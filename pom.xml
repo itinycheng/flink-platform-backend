@@ -3,29 +3,63 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
-
-  <groupId>com.itiger.platform</groupId>
+  <groupId>com.itiger.persona</groupId>
   <artifactId>persona-platform-backend</artifactId>
-  <version>1.0-SNAPSHOT</version>
+  <packaging>pom</packaging>
+  <version>0.0.1</version>
 
   <name>persona-platform-backend</name>
   <!-- FIXME change it to the project's website -->
   <url>http://www.example.com</url>
 
   <properties>
+    <java.version>1.8</java.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <maven.compiler.source>1.7</maven.compiler.source>
-    <maven.compiler.target>1.7</maven.compiler.target>
+    <maven.compiler.source>1.8</maven.compiler.source>
+    <maven.compiler.target>1.8</maven.compiler.target>
+
+    <persona-platform.version>0.0.1</persona-platform.version>
+
+    <spring.boot.version>2.4.4</spring.boot.version>
+
+    <guava.version>29.0-jre</guava.version>
+    <commons-pool2.version>2.9.0</commons-pool2.version>
+    <commons-lang3.version>3.5</commons-lang3.version>
+    <commons-io.version>2.7</commons-io.version>
+    <commons.beanutils.version>1.7.0</commons.beanutils.version>
+    <commons.collections.version>3.2.2</commons.collections.version>
+    <lombok.version>1.18.12</lombok.version>
+    <fastjson.version>1.2.75</fastjson.version>
+    <slf4j.version>1.7.30</slf4j.version>
+    <mysql.version>5.1.49</mysql.version>
+    <druid.version>1.2.5</druid.version>
+    <mybatis-plus.version>3.4.2</mybatis-plus.version>
+    <dynamic-datasource.version>3.3.2</dynamic-datasource.version>
   </properties>
 
-  <dependencies>
-    <dependency>
-      <groupId>junit</groupId>
-      <artifactId>junit</artifactId>
-      <version>4.11</version>
-      <scope>test</scope>
-    </dependency>
-  </dependencies>
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <!-- Import dependency management from Spring Boot -->
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-dependencies</artifactId>
+        <version>${spring.boot.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
+
+  <repositories>
+    <repository>
+      <id>nexus-inner</id>
+      <url>http://alpha-repo.tigerbrokers.net/nexus/repository/maven-public</url>
+    </repository>
+    <repository>
+      <id>nexus-tigerbrokers</id>
+      <url>http://nexus.tigerbrokers.net/repository/maven-public</url>
+    </repository>
+  </repositories>
 
   <build>
     <pluginManagement><!-- lock down plugins versions to avoid using Maven defaults (may be moved to parent pom) -->
@@ -72,4 +106,9 @@
       </plugins>
     </pluginManagement>
   </build>
+
+  <modules>
+    <module>persona-platform-web</module>
+    <module>persona-platform-common</module>
+  </modules>
 </project>

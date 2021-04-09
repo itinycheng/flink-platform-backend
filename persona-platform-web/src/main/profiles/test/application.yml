@@ -1,0 +1,59 @@
+server:
+  tomcat:
+    uri-encoding: UTF-8
+    threads:
+      max: 1000
+      min-spare: 30
+  port: 9104
+
+spring:
+  profiles:
+    active: test
+  # redis
+  redis:
+    password: ZXC123asd
+    sentinel:
+      master: mymaster
+      nodes: 172.28.49.125:26380,172.28.49.125:26381,172.28.49.125:26382
+    lettuce:
+      pool:
+        max-active: 20
+        max-idle: 20
+        max-wait: -1ms
+        min-idle: 5
+  # 多数据源
+  datasource:
+    dynamic:
+      # strict: true #设置严格模式,默认false不启动. 启动后在未匹配到指定数据源时候会抛出异常,不启动则使用默认数据源.
+      datasource:
+        master_signature: # signature库
+          url: jdbc:mysql://172.28.49.124:3306/shik?allowMultiQueries=true&useUnicode=true&characterEncoding=UTF-8
+          username: root
+          password: W63gr^DHiZpxmkdfcVmb!ubf
+          driver-class-name: com.mysql.jdbc.Driver
+  quartz:
+    #数据库方式
+    job-store-type: "jdbc"
+    #初始化表结构
+    jdbc:
+      initialize-schema: "always"
+    #相关属性配置
+#    properties:
+#      org:
+#        quartz:
+#          scheduler:
+#            instanceName: quartzScheduler
+#            instanceId: AUTO
+#          jobStore:
+#            class: org.quartz.impl.jdbcjobstore.JobStoreTX
+#            driverDelegateClass: org.quartz.impl.jdbcjobstore.StdJDBCDelegate
+#            tablePrefix: QRTZ_
+#            isClustered: false
+#            clusterCheckinInterval: 10000
+#            useProperties: false
+#          threadPool:
+#            class: org.quartz.simpl.SimpleThreadPool
+#            threadCount: 10
+#            threadPriority: 5
+#            threadsInheritContextClassLoaderOfInitializingThread: true
+

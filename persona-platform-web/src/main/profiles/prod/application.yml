@@ -1,0 +1,40 @@
+server:
+  tomcat:
+    uri-encoding: UTF-8
+    threads:
+      max: 1000
+      min-spare: 30
+  port: 9104
+
+spring:
+  profiles:
+    active: prod
+  # redis
+  redis:
+    password: p2tUB7z2TOX+n0e8
+    sentinel:
+      master: mymaster
+      nodes: 10.8.12.17:26379,10.8.12.18:26379,10.8.12.19:26379
+      password: p2tUB7z2TOX+n0e8
+    lettuce:
+      pool:
+        max-active: 20
+        max-idle: 20
+        max-wait: -1ms
+        min-idle: 5
+  # 多数据源
+  datasource:
+    dynamic:
+      # strict: true #设置严格模式,默认false不启动. 启动后在未匹配到指定数据源时候会抛出异常,不启动则使用默认数据源.
+      datasource:
+        signature: # signature库
+          url: jdbc:mysql://10.8.10.1:3306/data_signature?allowMultiQueries=true&useUnicode=true&characterEncoding=UTF-8
+          username: signature
+          password: JDdDzUqHQKk=
+          driver-class-name: com.mysql.jdbc.Driver
+  quartz:
+    #数据库方式
+    job-store-type: "jdbc"
+    #初始化表结构
+    jdbc:
+      initialize-schema: "always"
