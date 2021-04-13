@@ -27,6 +27,11 @@ spring:
     dynamic:
       # strict: true #设置严格模式,默认false不启动. 启动后在未匹配到指定数据源时候会抛出异常,不启动则使用默认数据源.
       datasource:
+        master_platform: # platform
+          url: jdbc:mysql://10.8.10.1:3306/platform?allowMultiQueries=true&useUnicode=true&characterEncoding=UTF-8
+          username: signature
+          password: JDdDzUqHQKk=
+          driver-class-name: com.mysql.jdbc.Driver
         signature: # signature库
           url: jdbc:mysql://10.8.10.1:3306/data_signature?allowMultiQueries=true&useUnicode=true&characterEncoding=UTF-8
           username: signature
@@ -34,7 +39,25 @@ spring:
           driver-class-name: com.mysql.jdbc.Driver
   quartz:
     #数据库方式
-    job-store-type: "jdbc"
+    job-store-type: jdbc
     #初始化表结构
     jdbc:
-      initialize-schema: "always"
+      initialize-schema: always
+    #相关属性配置
+    properties:
+      org:
+        quartz:
+          scheduler:
+            instanceName: quartzScheduler
+            instanceId: AUTO
+          jobStore:
+            class: org.quartz.impl.jdbcjobstore.JobStoreTX
+            driverDelegateClass: org.quartz.impl.jdbcjobstore.StdJDBCDelegate
+            isClustered: true
+            clusterCheckinInterval: 10000
+            useProperties: false
+          threadPool:
+            class: org.quartz.simpl.SimpleThreadPool
+            threadCount: 10
+            threadPriority: 5
+            threadsInheritContextClassLoaderOfInitializingThread: true
