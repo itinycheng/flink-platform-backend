@@ -16,7 +16,7 @@ import org.springframework.stereotype.Service;
  * @since 2020-10-16
  */
 @Service
-@DS("master_signature")
+@DS("signature")
 public class SignatureServiceImpl extends ServiceImpl<SignatureMapper, Signature> implements ISignatureService {
 
 }
