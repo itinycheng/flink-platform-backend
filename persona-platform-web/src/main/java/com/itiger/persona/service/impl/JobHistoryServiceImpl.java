@@ -2,14 +2,14 @@ package com.itiger.persona.service.impl;
 
 import com.baomidou.dynamic.datasource.annotation.DS;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.itiger.persona.entity.TJobInfo;
-import com.itiger.persona.service.ITJobInfoService;
-import com.itiger.persona.service.mapper.TJobInfoMapper;
+import com.itiger.persona.entity.JobHistory;
+import com.itiger.persona.service.IJobHistoryService;
+import com.itiger.persona.service.mapper.JobHistoryMapper;
 import org.springframework.stereotype.Service;
 
 /**
  * <p>
- * job config info 服务实现类
+ * job modify info 服务实现类
  * </p>
  *
  * @author shik
@@ -17,6 +17,6 @@ import org.springframework.stereotype.Service;
  */
 @Service
 @DS("master_platform")
-public class TJobInfoServiceImpl extends ServiceImpl<TJobInfoMapper, TJobInfo> implements ITJobInfoService {
+public class JobHistoryServiceImpl extends ServiceImpl<JobHistoryMapper, JobHistory> implements IJobHistoryService {
 
 }
