@@ -90,6 +90,11 @@ public class JobInfo implements Serializable {
      */
     private Integer status;
 
+    /**
+     * cron expression for the job
+     */
+    private String cronExpr;
+
     private String createUser;
 
     /**
