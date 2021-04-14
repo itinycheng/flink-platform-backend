@@ -2,9 +2,9 @@ package com.itiger.persona.service.impl;
 
 import com.baomidou.dynamic.datasource.annotation.DS;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.itiger.persona.entity.TJobRunInfo;
-import com.itiger.persona.service.ITJobRunInfoService;
-import com.itiger.persona.service.mapper.TJobRunInfoMapper;
+import com.itiger.persona.entity.JobRunInfo;
+import com.itiger.persona.service.IJobRunInfoService;
+import com.itiger.persona.service.mapper.JobRunInfoMapper;
 import org.springframework.stereotype.Service;
 
 /**
@@ -17,6 +17,6 @@ import org.springframework.stereotype.Service;
  */
 @Service
 @DS("master_platform")
-public class TJobRunInfoServiceImpl extends ServiceImpl<TJobRunInfoMapper, TJobRunInfo> implements ITJobRunInfoService {
+public class JobRunInfoServiceImpl extends ServiceImpl<JobRunInfoMapper, JobRunInfo> implements IJobRunInfoService {
 
 }

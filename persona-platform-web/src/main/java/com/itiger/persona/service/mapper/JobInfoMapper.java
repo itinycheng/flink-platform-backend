@@ -1,7 +1,7 @@
 package com.itiger.persona.service.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
-import com.itiger.persona.entity.TJobInfo;
+import com.itiger.persona.entity.JobInfo;
 import org.apache.ibatis.annotations.Mapper;
 
 /**
@@ -13,6 +13,6 @@ import org.apache.ibatis.annotations.Mapper;
  * @since 2021-04-14
  */
 @Mapper
-public interface TJobInfoMapper extends BaseMapper<TJobInfo> {
+public interface JobInfoMapper extends BaseMapper<JobInfo> {
 
 }

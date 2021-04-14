@@ -2,6 +2,7 @@ package com.itiger.persona.entity;
 
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -26,7 +27,8 @@ import java.time.LocalDateTime;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class TJobInfo implements Serializable {
+@TableName("t_job_info")
+public class JobInfo implements Serializable {
 
     private static final long serialVersionUID = 1L;
 

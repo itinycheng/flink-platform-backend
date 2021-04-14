@@ -1,16 +1,16 @@
 package com.itiger.persona.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
-import com.itiger.persona.entity.TJobRunInfo;
+import com.itiger.persona.entity.JobInfo;
 
 /**
  * <p>
- * job run info 服务类
+ * job config info 服务类
  * </p>
  *
  * @author shik
  * @since 2021-04-14
  */
-public interface ITJobRunInfoService extends IService<TJobRunInfo> {
+public interface IJobInfoService extends IService<JobInfo> {
 
 }
