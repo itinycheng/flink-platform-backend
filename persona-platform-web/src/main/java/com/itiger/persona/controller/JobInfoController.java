@@ -11,7 +11,7 @@ import com.itiger.persona.enums.ResponseStatus;
 import com.itiger.persona.exception.DefinitionException;
 import com.itiger.persona.service.IJobInfoService;
 import com.itiger.persona.service.RedisService;
-import com.itiger.persona.util.UniqureCodeGenerator;
+import com.itiger.persona.util.UuidGenerator;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -93,7 +93,7 @@ public class JobInfoController {
 
     private void buildJobInfo(JobInfoRequest tJobInfoRequest) {
         if (StringUtils.isBlank(tJobInfoRequest.getCode())) {
-            tJobInfoRequest.setCode(UniqureCodeGenerator.generateShortUuid());
+            tJobInfoRequest.setCode(UuidGenerator.generateShortUuid());
         }
 
         if (StringUtils.isBlank(tJobInfoRequest.getJobType())) {
