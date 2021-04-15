@@ -1,4 +1,4 @@
-package com.itiger.persona.common;
+package com.itiger.persona.comn;
 
 import java.util.function.Supplier;
 

@@ -1,4 +1,4 @@
-package com.itiger.persona.enums;
+package com.itiger.persona.common.enums;
 
 
 /**

@@ -1,4 +1,4 @@
-package com.itiger.persona.flink.model;
+package com.itiger.persona.common.job;
 
 import lombok.Data;
 
@@ -15,7 +15,7 @@ public class SqlContext {
 
     private String sql;
 
-    private String execMode;
+    private ExecutionMode execMode;
 
     private String extJar;
 

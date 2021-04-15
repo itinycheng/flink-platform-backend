@@ -1,4 +1,4 @@
-package com.itiger.persona.constants;
+package com.itiger.persona.common.constants;
 
 public class CacheKeys {
 

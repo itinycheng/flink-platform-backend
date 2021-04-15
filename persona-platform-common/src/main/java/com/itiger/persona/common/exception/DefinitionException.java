@@ -1,6 +1,6 @@
-package com.itiger.persona.exception;
+package com.itiger.persona.common.exception;
 
-import com.itiger.persona.enums.ResponseStatus;
+import com.itiger.persona.common.enums.ResponseStatus;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;

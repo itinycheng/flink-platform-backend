@@ -1,4 +1,4 @@
-package com.itiger.persona.util;
+package com.itiger.persona.common.util;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
