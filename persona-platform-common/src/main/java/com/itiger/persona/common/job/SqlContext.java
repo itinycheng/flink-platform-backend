@@ -6,20 +6,27 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * @author tiger
+ * sql context
+ *
+ * @author tiny.wang
  */
 @Data
 public class SqlContext {
 
     private String id;
 
-    private String sql;
+    private List<String> sqls;
 
     private ExecutionMode execMode;
 
-    private String extJar;
+    /**
+     * currently not in use
+     */
+    private List<String> extJars;
 
-    private Map<String, String> config;
+    private Map<String, String> configs;
 
     private List<Catalog> catalogs;
+
+    private List<Function> functions;
 }

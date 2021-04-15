@@ -1,9 +1,11 @@
-package com.itiger.persona.comn;
+package com.itiger.persona.common.util;
 
 import java.util.function.Supplier;
 
 /**
- * @author tiny
+ * check whether throw exception
+ *
+ * @author tiny.wang
  */
 public class Preconditions {
 

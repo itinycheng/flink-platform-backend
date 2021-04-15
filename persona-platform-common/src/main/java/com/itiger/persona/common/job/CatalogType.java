@@ -3,7 +3,7 @@ package com.itiger.persona.common.job;
 import lombok.Getter;
 
 /**
- * @author tiger
+ * @author tiny.wang
  */
 @Getter
 public enum CatalogType {
