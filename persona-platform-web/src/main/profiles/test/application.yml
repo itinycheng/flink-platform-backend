@@ -37,11 +37,13 @@ spring:
           password: W63gr^DHiZpxmkdfcVmb!ubf
           driver-class-name: com.mysql.jdbc.Driver
   quartz:
+    overwrite-existing-jobs: true
+    startup-delay: 5s
     #数据库方式
     job-store-type: jdbc
     #初始化表结构
     jdbc:
-      initialize-schema: always
+      initialize-schema: never
     #相关属性配置
     properties:
       org:
@@ -55,8 +57,10 @@ spring:
             isClustered: true
             clusterCheckinInterval: 10000
             useProperties: false
+            misfireThreshold: 5000
           threadPool:
             class: org.quartz.simpl.SimpleThreadPool
-            threadCount: 10
+            threadCount: 20
             threadPriority: 5
             threadsInheritContextClassLoaderOfInitializingThread: true
+

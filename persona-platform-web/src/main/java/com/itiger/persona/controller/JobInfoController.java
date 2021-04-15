@@ -7,6 +7,7 @@ import com.itiger.persona.entity.JobInfo;
 import com.itiger.persona.entity.request.JobInfoRequest;
 import com.itiger.persona.entity.request.SignatureRequest;
 import com.itiger.persona.entity.response.ResultInfo;
+import com.itiger.persona.enums.JobStatusEnum;
 import com.itiger.persona.enums.ResponseStatus;
 import com.itiger.persona.exception.DefinitionException;
 import com.itiger.persona.service.IJobInfoService;
@@ -45,12 +46,12 @@ public class JobInfoController {
     @GetMapping
     public ResultInfo get(@RequestParam(name = "page", required = false, defaultValue = "1") Integer page,
                           @RequestParam(name = "size", required = false, defaultValue = "10") Integer size,
-                          SignatureRequest signatureRequest,
+                          JobInfoRequest jobInfoRequest,
                           HttpServletRequest request) {
 
         Page pager = new Page<>(page, size);
         IPage iPage = this.iJobInfoService.page(pager, new QueryWrapper<JobInfo>().lambda()
-                .eq(Objects.nonNull(signatureRequest.getStatus()), JobInfo::getStatus, signatureRequest.getStatus())
+                .eq(Objects.nonNull(jobInfoRequest.getStatus()), JobInfo::getStatus, jobInfoRequest.getStatus())
         );
 
         return ResultInfo.success(iPage);
@@ -65,15 +66,12 @@ public class JobInfoController {
     @PostMapping
     public ResultInfo saveOrUpdate(HttpServletRequest request, @RequestBody JobInfoRequest jobInfoRequest) {
         if (StringUtils.isNotBlank(jobInfoRequest.getJobName())) {
-
             // save
             if (Objects.isNull(jobInfoRequest.getId())) {
                 JobInfo one = this.iJobInfoService.getOne(new QueryWrapper<JobInfo>().lambda().eq(JobInfo::getJobName, jobInfoRequest.getJobName()));
-
                 if (Objects.isNull(one)) {
                     // TODO set time status
                     this.buildJobInfo(jobInfoRequest);
-
                     this.iJobInfoService.save(jobInfoRequest);
                     return ResultInfo.success(true);
                 } else {
@@ -96,16 +94,8 @@ public class JobInfoController {
             tJobInfoRequest.setCode(UuidGenerator.generateShortUuid());
         }
 
-        if (StringUtils.isBlank(tJobInfoRequest.getJobType())) {
-            tJobInfoRequest.setJobType("flink-sql");
-        }
-
-        if (StringUtils.isBlank(tJobInfoRequest.getDeployMode())) {
-            tJobInfoRequest.setDeployMode("run-local");
-        }
-
         if (Objects.isNull(tJobInfoRequest.getStatus())) {
-            tJobInfoRequest.setStatus(1);
+            tJobInfoRequest.setStatus(JobStatusEnum.CLOSE.getCode());
         }
     }
 
