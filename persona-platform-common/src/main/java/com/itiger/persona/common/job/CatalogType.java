@@ -1,4 +1,4 @@
-package com.itiger.persona.flink.common;
+package com.itiger.persona.common.job;
 
 import lombok.Getter;
 

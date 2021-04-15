@@ -18,7 +18,7 @@ import java.util.Map;
 @RequestMapping("/enums")
 public class EnumsController {
 
-    private final static String CLASS_PATH_PREFIX = "com.itiger.persona.enums";
+    private final static String CLASS_PATH_PREFIX = "com.itiger.persona.common.enums";
 
     @GetMapping
     public ResultInfo list(String enumsClass) {

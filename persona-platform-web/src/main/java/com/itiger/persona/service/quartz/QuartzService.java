@@ -1,6 +1,6 @@
 package com.itiger.persona.service.quartz;
 
-import com.itiger.persona.common.QuartzException;
+import com.itiger.persona.comn.QuartzException;
 import com.itiger.persona.entity.JobInfo;
 import org.quartz.CronTrigger;
 import org.quartz.JobDetail;

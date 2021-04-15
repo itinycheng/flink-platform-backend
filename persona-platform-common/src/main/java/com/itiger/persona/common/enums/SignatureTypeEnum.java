@@ -1,4 +1,4 @@
-package com.itiger.persona.enums;
+package com.itiger.persona.common.enums;
 
 /**
  * @Author Shik
@@ -7,17 +7,17 @@ package com.itiger.persona.enums;
  * @Description: TODO
  * @Date: 2021/3/30 下午4:43
  */
-public enum JobStatusEnum {
+public enum SignatureTypeEnum {
 
-    OPEN(1, "open"),
-    CLOSE(0, "close"),
-    DELETE(-1, "delete"),
+    STATISTICS(1, "统计标签"),
+    RULE(2, "规则标签"),
+    PREDICTOR(3, "预测标签"),
     ;
 
     private int code;
     private String desc;
 
-    JobStatusEnum(int code, String desc) {
+    SignatureTypeEnum(int code, String desc) {
         this.code = code;
         this.desc = desc;
     }

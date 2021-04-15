@@ -1,7 +1,7 @@
 package com.itiger.persona.service;
 
 import com.alibaba.fastjson.JSON;
-import com.itiger.persona.constants.CacheKeys;
+import com.itiger.persona.common.constants.CacheKeys;
 import com.itiger.persona.entity.Signature;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;

@@ -1,6 +1,5 @@
-package com.itiger.persona.flink.model;
+package com.itiger.persona.common.job;
 
-import com.itiger.persona.flink.common.CatalogType;
 import lombok.Data;
 
 import java.util.Map;

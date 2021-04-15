@@ -1,8 +1,8 @@
 package com.itiger.persona.config;
 
 import com.itiger.persona.entity.response.ResultInfo;
-import com.itiger.persona.enums.ResponseStatus;
-import com.itiger.persona.exception.DefinitionException;
+import com.itiger.persona.common.enums.ResponseStatus;
+import com.itiger.persona.common.exception.DefinitionException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;

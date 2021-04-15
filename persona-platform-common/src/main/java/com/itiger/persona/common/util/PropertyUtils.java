@@ -1,4 +1,4 @@
-package com.itiger.persona.util;
+package com.itiger.persona.common.util;
 
 import java.io.InputStreamReader;
 import java.util.Properties;
