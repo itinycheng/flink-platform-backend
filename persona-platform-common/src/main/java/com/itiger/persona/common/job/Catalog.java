@@ -5,7 +5,7 @@ import lombok.Data;
 import java.util.Map;
 
 /**
- * @author tiger
+ * @author tiny.wang
  */
 @Data
 public class Catalog {
@@ -16,5 +16,7 @@ public class Catalog {
 
     private String defaultDatabase;
 
-    private Map<String, String> config;
+    private String configPath;
+
+    private Map<String, String> configs;
 }
