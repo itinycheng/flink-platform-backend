@@ -9,13 +9,13 @@ import org.springframework.context.annotation.Configuration;
 /**
  * @author tiger
  */
-@Configuration
+//@Configuration
 public class QuartzConfig {
 
     /**
      * create quartz scheduler
      */
-    @Bean(name = "quartzScheduler")
+//    @Bean(name = "quartzScheduler")
     public Scheduler quartzScheduler() throws SchedulerException {
         Scheduler scheduler = StdSchedulerFactory.getDefaultScheduler();
         scheduler.start();

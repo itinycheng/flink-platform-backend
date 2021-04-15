@@ -7,8 +7,11 @@ import com.itiger.persona.enums.ResponseStatus;
 import com.itiger.persona.exception.DefinitionException;
 import com.itiger.persona.service.IJobInfoService;
 import com.itiger.persona.service.mapper.JobInfoMapper;
+import com.itiger.persona.service.quartz.QuartzService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import javax.annotation.Resource;
 
 /**
  * <p>
@@ -22,17 +25,20 @@ import org.springframework.transaction.annotation.Transactional;
 @DS("master_platform")
 public class JobInfoServiceImpl extends ServiceImpl<JobInfoMapper, JobInfo> implements IJobInfoService {
 
-    @Transactional(rollbackFor = DefinitionException.class)
+    @Resource
+    public QuartzService quartzService;
+
+    @Transactional(rollbackFor = RuntimeException.class)
     @Override
     public boolean save(JobInfo jobInfo) {
         boolean save = super.save(jobInfo);
-        if (save) {
-            // TODO 生成job detail
+        if (!save) {
+            throw new DefinitionException(ResponseStatus.SERVICE_ERROR);
         }
-        throw new DefinitionException(ResponseStatus.SERVICE_ERROR);
+        return quartzService.addOrFailQuartzJob(jobInfo);
     }
 
-    @Transactional(rollbackFor = DefinitionException.class)
+    @Transactional(rollbackFor = RuntimeException.class)
     @Override
     public boolean updateById(JobInfo jobInfo) {
         boolean update = super.updateById(jobInfo);
