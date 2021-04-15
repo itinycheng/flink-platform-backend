@@ -16,6 +16,7 @@ public class JobRunner implements Job {
     public void execute(JobExecutionContext context) {
         JobDetail detail = context.getJobDetail();
         JobKey key = detail.getKey();
+        // TODO avoid preforming the same job multiple times at the same time.
         log.info(" job key: {}, current time: {}", key, System.currentTimeMillis());
     }
 }
