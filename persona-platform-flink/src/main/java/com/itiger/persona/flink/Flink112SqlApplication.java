@@ -5,6 +5,7 @@ import com.itiger.persona.common.job.Function;
 import com.itiger.persona.common.job.SqlContext;
 import com.itiger.persona.common.util.JsonUtil;
 import com.itiger.persona.flink.helper.Catalogs;
+import com.itiger.persona.flink.helper.ExecuteSqls;
 import com.itiger.persona.flink.helper.ExecutionEnvs;
 import com.itiger.persona.flink.helper.Functions;
 import org.apache.flink.configuration.Configuration;
@@ -45,10 +46,11 @@ public class Flink112SqlApplication {
         Functions.registerFunctionsToTableEnv(tEnv, functions);
 
         // step 5: exec sql
+        ExecuteSqls.execSqls(tEnv, sqlContext.getSqls());
+        //TableResult tableResult = statementSet.execute();
 
         // step 6: wait for return and do callback action
 
-        System.out.println("Hello World!");
     }
 
 }

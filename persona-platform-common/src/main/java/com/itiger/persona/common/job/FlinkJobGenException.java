@@ -1,4 +1,4 @@
-package com.itiger.persona.flink.exception;
+package com.itiger.persona.common.job;
 
 /**
  * gen flink job exception
