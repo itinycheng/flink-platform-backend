@@ -12,9 +12,9 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class SqlCommand {
+public class Sql {
 
-    private SqlCommandType type;
+    private SqlType type;
 
     private String[] operands;
 
