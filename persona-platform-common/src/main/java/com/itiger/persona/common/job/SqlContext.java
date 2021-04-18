@@ -15,7 +15,7 @@ public class SqlContext {
 
     private String id;
 
-    private List<SqlCommand> sqls;
+    private List<Sql> sqls;
 
     private ExecutionMode execMode;
 

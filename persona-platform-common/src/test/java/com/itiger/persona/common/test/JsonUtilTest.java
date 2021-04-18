@@ -1,9 +1,13 @@
 package com.itiger.persona.common.test;
 
 import com.itiger.persona.common.job.ExecutionMode;
+import com.itiger.persona.common.job.Sql;
 import com.itiger.persona.common.job.SqlContext;
+import com.itiger.persona.common.job.SqlType;
 import com.itiger.persona.common.util.JsonUtil;
 import org.junit.Test;
+
+import java.util.Collections;
 
 public class JsonUtilTest {
 
@@ -11,7 +15,12 @@ public class JsonUtilTest {
     public void testEnum() {
         SqlContext sqlContext = new SqlContext();
         sqlContext.setId("a");
-        //sqlContext.setSqls(Collections.singletonList("select"));
+
+        Sql sql = new Sql();
+        sql.setType(SqlType.INSERT_INTO);
+        sql.setOperands(new String[]{"insert into table"});
+        sqlContext.setSqls(Collections.singletonList(sql));
+
         sqlContext.setExecMode(ExecutionMode.BATCH);
 
         String jsonString = JsonUtil.toJsonString(sqlContext);

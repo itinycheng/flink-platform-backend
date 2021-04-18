@@ -12,7 +12,7 @@ import java.util.stream.Stream;
  *
  * @author tiny.wang
  */
-public enum SqlCommandType {
+public enum SqlType {
 
     /**
      * sql type enum
@@ -104,25 +104,28 @@ public enum SqlCommandType {
 
     public final Function<String[], Optional<String[]>> operandConverter;
 
-    SqlCommandType(String regex, Function<String[], Optional<String[]>> operandConverter) {
+    SqlType(String regex, Function<String[], Optional<String[]>> operandConverter) {
         this.pattern = Pattern.compile(regex, Constants.SQL_PATTERN_CONFIGS);
         this.operandConverter = operandConverter;
     }
 
-    public static Optional<SqlCommand> parse(String statement) {
+    public static Sql parse(String statement) {
         // delete the comment and semicolon at the end of sql
         String stmt = Utils.stripUselessCharsFromSql(statement);
         // parse sql
-        for (SqlCommandType type : values()) {
+        for (SqlType type : values()) {
             Matcher matcher = type.pattern.matcher(stmt);
             if (matcher.matches()) {
                 return type.operandConverter.apply(Stream.iterate(0, i -> i + 1)
                         .limit(matcher.groupCount())
                         .map(matcher::group)
                         .toArray(String[]::new))
-                        .map((operands) -> new SqlCommand(type, operands));
+                        .map((operands) -> new Sql(type, operands))
+                        .orElseThrow(() -> new FlinkJobGenException(
+                                String.format("cannot match a correct sql statement: %s", stmt)));
             }
         }
         throw new FlinkJobGenException(String.format("cannot parse statement: %s", stmt));
     }
+
 }

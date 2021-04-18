@@ -25,7 +25,7 @@ public class Utils {
                 .collect(Collectors.joining(SQL_LINE_SEPARATOR));
         // delete ';'
         if (stmt.endsWith(SEMICOLON)) {
-            stmt = stmt.substring(0, statement.length() - 1).trim();
+            stmt = stmt.substring(0, stmt.length() - 1).trim();
         }
         return stmt;
 
