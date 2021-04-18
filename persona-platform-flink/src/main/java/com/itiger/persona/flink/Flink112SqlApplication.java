@@ -5,10 +5,10 @@ import com.itiger.persona.common.job.Function;
 import com.itiger.persona.common.job.SqlContext;
 import com.itiger.persona.common.util.JsonUtil;
 import com.itiger.persona.flink.helper.Catalogs;
+import com.itiger.persona.flink.helper.Configurations;
 import com.itiger.persona.flink.helper.ExecuteSqls;
 import com.itiger.persona.flink.helper.ExecutionEnvs;
 import com.itiger.persona.flink.helper.Functions;
-import org.apache.flink.configuration.Configuration;
 import org.apache.flink.table.api.TableEnvironment;
 
 import java.nio.file.Path;
@@ -31,10 +31,9 @@ public class Flink112SqlApplication {
 
         // step 1: create and configure environment
         TableEnvironment tEnv = ExecutionEnvs.createExecutionEnv(sqlContext);
-        Configuration config = tEnv.getConfig().getConfiguration();
         Optional.ofNullable(sqlContext.getConfigs())
                 .orElse(Collections.emptyMap())
-                .forEach(config::setString);
+                .forEach((key, value) -> Configurations.setConfig(tEnv, key, value));
         // TODO step 2: set special config, such as checkpoint/watermark for streaming env
 
         // step 3: add catalog
@@ -47,10 +46,6 @@ public class Flink112SqlApplication {
 
         // step 5: exec sql
         ExecuteSqls.execSqls(tEnv, sqlContext.getSqls());
-        //TableResult tableResult = statementSet.execute();
-
-        // step 6: wait for return and do callback action
-
     }
 
 }
