@@ -1,11 +1,8 @@
 package com.itiger.persona.common.job;
 
-import lombok.Getter;
-
 /**
  * @author tiny.wang
  */
-@Getter
 public enum CatalogType {
 
     /**
@@ -19,6 +16,6 @@ public enum CatalogType {
 
     JDBC,
 
-    POSTGRES
+    POSTGRES;
 
 }
