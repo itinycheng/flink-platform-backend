@@ -2,7 +2,7 @@ package com.itiger.persona.service;
 
 import com.baomidou.dynamic.datasource.annotation.DS;
 import com.itiger.persona.entity.JobInfo;
-import com.itiger.persona.service.quartz.QuartzService;
+import com.itiger.persona.quartz.QuartzService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

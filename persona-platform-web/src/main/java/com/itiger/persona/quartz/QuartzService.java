@@ -1,4 +1,4 @@
-package com.itiger.persona.service.quartz;
+package com.itiger.persona.quartz;
 
 import com.itiger.persona.comn.QuartzException;
 import com.itiger.persona.entity.JobInfo;

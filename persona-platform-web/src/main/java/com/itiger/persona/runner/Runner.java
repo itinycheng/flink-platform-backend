@@ -1,15 +1,11 @@
 package com.itiger.persona.runner;
 
-import com.itiger.persona.entity.JobInfo;
 import com.itiger.persona.service.IJobInfoService;
-import com.itiger.persona.service.quartz.QuartzService;
+import com.itiger.persona.quartz.QuartzService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
-
-import java.util.List;
 
 /**
  * @author gengshikun
