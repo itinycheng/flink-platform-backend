@@ -4,6 +4,8 @@ import org.apache.flink.configuration.Configuration;
 import org.apache.flink.table.api.TableEnvironment;
 
 /**
+ * TODO support table and common configs
+ *
  * @author tiny.wang
  */
 public class Configurations {

@@ -22,7 +22,7 @@ import java.util.Optional;
  *
  * @author tiger
  */
-public class Flink112SqlApplication {
+public class Sql112Application {
 
     public static void main(String[] args) throws Exception {
         // deSer sql context
@@ -34,17 +34,16 @@ public class Flink112SqlApplication {
         Optional.ofNullable(sqlContext.getConfigs())
                 .orElse(Collections.emptyMap())
                 .forEach((key, value) -> Configurations.setConfig(tEnv, key, value));
-        // TODO step 2: set special config, such as checkpoint/watermark for streaming env
 
-        // step 3: add catalog
+        // step 2: add catalog
         List<Catalog> catalogs = sqlContext.getCatalogs();
         Catalogs.registerCatalogsToTableEnv(tEnv, catalogs);
 
-        // step 4: create temporary system function
+        // step 3: create temporary system function
         List<Function> functions = sqlContext.getFunctions();
         Functions.registerFunctionsToTableEnv(tEnv, functions);
 
-        // step 5: exec sql
+        // step 4: exec sql
         ExecuteSqls.execSqls(tEnv, sqlContext.getSqls());
     }
 

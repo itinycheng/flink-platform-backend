@@ -24,6 +24,9 @@ public class SqlContext {
      */
     private List<String> extJars;
 
+    /**
+     * flink-conf.yaml configs
+     */
     private Map<String, String> configs;
 
     private List<Catalog> catalogs;
