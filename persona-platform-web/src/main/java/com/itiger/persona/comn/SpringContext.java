@@ -5,6 +5,9 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.stereotype.Component;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * @author tiger
  */
@@ -44,6 +47,10 @@ public class SpringContext implements ApplicationContextAware {
 
     public static <T> T getBean(String name, Class<T> requiredType) {
         return applicationContext.getBean(name, requiredType);
+    }
+
+    public static <T> List<T> getBeansOfType(Class<T> t) {
+        return new ArrayList<>(applicationContext.getBeansOfType(t).values());
     }
 
     public static String getEnv() {

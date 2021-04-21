@@ -8,9 +8,17 @@ public enum DeployMode {
     /**
      * deploy mode
      */
-    RUN_LOCAL,
-    PER_YARN,
-    YARN_SESSION,
-    RUN_APPLICATION
+    RUN_LOCAL("", ""),
+    FLINK_YARN_PER("run", "yarn-per-job"),
+    FLINK_YARN_SESSION("run", "yarn-session"),
+    FLINK_YARN_RUN_APPLICATION("run-application", "yarn-application");
 
+    public final String mode;
+
+    public final String target;
+
+    DeployMode(String mode, String target) {
+        this.mode = mode;
+        this.target = target;
+    }
 }

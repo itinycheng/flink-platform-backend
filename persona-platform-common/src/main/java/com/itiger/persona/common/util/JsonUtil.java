@@ -7,6 +7,10 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
+import java.util.Map;
+
+import static java.util.stream.Collectors.toList;
 
 /**
  * json utils
@@ -16,11 +20,21 @@ import java.nio.file.Path;
 @Slf4j
 public class JsonUtil {
 
+    public static List<String> toJsonList(String res) {
+        return JSON.parseArray(res).stream()
+                .map(Object::toString)
+                .collect(toList());
+    }
+
+    public static Map<String, Object> toJsonMap(String res) {
+        return JSON.parseObject(res);
+    }
+
     public static <T> T toJson(String res, Class<T> clazz) {
         try {
             return JSON.parseObject(res, clazz);
         } catch (Exception e) {
-            log.error("parseObject is error");
+            log.error("parse string to class instance failed", e);
             return null;
         }
     }
@@ -31,12 +45,7 @@ public class JsonUtil {
     }
 
     public static String toJsonString(Object obj) {
-        try {
-            return JSON.toJSONString(obj);
-        } catch (Exception e) {
-            log.error("parse object to json string failed", e);
-            return null;
-        }
+        return JSON.toJSONString(obj);
     }
 
 }
