@@ -63,7 +63,7 @@ public class JobRunInfo implements Serializable {
     /**
      * stop user
      */
-    private LocalDateTime stopUser;
+    private String stopUser;
 
     /**
      * stop time

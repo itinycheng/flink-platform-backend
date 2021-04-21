@@ -66,3 +66,5 @@ flink:
   sql112:
     command-path: /data0/app/flink-1.12.0/bin/flink
     jar-path: hdfs:///flink/jars/job-submitter/persona-platform-flink.jar
+    class-name: com.itiger.persona.flink.Sql112Application
+    sql-dir: sql_files

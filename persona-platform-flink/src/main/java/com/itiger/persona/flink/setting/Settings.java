@@ -1,6 +1,6 @@
 package com.itiger.persona.flink.setting;
 
-import com.itiger.persona.common.job.FlinkJobGenException;
+import com.itiger.persona.common.exception.FlinkJobGenException;
 import org.yaml.snakeyaml.Yaml;
 
 import java.io.InputStream;

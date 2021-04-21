@@ -1,5 +1,7 @@
 package com.itiger.persona.common.job;
 
+import com.itiger.persona.common.exception.FlinkJobGenException;
+
 import java.util.Arrays;
 import java.util.Optional;
 import java.util.function.Function;

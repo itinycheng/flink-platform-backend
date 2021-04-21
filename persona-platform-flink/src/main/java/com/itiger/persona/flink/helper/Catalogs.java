@@ -3,7 +3,7 @@ package com.itiger.persona.flink.helper;
 import com.itiger.persona.common.job.Catalog;
 import com.itiger.persona.common.job.Constants;
 import com.itiger.persona.common.util.Preconditions;
-import com.itiger.persona.common.job.FlinkJobGenException;
+import com.itiger.persona.common.exception.FlinkJobGenException;
 import io.tidb.bigdata.flink.tidb.TiDBCatalog;
 import org.apache.flink.connector.jdbc.catalog.JdbcCatalog;
 import org.apache.flink.table.api.TableEnvironment;

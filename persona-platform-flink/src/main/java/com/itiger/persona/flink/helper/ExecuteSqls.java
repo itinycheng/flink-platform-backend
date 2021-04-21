@@ -1,6 +1,6 @@
 package com.itiger.persona.flink.helper;
 
-import com.itiger.persona.common.job.FlinkJobGenException;
+import com.itiger.persona.common.exception.FlinkJobGenException;
 import com.itiger.persona.common.job.Sql;
 import com.itiger.persona.common.job.SqlType;
 import org.apache.flink.table.api.StatementSet;
