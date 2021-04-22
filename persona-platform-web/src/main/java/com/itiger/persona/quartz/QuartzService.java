@@ -61,7 +61,7 @@ public class QuartzService {
     private void addTrigger(JobInfo jobInfo) throws SchedulerException {
         JobDetail jobDetail = newJob(JobRunner.class)
                 .withIdentity(jobInfo.getCode(), Key.DEFAULT_GROUP)
-                .usingJobData(JOB_NAME, jobInfo.getJobName())
+                .usingJobData(JOB_NAME, jobInfo.getName())
                 .build();
         CronTrigger trigger = newTrigger()
                 .withIdentity(jobInfo.getCode(), Key.DEFAULT_GROUP)

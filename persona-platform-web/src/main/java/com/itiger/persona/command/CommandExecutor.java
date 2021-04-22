@@ -6,7 +6,7 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 
-import static com.itiger.persona.command.Constants.LINE_SEPARATOR;
+import static com.itiger.persona.common.job.Constants.LINE_SEPARATOR;
 import static java.util.stream.Collectors.joining;
 
 /**
@@ -15,7 +15,7 @@ import static java.util.stream.Collectors.joining;
 @Slf4j
 public class CommandExecutor {
 
-    public static String execCommand(String command) throws Exception {
+    public static JobCommandCallback execCommand(String command) throws Exception {
         log.info("exec command: {}", command);
         Process process = Runtime.getRuntime().exec(command);
         process.waitFor();
@@ -23,7 +23,10 @@ public class CommandExecutor {
              BufferedReader errReader = new BufferedReader(new InputStreamReader(process.getErrorStream(), StandardCharsets.UTF_8))) {
             String stdMsg = stdReader.lines().collect(joining(LINE_SEPARATOR));
             String errMsg = errReader.lines().collect(joining(LINE_SEPARATOR));
-            return String.join(LINE_SEPARATOR, stdMsg, errMsg);
+            String appId = Utils.extractApplicationId(stdMsg);
+            String jobId = Utils.extractJobId(stdMsg);
+            String detail = String.join(LINE_SEPARATOR, stdMsg, errMsg);
+            return new JobCommandCallback(jobId, appId, detail);
         } finally {
             process.destroy();
         }

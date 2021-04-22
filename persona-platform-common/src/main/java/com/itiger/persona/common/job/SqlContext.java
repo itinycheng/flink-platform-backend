@@ -31,5 +31,8 @@ public class SqlContext {
 
     private List<Catalog> catalogs;
 
+    /**
+     * currently not in use
+     */
     private List<Function> functions;
 }

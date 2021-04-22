@@ -5,8 +5,6 @@ package com.itiger.persona.command;
  */
 public class Constants {
 
-    public static final String LINE_SEPARATOR = System.lineSeparator();
-
     public static final String YARN_NAME = "yarn.application.name";
 
     public static final String CLASS_NAME = "-c";

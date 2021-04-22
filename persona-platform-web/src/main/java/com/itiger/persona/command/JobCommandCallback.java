@@ -17,4 +17,6 @@ public class JobCommandCallback {
     private String jobId;
 
     private String appId;
+
+    private String detail;
 }
