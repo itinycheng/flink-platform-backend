@@ -6,7 +6,7 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 
-import static com.itiger.persona.common.job.Constants.LINE_SEPARATOR;
+import static com.itiger.persona.common.constants.JobConstant.LINE_SEPARATOR;
 import static java.util.stream.Collectors.joining;
 
 /**

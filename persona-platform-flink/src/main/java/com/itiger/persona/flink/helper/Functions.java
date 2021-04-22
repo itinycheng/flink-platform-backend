@@ -1,6 +1,6 @@
 package com.itiger.persona.flink.helper;
 
-import com.itiger.persona.common.job.Function;
+import com.itiger.persona.common.entity.job.Function;
 import com.itiger.persona.common.exception.FlinkJobGenException;
 import org.apache.flink.table.api.TableEnvironment;
 import org.apache.flink.table.functions.UserDefinedFunction;

@@ -9,8 +9,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
-
-import static java.util.stream.Collectors.toList;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 /**
  * json utils
@@ -20,14 +20,23 @@ import static java.util.stream.Collectors.toList;
 @Slf4j
 public class JsonUtil {
 
-    public static List<String> toJsonList(String res) {
+    public static List<String> toList(String res) {
         return JSON.parseArray(res).stream()
                 .map(Object::toString)
-                .collect(toList());
+                .collect(Collectors.toList());
     }
 
-    public static Map<String, Object> toJsonMap(String res) {
+    public static Map<String, Object> toMap(String res) {
         return JSON.parseObject(res);
+    }
+
+    public static Map<String, String> toStrMap(String res) {
+        return JsonUtil.toMap(res)
+                .entrySet()
+                .stream()
+                .filter(entry -> Objects.nonNull(entry.getValue()))
+                .collect(Collectors.toMap(Map.Entry::getKey,
+                        entry -> String.valueOf(entry.getValue())));
     }
 
     public static <T> T toJson(String res, Class<T> clazz) {

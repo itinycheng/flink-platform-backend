@@ -4,7 +4,7 @@ import com.baomidou.dynamic.datasource.annotation.DS;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.itiger.persona.entity.JobHistory;
 import com.itiger.persona.service.IJobHistoryService;
-import com.itiger.persona.service.mapper.JobHistoryMapper;
+import com.itiger.persona.mapper.JobHistoryMapper;
 import org.springframework.stereotype.Service;
 
 /**

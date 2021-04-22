@@ -6,7 +6,7 @@ import com.itiger.persona.entity.JobInfo;
 import com.itiger.persona.common.enums.ResponseStatus;
 import com.itiger.persona.common.exception.DefinitionException;
 import com.itiger.persona.service.IJobInfoService;
-import com.itiger.persona.service.mapper.JobInfoMapper;
+import com.itiger.persona.mapper.JobInfoMapper;
 import com.itiger.persona.quartz.QuartzService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

@@ -4,7 +4,7 @@ import com.baomidou.dynamic.datasource.annotation.DS;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.itiger.persona.entity.JobRunInfo;
 import com.itiger.persona.service.IJobRunInfoService;
-import com.itiger.persona.service.mapper.JobRunInfoMapper;
+import com.itiger.persona.mapper.JobRunInfoMapper;
 import org.springframework.stereotype.Service;
 
 /**

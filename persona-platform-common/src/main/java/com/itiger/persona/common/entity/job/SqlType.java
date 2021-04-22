@@ -1,6 +1,8 @@
-package com.itiger.persona.common.job;
+package com.itiger.persona.common.entity.job;
 
+import com.itiger.persona.common.constants.JobConstant;
 import com.itiger.persona.common.exception.FlinkJobGenException;
+import com.itiger.persona.common.util.SqlUtil;
 
 import java.util.Arrays;
 import java.util.Optional;
@@ -107,13 +109,13 @@ public enum SqlType {
     public final Function<String[], Optional<String[]>> operandConverter;
 
     SqlType(String regex, Function<String[], Optional<String[]>> operandConverter) {
-        this.pattern = Pattern.compile(regex, Constants.SQL_PATTERN_CONFIGS);
+        this.pattern = Pattern.compile(regex, JobConstant.SQL_PATTERN_CONFIGS);
         this.operandConverter = operandConverter;
     }
 
     public static Sql parse(String statement) {
         // delete the comment and semicolon at the end of sql
-        String stmt = Utils.stripUselessCharsFromSql(statement);
+        String stmt = SqlUtil.stripUselessCharsFromSql(statement);
         // parse sql
         for (SqlType type : values()) {
             Matcher matcher = type.pattern.matcher(stmt);
