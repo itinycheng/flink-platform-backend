@@ -1,4 +1,4 @@
-package com.itiger.persona.common.job;
+package com.itiger.persona.common.constants;
 
 import com.itiger.persona.common.util.FunctionUtil;
 
@@ -10,7 +10,7 @@ import java.util.regex.Pattern;
  *
  * @author tiny.wang
  */
-public class Constants {
+public class JobConstant {
 
     public static final String HOST_IP = FunctionUtil.getOrDefault(() -> InetAddress.getLocalHost().getHostAddress(), "");
 

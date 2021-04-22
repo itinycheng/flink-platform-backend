@@ -1,6 +1,6 @@
 package com.itiger.persona.flink.helper;
 
-import com.itiger.persona.common.job.SqlContext;
+import com.itiger.persona.common.entity.job.SqlContext;
 import com.itiger.persona.common.exception.FlinkJobGenException;
 import lombok.val;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;

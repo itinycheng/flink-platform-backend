@@ -47,10 +47,10 @@ public class Flink112CommandBuilder implements JobCommandBuilder {
         String execMode = String.format(EXEC_MODE, deployMode.mode, deployMode.target);
         command.setPrefix(commandBinPath + execMode);
         Map<String, Object> configs = command.getConfigs();
-        configs.putAll(JsonUtil.toJsonMap(jobInfo.getConfig()));
+        configs.putAll(JsonUtil.toMap(jobInfo.getConfig()));
         String appName = String.join("-", jobInfo.getJobName(), jobInfo.getJobCode());
         configs.put(Constants.YARN_NAME, appName);
-        command.setExtJars(JsonUtil.toJsonList(jobInfo.getExtJars()));
+        command.setExtJars(JsonUtil.toList(jobInfo.getExtJars()));
         switch (jobInfo.getJobType()) {
             case FLINK_JAR:
                 command.setMainJar(jobInfo.getSubject());

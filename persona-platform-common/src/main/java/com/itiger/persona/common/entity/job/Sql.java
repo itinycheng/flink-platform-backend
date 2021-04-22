@@ -1,4 +1,4 @@
-package com.itiger.persona.common.job;
+package com.itiger.persona.common.entity.job;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

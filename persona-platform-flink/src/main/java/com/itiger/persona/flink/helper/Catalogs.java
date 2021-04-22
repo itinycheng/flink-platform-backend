@@ -1,7 +1,7 @@
 package com.itiger.persona.flink.helper;
 
-import com.itiger.persona.common.job.Catalog;
-import com.itiger.persona.common.job.Constants;
+import com.itiger.persona.common.entity.job.Catalog;
+import com.itiger.persona.common.constants.JobConstant;
 import com.itiger.persona.common.util.Preconditions;
 import com.itiger.persona.common.exception.FlinkJobGenException;
 import io.tidb.bigdata.flink.tidb.TiDBCatalog;
@@ -34,9 +34,9 @@ public class Catalogs {
             case JDBC:
                 checkJdbcConfigs(catalog);
                 Map<String, String> configs = catalog.getConfigs();
-                String url = configs.get(Constants.JDBC_URL);
-                String username = configs.get(Constants.JDBC_USERNAME);
-                String password = configs.get(Constants.JDBC_PASSWORD);
+                String url = configs.get(JobConstant.JDBC_URL);
+                String username = configs.get(JobConstant.JDBC_USERNAME);
+                String password = configs.get(JobConstant.JDBC_PASSWORD);
                 JdbcCatalog jdbcCatalog = new JdbcCatalog(catalog.getName(), catalog.getDefaultDatabase(),
                         username, password, url);
                 tEnv.registerCatalog(catalog.getName(), jdbcCatalog);
@@ -60,11 +60,11 @@ public class Catalogs {
 
     private static void checkJdbcConfigs(Catalog catalog) {
         Map<String, String> configs = catalog.getConfigs();
-        Preconditions.checkThrow(configs.get(Constants.JDBC_URL) == null,
+        Preconditions.checkThrow(configs.get(JobConstant.JDBC_URL) == null,
                 () -> new FlinkJobGenException(String.format("jdbc url is null, catalog: %s", catalog)));
-        Preconditions.checkThrow(configs.get(Constants.JDBC_USERNAME) == null,
+        Preconditions.checkThrow(configs.get(JobConstant.JDBC_USERNAME) == null,
                 () -> new FlinkJobGenException(String.format("jdbc username is null, catalog: %s", catalog)));
-        Preconditions.checkThrow(configs.get(Constants.JDBC_PASSWORD) == null,
+        Preconditions.checkThrow(configs.get(JobConstant.JDBC_PASSWORD) == null,
                 () -> new FlinkJobGenException(String.format("jdbc password is null, catalog: %s", catalog)));
     }
 }

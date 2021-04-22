@@ -3,7 +3,7 @@ package com.itiger.persona.entity;
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
-import com.itiger.persona.common.job.ExecutionMode;
+import com.itiger.persona.common.entity.job.ExecutionMode;
 import com.itiger.persona.enums.DeployMode;
 import com.itiger.persona.enums.JobType;
 import lombok.AllArgsConstructor;

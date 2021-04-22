@@ -1,6 +1,9 @@
-package com.itiger.persona.common.job;
+package com.itiger.persona.common.entity.job;
 
+import com.itiger.persona.common.entity.CatalogType;
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.util.Map;
 
@@ -8,6 +11,8 @@ import java.util.Map;
  * @author tiny.wang
  */
 @Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class Catalog {
 
     private String name;

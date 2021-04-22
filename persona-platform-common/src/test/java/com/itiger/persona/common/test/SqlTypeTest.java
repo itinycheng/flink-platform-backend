@@ -1,6 +1,6 @@
 package com.itiger.persona.common.test;
 
-import com.itiger.persona.common.job.SqlType;
+import com.itiger.persona.common.entity.job.SqlType;
 import org.junit.Test;
 
 import java.util.Map;

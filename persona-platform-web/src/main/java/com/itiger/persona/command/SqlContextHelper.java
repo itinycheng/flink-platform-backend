@@ -1,17 +1,19 @@
 package com.itiger.persona.command;
 
 import com.itiger.persona.common.exception.FlinkCommandGenException;
-import com.itiger.persona.common.job.Catalog;
-import com.itiger.persona.common.job.Function;
-import com.itiger.persona.common.job.Sql;
-import com.itiger.persona.common.job.SqlContext;
-import com.itiger.persona.common.job.SqlType;
+import com.itiger.persona.common.entity.job.Catalog;
+import com.itiger.persona.common.entity.job.Function;
+import com.itiger.persona.common.entity.job.Sql;
+import com.itiger.persona.common.entity.job.SqlContext;
+import com.itiger.persona.common.entity.job.SqlType;
 import com.itiger.persona.common.util.JsonUtil;
 import com.itiger.persona.entity.JobInfo;
+import com.itiger.persona.service.ICatalogInfoService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+import javax.annotation.Resource;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -24,10 +26,11 @@ import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.stream.Collectors;
 
-import static com.itiger.persona.common.job.Constants.JSON_FILE_SUFFIX;
-import static com.itiger.persona.common.job.Constants.ROOT_DIR;
-import static com.itiger.persona.common.job.Constants.SEMICOLON;
-import static com.itiger.persona.common.job.Constants.SQL_PATTERN;
+import static com.itiger.persona.common.constants.JobConstant.JSON_FILE_SUFFIX;
+import static com.itiger.persona.common.constants.JobConstant.ROOT_DIR;
+import static com.itiger.persona.common.constants.JobConstant.SEMICOLON;
+import static com.itiger.persona.common.constants.JobConstant.SQL_PATTERN;
+import static java.util.stream.Collectors.toList;
 
 /**
  * @author tiny.wang
@@ -38,6 +41,9 @@ public class SqlContextHelper {
 
     @Value("${flink.sql112.sql-dir}")
     private String sqlDir;
+
+    @Resource
+    private ICatalogInfoService catalogInfoService;
 
     public String convertFromAndSaveToFile(JobInfo jobInfo) {
         SqlContext sqlContext = convertFrom(jobInfo);
@@ -53,7 +59,7 @@ public class SqlContextHelper {
         sqlContext.setExecMode(jobInfo.getExecMode());
         sqlContext.setExtJars(Collections.emptyList());
         sqlContext.setConfigs(toConfigs(jobInfo.getConfig()));
-        sqlContext.setCatalogs(toCatalogs(jobInfo.getConfig()));
+        sqlContext.setCatalogs(toCatalogs(jobInfo.getCatalogs()));
         sqlContext.setFunctions(toFunctions(jobInfo.getConfig()));
         return sqlContext;
     }
@@ -65,12 +71,20 @@ public class SqlContextHelper {
         return Collections.emptyList();
     }
 
-    private List<Catalog> toCatalogs(String jobConfig) {
-        return null;
+    private List<Catalog> toCatalogs(String catalogs) {
+        return JsonUtil.toList(catalogs).stream()
+                .map(Long::parseLong)
+                .map(id -> catalogInfoService.getById(id))
+                .map(catalogInfo -> new Catalog(catalogInfo.getName(),
+                        catalogInfo.getType(),
+                        catalogInfo.getDefaultDatabase(),
+                        catalogInfo.getConfigPath(),
+                        JsonUtil.toStrMap(catalogInfo.getConfigs())))
+                .collect(toList());
     }
 
     private Map<String, String> toConfigs(String jobConfig) {
-        return JsonUtil.toJsonMap(jobConfig)
+        return JsonUtil.toMap(jobConfig)
                 .entrySet()
                 .stream()
                 .filter(entry -> Objects.nonNull(entry.getValue()))

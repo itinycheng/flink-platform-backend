@@ -4,7 +4,7 @@ import com.baomidou.dynamic.datasource.annotation.DS;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.itiger.persona.entity.Signature;
 import com.itiger.persona.service.ISignatureService;
-import com.itiger.persona.service.mapper.SignatureMapper;
+import com.itiger.persona.mapper.SignatureMapper;
 import org.springframework.stereotype.Service;
 
 /**

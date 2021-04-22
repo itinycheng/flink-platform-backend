@@ -7,7 +7,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import static com.itiger.persona.common.job.Constants.LINE_SEPARATOR;
+import static com.itiger.persona.common.constants.JobConstant.LINE_SEPARATOR;
 
 /**
  * job command

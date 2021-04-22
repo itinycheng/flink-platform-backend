@@ -1,8 +1,8 @@
 package com.itiger.persona.flink;
 
-import com.itiger.persona.common.job.Catalog;
-import com.itiger.persona.common.job.Function;
-import com.itiger.persona.common.job.SqlContext;
+import com.itiger.persona.common.entity.job.Catalog;
+import com.itiger.persona.common.entity.job.Function;
+import com.itiger.persona.common.entity.job.SqlContext;
 import com.itiger.persona.common.util.JsonUtil;
 import com.itiger.persona.flink.helper.Catalogs;
 import com.itiger.persona.flink.helper.Configurations;
