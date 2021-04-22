@@ -41,22 +41,22 @@ public class JobInfo implements Serializable {
     /**
      * uniqure code
      */
-    private String code;
+    private String jobCode;
 
     /**
      * job name
      */
-    private String name;
+    private String jobName;
 
     /**
      * job desc
      */
-    private String desc;
+    private String jobDesc;
 
     /**
      * flink-sql, flink-jar, common-jar
      */
-    private JobType type;
+    private JobType jobType;
 
     /**
      * config for run job
