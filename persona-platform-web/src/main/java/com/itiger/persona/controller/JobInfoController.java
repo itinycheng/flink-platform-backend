@@ -64,10 +64,10 @@ public class JobInfoController {
 
     @PostMapping
     public ResultInfo saveOrUpdate(HttpServletRequest request, @RequestBody JobInfoRequest jobInfoRequest) {
-        if (StringUtils.isNotBlank(jobInfoRequest.getName())) {
+        if (StringUtils.isNotBlank(jobInfoRequest.getJobName())) {
             // save
             if (Objects.isNull(jobInfoRequest.getId())) {
-                JobInfo one = this.iJobInfoService.getOne(new QueryWrapper<JobInfo>().lambda().eq(JobInfo::getName, jobInfoRequest.getName()));
+                JobInfo one = this.iJobInfoService.getOne(new QueryWrapper<JobInfo>().lambda().eq(JobInfo::getJobName, jobInfoRequest.getJobName()));
                 if (Objects.isNull(one)) {
                     // TODO set time status
                     this.buildJobInfo(jobInfoRequest);
@@ -89,8 +89,8 @@ public class JobInfoController {
     }
 
     private void buildJobInfo(JobInfoRequest tJobInfoRequest) {
-        if (StringUtils.isBlank(tJobInfoRequest.getCode())) {
-            tJobInfoRequest.setCode(UuidGenerator.generateShortUuid());
+        if (StringUtils.isBlank(tJobInfoRequest.getJobCode())) {
+            tJobInfoRequest.setJobCode(UuidGenerator.generateShortUuid());
         }
 
         if (Objects.isNull(tJobInfoRequest.getStatus())) {

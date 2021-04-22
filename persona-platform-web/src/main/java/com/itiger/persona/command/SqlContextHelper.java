@@ -42,13 +42,13 @@ public class SqlContextHelper {
     public String convertFromAndSaveToFile(JobInfo jobInfo) {
         SqlContext sqlContext = convertFrom(jobInfo);
         long timestamp = System.currentTimeMillis();
-        String fileName = String.join(".", jobInfo.getCode(), String.valueOf(timestamp), JSON_FILE_SUFFIX);
+        String fileName = String.join(".", jobInfo.getJobCode(), String.valueOf(timestamp), JSON_FILE_SUFFIX);
         return saveToFile(fileName, sqlContext);
     }
 
     public SqlContext convertFrom(JobInfo jobInfo) {
         SqlContext sqlContext = new SqlContext();
-        sqlContext.setId(jobInfo.getCode());
+        sqlContext.setId(jobInfo.getJobCode());
         sqlContext.setSqls(toSqls(jobInfo.getSubject()));
         sqlContext.setExecMode(jobInfo.getExecMode());
         sqlContext.setExtJars(Collections.emptyList());
