@@ -5,7 +5,6 @@ import com.itiger.persona.command.CommandExecutor;
 import com.itiger.persona.command.JobCommand;
 import com.itiger.persona.command.JobCommandBuilder;
 import com.itiger.persona.command.JobCommandCallback;
-import com.itiger.persona.command.Utils;
 import com.itiger.persona.common.exception.FlinkCommandGenException;
 import com.itiger.persona.common.util.JsonUtil;
 import com.itiger.persona.comn.SpringContext;
@@ -66,7 +65,7 @@ public class JobRunner implements Job {
             }
 
             // step2: build shell command, create a SqlContext if needed
-            JobType jobType = jobInfo.getJobType();
+            JobType jobType = jobInfo.getType();
             jobCommand = jobCommandBuilders.stream()
                     .filter(builder -> builder.isSupported(jobType))
                     .findFirst()
@@ -74,12 +73,9 @@ public class JobRunner implements Job {
                     .buildCommand(jobInfo);
 
             // step 3: submit job
-            String callbackMsg = CommandExecutor.execCommand(jobCommand.toCommandString());
+            JobCommandCallback callback = CommandExecutor.execCommand(jobCommand.toCommandString());
 
             // step 4: write msg back to db
-            String appId = Utils.extractApplicationId(callbackMsg);
-            String jobId = Utils.extractJobId(callbackMsg);
-            JobCommandCallback callback = new JobCommandCallback(jobId, appId);
             JobRunInfo jobRunInfo = new JobRunInfo();
             jobRunInfo.setJobId(jobInfo.getId());
             jobRunInfo.setStatus(0);
@@ -92,7 +88,7 @@ public class JobRunner implements Job {
         } finally {
             RUNNER_MAP.remove(code);
             if (jobInfo != null
-                    && jobInfo.getJobType() == JobType.FLINK_SQL
+                    && jobInfo.getType() == JobType.FLINK_SQL
                     && jobCommand != null
                     && jobCommand.getMainArgs() != null) {
                 try {

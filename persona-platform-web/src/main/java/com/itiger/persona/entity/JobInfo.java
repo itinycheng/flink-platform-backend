@@ -3,6 +3,7 @@ package com.itiger.persona.entity;
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
+import com.itiger.persona.common.job.ExecutionMode;
 import com.itiger.persona.enums.DeployMode;
 import com.itiger.persona.enums.JobType;
 import lombok.AllArgsConstructor;
@@ -45,27 +46,32 @@ public class JobInfo implements Serializable {
     /**
      * job name
      */
-    private String jobName;
+    private String name;
 
     /**
      * job desc
      */
-    private String jobDesc;
+    private String desc;
 
     /**
      * flink-sql, flink-jar, common-jar
      */
-    private JobType jobType;
+    private JobType type;
 
     /**
      * config for run job
      */
-    private String jobConfig;
+    private String config;
 
     /**
      * deploy mode: run-local, pre-yarn, yarn-session, run-application, etc.
      */
     private DeployMode deployMode;
+
+    /**
+     * BATCH, STREAMING
+     */
+    private ExecutionMode execMode;
 
     /**
      * sql, runable jar path
@@ -83,9 +89,14 @@ public class JobInfo implements Serializable {
     private String mainClass;
 
     /**
-     * external jar
+     * catalogs
      */
-    private String extJar;
+    private String catalogs;
+
+    /**
+     * external jars
+     */
+    private String extJars;
 
     /**
      * -1: delete, 0: close, 1: open
@@ -110,6 +121,5 @@ public class JobInfo implements Serializable {
      * 修改时间
      */
     private LocalDateTime updateTime;
-
 
 }

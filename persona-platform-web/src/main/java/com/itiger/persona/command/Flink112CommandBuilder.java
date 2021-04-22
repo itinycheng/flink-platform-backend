@@ -47,11 +47,11 @@ public class Flink112CommandBuilder implements JobCommandBuilder {
         String execMode = String.format(EXEC_MODE, deployMode.mode, deployMode.target);
         command.setPrefix(commandBinPath + execMode);
         Map<String, Object> configs = command.getConfigs();
-        configs.putAll(JsonUtil.toJsonMap(jobInfo.getJobConfig()));
-        String appName = String.join("-", jobInfo.getJobName(), jobInfo.getCode());
+        configs.putAll(JsonUtil.toJsonMap(jobInfo.getConfig()));
+        String appName = String.join("-", jobInfo.getName(), jobInfo.getCode());
         configs.put(Constants.YARN_NAME, appName);
-        command.setExtJars(JsonUtil.toJsonList(jobInfo.getExtJar()));
-        switch (jobInfo.getJobType()) {
+        command.setExtJars(JsonUtil.toJsonList(jobInfo.getExtJars()));
+        switch (jobInfo.getType()) {
             case FLINK_JAR:
                 command.setMainJar(jobInfo.getSubject());
                 command.setMainArgs(jobInfo.getMainArgs());
@@ -63,7 +63,6 @@ public class Flink112CommandBuilder implements JobCommandBuilder {
                 command.setMainJar(sqlJarPath);
                 command.setMainClass(sqlClassName);
                 break;
-            case COMMON_JAR:
             default:
                 throw new FlinkCommandGenException("unsupported job type");
         }
