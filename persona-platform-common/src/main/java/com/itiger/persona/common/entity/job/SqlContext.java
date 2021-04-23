@@ -1,5 +1,6 @@
 package com.itiger.persona.common.entity.job;
 
+import com.itiger.persona.common.enums.ExecutionMode;
 import lombok.Data;
 
 import java.util.List;

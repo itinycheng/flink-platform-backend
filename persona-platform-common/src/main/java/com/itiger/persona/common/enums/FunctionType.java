@@ -1,4 +1,4 @@
-package com.itiger.persona.common.entity.job;
+package com.itiger.persona.common.enums;
 
 /**
  * function type

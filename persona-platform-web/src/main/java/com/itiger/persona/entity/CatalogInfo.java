@@ -2,7 +2,7 @@ package com.itiger.persona.entity;
 
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
-import com.itiger.persona.common.entity.CatalogType;
+import com.itiger.persona.common.enums.CatalogType;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;

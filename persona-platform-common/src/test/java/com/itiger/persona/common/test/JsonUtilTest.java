@@ -1,9 +1,9 @@
 package com.itiger.persona.common.test;
 
-import com.itiger.persona.common.entity.job.ExecutionMode;
+import com.itiger.persona.common.enums.ExecutionMode;
 import com.itiger.persona.common.entity.job.Sql;
 import com.itiger.persona.common.entity.job.SqlContext;
-import com.itiger.persona.common.entity.job.SqlType;
+import com.itiger.persona.common.enums.SqlType;
 import com.itiger.persona.common.util.JsonUtil;
 import org.junit.Test;
 

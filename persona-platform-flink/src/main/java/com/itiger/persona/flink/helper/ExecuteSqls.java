@@ -2,7 +2,7 @@ package com.itiger.persona.flink.helper;
 
 import com.itiger.persona.common.exception.FlinkJobGenException;
 import com.itiger.persona.common.entity.job.Sql;
-import com.itiger.persona.common.entity.job.SqlType;
+import com.itiger.persona.common.enums.SqlType;
 import org.apache.flink.table.api.StatementSet;
 import org.apache.flink.table.api.TableEnvironment;
 
@@ -10,8 +10,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Stream;
 
-import static com.itiger.persona.common.entity.job.SqlType.INSERT_INTO;
-import static com.itiger.persona.common.entity.job.SqlType.INSERT_OVERWRITE;
+import static com.itiger.persona.common.enums.SqlType.INSERT_INTO;
+import static com.itiger.persona.common.enums.SqlType.INSERT_OVERWRITE;
 import static java.util.stream.Collectors.toSet;
 
 /**
