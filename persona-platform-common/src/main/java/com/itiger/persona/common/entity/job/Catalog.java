@@ -1,6 +1,6 @@
 package com.itiger.persona.common.entity.job;
 
-import com.itiger.persona.common.entity.CatalogType;
+import com.itiger.persona.common.enums.CatalogType;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;

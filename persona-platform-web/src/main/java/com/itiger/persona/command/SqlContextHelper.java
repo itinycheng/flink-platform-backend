@@ -5,7 +5,7 @@ import com.itiger.persona.common.entity.job.Catalog;
 import com.itiger.persona.common.entity.job.Function;
 import com.itiger.persona.common.entity.job.Sql;
 import com.itiger.persona.common.entity.job.SqlContext;
-import com.itiger.persona.common.entity.job.SqlType;
+import com.itiger.persona.common.enums.SqlType;
 import com.itiger.persona.common.util.JsonUtil;
 import com.itiger.persona.entity.JobInfo;
 import com.itiger.persona.service.ICatalogInfoService;
@@ -65,7 +65,7 @@ public class SqlContextHelper {
     }
 
     /**
-     *
+     * no use
      */
     private List<Function> toFunctions(String jobConfig) {
         return Collections.emptyList();

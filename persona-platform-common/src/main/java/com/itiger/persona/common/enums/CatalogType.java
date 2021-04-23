@@ -1,4 +1,4 @@
-package com.itiger.persona.common.entity;
+package com.itiger.persona.common.enums;
 
 /**
  * @author tiny.wang

@@ -1,6 +1,7 @@
-package com.itiger.persona.common.entity.job;
+package com.itiger.persona.common.enums;
 
 import com.itiger.persona.common.constants.JobConstant;
+import com.itiger.persona.common.entity.job.Sql;
 import com.itiger.persona.common.exception.FlinkJobGenException;
 import com.itiger.persona.common.util.SqlUtil;
 
