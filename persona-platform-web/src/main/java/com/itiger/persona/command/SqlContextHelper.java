@@ -1,11 +1,11 @@
 package com.itiger.persona.command;
 
-import com.itiger.persona.common.exception.FlinkCommandGenException;
 import com.itiger.persona.common.entity.job.Catalog;
 import com.itiger.persona.common.entity.job.Function;
 import com.itiger.persona.common.entity.job.Sql;
 import com.itiger.persona.common.entity.job.SqlContext;
 import com.itiger.persona.common.enums.SqlType;
+import com.itiger.persona.common.exception.FlinkCommandGenException;
 import com.itiger.persona.common.util.JsonUtil;
 import com.itiger.persona.entity.JobInfo;
 import com.itiger.persona.service.ICatalogInfoService;
@@ -22,9 +22,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.regex.Matcher;
-import java.util.stream.Collectors;
 
 import static com.itiger.persona.common.constants.JobConstant.JSON_FILE_SUFFIX;
 import static com.itiger.persona.common.constants.JobConstant.ROOT_DIR;
@@ -84,12 +82,7 @@ public class SqlContextHelper {
     }
 
     private Map<String, String> toConfigs(String jobConfig) {
-        return JsonUtil.toMap(jobConfig)
-                .entrySet()
-                .stream()
-                .filter(entry -> Objects.nonNull(entry.getValue()))
-                .collect(Collectors.toMap(Map.Entry::getKey,
-                        entry -> String.valueOf(entry.getValue())));
+        return JsonUtil.toStrMap(jobConfig);
     }
 
     private List<Sql> toSqls(String subject) {
@@ -123,7 +116,7 @@ public class SqlContextHelper {
     }
 
     public static void main(String[] args) {
-        Matcher matcher = SQL_PATTERN.matcher("set a =\n b;\nset c = d;\n select * from a;");
+        Matcher matcher = SQL_PATTERN.matcher("set a =\n b;\nset c = d;\n select * from a where  name = ';';");
         while (matcher.find()) {
             System.out.println("item: " + matcher.group());
         }

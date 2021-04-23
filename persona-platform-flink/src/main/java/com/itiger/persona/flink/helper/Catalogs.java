@@ -42,6 +42,7 @@ public class Catalogs {
                 tEnv.registerCatalog(catalog.getName(), jdbcCatalog);
                 break;
             case TIDB:
+                //TODO rename key
                 checkJdbcConfigs(catalog);
                 TiDBCatalog tidbcatalog = new TiDBCatalog(catalog.getName(),
                         catalog.getDefaultDatabase(), catalog.getConfigs());

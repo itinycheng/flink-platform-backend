@@ -99,6 +99,8 @@ public class JobRunner implements Job {
             }
         }
 
-        log.info(" job key: {}, current time: {}", key, System.currentTimeMillis());
+        // print job command info
+        String command = jobCommand != null ? jobCommand.toCommandString() : null;
+        log.info(" job key: {}, time: {}, command: {}", key, System.currentTimeMillis(), command);
     }
 }
