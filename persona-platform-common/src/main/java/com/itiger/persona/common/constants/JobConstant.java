@@ -24,9 +24,17 @@ public class JobConstant {
 
     public static final String JDBC_PASSWORD = "jdbc-password";
 
-    public static final String FILTER_PUSH_DOWN = "filter-push-down";
+    public static final String TIDB_DATABASE_URL = "tidb.database.url";
+
+    public static final String TIDB_USERNAME = "tidb.username";
+
+    public static final String TIDB_PASSWORD = "tidb.password";
+
+    public static final String TIDB_FILTER_PUSH_DOWN = "tidb.filter-push-down";
 
     public final static String SEMICOLON = ";";
+
+    public final static String DOT = ".";
 
     public final static String SQL_LINE_SEPARATOR = "\n";
 
@@ -37,5 +45,7 @@ public class JobConstant {
     public static final Pattern SQL_PATTERN = Pattern.compile("\\S+.*?;$", SQL_PATTERN_CONFIGS);
 
     public static final String JSON_FILE_SUFFIX = "json";
+
+    public static final String TMP_FILE_SUFFIX = "tmp";
 
 }

@@ -42,8 +42,7 @@ public class Catalogs {
                 tEnv.registerCatalog(catalog.getName(), jdbcCatalog);
                 break;
             case TIDB:
-                //TODO rename key
-                checkJdbcConfigs(catalog);
+                checkTidbConfigs(catalog);
                 TiDBCatalog tidbcatalog = new TiDBCatalog(catalog.getName(),
                         catalog.getDefaultDatabase(), catalog.getConfigs());
                 tidbcatalog.open();
@@ -66,6 +65,16 @@ public class Catalogs {
         Preconditions.checkThrow(configs.get(JobConstant.JDBC_USERNAME) == null,
                 () -> new FlinkJobGenException(String.format("jdbc username is null, catalog: %s", catalog)));
         Preconditions.checkThrow(configs.get(JobConstant.JDBC_PASSWORD) == null,
+                () -> new FlinkJobGenException(String.format("jdbc password is null, catalog: %s", catalog)));
+    }
+
+    private static void checkTidbConfigs(Catalog catalog) {
+        Map<String, String> configs = catalog.getConfigs();
+        Preconditions.checkThrow(configs.get(JobConstant.TIDB_DATABASE_URL) == null,
+                () -> new FlinkJobGenException(String.format("jdbc url is null, catalog: %s", catalog)));
+        Preconditions.checkThrow(configs.get(JobConstant.TIDB_USERNAME) == null,
+                () -> new FlinkJobGenException(String.format("jdbc username is null, catalog: %s", catalog)));
+        Preconditions.checkThrow(configs.get(JobConstant.TIDB_PASSWORD) == null,
                 () -> new FlinkJobGenException(String.format("jdbc password is null, catalog: %s", catalog)));
     }
 }

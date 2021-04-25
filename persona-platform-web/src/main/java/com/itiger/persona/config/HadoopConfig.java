@@ -11,6 +11,8 @@ import java.io.File;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
+import static com.itiger.persona.common.constants.JobConstant.ROOT_DIR;
+
 /**
  * create hdfs instance
  *
@@ -32,7 +34,7 @@ public class HadoopConfig {
     @Value("${hadoop.core-site}")
     private String coreSite;
 
-    @Value("${hadoop.file-dir}")
+    @Value("${hadoop.local-dir}")
     private String localFileName;
 
     @Bean("fileSystem")
@@ -53,10 +55,9 @@ public class HadoopConfig {
         return fs;
     }
 
-    @Bean("localFileDir")
-    public Path createFileDir() {
-        String rootDir = System.getProperty("user.dir");
-        String dataDir = rootDir + "/" + localFileName;
+    @Bean("localDataDir")
+    public Path createDataDir() {
+        String dataDir = ROOT_DIR + "/" + localFileName;
         Path path = Paths.get(dataDir);
         File file = path.toFile();
         if (!file.exists()) {

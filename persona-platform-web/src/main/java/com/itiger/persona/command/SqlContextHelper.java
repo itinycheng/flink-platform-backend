@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 
+import static com.itiger.persona.common.constants.JobConstant.DOT;
 import static com.itiger.persona.common.constants.JobConstant.JSON_FILE_SUFFIX;
 import static com.itiger.persona.common.constants.JobConstant.ROOT_DIR;
 import static com.itiger.persona.common.constants.JobConstant.SEMICOLON;
@@ -37,7 +38,7 @@ import static java.util.stream.Collectors.toList;
 @Component("sqlContextHelper")
 public class SqlContextHelper {
 
-    @Value("${flink.sql112.sql-dir}")
+    @Value("${flink.sql-dir}")
     private String sqlDir;
 
     @Resource
@@ -46,7 +47,7 @@ public class SqlContextHelper {
     public String convertFromAndSaveToFile(JobInfo jobInfo) {
         SqlContext sqlContext = convertFrom(jobInfo);
         long timestamp = System.currentTimeMillis();
-        String fileName = String.join(".", jobInfo.getJobCode(), String.valueOf(timestamp), JSON_FILE_SUFFIX);
+        String fileName = String.join(DOT, jobInfo.getJobCode(), String.valueOf(timestamp), JSON_FILE_SUFFIX);
         return saveToFile(fileName, sqlContext);
     }
 

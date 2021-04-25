@@ -6,7 +6,6 @@ import java.util.UUID;
  * @Author Shik
  * @Title: UuidUtil
  * @ProjectName: persona-platform-backend
- * @Description: TODO
  * @Date: 2021/4/14 上午11:16
  */
 public class UuidGenerator {
