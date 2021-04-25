@@ -21,7 +21,8 @@ public interface JobCommandBuilder {
      *
      * @param jobInfo job info
      * @return shell command
+     * @throws Exception IO exception
      */
-    JobCommand buildCommand(JobInfo jobInfo);
+    JobCommand buildCommand(JobInfo jobInfo) throws Exception;
 
 }
