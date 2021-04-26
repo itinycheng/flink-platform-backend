@@ -4,7 +4,7 @@
 <configuration>
 	<property>
 		<name>fs.defaultFS</name>
-		<value>hdfs://nameservice1</value>
+		<value>hdfs://172.28.49.59:8020</value>
 	</property>
 	<property>
 		<name>fs.trash.interval</name>

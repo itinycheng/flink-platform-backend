@@ -37,7 +37,7 @@ public class Flink112CommandBuilder implements JobCommandBuilder {
     @Value("${flink.sql112.class-name}")
     private String sqlClassName;
 
-    @Value("${flink.job-jar-dir}")
+    @Value("${flink.local.jar-dir}")
     private String jobJarDir;
 
     @Resource(name = "sqlContextHelper")

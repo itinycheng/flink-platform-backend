@@ -27,7 +27,7 @@ public class Sql112Application {
     public static void main(String[] args) throws Exception {
         // deSer sql context
         Path sqlContextPath = Paths.get(args[0]);
-        SqlContext sqlContext = JsonUtil.toJson(sqlContextPath, SqlContext.class);
+        SqlContext sqlContext = JsonUtil.toBean(sqlContextPath, SqlContext.class);
 
         // step 1: create and configure environment
         TableEnvironment tEnv = ExecutionEnvs.createExecutionEnv(sqlContext);

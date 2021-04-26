@@ -26,7 +26,7 @@ public class JsonUtilTest {
         String jsonString = JsonUtil.toJsonString(sqlContext);
         System.out.println(jsonString);
 
-        SqlContext sqlContext1 = JsonUtil.toJson(jsonString, SqlContext.class);
+        SqlContext sqlContext1 = JsonUtil.toBean(jsonString, SqlContext.class);
         System.out.println(sqlContext1);
 
     }

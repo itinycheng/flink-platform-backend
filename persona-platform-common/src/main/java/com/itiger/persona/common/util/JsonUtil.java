@@ -7,9 +7,11 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
@@ -21,13 +23,16 @@ import java.util.stream.Collectors;
 public class JsonUtil {
 
     public static List<String> toList(String res) {
-        return JSON.parseArray(res).stream()
+        return Optional.ofNullable((List<Object>) JSON.parseArray(res))
+                .orElse(Collections.emptyList())
+                .stream()
                 .map(Object::toString)
                 .collect(Collectors.toList());
     }
 
     public static Map<String, Object> toMap(String res) {
-        return JSON.parseObject(res);
+        return Optional.ofNullable((Map<String, Object>) JSON.parseObject(res))
+                .orElse(Collections.emptyMap());
     }
 
     public static Map<String, String> toStrMap(String res) {
@@ -39,16 +44,11 @@ public class JsonUtil {
                         entry -> String.valueOf(entry.getValue())));
     }
 
-    public static <T> T toJson(String res, Class<T> clazz) {
-        try {
-            return JSON.parseObject(res, clazz);
-        } catch (Exception e) {
-            log.error("parse string to class instance failed", e);
-            return null;
-        }
+    public static <T> T toBean(String res, Class<T> clazz) {
+        return JSON.parseObject(res, clazz);
     }
 
-    public static <T> T toJson(Path path, Class<T> clazz) throws Exception {
+    public static <T> T toBean(Path path, Class<T> clazz) throws Exception {
         InputStream inputStream = Files.newInputStream(path);
         return JSON.parseObject(inputStream, StandardCharsets.UTF_8, clazz);
     }

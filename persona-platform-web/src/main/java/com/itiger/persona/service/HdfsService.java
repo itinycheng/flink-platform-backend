@@ -42,6 +42,10 @@ public class HdfsService {
         }
     }
 
+    public void moveFromLocalFile(Path localFile, Path hdfsPath) throws IOException {
+        fileSystem.moveFromLocalFile(localFile, hdfsPath);
+    }
+
     public List<Path> listVisibleFiles(String dir) throws IOException {
         return Arrays.stream(fileSystem.listStatus(new Path(dir),
                 path -> !path.getName().startsWith(DOT)))

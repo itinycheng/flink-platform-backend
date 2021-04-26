@@ -34,8 +34,8 @@ public class HadoopConfig {
     @Value("${hadoop.core-site}")
     private String coreSite;
 
-    @Value("${hadoop.local-dir}")
-    private String localFileName;
+    @Value("${hadoop.local.data-dir}")
+    private String localDataDir;
 
     @Bean("fileSystem")
     public FileSystem createFs() throws Exception {
@@ -57,7 +57,7 @@ public class HadoopConfig {
 
     @Bean("localDataDir")
     public Path createDataDir() {
-        String dataDir = ROOT_DIR + "/" + localFileName;
+        String dataDir = ROOT_DIR + "/" + localDataDir;
         Path path = Paths.get(dataDir);
         File file = path.toFile();
         if (!file.exists()) {
