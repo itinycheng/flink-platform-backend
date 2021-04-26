@@ -10,14 +10,13 @@ import com.itiger.persona.common.util.JsonUtil;
 import com.itiger.persona.entity.JobInfo;
 import com.itiger.persona.service.ICatalogInfoService;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.io.FileUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.Resource;
+import java.io.File;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -38,7 +37,7 @@ import static java.util.stream.Collectors.toList;
 @Component("sqlContextHelper")
 public class SqlContextHelper {
 
-    @Value("${flink.sql-dir}")
+    @Value("${flink.local.sql-dir}")
     private String sqlDir;
 
     @Resource
@@ -108,8 +107,7 @@ public class SqlContextHelper {
         try {
             String json = JsonUtil.toJsonString(sqlContext);
             String sqlFilePath = String.join("/", ROOT_DIR, sqlDir, fileName);
-            Path path = Paths.get(sqlFilePath);
-            Files.write(path, json.getBytes(StandardCharsets.UTF_8));
+            FileUtils.write(new File(sqlFilePath), json, StandardCharsets.UTF_8);
             return sqlFilePath;
         } catch (Exception e) {
             throw new FlinkCommandGenException("serde sql context to local disk failed", e);

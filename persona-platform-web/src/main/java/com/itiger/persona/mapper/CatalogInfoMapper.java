@@ -2,6 +2,7 @@ package com.itiger.persona.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.itiger.persona.entity.CatalogInfo;
+import org.apache.ibatis.annotations.Mapper;
 
 /**
  * <p>
@@ -11,6 +12,7 @@ import com.itiger.persona.entity.CatalogInfo;
  * @author shik
  * @since 2021-04-22
  */
+@Mapper
 public interface CatalogInfoMapper extends BaseMapper<CatalogInfo> {
 
 }

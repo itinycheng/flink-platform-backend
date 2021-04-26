@@ -64,3 +64,20 @@ spring:
             threadPriority: 5
             threadsInheritContextClassLoaderOfInitializingThread: true
 
+
+flink:
+  local:
+    sql-dir: sql_file
+    jar-dir: job_jar
+  sql112:
+    command: /data0/app/flink-1.12.0/bin/flink
+    jar-file: hdfs:///flink/jars/job_jar/persona-platform-flink.jar
+    class-name: com.itiger.persona.flink.Sql112Application
+
+hadoop:
+  user: hive
+  password:
+  hdfs-site: hdfs-site.xml
+  core-site: core-site.xml
+  local:
+    data-dir: data_dir

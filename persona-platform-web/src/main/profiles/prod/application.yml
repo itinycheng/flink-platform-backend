@@ -63,11 +63,12 @@ spring:
             threadsInheritContextClassLoaderOfInitializingThread: true
 
 flink:
-  sql-dir: sql_file
-  job-jar-dir: job_jar
+  local:
+    sql-dir: sql_file
+    jar-dir: job_jar
   sql112:
     command: /data0/app/flink-1.12.0/bin/flink
-    jar-file: hdfs:///flink/jars/job-submitter/persona-platform-flink.jar
+    jar-file: hdfs:///flink/jars/job_jar/persona-platform-flink.jar
     class-name: com.itiger.persona.flink.Sql112Application
 
 hadoop:
@@ -75,4 +76,5 @@ hadoop:
   password:
   hdfs-site: hdfs-site.xml
   core-site: core-site.xml
-  local-dir: data_dir
+  local:
+    data-dir: data_dir
