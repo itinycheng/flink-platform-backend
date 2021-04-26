@@ -1,0 +1,16 @@
+parallelism.default: 1
+
+pipeline.max-parallelism: 4096
+pipeline.object-reuse: true
+pipeline.auto-watermark-interval: 20000
+pipeline.time-characteristic: EventTime
+
+restart-strategy: failure-rate
+
+state.backend: rocksdb # filesystem
+state.checkpoints.dir: hdfs:///flink/rocksdb
+
+execution.checkpointing.mode: EXACTLY_ONCE # AT_LEAST_ONCE
+execution.checkpointing.interval: 300000
+execution.checkpointing.min-pause: 120000
+execution.checkpointing.tolerable-failed-checkpoints: 0

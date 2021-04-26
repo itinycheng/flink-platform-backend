@@ -4,6 +4,7 @@ import com.itiger.persona.common.entity.job.Catalog;
 import com.itiger.persona.common.entity.job.Function;
 import com.itiger.persona.common.entity.job.SqlContext;
 import com.itiger.persona.common.util.JsonUtil;
+import com.itiger.persona.flink.common.ConfigLoader;
 import com.itiger.persona.flink.helper.Catalogs;
 import com.itiger.persona.flink.helper.Configurations;
 import com.itiger.persona.flink.helper.ExecuteSqls;
@@ -13,9 +14,8 @@ import org.apache.flink.table.api.TableEnvironment;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
+import java.util.Map;
 
 /**
  * must input a valid sql context file
@@ -31,9 +31,9 @@ public class Sql112Application {
 
         // step 1: create and configure environment
         TableEnvironment tEnv = ExecutionEnvs.createExecutionEnv(sqlContext);
-        Optional.ofNullable(sqlContext.getConfigs())
-                .orElse(Collections.emptyMap())
-                .forEach((key, value) -> Configurations.setConfig(tEnv, key, value));
+        Map<String, String> configMap = ConfigLoader.loadDefault();
+        configMap.putAll(sqlContext.getConfigs());
+        configMap.forEach((key, value) -> Configurations.setConfig(tEnv, key, value));
 
         // step 2: add catalog
         List<Catalog> catalogs = sqlContext.getCatalogs();

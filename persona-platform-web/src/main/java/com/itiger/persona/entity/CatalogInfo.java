@@ -2,6 +2,7 @@ package com.itiger.persona.entity;
 
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableName;
 import com.itiger.persona.common.enums.CatalogType;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -23,6 +24,7 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = false)
+@TableName("t_catalog_info")
 public class CatalogInfo implements Serializable {
 
     private static final long serialVersionUID = 1L;
