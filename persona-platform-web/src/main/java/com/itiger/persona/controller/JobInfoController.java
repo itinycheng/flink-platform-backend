@@ -96,6 +96,10 @@ public class JobInfoController {
         if (Objects.isNull(tJobInfoRequest.getStatus())) {
             tJobInfoRequest.setStatus(JobStatusEnum.CLOSE.getCode());
         }
+
+        if (StringUtils.isNotBlank(tJobInfoRequest.getSqlMain())) {
+            tJobInfoRequest.setSubject(tJobInfoRequest.getSqlMain());
+        }
     }
 
 }

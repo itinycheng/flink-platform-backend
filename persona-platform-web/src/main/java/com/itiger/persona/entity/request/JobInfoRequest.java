@@ -18,6 +18,8 @@ import lombok.experimental.Accessors;
 @EqualsAndHashCode(callSuper = false)
 @Accessors(chain = true)
 @AllArgsConstructor
-//@NoArgsConstructor
+@NoArgsConstructor
 public class JobInfoRequest extends JobInfo {
+
+    private String sqlMain;
 }
