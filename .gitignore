@@ -41,3 +41,6 @@ hs_err_pid*
 .idea
 
 logs/
+data_dir/
+job_jar/
+sql_file/
