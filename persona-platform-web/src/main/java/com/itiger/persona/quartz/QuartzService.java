@@ -47,24 +47,24 @@ public class QuartzService {
     }
 
     private boolean isTriggerExists(JobInfo jobInfo) throws SchedulerException {
-        TriggerKey triggerKey = TriggerKey.triggerKey(jobInfo.getJobCode(), Key.DEFAULT_GROUP);
+        TriggerKey triggerKey = TriggerKey.triggerKey(jobInfo.getCode(), Key.DEFAULT_GROUP);
         CronTrigger trigger = (CronTrigger) scheduler.getTrigger(triggerKey);
         return trigger != null;
     }
 
     private boolean isJobExists(JobInfo jobInfo) throws SchedulerException {
-        JobKey jobKey = JobKey.jobKey(jobInfo.getJobCode(), Key.DEFAULT_GROUP);
+        JobKey jobKey = JobKey.jobKey(jobInfo.getCode(), Key.DEFAULT_GROUP);
         JobDetail jobDetail = scheduler.getJobDetail(jobKey);
         return jobDetail != null;
     }
 
     private void addTrigger(JobInfo jobInfo) throws SchedulerException {
         JobDetail jobDetail = newJob(JobRunner.class)
-                .withIdentity(jobInfo.getJobCode(), Key.DEFAULT_GROUP)
-                .usingJobData(JOB_NAME, jobInfo.getJobName())
+                .withIdentity(jobInfo.getCode(), Key.DEFAULT_GROUP)
+                .usingJobData(JOB_NAME, jobInfo.getName())
                 .build();
         CronTrigger trigger = newTrigger()
-                .withIdentity(jobInfo.getJobCode(), Key.DEFAULT_GROUP)
+                .withIdentity(jobInfo.getCode(), Key.DEFAULT_GROUP)
                 .withSchedule(cronSchedule(jobInfo.getCronExpr()))
                 .startNow()
                 .build();
