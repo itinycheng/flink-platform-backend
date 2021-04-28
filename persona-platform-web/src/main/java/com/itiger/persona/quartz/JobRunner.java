@@ -58,14 +58,14 @@ public class JobRunner implements Job {
             }
 
             // step 1: get job info
-            jobInfo = jobInfoService.getOne(new QueryWrapper<JobInfo>().lambda().eq(JobInfo::getJobCode, code));
+            jobInfo = jobInfoService.getOne(new QueryWrapper<JobInfo>().lambda().eq(JobInfo::getCode, code));
             if (jobInfo == null || jobInfo.getStatus() != 1) {
                 log.warn("the job: {} is no longer exists or not in open status, {}", code, jobInfo);
                 return;
             }
 
             // step2: build shell command, create a SqlContext if needed
-            JobType jobType = jobInfo.getJobType();
+            JobType jobType = jobInfo.getType();
             jobCommand = jobCommandBuilders.stream()
                     .filter(builder -> builder.isSupported(jobType))
                     .findFirst()
@@ -88,7 +88,7 @@ public class JobRunner implements Job {
         } finally {
             RUNNER_MAP.remove(code);
             if (jobInfo != null
-                    && jobInfo.getJobType() == JobType.FLINK_SQL
+                    && jobInfo.getType() == JobType.FLINK_SQL
                     && jobCommand != null
                     && jobCommand.getMainArgs() != null) {
                 try {

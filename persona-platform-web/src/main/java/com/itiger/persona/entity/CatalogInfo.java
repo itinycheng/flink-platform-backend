@@ -57,12 +57,14 @@ public class CatalogInfo implements Serializable {
      */
     private String configs;
 
+    /**
+     * create user
+     */
     private String createUser;
 
     /**
      * create time
      */
     private LocalDateTime createTime;
-
 
 }

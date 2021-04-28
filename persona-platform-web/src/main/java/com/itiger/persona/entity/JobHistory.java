@@ -3,6 +3,8 @@ package com.itiger.persona.entity;
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
+import com.itiger.persona.common.enums.ExecutionMode;
+import com.itiger.persona.enums.DeployMode;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -63,12 +65,32 @@ public class JobHistory implements Serializable {
     /**
      * deploy mode: run-local, pre-yarn, yarn-session, run-application, etc.
      */
-    private String deployMode;
+    private DeployMode deployMode;
 
     /**
-     * sql, runable jar path
+     * BATCH, STREAMING
+     */
+    private ExecutionMode execMode;
+
+    /**
+     * cron expression
+     */
+    private String cronExpr;
+
+    /**
+     * sql or jar path
      */
     private String subject;
+
+    /**
+     * catalog id list
+     */
+    private String catalogs;
+
+    /**
+     * external jars
+     */
+    private String extJars;
 
     /**
      * main args
@@ -81,21 +103,18 @@ public class JobHistory implements Serializable {
     private String mainClass;
 
     /**
-     * external jar
-     */
-    private String extJar;
-
-    /**
      * -1: delete, 0: close, 1: open
      */
     private Integer status;
 
+    /**
+     * modify user
+     */
     private String modifyUser;
 
     /**
      * 创建时间
      */
     private LocalDateTime modifyTime;
-
 
 }
