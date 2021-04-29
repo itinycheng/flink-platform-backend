@@ -53,7 +53,7 @@ public class JobHistory implements Serializable {
     private String jobDesc;
 
     /**
-     * flink-sql, flink-jar, common-jar
+     * job type
      */
     private String jobType;
 
@@ -63,12 +63,12 @@ public class JobHistory implements Serializable {
     private String jobConfig;
 
     /**
-     * deploy mode: run-local, pre-yarn, yarn-session, run-application, etc.
+     * deploy mode
      */
     private DeployMode deployMode;
 
     /**
-     * BATCH, STREAMING
+     * execution mode
      */
     private ExecutionMode execMode;
 
@@ -113,7 +113,7 @@ public class JobHistory implements Serializable {
     private String modifyUser;
 
     /**
-     * 创建时间
+     * modify time
      */
     private LocalDateTime modifyTime;
 

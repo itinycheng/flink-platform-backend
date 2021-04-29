@@ -1,5 +1,6 @@
 package com.itiger.persona.flink.udf;
 
+import com.itiger.persona.common.util.FunctionUtil;
 import com.itiger.persona.common.util.JsonUtil;
 import com.itiger.persona.flink.udf.common.DataType;
 import com.itiger.persona.flink.udf.entity.UserLabel;
@@ -18,9 +19,13 @@ import java.util.Optional;
  */
 public class UserLabelValueFunction extends ScalarFunction {
 
+    public String eval(String json) {
+        val userLabel = FunctionUtil.getOrDefault(() -> JsonUtil.toBean(json, UserLabel.class), null);
+        return userLabel != null ? userLabel.getValue() : null;
+    }
+
     public Object eval(String json, String type) {
-        val userLabel = JsonUtil.toBean(json, UserLabel.class);
-        String value = userLabel != null ? userLabel.getValue() : null;
+        String value = eval(json);
         if (value == null) {
             return null;
         }

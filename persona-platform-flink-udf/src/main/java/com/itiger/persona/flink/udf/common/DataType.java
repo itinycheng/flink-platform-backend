@@ -14,14 +14,13 @@ public enum DataType {
     FLOAT,
     DOUBLE,
     STRING,
-    BOOL,
-    OTHER;
+    BOOL;
 
     public static DataType of(String type) {
         return Arrays.stream(values())
                 .filter(dataType -> dataType.name().equalsIgnoreCase(type))
                 .findFirst()
-                .orElse(OTHER);
+                .orElse(null);
     }
 
 }

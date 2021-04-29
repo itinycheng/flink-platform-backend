@@ -39,7 +39,7 @@ public class JobInfo implements Serializable {
     private Long id;
 
     /**
-     * uniqure code
+     * unique code
      */
     private String code;
 
@@ -54,7 +54,7 @@ public class JobInfo implements Serializable {
     private String description;
 
     /**
-     * flink-sql, flink-jar, common-jar
+     * job type
      */
     private JobType type;
 
@@ -64,17 +64,17 @@ public class JobInfo implements Serializable {
     private String config;
 
     /**
-     * deploy mode: run-local, pre-yarn, yarn-session, run-application, etc.
+     * deploy mode
      */
     private DeployMode deployMode;
 
     /**
-     * BATCH, STREAMING
+     * execution mode
      */
     private ExecutionMode execMode;
 
     /**
-     * sql, runable jar path
+     * sql or jar path
      */
     private String subject;
 
@@ -108,17 +108,23 @@ public class JobInfo implements Serializable {
      */
     private String cronExpr;
 
+    /**
+     * create user
+     */
     private String createUser;
 
     /**
-     * 创建时间
+     * create time
      */
     private LocalDateTime createTime;
 
+    /**
+     * update user
+     */
     private String updateUser;
 
     /**
-     * 修改时间
+     * update time
      */
     private LocalDateTime updateTime;
 
