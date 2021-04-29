@@ -12,7 +12,7 @@ import org.apache.flink.table.functions.ScalarFunction;
  */
 public class ToStringFunction extends ScalarFunction {
 
-    private String eval(@DataTypeHint(inputGroup = InputGroup.ANY) Object value) {
+    public String eval(@DataTypeHint(inputGroup = InputGroup.ANY) Object value) {
         return JsonUtil.toJsonString(value);
     }
 }

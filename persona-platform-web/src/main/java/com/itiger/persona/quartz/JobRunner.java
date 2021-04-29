@@ -57,7 +57,7 @@ public class JobRunner implements Job {
                 return;
             }
 
-            // step 1: get job info
+            // step 1: get job info TODO sql: and status = 1
             jobInfo = jobInfoService.getOne(new QueryWrapper<JobInfo>().lambda().eq(JobInfo::getCode, code));
             if (jobInfo == null || jobInfo.getStatus() != 1) {
                 log.warn("the job: {} is no longer exists or not in open status, {}", code, jobInfo);

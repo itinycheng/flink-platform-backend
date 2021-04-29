@@ -43,6 +43,11 @@ public class CatalogInfo implements Serializable {
     private CatalogType type;
 
     /**
+     * catalog desc
+     */
+    private String description;
+
+    /**
      * default database
      */
     private String defaultDatabase;
