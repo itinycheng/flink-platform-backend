@@ -42,7 +42,7 @@ spring:
     job-store-type: jdbc
     #初始化表结构
     jdbc:
-      initialize-schema: always
+      initialize-schema: never
     #相关属性配置
     properties:
       org:
