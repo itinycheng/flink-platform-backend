@@ -30,8 +30,8 @@ public class Sql112Application {
         SqlContext sqlContext = JsonUtil.toBean(sqlContextPath, SqlContext.class);
 
         // step 1: create and configure environment
-        TableEnvironment tEnv = ExecutionEnvs.createExecutionEnv(sqlContext);
-        Map<String, String> configMap = ConfigLoader.loadDefault();
+        TableEnvironment tEnv = ExecutionEnvs.createExecutionEnv(sqlContext.getExecMode());
+        Map<String, String> configMap = ConfigLoader.loadDefault(sqlContext.getExecMode());
         configMap.putAll(sqlContext.getConfigs());
         configMap.forEach((key, value) -> Configurations.setConfig(tEnv, key, value));
 

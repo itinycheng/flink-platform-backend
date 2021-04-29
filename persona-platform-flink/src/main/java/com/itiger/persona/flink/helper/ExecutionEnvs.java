@@ -1,6 +1,6 @@
 package com.itiger.persona.flink.helper;
 
-import com.itiger.persona.common.entity.job.SqlContext;
+import com.itiger.persona.common.enums.ExecutionMode;
 import com.itiger.persona.common.exception.FlinkJobGenException;
 import lombok.val;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
@@ -14,11 +14,11 @@ import org.apache.flink.table.api.bridge.java.StreamTableEnvironment;
  * @author tiny.wang
  */
 public class ExecutionEnvs {
-    public static TableEnvironment createExecutionEnv(SqlContext sqlContext) {
+    public static TableEnvironment createExecutionEnv(ExecutionMode execMode) {
         TableEnvironment tEnv;
         // create table Env
         val settingBuilder = EnvironmentSettings.newInstance().useBlinkPlanner();
-        switch (sqlContext.getExecMode()) {
+        switch (execMode) {
             case BATCH:
                 settingBuilder.inBatchMode();
                 tEnv = TableEnvironment.create(settingBuilder.build());
