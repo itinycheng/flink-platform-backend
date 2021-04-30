@@ -19,13 +19,9 @@ import java.util.Optional;
  */
 public class UserLabelValueFunction extends ScalarFunction {
 
-    public String eval(String json) {
-        val userLabel = FunctionUtil.getOrDefault(() -> JsonUtil.toBean(json, UserLabel.class), null);
-        return userLabel != null ? userLabel.getValue() : null;
-    }
-
     public Object eval(String json, String type) {
-        String value = eval(json);
+        val userLabel = FunctionUtil.getOrDefault(() -> JsonUtil.toBean(json, UserLabel.class), null);
+        String value = userLabel != null ? userLabel.getValue() : null;
         if (value == null) {
             return null;
         }
