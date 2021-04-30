@@ -108,6 +108,7 @@ public class SqlContextHelper {
             String json = JsonUtil.toJsonString(sqlContext);
             String sqlFilePath = String.join("/", ROOT_DIR, sqlDir, fileName);
             FileUtils.write(new File(sqlFilePath), json, StandardCharsets.UTF_8);
+            log.info("serial sql context to local disk successfully, path: {}, data: {}", sqlFilePath, json);
             return sqlFilePath;
         } catch (Exception e) {
             throw new FlinkCommandGenException("serde sql context to local disk failed", e);
