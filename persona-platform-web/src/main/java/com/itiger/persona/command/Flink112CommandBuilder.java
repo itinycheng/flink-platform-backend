@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.Map;
 
 import static com.itiger.persona.common.constants.JobConstant.ROOT_DIR;
+import static com.itiger.persona.common.constants.JobConstant.YARN_NAME;
 
 /**
  * @author tiny.wang
@@ -60,7 +61,7 @@ public class Flink112CommandBuilder implements JobCommandBuilder {
         Map<String, Object> configs = command.getConfigs();
         configs.putAll(JsonUtil.toMap(jobInfo.getConfig()));
         String appName = String.join("-", jobInfo.getName(), jobInfo.getCode());
-        configs.put(Constants.YARN_NAME, appName);
+        configs.put(YARN_NAME, appName);
         command.setExtJars(JsonUtil.toList(jobInfo.getExtJars()));
         switch (jobInfo.getType()) {
             case FLINK_JAR:

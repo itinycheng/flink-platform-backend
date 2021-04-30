@@ -1,13 +1,16 @@
 package com.itiger.persona.common.test;
 
-import com.itiger.persona.common.enums.ExecutionMode;
+import com.itiger.persona.common.entity.job.Catalog;
 import com.itiger.persona.common.entity.job.Sql;
 import com.itiger.persona.common.entity.job.SqlContext;
+import com.itiger.persona.common.enums.ExecutionMode;
 import com.itiger.persona.common.enums.SqlType;
 import com.itiger.persona.common.util.JsonUtil;
 import org.junit.Test;
 
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
 public class JsonUtilTest {
 
@@ -29,5 +32,16 @@ public class JsonUtilTest {
         SqlContext sqlContext1 = JsonUtil.toBean(jsonString, SqlContext.class);
         System.out.println(sqlContext1);
 
+    }
+
+    @Test
+    public void string() {
+        Map<String, String> map = new HashMap<>();
+        map.put("a", "true");
+        map.put("b", null);
+        Catalog catalog = new Catalog();
+        catalog.setConfigs(map);
+        String str = JsonUtil.toJsonString(catalog);
+        System.out.println(str);
     }
 }

@@ -1,6 +1,7 @@
 package com.itiger.persona.common.util;
 
 import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.serializer.SerializerFeature;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.InputStream;
@@ -54,7 +55,7 @@ public class JsonUtil {
     }
 
     public static String toJsonString(Object obj) {
-        return JSON.toJSONString(obj);
+        return JSON.toJSONString(obj, SerializerFeature.WriteMapNullValue);
     }
 
 }
