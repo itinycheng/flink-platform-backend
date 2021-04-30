@@ -18,6 +18,12 @@ public class JobConstant {
 
     public static final String LINE_SEPARATOR = System.lineSeparator();
 
+    public static final Pattern APP_ID_PATTERN = Pattern.compile("yarn\\s+application\\s+-kill\\s+(\\S+)");
+
+    public static final Pattern JOB_ID_PATTERN = Pattern.compile("Job\\s+has\\s+been\\s+submitted\\s+with\\s+JobID\\s+(\\S+)");
+
+    public static final String YARN_NAME = "yarn.application.name";
+
     public static final String JDBC_URL = "jdbc-url";
 
     public static final String JDBC_USERNAME = "jdbc-username";
@@ -40,12 +46,12 @@ public class JobConstant {
 
     public final static String SQL_COMMENT_SYMBOL = "--";
 
-    public static final int SQL_PATTERN_CONFIGS = Pattern.CASE_INSENSITIVE | Pattern.MULTILINE | Pattern.DOTALL;
-
-    public static final Pattern SQL_PATTERN = Pattern.compile("\\S+.*?;$", SQL_PATTERN_CONFIGS);
-
     public static final String JSON_FILE_SUFFIX = "json";
 
     public static final String TMP_FILE_SUFFIX = "tmp";
+
+    public static final int SQL_PATTERN_CONFIGS = Pattern.CASE_INSENSITIVE | Pattern.MULTILINE | Pattern.DOTALL;
+
+    public static final Pattern SQL_PATTERN = Pattern.compile("\\S+.*?;$", SQL_PATTERN_CONFIGS);
 
 }
