@@ -18,7 +18,7 @@ import static java.util.stream.Collectors.joining;
 @Slf4j
 public class CommandExecutor {
 
-    public static JobCommandCallback execCommand(String command) throws Exception {
+    public static JobCallback execCommand(String command) throws Exception {
         log.info("exec command: {}", command);
         Process process = Runtime.getRuntime().exec(command);
         process.waitFor();
@@ -28,8 +28,8 @@ public class CommandExecutor {
             String errMsg = errReader.lines().collect(joining(LINE_SEPARATOR));
             String appId = extractApplicationId(stdMsg);
             String jobId = extractJobId(stdMsg);
-            String detail = String.join(LINE_SEPARATOR, stdMsg, errMsg);
-            return new JobCommandCallback(jobId, appId, detail);
+            String message = String.join(LINE_SEPARATOR, stdMsg, errMsg);
+            return new JobCallback(jobId, appId, message);
         } finally {
             process.destroy();
         }

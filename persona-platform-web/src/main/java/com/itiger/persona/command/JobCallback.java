@@ -12,11 +12,11 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class JobCommandCallback {
+public class JobCallback {
 
     private String jobId;
 
     private String appId;
 
-    private String detail;
+    private String message;
 }

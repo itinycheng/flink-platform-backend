@@ -25,7 +25,7 @@ import static java.util.stream.Collectors.toMap;
 /**
  * must input a valid sql context file
  *
- * @author tiger
+ * @author tiny.wang
  */
 public class Sql112Application {
 

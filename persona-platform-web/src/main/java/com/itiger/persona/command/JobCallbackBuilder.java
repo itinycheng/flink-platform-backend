@@ -6,7 +6,7 @@ package com.itiger.persona.command;
  *
  * @author tiny.wang
  */
-public interface JobCommandCallbackBuilder {
+public interface JobCallbackBuilder {
 
     /**
      * extract app id
