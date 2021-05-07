@@ -4,7 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.itiger.persona.command.CommandExecutor;
 import com.itiger.persona.command.JobCommand;
 import com.itiger.persona.command.JobCommandBuilder;
-import com.itiger.persona.command.JobCommandCallback;
+import com.itiger.persona.command.JobCallback;
 import com.itiger.persona.common.exception.FlinkCommandGenException;
 import com.itiger.persona.common.util.JsonUtil;
 import com.itiger.persona.comn.SpringContext;
@@ -50,15 +50,16 @@ public class JobRunner implements Job {
         JobCommand jobCommand = null;
         JobInfo jobInfo = null;
         try {
-            // avoid preforming the same job multiple times at the same time
+            // TODO avoid preforming the same job multiple times at the same time
             Long previous = RUNNER_MAP.putIfAbsent(code, System.currentTimeMillis());
             if (previous != null && previous > 0) {
                 log.warn("the job: {} is already running, start time: {}", code, previous);
                 return;
             }
 
-            // step 1: get job info TODO sql: and status = 1
-            jobInfo = jobInfoService.getOne(new QueryWrapper<JobInfo>().lambda().eq(JobInfo::getCode, code));
+            // step 1: get job info
+            jobInfo = jobInfoService.getOne(new QueryWrapper<JobInfo>().lambda()
+                    .eq(JobInfo::getCode, code).eq(JobInfo::getStatus, 1));
             if (jobInfo == null || jobInfo.getStatus() != 1) {
                 log.warn("the job: {} is no longer exists or not in open status, {}", code, jobInfo);
                 return;
@@ -73,7 +74,7 @@ public class JobRunner implements Job {
                     .buildCommand(jobInfo);
 
             // step 3: submit job
-            JobCommandCallback callback = CommandExecutor.execCommand(jobCommand.toCommandString());
+            JobCallback callback = CommandExecutor.execCommand(jobCommand.toCommandString());
 
             // step 4: write msg back to db
             JobRunInfo jobRunInfo = new JobRunInfo();

@@ -4,7 +4,7 @@ import org.apache.flink.configuration.Configuration;
 import org.apache.flink.table.api.TableEnvironment;
 
 /**
- * TODO support table and common configs
+ * add configuration
  *
  * @author tiny.wang
  */
