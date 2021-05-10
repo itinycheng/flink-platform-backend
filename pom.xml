@@ -34,6 +34,7 @@
         <commons.collections.version>3.2.2</commons.collections.version>
         <lombok.version>1.18.12</lombok.version>
         <fastjson.version>1.2.75</fastjson.version>
+        <jackson.version>2.11.4</jackson.version>
         <slf4j.version>1.7.30</slf4j.version>
         <mysql.version>5.1.49</mysql.version>
         <druid.version>1.2.5</druid.version>
@@ -76,6 +77,11 @@
                 <groupId>com.alibaba</groupId>
                 <artifactId>fastjson</artifactId>
                 <version>${fastjson.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-databind</artifactId>
+                <version>${jackson.version}</version>
             </dependency>
             <!-- spring jdbc -->
             <dependency>
