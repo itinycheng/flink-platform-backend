@@ -8,7 +8,7 @@ import com.itiger.persona.parser.SimpleSqlWhere;
 import com.itiger.persona.parser.SqlIdentifier;
 import com.itiger.persona.parser.SqlSelect;
 import com.itiger.persona.parser.SqlWhere;
-import com.itiger.persona.service.SqlGenService;
+import com.itiger.persona.service.UserGroupSqlGenService;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -76,7 +76,10 @@ public class SqlParserTest {
 
     @Test
     public void test3() {
-        String sql = new SqlGenService().generateSelect(sqlSelect);
-        System.out.println(sql);
+        UserGroupSqlGenService userGroupSqlGenService = new UserGroupSqlGenService();
+        String selectSql = userGroupSqlGenService.generateSelect(sqlSelect);
+        System.out.println(selectSql);
+        String insertSelect = userGroupSqlGenService.generateInsertSelect(sqlSelect);
+        System.out.println(insertSelect);
     }
 }
