@@ -4,17 +4,20 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.itiger.persona.entity.Signature;
 import com.itiger.persona.enums.SqlDataType;
 import com.itiger.persona.enums.SqlExpression;
-import com.itiger.persona.parser.CompositeCondition;
-import com.itiger.persona.parser.Condition;
-import com.itiger.persona.parser.SimpleCondition;
+import com.itiger.persona.parser.CompositeSqlWhere;
+import com.itiger.persona.parser.SimpleSqlWhere;
+import com.itiger.persona.parser.SqlIdentifier;
 import com.itiger.persona.parser.SqlSelect;
+import com.itiger.persona.parser.SqlWhere;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import javax.annotation.Resource;
 import java.util.ArrayList;
 import java.util.List;
+
+import static java.util.stream.Collectors.toList;
 
 /**
  * @author tiny.wang
@@ -23,54 +26,57 @@ import java.util.List;
 @Slf4j
 public class SqlGenService {
 
-    @Autowired
+    @Resource
     private ISignatureService iSignatureService;
 
     public String generateSelect(SqlSelect sqlSelect) {
-        String select = String.join(",", sqlSelect.getSelectList());
-        String from = sqlSelect.getFrom();
+        // select columns
+        List<String> columns = sqlSelect.getSelectList().stream()
+                .map(SqlIdentifier::toColumnString).collect(toList());
+        String select = String.join(", ", columns);
+        // from table
+        String from = sqlSelect.getFrom().toTableString();
+        // where statement
         String where = generateWhereStatement(sqlSelect.getWhere());
         if (StringUtils.isNotBlank(where)) {
+            where = where.trim();
             where = String.join(" ", "WHERE", where.substring(1, where.length() - 1));
         }
         return String.join(" ", "SELECT", select, "FROM", from, where);
     }
 
-    private String generateWhereStatement(Condition where) {
+    private String generateWhereStatement(SqlWhere where) {
         if (where == null) {
             return StringUtils.EMPTY;
-        } else if (where instanceof CompositeCondition) {
+        } else if (where instanceof CompositeSqlWhere) {
             List<String> conditionList = new ArrayList<>();
-            CompositeCondition compositeCondition = (CompositeCondition) where;
+            CompositeSqlWhere compositeCondition = (CompositeSqlWhere) where;
             SqlExpression sqlExpr = SqlExpression.of(compositeCondition.getRelation());
-            for (Condition condition : compositeCondition.getConditions()) {
+            for (SqlWhere condition : compositeCondition.getConditions()) {
                 conditionList.add(generateWhereStatement(condition));
             }
             String joined = String.join(sqlExpr.name(), conditionList);
             return String.join("", " (", joined, ") ");
-        } else if (where instanceof SimpleCondition) {
-            return generateWhereSegment((SimpleCondition) where);
+        } else if (where instanceof SimpleSqlWhere) {
+            return generateWhereSegment((SimpleSqlWhere) where);
         } else {
             throw new RuntimeException("unknown condition type");
         }
     }
 
-    private String generateWhereSegment(SimpleCondition simpleCondition) {
-        SqlExpression sqlExpr = SqlExpression.of(simpleCondition.getOperator());
+    private String generateWhereSegment(SimpleSqlWhere simpleCondition) {
+        SqlExpression operatorExpr = simpleCondition.getOperator();
         String columnName = simpleCondition.getOperands()[0];
         Signature signature = iSignatureService.getOne(new QueryWrapper<Signature>().lambda()
                 .eq(Signature::getName, columnName));
         SqlDataType sqlDataType = signature.getDataType();
         String[] operands = simpleCondition.getOperands();
-        Object[] formatted = new Object[operands.length];
+        Object[] formatted = new Object[operands.length + 1];
+        formatted[0] = simpleCondition.getColumn().toColumnString();
         for (int i = 0; i < operands.length; i++) {
-            if (i == 0) {
-                formatted[i] = operands[i];
-            } else {
-                formatted[i] = String.join("", sqlDataType.prefix, operands[i], sqlDataType.suffix);
-            }
+            formatted[i + 1] = String.join("", sqlDataType.prefix, operands[i], sqlDataType.suffix);
         }
-        return String.format(sqlExpr.expression, formatted);
+        return String.format(operatorExpr.expression, formatted);
     }
 
 }

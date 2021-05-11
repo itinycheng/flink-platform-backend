@@ -9,8 +9,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import javax.servlet.http.HttpServletRequest;
-
 /**
  * @author tiny.wang
  */
@@ -22,7 +20,7 @@ public class SqlGenController {
     private SqlGenService sqlGenService;
 
     @PostMapping(value = "generateSelect")
-    public ResultInfo generateSelect(HttpServletRequest request, @RequestBody SqlSelect sqlSelect) {
+    public ResultInfo generateSelect(@RequestBody SqlSelect sqlSelect) {
         // validate first
         String sqlString = sqlGenService.generateSelect(sqlSelect);
         return ResultInfo.success(sqlString);

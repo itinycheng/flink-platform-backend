@@ -12,16 +12,15 @@ import static com.fasterxml.jackson.annotation.JsonTypeInfo.As;
 /**
  * @author tiny.wang
  */
-
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @JsonTypeInfo(use = Id.NAME, include = As.EXISTING_PROPERTY, property = "type", visible = true)
 @JsonSubTypes({
-        @JsonSubTypes.Type(value = CompositeCondition.class, name = "composite"),
-        @JsonSubTypes.Type(value = SimpleCondition.class, name = "simple")
+        @JsonSubTypes.Type(value = CompositeSqlWhere.class, name = "composite"),
+        @JsonSubTypes.Type(value = SimpleSqlWhere.class, name = "simple")
 })
-public class Condition {
+public class SqlWhere {
 
     private String type;
 

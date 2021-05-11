@@ -9,14 +9,14 @@ import com.fasterxml.jackson.databind.type.TypeFactory;
 /**
  * @author tiny.wang
  */
-public class ConditionTypeIdResolver extends TypeIdResolverBase {
+public class SqlWhereTypeIdResolver extends TypeIdResolverBase {
 
-    public ConditionTypeIdResolver() {
-        this(TypeFactory.defaultInstance().constructType(Condition.class),
+    public SqlWhereTypeIdResolver() {
+        this(TypeFactory.defaultInstance().constructType(SqlWhere.class),
                 TypeFactory.defaultInstance());
     }
 
-    public ConditionTypeIdResolver(JavaType baseType, TypeFactory typeFactory) {
+    public SqlWhereTypeIdResolver(JavaType baseType, TypeFactory typeFactory) {
         super(baseType, typeFactory);
     }
 
@@ -32,9 +32,9 @@ public class ConditionTypeIdResolver extends TypeIdResolverBase {
 
     @Override
     public JavaType typeFromId(DatabindContext context, String id) {
-        Class<?> clazz = Condition.class;
+        Class<?> clazz = SqlWhere.class;
         if (id == null) {
-            clazz = CompositeCondition.class;
+            clazz = CompositeSqlWhere.class;
         }
         return TypeFactory.defaultInstance().constructType(clazz);
     }
