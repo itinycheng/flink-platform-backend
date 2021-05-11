@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.itiger.persona.entity.Signature;
 import com.itiger.persona.enums.SqlDataType;
 import com.itiger.persona.enums.SqlExpression;
+import com.itiger.persona.enums.SqlVar;
 import com.itiger.persona.parser.CompositeSqlWhere;
 import com.itiger.persona.parser.SimpleSqlWhere;
 import com.itiger.persona.parser.SqlIdentifier;
@@ -16,6 +17,7 @@ import org.springframework.stereotype.Service;
 import javax.annotation.Resource;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static java.util.stream.Collectors.toList;
 
@@ -24,10 +26,25 @@ import static java.util.stream.Collectors.toList;
  */
 @Service
 @Slf4j
-public class SqlGenService {
+public class UserGroupSqlGenService {
+
+    private static final String T = "t";
 
     @Resource
     private ISignatureService iSignatureService;
+
+    public String generateInsertSelect(SqlSelect sqlSelect) {
+        String insertPrefix = String.format("INSERT OVERWRITE `t_hive_user_group_result` PARTITION(id = %s, ts = %s) \n",
+                SqlVar.JOB_CODE.variable, SqlVar.CURRENT_TIMESTAMP.variable);
+        String joinedSelectList = sqlSelect.getSelectList().stream()
+                .map(identifier -> String.join(", ",
+                        SqlDataType.STRING.prefix + identifier.getName() + SqlDataType.STRING.suffix
+                        , String.join(".", T, identifier.getName())))
+                .collect(Collectors.joining(", "));
+        String insertSelect = String.format("SELECT to_json(MAP[%s]) AS result FROM \n", joinedSelectList);
+        String insertTable = generateSelect(sqlSelect);
+        return String.join("", insertPrefix, insertSelect, "( ", insertTable, ") ", T);
+    }
 
     public String generateSelect(SqlSelect sqlSelect) {
         // select columns

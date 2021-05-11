@@ -2,7 +2,7 @@ package com.itiger.persona.controller;
 
 import com.itiger.persona.entity.response.ResultInfo;
 import com.itiger.persona.parser.SqlSelect;
-import com.itiger.persona.service.SqlGenService;
+import com.itiger.persona.service.UserGroupSqlGenService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -13,15 +13,14 @@ import org.springframework.web.bind.annotation.RestController;
  * @author tiny.wang
  */
 @RestController
-@RequestMapping("/sql")
-public class SqlGenController {
+@RequestMapping("/userGroup/sqlGenerator")
+public class UserGroupSqlGenController {
 
     @Autowired
-    private SqlGenService sqlGenService;
+    private UserGroupSqlGenService sqlGenService;
 
-    @PostMapping(value = "generateSelect")
-    public ResultInfo generateSelect(@RequestBody SqlSelect sqlSelect) {
-        // validate first
+    @PostMapping(value = "insertSelect")
+    public ResultInfo insertSelect(@RequestBody SqlSelect sqlSelect) {
         String sqlString = sqlGenService.generateSelect(sqlSelect);
         return ResultInfo.success(sqlString);
     }
