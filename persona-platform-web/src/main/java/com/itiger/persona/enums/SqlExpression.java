@@ -30,7 +30,7 @@ public enum SqlExpression {
 
     public final String expression;
 
-    private SqlExpression(final String expression) {
+    SqlExpression(final String expression) {
         this.expression = expression;
     }
 

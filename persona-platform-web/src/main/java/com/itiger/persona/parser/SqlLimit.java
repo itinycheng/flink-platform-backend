@@ -10,10 +10,10 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class SimpleCondition extends Condition {
+public class SqlLimit {
 
-    private String operator;
+    private int offset;
 
-    private String[] operands;
+    private int rowCount;
 
 }

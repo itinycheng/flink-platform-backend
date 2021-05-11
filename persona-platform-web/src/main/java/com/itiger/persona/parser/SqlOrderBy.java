@@ -1,5 +1,6 @@
 package com.itiger.persona.parser;
 
+import com.itiger.persona.enums.SqlExpression;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -12,15 +13,10 @@ import java.util.List;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class SqlSelect {
+public class SqlOrderBy {
 
-    private List<SqlIdentifier> selectList;
+    private SqlExpression type;
 
-    private SqlIdentifier from;
+    private List<SqlIdentifier> items;
 
-    private SqlWhere where;
-
-    private SqlOrderBy orderBy;
-
-    private SqlLimit limit;
 }
