@@ -56,6 +56,8 @@ public class Signature implements Serializable {
 
     private String accountType;
 
+    private String parser;
+
     /**
      * 计算规则
      */
