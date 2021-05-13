@@ -1,5 +1,6 @@
 package com.itiger.persona.controller;
 
+import com.itiger.persona.constants.UserGroupConst;
 import com.itiger.persona.entity.response.ResultInfo;
 import com.itiger.persona.parser.SqlSelect;
 import com.itiger.persona.service.UserGroupSqlGenService;
@@ -21,7 +22,8 @@ public class UserGroupSqlGenController {
 
     @PostMapping(value = "insertSelect")
     public ResultInfo insertSelect(@RequestBody SqlSelect sqlSelect) {
-        String sqlString = sqlGenService.generateSelect(sqlSelect);
+        sqlSelect.setFrom(UserGroupConst.SOURCE_TABLE_IDENTIFIER);
+        String sqlString = sqlGenService.generateInsertSelect(sqlSelect);
         return ResultInfo.success(sqlString);
     }
 }
