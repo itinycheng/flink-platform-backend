@@ -1,6 +1,8 @@
 package com.itiger.persona.command;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -16,11 +18,16 @@ import static java.util.stream.Collectors.joining;
  * @author tiny.wang
  */
 @Slf4j
+@Component("commandExecutor")
 public class CommandExecutor {
 
-    public static JobCallback execCommand(String command) throws Exception {
+    @Value("${hadoop.user}")
+    private String hadoopUser;
+
+    public JobCallback execCommand(String command) throws Exception {
         log.info("exec command: {}", command);
-        Process process = Runtime.getRuntime().exec(command);
+        Process process = Runtime.getRuntime().exec(command,
+                new String[]{String.format("HADOOP_USER_NAME=%s", hadoopUser)});
         process.waitFor();
         try (BufferedReader stdReader = new BufferedReader(new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8));
              BufferedReader errReader = new BufferedReader(new InputStreamReader(process.getErrorStream(), StandardCharsets.UTF_8))) {
