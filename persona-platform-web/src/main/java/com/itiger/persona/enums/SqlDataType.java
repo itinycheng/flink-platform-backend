@@ -1,5 +1,8 @@
 package com.itiger.persona.enums;
 
+import static com.itiger.persona.constants.SqlConstant.EMPTY;
+import static com.itiger.persona.constants.SqlConstant.SINGLE_QUOTE;
+
 /**
  * @author tiger
  */
@@ -8,17 +11,12 @@ public enum SqlDataType {
     /**
      * data type
      */
-    INT("", ""),
-    LONG("", ""),
-    DOUBLE("", ""),
-    STRING("'", "'");
+    NUMBER(EMPTY),
+    STRING(SINGLE_QUOTE);
 
-    public final String prefix;
+    public final String quote;
 
-    public final String suffix;
-
-    SqlDataType(String prefix, String suffix) {
-        this.prefix = prefix;
-        this.suffix = suffix;
+    SqlDataType(String quote) {
+        this.quote = quote;
     }
 }
