@@ -34,17 +34,25 @@ public class SqlIdentifier {
         return String.join(EMPTY, backTick, name, backTick);
     }
 
-    public String toColumnString() {
+    public String toColumnStatement() {
         String backTick = SqlConstant.BACK_TICK;
         String quotedName = String.join(EMPTY, backTick, name, backTick);
         return String.join(DOT, qualifier, quotedName);
     }
 
     public String toColumnAsStatement() {
-        return String.join(SPACE, toColumnString(), AS, newColumnName());
+        return String.join(SPACE, toColumnStatement(), AS, newColumnName());
     }
 
     public String newColumnName() {
         return String.join(UNDERSCORE, qualifier.toLowerCase(), name);
+    }
+
+    public String correctColumnName(boolean isNew) {
+        if (isNew) {
+            return this.newColumnName();
+        } else {
+            return this.getName();
+        }
     }
 }
