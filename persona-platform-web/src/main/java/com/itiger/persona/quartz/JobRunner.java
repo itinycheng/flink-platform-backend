@@ -40,6 +40,8 @@ public class JobRunner implements Job {
 
     private final IJobRunInfoService jobRunInfoService = SpringContext.getBean(IJobRunInfoService.class);
 
+    private final CommandExecutor commandExecutor = SpringContext.getBean(CommandExecutor.class);
+
     private final List<JobCommandBuilder> jobCommandBuilders = SpringContext.getBeansOfType(JobCommandBuilder.class);
 
     @Override
@@ -74,7 +76,7 @@ public class JobRunner implements Job {
                     .buildCommand(jobInfo);
 
             // step 3: submit job
-            JobCallback callback = CommandExecutor.execCommand(jobCommand.toCommandString());
+            JobCallback callback = commandExecutor.execCommand(jobCommand.toCommandString());
 
             // step 4: write msg back to db
             JobRunInfo jobRunInfo = new JobRunInfo();
