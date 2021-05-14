@@ -1,6 +1,7 @@
 package com.itiger.persona.enums;
 
 import java.util.Arrays;
+import java.util.List;
 
 /**
  * @author tiny.wang
@@ -28,6 +29,8 @@ public enum SqlExpression {
     ASC(" ORDER BY %s ASC "),
     DESC(" ORDER BY %s DESC ");
 
+    public static final List<SqlExpression> SUPPORT_MULTI_INPUT_PARAMETER = Arrays.asList(IN, NOT_IN);
+
     public final String expression;
 
     SqlExpression(final String expression) {
@@ -39,5 +42,9 @@ public enum SqlExpression {
                 .filter(expr -> expr.name().equalsIgnoreCase(name))
                 .findFirst()
                 .orElseThrow(() -> new RuntimeException("can not find a suitable sql expression."));
+    }
+
+    public boolean isSupportMultiParameter() {
+        return SUPPORT_MULTI_INPUT_PARAMETER.stream().anyMatch(this::equals);
     }
 }
