@@ -1,6 +1,7 @@
 package com.itiger.persona.web;
 
 import com.itiger.persona.command.CommandExecutor;
+import com.itiger.persona.enums.SqlVar;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -24,5 +25,10 @@ public class CommandTest {
         String jobId = CommandExecutor.extractJobId(yarnClientMessage);
         Assert.assertEquals("application_1616984365313_0284", appId);
         Assert.assertEquals("698185836ffa4165f35c71627eb8c6f7", jobId);
+    }
+
+    @Test
+    public void testLongToString() {
+        System.out.println(SqlVar.CURRENT_TIMESTAMP.valueProvider.apply(null).toString());
     }
 }

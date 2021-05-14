@@ -2,15 +2,16 @@ package com.itiger.persona.quartz;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.itiger.persona.command.CommandExecutor;
+import com.itiger.persona.command.JobCallback;
 import com.itiger.persona.command.JobCommand;
 import com.itiger.persona.command.JobCommandBuilder;
-import com.itiger.persona.command.JobCallback;
 import com.itiger.persona.common.exception.FlinkCommandGenException;
 import com.itiger.persona.common.util.JsonUtil;
 import com.itiger.persona.comn.SpringContext;
 import com.itiger.persona.entity.JobInfo;
 import com.itiger.persona.entity.JobRunInfo;
 import com.itiger.persona.enums.JobType;
+import com.itiger.persona.enums.SqlVar;
 import com.itiger.persona.service.IJobInfoService;
 import com.itiger.persona.service.IJobRunInfoService;
 import lombok.extern.slf4j.Slf4j;
@@ -67,7 +68,14 @@ public class JobRunner implements Job {
                 return;
             }
 
-            // step2: build shell command, create a SqlContext if needed
+            // step 2: replace variables in the sql statement
+            for (SqlVar sqlVar : SqlVar.values()) {
+                String originSubject = jobInfo.getSubject();
+                String distSubject = originSubject.replace(sqlVar.variable, sqlVar.valueProvider.apply(jobInfo).toString());
+                jobInfo.setSubject(distSubject);
+            }
+
+            // step 3: build shell command, create a SqlContext if needed
             JobType jobType = jobInfo.getType();
             jobCommand = jobCommandBuilders.stream()
                     .filter(builder -> builder.isSupported(jobType))
@@ -75,10 +83,10 @@ public class JobRunner implements Job {
                     .orElseThrow(() -> new FlinkCommandGenException("no available job command builder"))
                     .buildCommand(jobInfo);
 
-            // step 3: submit job
+            // step 4: submit job
             JobCallback callback = commandExecutor.execCommand(jobCommand.toCommandString());
 
-            // step 4: write msg back to db
+            // step 5: write msg back to db
             JobRunInfo jobRunInfo = new JobRunInfo();
             jobRunInfo.setJobId(jobInfo.getId());
             jobRunInfo.setStatus(0);
