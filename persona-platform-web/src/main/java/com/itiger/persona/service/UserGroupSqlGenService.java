@@ -17,6 +17,7 @@ import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -181,9 +182,19 @@ public class UserGroupSqlGenService {
         }
         formatted[0] = columnSegment;
         for (int i = 0; i < operands.length; i++) {
-            formatted[i + 1] = String.join(EMPTY, sqlDataType.quote, operands[i], sqlDataType.quote);
+            formatted[i + 1] = decorateOperand(operatorExpr, operands[i], sqlDataType);
         }
         return String.format(operatorExpr.expression, formatted);
+    }
+
+    private String decorateOperand(SqlExpression operatorExpr, String operand, SqlDataType sqlDataType) {
+        if (operatorExpr.isSupportMultiParameter() && !EMPTY.equals(sqlDataType.quote)) {
+            return Arrays.stream(operand.split(COMMA))
+                    .map(item -> String.join(EMPTY, sqlDataType.quote, item, sqlDataType.quote))
+                    .collect(joining(COMMA));
+        } else {
+            return String.join(EMPTY, sqlDataType.quote, operand, sqlDataType.quote);
+        }
     }
 
 }
