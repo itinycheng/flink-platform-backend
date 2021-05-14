@@ -75,7 +75,7 @@ flink:
     class-name: com.itiger.persona.flink.Sql112Application
 
 hadoop:
-  user: hive
+  user: admin
   password:
   hdfs-site: hdfs-site.xml
   core-site: core-site.xml
