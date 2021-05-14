@@ -205,5 +205,6 @@
         <module>persona-platform-common</module>
         <module>persona-platform-flink</module>
         <module>persona-platform-flink-udf</module>
+        <module>persona-platform-monitor</module>
     </modules>
 </project>
