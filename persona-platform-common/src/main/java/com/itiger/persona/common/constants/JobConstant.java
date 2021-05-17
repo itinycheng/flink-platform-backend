@@ -22,6 +22,8 @@ public class JobConstant {
 
     public static final Pattern JOB_ID_PATTERN = Pattern.compile("Job\\s+has\\s+been\\s+submitted\\s+with\\s+JobID\\s+(\\S+)");
 
+    public static final String HADOOP_USER_NAME = "HADOOP_USER_NAME";
+
     public static final String YARN_NAME = "yarn.application.name";
 
     public static final String JDBC_URL = "jdbc-url";
