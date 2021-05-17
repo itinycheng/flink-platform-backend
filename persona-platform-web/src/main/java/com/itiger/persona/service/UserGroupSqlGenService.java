@@ -168,7 +168,7 @@ public class UserGroupSqlGenService {
 
     private String generateWhereSegment(SimpleSqlWhere simpleCondition, boolean subQueryExists) {
         SqlExpression operatorExpr = simpleCondition.getOperator();
-        String columnName = simpleCondition.getOperands()[0];
+        String columnName = simpleCondition.getColumn().getName();
         Signature signature = iSignatureService.getOne(new QueryWrapper<Signature>().lambda()
                 .eq(Signature::getName, columnName));
         SqlDataType sqlDataType = signature.getDataType();
