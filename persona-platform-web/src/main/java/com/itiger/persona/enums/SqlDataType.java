@@ -11,7 +11,8 @@ public enum SqlDataType {
     INT("", ""),
     LONG("", ""),
     DOUBLE("", ""),
-    STRING("'", "'");
+    STRING("'", "'"),
+    NUMBER("'", "'");
 
     public final String prefix;
 

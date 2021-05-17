@@ -35,7 +35,8 @@ public class JobInfoServiceImpl extends ServiceImpl<JobInfoMapper, JobInfo> impl
         if (!save) {
             throw new DefinitionException(ResponseStatus.SERVICE_ERROR);
         }
-        return quartzService.addOrFailQuartzJob(jobInfo);
+        return true;
+//        return quartzService.addOrFailQuartzJob(jobInfo);
     }
 
     @Transactional(rollbackFor = RuntimeException.class)

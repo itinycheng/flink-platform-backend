@@ -1,7 +1,7 @@
 package com.itiger.persona.entity.request;
 
-import com.itiger.persona.entity.JobInfo;
-import com.itiger.persona.enums.DeployMode;
+import com.baomidou.mybatisplus.annotation.TableName;
+import com.itiger.persona.entity.CatalogInfo;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -12,21 +12,18 @@ import java.util.List;
 
 /**
  * @Author Shik
- * @Title: TJobInfoRequest
+ * @Title: CatalogInfoRequest
  * @ProjectName: persona-platform-backend
  * @Description: TODO
- * @Date: 2021/4/14 上午10:50
+ * @Date: 2021/5/13 下午2:09
  */
 @Data
 @EqualsAndHashCode(callSuper = false)
 @Accessors(chain = true)
 @AllArgsConstructor
 @NoArgsConstructor
-public class JobInfoRequest extends JobInfo {
-
-    private String sqlMain;
-
-    private DeployMode deployMode;
+public class CatalogInfoRequest extends CatalogInfo {
 
     private List<String> catalogIds;
+
 }

@@ -1,11 +1,18 @@
 package com.itiger.persona.service.impl;
 
+import com.alibaba.fastjson.JSON;
 import com.baomidou.dynamic.datasource.annotation.DS;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.itiger.persona.entity.Signature;
+import com.itiger.persona.entity.response.SignatureResponse;
 import com.itiger.persona.service.ISignatureService;
 import com.itiger.persona.mapper.SignatureMapper;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
+import java.util.Map;
 
 /**
  * <p>
@@ -19,4 +26,12 @@ import org.springframework.stereotype.Service;
 @DS("signature")
 public class SignatureServiceImpl extends ServiceImpl<SignatureMapper, Signature> implements ISignatureService {
 
+    @Autowired
+    private SignatureMapper signatureMapper;
+
+    @Override
+    public List<Map<String,Object>> listAll() {
+        List<Map<String,Object>> list = signatureMapper.selectValues();
+        return list;
+    }
 }

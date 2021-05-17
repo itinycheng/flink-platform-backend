@@ -2,6 +2,10 @@ package com.itiger.persona.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.itiger.persona.entity.Signature;
+import com.itiger.persona.entity.response.SignatureResponse;
+
+import java.util.List;
+import java.util.Map;
 
 /**
  * <p>
@@ -13,4 +17,5 @@ import com.itiger.persona.entity.Signature;
  */
 public interface ISignatureService extends IService<Signature> {
 
+    List<Map<String,Object>> listAll();
 }
