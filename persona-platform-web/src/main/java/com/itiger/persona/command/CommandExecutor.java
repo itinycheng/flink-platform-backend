@@ -10,11 +10,14 @@ import java.nio.charset.StandardCharsets;
 import java.util.regex.Matcher;
 
 import static com.itiger.persona.common.constants.JobConstant.APP_ID_PATTERN;
+import static com.itiger.persona.common.constants.JobConstant.HADOOP_USER_NAME;
 import static com.itiger.persona.common.constants.JobConstant.JOB_ID_PATTERN;
 import static com.itiger.persona.common.constants.JobConstant.LINE_SEPARATOR;
 import static java.util.stream.Collectors.joining;
 
 /**
+ * TODO parse result
+ *
  * @author tiny.wang
  */
 @Slf4j
@@ -27,7 +30,7 @@ public class CommandExecutor {
     public JobCallback execCommand(String command) throws Exception {
         log.info("exec command: {}", command);
         Process process = Runtime.getRuntime().exec(command,
-                new String[]{String.format("HADOOP_USER_NAME=%s", hadoopUser)});
+                new String[]{String.format("%s=%s", HADOOP_USER_NAME, hadoopUser)});
         process.waitFor();
         try (BufferedReader stdReader = new BufferedReader(new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8));
              BufferedReader errReader = new BufferedReader(new InputStreamReader(process.getErrorStream(), StandardCharsets.UTF_8))) {
