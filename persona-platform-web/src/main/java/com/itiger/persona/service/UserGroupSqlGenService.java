@@ -1,8 +1,8 @@
 package com.itiger.persona.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.itiger.persona.common.enums.SqlDataType;
 import com.itiger.persona.entity.Signature;
-import com.itiger.persona.enums.SqlDataType;
 import com.itiger.persona.enums.SqlExpression;
 import com.itiger.persona.enums.SqlVar;
 import com.itiger.persona.parser.CompositeSqlWhere;
@@ -24,17 +24,17 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.IntStream;
 
-import static com.itiger.persona.constants.SqlConstant.AS;
-import static com.itiger.persona.constants.SqlConstant.BACK_TICK;
-import static com.itiger.persona.constants.SqlConstant.BRACKET_LEFT;
-import static com.itiger.persona.constants.SqlConstant.BRACKET_RIGHT;
-import static com.itiger.persona.constants.SqlConstant.COMMA;
-import static com.itiger.persona.constants.SqlConstant.EMPTY;
+import static com.itiger.persona.common.constants.Constant.AS;
+import static com.itiger.persona.common.constants.Constant.BACK_TICK;
+import static com.itiger.persona.common.constants.Constant.BRACKET_LEFT;
+import static com.itiger.persona.common.constants.Constant.BRACKET_RIGHT;
+import static com.itiger.persona.common.constants.Constant.COMMA;
+import static com.itiger.persona.common.constants.Constant.EMPTY;
+import static com.itiger.persona.common.constants.Constant.LINE_SEPARATOR;
+import static com.itiger.persona.common.constants.Constant.SINGLE_QUOTE;
+import static com.itiger.persona.common.constants.Constant.SPACE;
 import static com.itiger.persona.constants.SqlConstant.FROM;
-import static com.itiger.persona.constants.SqlConstant.LINE_SEPARATOR;
 import static com.itiger.persona.constants.SqlConstant.SELECT;
-import static com.itiger.persona.constants.SqlConstant.SINGLE_QUOTE;
-import static com.itiger.persona.constants.SqlConstant.SPACE;
 import static com.itiger.persona.constants.SqlConstant.WHERE;
 import static com.itiger.persona.constants.UserGroupConst.SOURCE_TABLE_IDENTIFIER;
 import static java.util.stream.Collectors.groupingBy;

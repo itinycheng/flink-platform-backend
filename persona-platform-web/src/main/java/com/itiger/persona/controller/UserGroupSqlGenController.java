@@ -22,6 +22,7 @@ public class UserGroupSqlGenController {
 
     @PostMapping(value = "insertSelect")
     public ResultInfo insertSelect(@RequestBody SqlSelect sqlSelect) {
+        // set default table for query from
         sqlSelect.setFrom(UserGroupConst.SOURCE_TABLE_IDENTIFIER);
         String sqlString = sqlGenService.generateInsertSelect(sqlSelect);
         return ResultInfo.success(sqlString);
