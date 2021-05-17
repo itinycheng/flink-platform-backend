@@ -1,8 +1,9 @@
-package com.itiger.persona.entity.request;
+package com.itiger.persona.entity.response;
 
-import com.itiger.persona.entity.JobInfo;
-import com.itiger.persona.enums.DeployMode;
+import com.itiger.persona.entity.Signature;
+import com.itiger.persona.entity.SignatureValue;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
@@ -12,21 +13,18 @@ import java.util.List;
 
 /**
  * @Author Shik
- * @Title: TJobInfoRequest
+ * @Title: SignatureResponse
  * @ProjectName: persona-platform-backend
  * @Description: TODO
- * @Date: 2021/4/14 上午10:50
+ * @Date: 2021/5/14 下午4:09
  */
 @Data
 @EqualsAndHashCode(callSuper = false)
 @Accessors(chain = true)
 @AllArgsConstructor
 @NoArgsConstructor
-public class JobInfoRequest extends JobInfo {
+public class SignatureResponse extends Signature {
 
-    private String sqlMain;
+    private List<SignatureValue> values;
 
-    private DeployMode deployMode;
-
-    private List<String> catalogIds;
 }

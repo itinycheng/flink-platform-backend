@@ -100,6 +100,8 @@ public class JobInfoController {
         if (StringUtils.isNotBlank(tJobInfoRequest.getSqlMain())) {
             tJobInfoRequest.setSubject(tJobInfoRequest.getSqlMain());
         }
+
+        tJobInfoRequest.setCatalogs(Objects.nonNull(tJobInfoRequest.getCatalogIds()) ? tJobInfoRequest.getCatalogIds().toString() : "");
     }
 
 }
