@@ -1,16 +1,16 @@
 package com.itiger.persona.parser;
 
-import com.itiger.persona.constants.SqlConstant;
+import com.itiger.persona.common.constants.Constant;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
-import static com.itiger.persona.constants.SqlConstant.AS;
-import static com.itiger.persona.constants.SqlConstant.DOT;
-import static com.itiger.persona.constants.SqlConstant.EMPTY;
-import static com.itiger.persona.constants.SqlConstant.SPACE;
-import static com.itiger.persona.constants.SqlConstant.UNDERSCORE;
+import static com.itiger.persona.common.constants.Constant.AS;
+import static com.itiger.persona.common.constants.Constant.DOT;
+import static com.itiger.persona.common.constants.Constant.EMPTY;
+import static com.itiger.persona.common.constants.Constant.SPACE;
+import static com.itiger.persona.common.constants.Constant.UNDERSCORE;
 
 /**
  * @author tiny.wang
@@ -30,12 +30,12 @@ public class SqlIdentifier {
     }
 
     public String toSimpleColumnStatement() {
-        String backTick = SqlConstant.BACK_TICK;
+        String backTick = Constant.BACK_TICK;
         return String.join(EMPTY, backTick, name, backTick);
     }
 
     public String toColumnStatement() {
-        String backTick = SqlConstant.BACK_TICK;
+        String backTick = Constant.BACK_TICK;
         String quotedName = String.join(EMPTY, backTick, name, backTick);
         return String.join(DOT, qualifier, quotedName);
     }
