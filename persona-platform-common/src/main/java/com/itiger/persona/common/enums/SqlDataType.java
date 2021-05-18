@@ -14,6 +14,7 @@ public enum SqlDataType {
     NUMBER(EMPTY),
     STRING(SINGLE_QUOTE),
     LIST(EMPTY),
+    LIST_MAP(EMPTY),
     MAP(EMPTY);
 
     public final String quote;

@@ -43,9 +43,9 @@ public class SqlParserTest {
 
         SimpleSqlWhere subCondition2 = new SimpleSqlWhere();
         subCondition2.setType("simple");
-        subCondition2.setOperator(SqlExpression.LE);
+        subCondition2.setOperator(SqlExpression.CONTAINS);
         subCondition2.setColumn(new SqlIdentifier("ib", "license"));
-        subCondition2.setOperands(new String[]{"TBNZ"});
+        subCondition2.setOperands(new String[]{"TBNZ&TBSG"});
 
         CompositeSqlWhere condition2 = new CompositeSqlWhere();
         condition2.setType("composite");
