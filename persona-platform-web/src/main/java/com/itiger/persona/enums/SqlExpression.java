@@ -3,6 +3,8 @@ package com.itiger.persona.enums;
 import java.util.Arrays;
 import java.util.List;
 
+import static com.itiger.persona.constants.UserGroupConst.PLACEHOLDER_UDF_NAME;
+
 /**
  * @author tiny.wang
  */
@@ -27,7 +29,13 @@ public enum SqlExpression {
     EXISTS(" EXISTS (%s) "),
     BETWEEN(" %s BETWEEN %s AND %s "),
     ASC(" ORDER BY %s ASC "),
-    DESC(" ORDER BY %s DESC ");
+    DESC(" ORDER BY %s DESC "),
+
+    /**
+     * udf expression
+     * only for data type of list
+     */
+    CONTAINS(" " + PLACEHOLDER_UDF_NAME + "(%s, %s) is ture ");
 
     public static final List<SqlExpression> SUPPORT_MULTI_INPUT_PARAMETER = Arrays.asList(IN, NOT_IN);
 

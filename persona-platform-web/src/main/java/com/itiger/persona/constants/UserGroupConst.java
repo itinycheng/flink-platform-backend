@@ -17,4 +17,6 @@ public class UserGroupConst {
 
     public static final String COMMON = "common";
 
+    public static final String PLACEHOLDER_UDF_NAME = "$udfName";
+
 }
