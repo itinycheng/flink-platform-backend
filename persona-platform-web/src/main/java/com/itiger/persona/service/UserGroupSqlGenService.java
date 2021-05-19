@@ -36,6 +36,7 @@ import static com.itiger.persona.common.constants.Constant.LINE_SEPARATOR;
 import static com.itiger.persona.common.constants.Constant.SINGLE_QUOTE;
 import static com.itiger.persona.common.constants.Constant.SLASH;
 import static com.itiger.persona.common.constants.Constant.SPACE;
+import static com.itiger.persona.common.constants.Constant.STAR;
 import static com.itiger.persona.constants.SqlConstant.FROM;
 import static com.itiger.persona.constants.SqlConstant.SELECT;
 import static com.itiger.persona.constants.SqlConstant.WHERE;
@@ -121,17 +122,21 @@ public class UserGroupSqlGenService {
         if (subQueryExists) {
             return generateSubQueryStatement(identifiers).toTableString();
         } else {
-            return sqlSelect.getFrom().toTableString();
+            String accountType = identifiers.stream().map(SqlIdentifier::getQualifier).findFirst()
+                    .orElseThrow(() -> new RuntimeException("no sql identifier found"));
+            String whichPartition = generatePartitionSegment(accountType);
+            return String.join(SPACE, BRACKET_LEFT, SELECT, STAR,
+                    FROM, sqlSelect.getFrom().getName(),
+                    WHERE, whichPartition, BRACKET_RIGHT, sqlSelect.getFrom().getQualifier());
         }
     }
 
     public String generateWhereStatement(SqlSelect sqlSelect, boolean subQueryExists) {
         String where = generateWhereSegment(sqlSelect.getWhere(), subQueryExists);
-        if (StringUtils.isNotBlank(where)) {
-            where = where.trim();
-            where = String.join(SPACE, WHERE, where.substring(1, where.length() - 1));
+        if (where.startsWith(BRACKET_LEFT)) {
+            where = where.substring(1, where.length() - 1);
         }
-        return where;
+        return String.join(SPACE, WHERE, where);
     }
 
     private Set<SqlIdentifier> getAllSqlIdentifiers(SqlSelect sqlSelect) {
