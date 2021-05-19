@@ -7,7 +7,7 @@ import com.itiger.persona.common.enums.ResponseStatus;
 import com.itiger.persona.common.exception.DefinitionException;
 import com.itiger.persona.service.IJobInfoService;
 import com.itiger.persona.mapper.JobInfoMapper;
-import com.itiger.persona.quartz.QuartzService;
+import com.itiger.persona.service.JobInfoQuartzService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,7 +26,7 @@ import javax.annotation.Resource;
 public class JobInfoServiceImpl extends ServiceImpl<JobInfoMapper, JobInfo> implements IJobInfoService {
 
     @Resource
-    public QuartzService quartzService;
+    public JobInfoQuartzService jobInfoQuartzService;
 
     @Transactional(rollbackFor = RuntimeException.class)
     @Override
