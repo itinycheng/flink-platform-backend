@@ -34,11 +34,16 @@ import static com.itiger.persona.common.constants.Constant.COMMA;
 import static com.itiger.persona.common.constants.Constant.EMPTY;
 import static com.itiger.persona.common.constants.Constant.LINE_SEPARATOR;
 import static com.itiger.persona.common.constants.Constant.SINGLE_QUOTE;
+import static com.itiger.persona.common.constants.Constant.SLASH;
 import static com.itiger.persona.common.constants.Constant.SPACE;
 import static com.itiger.persona.constants.SqlConstant.FROM;
 import static com.itiger.persona.constants.SqlConstant.SELECT;
 import static com.itiger.persona.constants.SqlConstant.WHERE;
+import static com.itiger.persona.constants.UserGroupConst.DT_PARTITION_PREFIX;
 import static com.itiger.persona.constants.UserGroupConst.PLACEHOLDER_UDF_NAME;
+import static com.itiger.persona.constants.UserGroupConst.QUERY_SOURCE_TABLE_PARTITIONS;
+import static com.itiger.persona.constants.UserGroupConst.SOURCE_TABLE_ACCOUNT_TYPE_PARTITION;
+import static com.itiger.persona.constants.UserGroupConst.SOURCE_TABLE_DT_PARTITION;
 import static com.itiger.persona.constants.UserGroupConst.SOURCE_TABLE_IDENTIFIER;
 import static com.itiger.persona.constants.UserGroupConst.UUID;
 import static com.itiger.persona.enums.SqlUdf.LIST_CONTAINS;
@@ -68,6 +73,9 @@ public class UserGroupSqlGenService {
     @Resource
     private ISignatureService iSignatureService;
 
+    @Resource
+    private HiveService hiveService;
+
     public String generateInsertSelect(SqlSelect sqlSelect) {
         List<String> sqls = new ArrayList<>();
         final Set<SqlIdentifier> allIdentifiers = getAllSqlIdentifiers(sqlSelect);
@@ -78,7 +86,6 @@ public class UserGroupSqlGenService {
         String tableStatement = generateTableStatement(sqlSelect, allIdentifiers, subQueryExists);
         // where
         String whereStatement = generateWhereStatement(sqlSelect, subQueryExists);
-
         // add required udfs
         Optional.ofNullable(UDFS.get()).ifPresent(udfs -> {
             sqls.addAll(udfs);
@@ -86,7 +93,6 @@ public class UserGroupSqlGenService {
         });
         // add full string of insert overwrite statement to sql list
         sqls.add(String.join(SPACE, INSERT_OVERWRITE_STATEMENT, selectStatement, tableStatement, whereStatement));
-
         return String.join(LINE_SEPARATOR, sqls);
     }
 
@@ -146,7 +152,8 @@ public class UserGroupSqlGenService {
         String selectStatement = identifiers.stream().map(SqlIdentifier::toColumnAsStatement).collect(joining(COMMA));
         String tableStatement = grouped.entrySet().stream().map(entry -> String.join(SPACE, BRACKET_LEFT, SELECT,
                 entry.getValue().stream().map(SqlIdentifier::toSimpleColumnStatement).collect(joining(COMMA)),
-                FROM, SOURCE_TABLE_IDENTIFIER.getName(), BRACKET_RIGHT, AS, entry.getKey()))
+                FROM, SOURCE_TABLE_IDENTIFIER.getName(), WHERE, generatePartitionSegment(entry.getKey())
+                , BRACKET_RIGHT, AS, entry.getKey()))
                 .collect(joining(COMMA));
         List<String> tableAliasList = new ArrayList<>(grouped.keySet());
         String where = IntStream.range(0, tableAliasList.size() - 1)
@@ -155,6 +162,23 @@ public class UserGroupSqlGenService {
                 .collect(joining(SqlExpression.AND.name()));
         String subQueryStatement = String.join(SPACE, BRACKET_LEFT, SELECT, selectStatement, FROM, tableStatement, WHERE, where, BRACKET_RIGHT);
         return new SqlIdentifier(SOURCE_TABLE_IDENTIFIER.getQualifier(), subQueryStatement);
+    }
+
+    private String generatePartitionSegment(String accountType) {
+        List<String> partitions = hiveService.getList(QUERY_SOURCE_TABLE_PARTITIONS);
+        long maxDt = partitions.stream()
+                .map(partition -> Arrays.stream(partition.split(SLASH))
+                        .filter(p -> p.startsWith(DT_PARTITION_PREFIX))
+                        .map(pa -> pa.replace(DT_PARTITION_PREFIX, EMPTY))
+                        .map(Long::parseLong)
+                        .findFirst().orElseThrow(() -> new RuntimeException("can not parse partition: dt")))
+                .mapToLong(ts -> ts)
+                .max()
+                .orElseThrow(() -> new RuntimeException("maximum dt not found"));
+        String dtStatement = String.format(SqlExpression.EQ.expression, SOURCE_TABLE_DT_PARTITION, maxDt);
+        String accountTypeStatement = String.format(SqlExpression.EQ.expression, SOURCE_TABLE_ACCOUNT_TYPE_PARTITION,
+                String.join(EMPTY, SqlDataType.STRING.quote, accountType.toUpperCase(), SqlDataType.STRING.quote));
+        return String.format(SqlExpression.AND.expression, dtStatement, accountTypeStatement);
     }
 
     private String generateWhereSegment(SqlWhere where, boolean subQueryExists) {
@@ -204,6 +228,7 @@ public class UserGroupSqlGenService {
         Signature signature = iSignatureService.getOne(new QueryWrapper<Signature>().lambda()
                 .eq(Signature::getName, columnName));
         SqlDataType sqlDataType = signature.getDataType();
+        //TODO check the list of sql expressions supported by sql data type
         switch (sqlDataType) {
             case NUMBER:
             case STRING:
