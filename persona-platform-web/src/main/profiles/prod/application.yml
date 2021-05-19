@@ -37,6 +37,11 @@ spring:
           username: signature
           password: JDdDzUqHQKk=
           driver-class-name: com.mysql.jdbc.Driver
+        hive:
+          url: jdbc:hive2://10.8.12.11:10000/signature
+          username: signature
+          password: JDdDzUqHQKk=
+          driver-class-name: org.apache.hive.jdbc.HiveDriver
   quartz:
     #数据库方式
     job-store-type: jdbc

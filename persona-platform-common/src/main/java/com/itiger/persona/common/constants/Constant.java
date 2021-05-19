@@ -36,4 +36,8 @@ public class Constant {
     public final static String LINE_SEPARATOR = "\n";
 
     public final static String EQUAL = "=";
+
+    public final static String SLASH = "/";
+
 }
+
