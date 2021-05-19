@@ -2,7 +2,6 @@ package com.itiger.persona.service;
 
 import com.baomidou.dynamic.datasource.annotation.DS;
 import com.itiger.persona.entity.JobInfo;
-import com.itiger.persona.quartz.QuartzService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,7 +17,7 @@ import javax.annotation.Resource;
 public class JobTaskService {
 
     @Resource
-    public QuartzService quartzService;
+    public JobInfoQuartzService jobInfoQuartzService;
 
     @Resource
     public IJobInfoService jobInfoService;
@@ -29,6 +28,6 @@ public class JobTaskService {
         if (!saved) {
             throw new RuntimeException("cannot persist job info");
         }
-        return quartzService.addOrFailQuartzJob(jobInfo);
+        return jobInfoQuartzService.addJobToQuartz(jobInfo);
     }
 }
