@@ -207,13 +207,11 @@ public class UserGroupSqlGenService {
 
     private String generateSimpleWhereSegment(SimpleSqlWhere simpleWhere, boolean subQueryExists) {
         SqlExpression operatorExpr = simpleWhere.getOperator();
-        // get column name
-        SqlIdentifier column = simpleWhere.getColumn();
-        String favorableColumnName = subQueryExists ? column.newColumnName() : column.toSimpleColumnStatement();
         // fill operands to object array
         Object[] formatted = new Object[simpleWhere.getOperands().length + 1];
-        formatted[0] = favorableColumnName;
-        Pair<String, Object[]> udfAndOperands = decorateWhereOperands(simpleWhere);
+        Signature signature = getSignature(simpleWhere.getColumn().getName());
+        formatted[0] = decorateWhereColumn(simpleWhere.getColumn(), signature, subQueryExists);
+        Pair<String, Object[]> udfAndOperands = decorateWhereOperands(simpleWhere, signature);
         // replace variable in sql expression
         String udfName = udfAndOperands.getLeft();
         String expression = operatorExpr.expression;
@@ -226,17 +224,31 @@ public class UserGroupSqlGenService {
         return String.format(expression, formatted);
     }
 
-    private Pair<String, Object[]> decorateWhereOperands(SimpleSqlWhere simpleWhere) {
+    private String decorateWhereColumn(SqlIdentifier column, Signature signature, boolean subQueryExists) {
+        switch (signature.getDataType()) {
+            case MAP:
+                String[] columnAndKey = column.getName().split("\\.");
+                column = new SqlIdentifier(column.getQualifier(), columnAndKey[0]);
+                String newColumnName = subQueryExists ? column.newColumnName() : column.toSimpleColumnStatement();
+                return String.join(EMPTY, newColumnName, "['", columnAndKey[1], "']");
+            case STRING:
+            case NUMBER:
+            case LIST:
+            case LIST_MAP:
+            default:
+                return subQueryExists ? column.newColumnName() : column.toSimpleColumnStatement();
+        }
+    }
+
+    private Pair<String, Object[]> decorateWhereOperands(SimpleSqlWhere simpleWhere, Signature signature) {
         String[] operands = simpleWhere.getOperands();
         SqlExpression operatorExpr = simpleWhere.getOperator();
-        String columnName = simpleWhere.getColumn().getName();
-        Signature signature = iSignatureService.getOne(new QueryWrapper<Signature>().lambda()
-                .eq(Signature::getName, columnName));
         SqlDataType sqlDataType = signature.getDataType();
         //TODO check the list of sql expressions supported by sql data type
         switch (sqlDataType) {
             case NUMBER:
             case STRING:
+            case MAP:
                 Object[] simpleTypeOperands = Arrays.stream(operands)
                         .map(operand -> decorateWhereOperand(operatorExpr, operand, sqlDataType))
                         .toArray();
@@ -250,7 +262,6 @@ public class UserGroupSqlGenService {
                         .map(operand -> decorateWhereOperand(operatorExpr, operand, SqlDataType.STRING))
                         .toArray();
                 return Pair.of(LIST_CONTAINS.name, listTypeOperands);
-            case MAP:
             case LIST_MAP:
             default:
                 throw new RuntimeException(String.format("Unsupported sql data type %s", sqlDataType.name()));
@@ -265,6 +276,11 @@ public class UserGroupSqlGenService {
         } else {
             return String.join(EMPTY, sqlDataType.quote, operand, sqlDataType.quote);
         }
+    }
+
+    private Signature getSignature(String columnName) {
+        return iSignatureService.getOne(new QueryWrapper<Signature>().lambda()
+                .eq(Signature::getName, columnName));
     }
 
     private void cacheUdf(String udfStatement) {

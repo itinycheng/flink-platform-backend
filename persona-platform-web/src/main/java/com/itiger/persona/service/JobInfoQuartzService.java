@@ -76,7 +76,7 @@ public class JobInfoQuartzService {
 
     private boolean isTriggerExists(JobInfo jobInfo) throws SchedulerException {
         TriggerKey triggerKey = TriggerKey.triggerKey(jobInfo.getCode(), Key.DEFAULT_GROUP);
-        CronTrigger trigger = (CronTrigger) scheduler.getTrigger(triggerKey);
+        Trigger trigger = scheduler.getTrigger(triggerKey);
         return trigger != null;
     }
 

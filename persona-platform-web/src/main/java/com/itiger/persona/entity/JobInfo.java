@@ -79,6 +79,11 @@ public class JobInfo implements Serializable {
     private String subject;
 
     /**
+     * use json to explain sql logic in subject column
+     */
+    private String sqlPlan;
+
+    /**
      * main args
      */
     private String mainArgs;
