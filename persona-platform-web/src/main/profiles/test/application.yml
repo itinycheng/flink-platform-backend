@@ -9,11 +9,6 @@ server:
 spring:
   profiles:
     active: test
-  # caffeine cache
-  cache:
-    cache-names: caffeine
-    caffeine:
-      spec: maximumSize=500,expireAfterWrite=30s
   # redis
   redis:
     password: ZXC123asd

@@ -22,7 +22,7 @@ public class HiveService {
     @Resource
     private JdbcTemplate jdbcTemplate;
 
-    @Cacheable("caffeine")
+    @Cacheable("hiveRtn")
     public List<String> getList(String sql) {
         return jdbcTemplate.queryForList(sql, String.class);
     }
