@@ -9,6 +9,11 @@ server:
 spring:
   profiles:
     active: prod
+  # caffeine cache
+  cache:
+    cache-names: caffeine
+    caffeine:
+      spec: maximumSize=500,expireAfterWrite=30s
   # redis
   redis:
     password: p2tUB7z2TOX+n0e8

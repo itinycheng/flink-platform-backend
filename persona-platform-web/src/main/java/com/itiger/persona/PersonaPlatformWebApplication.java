@@ -3,6 +3,7 @@ package com.itiger.persona;
 import com.alibaba.druid.spring.boot.autoconfigure.DruidDataSourceAutoConfigure;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 
 /**
@@ -12,6 +13,7 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
  * @Description: TODO
  * @Date: 2021/4/9 下午2:31
  */
+@EnableCaching
 @EnableTransactionManagement
 @SpringBootApplication(exclude = DruidDataSourceAutoConfigure.class)
 public class PersonaPlatformWebApplication {
