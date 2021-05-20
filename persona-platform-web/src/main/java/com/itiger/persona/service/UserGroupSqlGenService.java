@@ -67,7 +67,7 @@ public class UserGroupSqlGenService {
     /**
      * insert overwrite table
      */
-    private static final String INSERT_OVERWRITE_STATEMENT = String.format(INSERT_OVERWRITE_EXPR, SqlVar.JOB_CODE.variable, SqlVar.CURRENT_TIMESTAMP.variable);
+    private static final String INSERT_OVERWRITE_STATEMENT = String.format(INSERT_OVERWRITE_EXPR, SqlVar.JOB_CODE.variable, SqlVar.CURRENT_TIME_MINUS.variable);
 
     private static final ThreadLocal<List<String>> UDFS = new ThreadLocal<>();
 

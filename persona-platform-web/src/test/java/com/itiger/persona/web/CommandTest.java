@@ -30,5 +30,6 @@ public class CommandTest {
     @Test
     public void testLongToString() {
         System.out.println(SqlVar.CURRENT_TIMESTAMP.valueProvider.apply(null).toString());
+        System.out.println(SqlVar.CURRENT_TIME_MINUS.valueProvider.apply(null).toString());
     }
 }
