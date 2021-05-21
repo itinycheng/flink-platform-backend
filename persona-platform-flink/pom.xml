@@ -28,11 +28,6 @@
         </dependency>
         <dependency>
             <groupId>com.itiger.persona</groupId>
-            <artifactId>persona-platform-common</artifactId>
-            <version>${persona-platform.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.itiger.persona</groupId>
             <artifactId>persona-platform-flink-udf</artifactId>
             <version>${persona-platform.version}</version>
         </dependency>
