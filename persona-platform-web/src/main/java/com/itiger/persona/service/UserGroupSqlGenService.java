@@ -60,7 +60,7 @@ public class UserGroupSqlGenService {
 
     private static final String INSERT_OVERWRITE_EXPR = "INSERT OVERWRITE `t_hive_user_group_result` PARTITION(id = '%s', ts = %s) \n";
 
-    private static final String INSERT_SELECT_ONE_COLUMN = "SELECT %s AS result FROM \n";
+    private static final String INSERT_SELECT_ONE_COLUMN = "SELECT %s AS result_value FROM \n";
 
     private static final String INSERT_SELECT_MULTI_COLUMNS = "SELECT " + PLACEHOLDER_UDF_NAME + "(MAP[%s]) AS result_value FROM \n";
 
@@ -132,7 +132,7 @@ public class UserGroupSqlGenService {
     }
 
     public String generateWhereStatement(SqlSelect sqlSelect, boolean subQueryExists) {
-        String where = generateWhereSegment(sqlSelect.getWhere(), subQueryExists);
+        String where = generateWhereSegment(sqlSelect.getWhere(), subQueryExists).trim();
         if (where.startsWith(BRACKET_LEFT)) {
             where = where.substring(1, where.length() - 1);
         }
@@ -201,7 +201,7 @@ public class UserGroupSqlGenService {
                 conditionList.add(generateWhereSegment(condition, subQueryExists));
             }
             String joined = String.join(sqlExpr.name(), conditionList);
-            return String.join(EMPTY, SPACE, BRACKET_LEFT, joined, BRACKET_RIGHT, SPACE);
+            return String.join(EMPTY, BRACKET_LEFT, joined, BRACKET_RIGHT);
         } else if (where instanceof SimpleSqlWhere) {
             return generateSimpleWhereSegment((SimpleSqlWhere) where, subQueryExists);
         } else {
