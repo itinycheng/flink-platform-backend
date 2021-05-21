@@ -154,6 +154,10 @@ public class UserGroupSqlGenService {
 
     public SqlIdentifier generateSubQueryStatement(Set<SqlIdentifier> identifiers) {
         Map<String, List<SqlIdentifier>> grouped = identifiers.stream().collect(groupingBy(SqlIdentifier::getQualifier));
+        // add uuid to each subQuery's select list
+        grouped.entrySet().stream()
+                .filter(entry -> entry.getValue().stream().noneMatch(identifier -> UUID.equalsIgnoreCase(identifier.getName())))
+                .forEach(entry -> entry.getValue().add(new SqlIdentifier(entry.getKey(), UUID)));
         String selectStatement = identifiers.stream().map(SqlIdentifier::toColumnAsStatement).collect(joining(COMMA));
         String tableStatement = grouped.entrySet().stream().map(entry -> String.join(SPACE, BRACKET_LEFT, SELECT,
                 entry.getValue().stream().map(SqlIdentifier::toSimpleColumnStatement).collect(joining(COMMA)),
