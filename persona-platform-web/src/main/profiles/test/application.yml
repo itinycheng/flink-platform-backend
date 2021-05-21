@@ -41,33 +41,33 @@ spring:
           username: signature
           password: JDdDzUqHQKk=
           driver-class-name: org.apache.hive.jdbc.HiveDriver
-#  quartz:
-#    overwrite-existing-jobs: true
-#    startup-delay: 5s
-#    #数据库方式
-#    job-store-type: jdbc
-#    #初始化表结构
-#    jdbc:
-#      initialize-schema: never
-#    #相关属性配置
-#    properties:
-#      org:
-#        quartz:
-#          scheduler:
-#            instanceName: quartzScheduler
-#            instanceId: AUTO
-#          jobStore:
-#            class: org.quartz.impl.jdbcjobstore.JobStoreTX
-#            driverDelegateClass: org.quartz.impl.jdbcjobstore.StdJDBCDelegate
-#            isClustered: true
-#            clusterCheckinInterval: 10000
-#            useProperties: false
-#            misfireThreshold: 5000
-#          threadPool:
-#            class: org.quartz.simpl.SimpleThreadPool
-#            threadCount: 20
-#            threadPriority: 5
-#            threadsInheritContextClassLoaderOfInitializingThread: true
+  quartz:
+    overwrite-existing-jobs: true
+    startup-delay: 5s
+    #数据库方式
+    job-store-type: jdbc
+    #初始化表结构
+    jdbc:
+      initialize-schema: never
+    #相关属性配置
+    properties:
+      org:
+        quartz:
+          scheduler:
+            instanceName: quartzScheduler
+            instanceId: AUTO
+          jobStore:
+            class: org.quartz.impl.jdbcjobstore.JobStoreTX
+            driverDelegateClass: org.quartz.impl.jdbcjobstore.StdJDBCDelegate
+            isClustered: true
+            clusterCheckinInterval: 10000
+            useProperties: false
+            misfireThreshold: 5000
+          threadPool:
+            class: org.quartz.simpl.SimpleThreadPool
+            threadCount: 20
+            threadPriority: 5
+            threadsInheritContextClassLoaderOfInitializingThread: true
 
 
 flink:

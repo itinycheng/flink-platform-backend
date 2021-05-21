@@ -2,6 +2,7 @@ package com.itiger.persona.service.impl;
 
 import com.baomidou.dynamic.datasource.annotation.DS;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.itiger.persona.common.enums.JobStatusEnum;
 import com.itiger.persona.entity.JobInfo;
 import com.itiger.persona.common.enums.ResponseStatus;
 import com.itiger.persona.common.exception.DefinitionException;
@@ -14,6 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
+import java.time.LocalDateTime;
 
 /**
  * <p>
@@ -37,8 +39,8 @@ public class JobInfoServiceImpl extends ServiceImpl<JobInfoMapper, JobInfo> impl
         if (!save) {
             throw new DefinitionException(ResponseStatus.SERVICE_ERROR);
         }
-//        return true;
-        return jobInfoQuartzService.addJobToQuartz(jobInfo);
+        return true;
+//        return jobInfoQuartzService.addJobToQuartz(jobInfo);
     }
 
     @Transactional(rollbackFor = RuntimeException.class)
@@ -50,5 +52,30 @@ public class JobInfoServiceImpl extends ServiceImpl<JobInfoMapper, JobInfo> impl
         }
         // TODO 修改job detail
         return true;
+    }
+
+    @Transactional(rollbackFor = RuntimeException.class)
+    @Override
+    public boolean stopJob(JobInfo jobInfo) {
+        jobInfo.setStatus(JobStatusEnum.STOPPED.getCode()).setUpdateTime(LocalDateTime.now());
+        boolean update = super.updateById(jobInfo);
+        if (!update) {
+            throw new DefinitionException(ResponseStatus.SERVICE_ERROR);
+        }
+        // 移除job quartz
+        this.jobInfoQuartzService.removeJob(jobInfo.getCode());
+        return true;
+    }
+
+    @Transactional(rollbackFor = RuntimeException.class)
+    @Override
+    public boolean openJob(JobInfo jobInfo) {
+        jobInfo.setStatus(JobStatusEnum.SCHEDULED.getCode()).setUpdateTime(LocalDateTime.now());
+        boolean update = super.updateById(jobInfo);
+        if (!update) {
+            throw new DefinitionException(ResponseStatus.SERVICE_ERROR);
+        }
+        jobInfoQuartzService.removeJob(jobInfo.getCode());
+        return jobInfoQuartzService.addJobToQuartz(jobInfo);
     }
 }
