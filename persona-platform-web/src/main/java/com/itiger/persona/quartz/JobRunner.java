@@ -45,6 +45,13 @@ public class JobRunner implements Job {
 
     private final List<JobCommandBuilder> jobCommandBuilders = SpringContext.getBeansOfType(JobCommandBuilder.class);
 
+//    @Override
+//    public void execute(JobExecutionContext context) {
+//        log.info("job run end!!!!");
+//
+//        return ;
+//    }
+
     @Override
     public void execute(JobExecutionContext context) {
         JobDetail detail = context.getJobDetail();

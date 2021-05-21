@@ -10,6 +10,7 @@ import com.itiger.persona.common.enums.JobStatusEnum;
 import com.itiger.persona.common.enums.ResponseStatus;
 import com.itiger.persona.common.exception.DefinitionException;
 import com.itiger.persona.service.IJobInfoService;
+import com.itiger.persona.service.JobInfoQuartzService;
 import com.itiger.persona.service.RedisService;
 import com.itiger.persona.common.util.UuidGenerator;
 import org.apache.commons.lang3.StringUtils;
@@ -22,6 +23,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import java.util.Objects;
 
@@ -38,6 +40,9 @@ public class JobInfoController {
 
     @Autowired
     private IJobInfoService iJobInfoService;
+
+    @Resource
+    public JobInfoQuartzService jobInfoQuartzService;
 
     @Autowired
     private RedisService redisService;
@@ -60,6 +65,35 @@ public class JobInfoController {
     public ResultInfo getOne(@PathVariable String id, HttpServletRequest request) {
         JobInfo jobInfo = this.iJobInfoService.getById(id);
         return ResultInfo.success(jobInfo);
+    }
+
+    @PostMapping(value = "open/{id}")
+    public ResultInfo openOne(@PathVariable String id, String cronExpr, HttpServletRequest request) {
+        JobInfo jobInfo = this.iJobInfoService.getById(id);
+
+        boolean result;
+        if(Objects.nonNull(jobInfo)) {
+            jobInfo.setCronExpr(cronExpr);
+            result = this.iJobInfoService.openJob(jobInfo);
+        } else {
+            throw new DefinitionException(ResponseStatus.ERROR_PARAMETER);
+        }
+
+        return ResultInfo.success(result);
+    }
+
+    @PostMapping(value = "stop/{id}")
+    public ResultInfo stopOne(@PathVariable String id, HttpServletRequest request) {
+        JobInfo jobInfo = this.iJobInfoService.getById(id);
+
+        boolean result;
+        if(Objects.nonNull(jobInfo)) {
+            result = iJobInfoService.stopJob(jobInfo);
+        } else {
+            throw new DefinitionException(ResponseStatus.ERROR_PARAMETER);
+        }
+
+        return ResultInfo.success(result);
     }
 
     @PostMapping
@@ -94,7 +128,7 @@ public class JobInfoController {
         }
 
         if (Objects.isNull(tJobInfoRequest.getStatus())) {
-            tJobInfoRequest.setStatus(JobStatusEnum.CLOSE.getCode());
+            tJobInfoRequest.setStatus(JobStatusEnum.NEW.getCode());
         }
 
         if (StringUtils.isNotBlank(tJobInfoRequest.getSqlMain())) {
