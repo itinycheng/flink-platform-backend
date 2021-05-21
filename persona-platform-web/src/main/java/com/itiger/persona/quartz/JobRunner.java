@@ -66,7 +66,7 @@ public class JobRunner implements Job {
                     .eq(JobInfo::getCode, code).in(JobInfo::getStatus,
                             JobStatusEnum.SCHEDULED.getCode(),
                             JobStatusEnum.READY.getCode()));
-            if (jobInfo == null || jobInfo.getStatus() != 1) {
+            if (jobInfo == null) {
                 log.warn("the job: {} is no longer exists or not in ready/scheduled status, {}", code, jobInfo);
                 return;
             }
