@@ -37,8 +37,8 @@ public class JobInfoServiceImpl extends ServiceImpl<JobInfoMapper, JobInfo> impl
         if (!save) {
             throw new DefinitionException(ResponseStatus.SERVICE_ERROR);
         }
-//        return true;
-        return jobInfoQuartzService.addJobToQuartz(jobInfo);
+        return true;
+//        return jobInfoQuartzService.addJobToQuartz(jobInfo);
     }
 
     @Transactional(rollbackFor = RuntimeException.class)
@@ -50,5 +50,10 @@ public class JobInfoServiceImpl extends ServiceImpl<JobInfoMapper, JobInfo> impl
         }
         // TODO 修改job detail
         return true;
+    }
+
+    @Override
+    public boolean stopJob(JobInfo jobInfo) {
+        return false;
     }
 }

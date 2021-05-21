@@ -9,8 +9,11 @@ package com.itiger.persona.common.enums;
  */
 public enum JobStatusEnum {
 
-    OPEN(1, "open"),
-    CLOSE(0, "close"),
+    NEW(1, "new"),
+    READY(2, "ready"),
+    SCHEDULED(3, "scheduled"),
+    STOPPED(4, "stopped"),
+    FAILED(5, "failed"),
     DELETE(-1, "delete"),
     ;
 
