@@ -1,6 +1,7 @@
 package com.itiger.persona.command;
 
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -38,7 +39,10 @@ public class CommandExecutor {
             String errMsg = errReader.lines().collect(joining(LINE_SEPARATOR));
             String appId = extractApplicationId(stdMsg);
             String jobId = extractJobId(stdMsg);
-            String message = String.join(LINE_SEPARATOR, stdMsg, errMsg);
+            String message = StringUtils.EMPTY;
+            if (StringUtils.isEmpty(appId) || StringUtils.isEmpty(jobId)) {
+                message = String.join(LINE_SEPARATOR, stdMsg, errMsg);
+            }
             return new JobCallback(jobId, appId, message);
         } finally {
             process.destroy();
