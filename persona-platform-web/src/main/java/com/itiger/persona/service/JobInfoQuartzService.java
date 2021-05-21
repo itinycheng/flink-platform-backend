@@ -56,6 +56,29 @@ public class JobInfoQuartzService {
         return added;
     }
 
+    /**
+     * 移除一个任务
+     *
+     * @param jobCode
+     *            任务名
+     */
+    public void removeJob(String jobCode) {
+        try {
+            // 通过触发器名和组名获取TriggerKey
+            TriggerKey triggerKey = TriggerKey.triggerKey(jobCode, Key.DEFAULT_GROUP);
+            // 通过任务名和组名获取JobKey
+            JobKey jobKey = JobKey.jobKey(jobCode, Key.DEFAULT_GROUP);
+            // 停止触发器
+            scheduler.pauseTrigger(triggerKey);
+            // 移除触发器
+            scheduler.unscheduleJob(triggerKey);
+            // 删除任务
+            scheduler.deleteJob(jobKey);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     public synchronized boolean runOnce(JobInfo jobInfo) {
         try {
             checkQuartzSchedulerStarted();

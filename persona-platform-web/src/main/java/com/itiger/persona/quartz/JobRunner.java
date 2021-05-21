@@ -47,6 +47,11 @@ public class JobRunner implements Job {
 
     @Override
     public void execute(JobExecutionContext context) {
+        log.info("job run end!!!!");
+
+        return ;
+    }
+    /*public void execute(JobExecutionContext context) {
         JobDetail detail = context.getJobDetail();
         JobKey key = detail.getKey();
         String code = key.getName();
@@ -113,5 +118,5 @@ public class JobRunner implements Job {
         // print job command info
         String command = jobCommand != null ? jobCommand.toCommandString() : null;
         log.info(" job key: {}, time: {}, command: {}", key, System.currentTimeMillis(), command);
-    }
+    }*/
 }

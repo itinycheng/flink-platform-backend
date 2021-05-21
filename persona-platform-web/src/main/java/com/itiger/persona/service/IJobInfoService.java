@@ -16,4 +16,6 @@ public interface IJobInfoService extends IService<JobInfo> {
     boolean save(JobInfo jobInfo);
 
     boolean updateById(JobInfo jobInfo);
+
+    boolean stopJob(JobInfo jobInfo);
 }
