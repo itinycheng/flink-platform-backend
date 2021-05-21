@@ -8,6 +8,8 @@ import com.itiger.persona.common.exception.DefinitionException;
 import com.itiger.persona.service.IJobInfoService;
 import com.itiger.persona.mapper.JobInfoMapper;
 import com.itiger.persona.service.JobInfoQuartzService;
+import org.quartz.impl.QuartzServer;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -35,17 +37,18 @@ public class JobInfoServiceImpl extends ServiceImpl<JobInfoMapper, JobInfo> impl
         if (!save) {
             throw new DefinitionException(ResponseStatus.SERVICE_ERROR);
         }
-        return true;
-//        return quartzService.addOrFailQuartzJob(jobInfo);
+//        return true;
+        return jobInfoQuartzService.addJobToQuartz(jobInfo);
     }
 
     @Transactional(rollbackFor = RuntimeException.class)
     @Override
     public boolean updateById(JobInfo jobInfo) {
         boolean update = super.updateById(jobInfo);
-        if (update) {
-            // TODO 修改job detail
+        if (!update) {
+            throw new DefinitionException(ResponseStatus.SERVICE_ERROR);
         }
-        throw new DefinitionException(ResponseStatus.SERVICE_ERROR);
+        // TODO 修改job detail
+        return true;
     }
 }
