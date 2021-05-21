@@ -21,6 +21,11 @@
             <artifactId>persona-platform-common</artifactId>
             <version>${persona-platform.version}</version>
         </dependency>
+        <dependency>
+            <groupId>com.itiger.persona</groupId>
+            <artifactId>persona-platform-monitor</artifactId>
+            <version>${persona-platform.version}</version>
+        </dependency>
         <!-- spring start -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
