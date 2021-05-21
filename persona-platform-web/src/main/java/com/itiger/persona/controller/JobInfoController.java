@@ -68,12 +68,13 @@ public class JobInfoController {
     }
 
     @PostMapping(value = "open/{id}")
-    public ResultInfo openOne(@PathVariable String id, HttpServletRequest request) {
+    public ResultInfo openOne(@PathVariable String id, String cronExpr, HttpServletRequest request) {
         JobInfo jobInfo = this.iJobInfoService.getById(id);
 
         boolean result;
         if(Objects.nonNull(jobInfo)) {
-            result = jobInfoQuartzService.addJobToQuartz(jobInfo);
+            jobInfo.setCronExpr(cronExpr);
+            result = this.iJobInfoService.openJob(jobInfo);
         } else {
             throw new DefinitionException(ResponseStatus.ERROR_PARAMETER);
         }

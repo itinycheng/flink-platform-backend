@@ -18,4 +18,6 @@ public interface IJobInfoService extends IService<JobInfo> {
     boolean updateById(JobInfo jobInfo);
 
     boolean stopJob(JobInfo jobInfo);
+
+    boolean openJob(JobInfo jobInfo);
 }
