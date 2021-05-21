@@ -5,6 +5,7 @@ import com.itiger.persona.command.CommandExecutor;
 import com.itiger.persona.command.JobCallback;
 import com.itiger.persona.command.JobCommand;
 import com.itiger.persona.command.JobCommandBuilder;
+import com.itiger.persona.common.enums.JobStatusEnum;
 import com.itiger.persona.common.exception.FlinkCommandGenException;
 import com.itiger.persona.common.util.JsonUtil;
 import com.itiger.persona.comn.SpringContext;
@@ -45,13 +46,6 @@ public class JobRunner implements Job {
 
     private final List<JobCommandBuilder> jobCommandBuilders = SpringContext.getBeansOfType(JobCommandBuilder.class);
 
-//    @Override
-//    public void execute(JobExecutionContext context) {
-//        log.info("job run end!!!!");
-//
-//        return ;
-//    }
-
     @Override
     public void execute(JobExecutionContext context) {
         JobDetail detail = context.getJobDetail();
@@ -69,9 +63,11 @@ public class JobRunner implements Job {
 
             // step 1: get job info
             jobInfo = jobInfoService.getOne(new QueryWrapper<JobInfo>().lambda()
-                    .eq(JobInfo::getCode, code).eq(JobInfo::getStatus, 1));
+                    .eq(JobInfo::getCode, code).in(JobInfo::getStatus,
+                            JobStatusEnum.SCHEDULED.getCode(),
+                            JobStatusEnum.READY.getCode()));
             if (jobInfo == null || jobInfo.getStatus() != 1) {
-                log.warn("the job: {} is no longer exists or not in open status, {}", code, jobInfo);
+                log.warn("the job: {} is no longer exists or not in ready/scheduled status, {}", code, jobInfo);
                 return;
             }
 
