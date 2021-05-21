@@ -9,6 +9,7 @@ import com.itiger.persona.service.ISignatureValueService;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -36,6 +37,15 @@ public class SignatureValueController {
     public ResultInfo list(HttpServletRequest request) {
 
         List<SignatureValue> list = this.iSignatureValueService.list();
+
+        return ResultInfo.success(list);
+
+    }
+
+    @GetMapping("list/{sign_id}")
+    public ResultInfo list(@PathVariable Long sign_id, HttpServletRequest request) {
+
+        List<SignatureValue> list = this.iSignatureValueService.list(new QueryWrapper<SignatureValue>().lambda().eq(SignatureValue::getSignId, sign_id));
 
         return ResultInfo.success(list);
 
