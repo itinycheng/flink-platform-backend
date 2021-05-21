@@ -22,6 +22,8 @@ public class Catalogs {
 
     public static void registerCatalogsToTableEnv(TableEnvironment tEnv, List<Catalog> catalogs) {
         catalogs.forEach(catalog -> addCatalog(tEnv, catalog));
+        //TODO set current catalog
+        catalogs.stream().findFirst().ifPresent(catalog -> tEnv.useCatalog(catalog.getName()));
     }
 
     private static void addCatalog(TableEnvironment tEnv, Catalog catalog) {

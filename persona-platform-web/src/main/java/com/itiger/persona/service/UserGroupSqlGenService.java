@@ -62,7 +62,7 @@ public class UserGroupSqlGenService {
 
     private static final String INSERT_SELECT_ONE_COLUMN = "SELECT %s AS result FROM \n";
 
-    private static final String INSERT_SELECT_MULTI_COLUMNS = "SELECT " + PLACEHOLDER_UDF_NAME + "(MAP[%s]) AS result FROM \n";
+    private static final String INSERT_SELECT_MULTI_COLUMNS = "SELECT " + PLACEHOLDER_UDF_NAME + "(MAP[%s]) AS result_value FROM \n";
 
     /**
      * insert overwrite table
