@@ -35,7 +35,7 @@ public enum SqlExpression {
      * udf expression
      * only for data type of list
      */
-    CONTAINS(" " + PLACEHOLDER_UDF_NAME + "(%s, %s) is ture ");
+    CONTAINS(" " + PLACEHOLDER_UDF_NAME + "(%s, %s) = 1 ");
 
     public static final List<SqlExpression> SUPPORT_MULTI_INPUT_PARAMETER = Arrays.asList(IN, NOT_IN);
 

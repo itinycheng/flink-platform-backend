@@ -16,10 +16,18 @@ import static com.itiger.persona.common.constants.Constant.OR;
  */
 public class ListContainsValueFunction extends ScalarFunction {
 
-    public boolean eval(List<Object> columnValues, String inputValue) {
+    private static final int ZERO = 0;
+
+    private static final int ONE = 1;
+
+    public int eval(List<String> columnValues, String inputValue) {
+        return internalEval(columnValues, inputValue);
+    }
+
+    public int internalEval(List<?> columnValues, String inputValue) {
         if (CollectionUtils.isEmpty(columnValues)
                 || StringUtils.isBlank(inputValue)) {
-            return false;
+            return ZERO;
         }
         // and | or operator
         boolean orOperator = inputValue.contains(OR);
@@ -34,14 +42,16 @@ public class ListContainsValueFunction extends ScalarFunction {
                 isAllContained(columnValues, inputItems);
     }
 
-    private boolean isAllContained(List<Object> columnValues, String[] inputItems) {
+    private int isAllContained(List<?> columnValues, String[] inputItems) {
         Object[] cast = ObjectUtil.cast(inputItems, columnValues.get(0).getClass());
-        return Arrays.stream(cast).allMatch(columnValues::contains);
+        boolean bool = Arrays.stream(cast).allMatch(columnValues::contains);
+        return bool ? ONE : ZERO;
     }
 
-    private boolean isAnyContained(List<Object> columnValues, String[] inputItems) {
+    private int isAnyContained(List<?> columnValues, String[] inputItems) {
         Object[] cast = ObjectUtil.cast(inputItems, columnValues.get(0).getClass());
-        return Arrays.stream(cast).anyMatch(columnValues::contains);
+        boolean bool = Arrays.stream(cast).anyMatch(columnValues::contains);
+        return bool ? ONE : ZERO;
     }
 
 }
