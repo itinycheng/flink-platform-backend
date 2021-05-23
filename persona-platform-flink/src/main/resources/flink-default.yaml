@@ -20,5 +20,8 @@ streaming:
 
 batch:
   parallelism.default: 1
-  pipeline.max-parallelism: 32
+  pipeline.max-parallelism: 4096
   pipeline.object-reuse: true
+  table.exec.resource.default-parallelism: 1
+  table.exec.hive.infer-source-parallelism: true
+  table.exec.hive.infer-source-parallelism.max: 20
