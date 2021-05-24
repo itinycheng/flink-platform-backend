@@ -3,6 +3,8 @@ package com.itiger.persona.monitor;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.itiger.persona.entity.JobRunInfo;
 import com.itiger.persona.service.IJobRunInfoService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -43,17 +45,18 @@ public class JobStateMonitor {
         if (lock == 0) {
             try {
                 //TODO 查数据库，找出running状态的写入队列，添加并行锁
-                List<Map<String,Object>> infoList = iJobRunInfoService.listAllRunningJobs();
+                List<JobRunInfo> infoList = iJobRunInfoService.list(
+                        new QueryWrapper<JobRunInfo>().lambda().notIn(JobRunInfo::getStatus, 2,3,4));
                 ArrayList<Map<String, Object>> jobIdQueue = new ArrayList<>();
-                for (Map<String,Object> info: infoList){
-                    JSONObject tempJson = JSONObject.parseObject(info.get("back_info").toString());
+                for (JobRunInfo info: infoList){
+                    JSONObject tempJson = JSONObject.parseObject(info.getBackInfo());
                     if (tempJson != null) {
                         String tempJobId = tempJson.getString("appId");
                         if (tempJobId != null) {
                             Map<String, Object> tempMap = new HashMap<>();
                             tempMap.put("appId", tempJobId);
-                            tempMap.put("id", info.get("id"));
-                            tempMap.put("status", info.get("status"));
+                            tempMap.put("id", info.getId());
+                            tempMap.put("status", info.getStatus());
                             jobIdQueue.add(tempMap);
                         }
                     }
@@ -69,12 +72,25 @@ public class JobStateMonitor {
                             String url = "http://10.8.12.12:8088/ws/v1/cluster/apps/" + appId;
                             log.info("获取Job状态 appId={} url={}", appId, url);
                             String res = HttpUtil.buildRestTemplate(HttpUtil.TIME_OUT_1_M).getForObject(url, String.class);
-                            if (StringUtils.isEmpty(res) || JSON.parseObject(res).get("state") == null) {
-                                log.error("请求状态失败:返回结果为空或缺少state字段 url={}", url);
-                            }
-                            Integer newStatus = JobYarnStatusEnum.getCodeByDesc(String.valueOf(JSON.parseObject(res).get("state")));
-                            if(newStatus != null && !newStatus.equals(preStatus)){
-                                iJobRunInfoService.updateJobState((Integer)job.get("id"), newStatus);
+                            if(StringUtils.isNotBlank(res)) {
+                                JSONObject jsonObject = JSON.parseObject(res);
+                                if(jsonObject.containsKey("app")) {
+                                    JSONObject app = jsonObject.getObject("app", JSONObject.class);
+                                    if(app.containsKey("state")) {
+                                        String state = app.getObject("state", String.class);
+                                        Integer newStatus = JobYarnStatusEnum.getCodeByDesc(state);
+                                        if(newStatus != null && !newStatus.equals(preStatus)){
+                                            JobRunInfo runInfo = JobRunInfo.builder().id((Long) job.get("id")).status(newStatus).build();
+                                            iJobRunInfoService.updateById(runInfo);
+                                        }
+                                    } else{
+                                        log.warn("请求状态失败:state key 不存在 url={}", url);
+                                    }
+                                } else {
+                                    log.warn("请求状态失败:app key 不存在 url={}", url);
+                                }
+                            } else {
+                                log.error("请求状态失败:返回结果为空 url={}", url);
                             }
                         }
                     }
@@ -87,6 +103,11 @@ public class JobStateMonitor {
         }
     }
 
+    /**
+     * STREAMING
+     * @param appId
+     * @throws Exception
+     */
     public void killJobByAppId(String appId) throws Exception {
         // curl -u hadoop:123456 -H "Accept: application/json" -H "Content-type: application/json" -v -X PUT -d '{"state": "KILLED"}'
         try (final CloseableHttpClient httpclient = HttpClients.createDefault()) {
