@@ -46,6 +46,12 @@ public class JobRunInfo implements Serializable {
     private Integer status;
 
     /**
+     * sql variables
+     * type Map<String, String>
+     */
+    private String variables;
+
+    /**
      * yarn application id
      */
     private String backInfo;
@@ -69,6 +75,5 @@ public class JobRunInfo implements Serializable {
      * stop time
      */
     private LocalDateTime stopTime;
-
 
 }
