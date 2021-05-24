@@ -9,7 +9,7 @@ public class Constant {
 
     public static final String AND = "&";
 
-    public static final String OR = "\\|";
+    public static final String OR = "|";
 
     public static final String DOT = ".";
 

@@ -33,7 +33,7 @@ public class ListContainsValueFunction extends ScalarFunction {
         boolean orOperator = inputValue.contains(OR);
         String[] inputItems;
         if (orOperator) {
-            inputItems = inputValue.split(OR);
+            inputItems = inputValue.split("\\|");
         } else {
             inputItems = inputValue.split(AND);
         }
