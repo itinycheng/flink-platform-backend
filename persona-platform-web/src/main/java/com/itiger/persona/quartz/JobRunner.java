@@ -6,6 +6,7 @@ import com.itiger.persona.command.JobCallback;
 import com.itiger.persona.command.JobCommand;
 import com.itiger.persona.command.JobCommandBuilder;
 import com.itiger.persona.common.enums.JobStatusEnum;
+import com.itiger.persona.common.enums.JobYarnStatusEnum;
 import com.itiger.persona.common.exception.FlinkCommandGenException;
 import com.itiger.persona.common.util.JsonUtil;
 import com.itiger.persona.comn.SpringContext;
@@ -103,7 +104,7 @@ public class JobRunner implements Job {
             // step 5: write msg back to db
             JobRunInfo jobRunInfo = new JobRunInfo();
             jobRunInfo.setJobId(jobInfo.getId());
-            jobRunInfo.setStatus(0);
+            jobRunInfo.setStatus(JobYarnStatusEnum.NEW.getCode());
             jobRunInfo.setVariables(JsonUtil.toJsonString(sqlVarValueMap));
             jobRunInfo.setBackInfo(JsonUtil.toJsonString(callback));
             jobRunInfo.setSubmitUser("quartz");
