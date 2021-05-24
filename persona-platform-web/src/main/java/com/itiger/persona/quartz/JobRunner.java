@@ -16,6 +16,7 @@ import com.itiger.persona.enums.SqlVar;
 import com.itiger.persona.service.IJobInfoService;
 import com.itiger.persona.service.IJobRunInfoService;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.tuple.Pair;
 import org.quartz.Job;
 import org.quartz.JobDetail;
 import org.quartz.JobExecutionContext;
@@ -24,9 +25,12 @@ import org.quartz.JobKey;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+
+import static java.util.stream.Collectors.toMap;
 
 /**
  * submit job
@@ -67,14 +71,21 @@ public class JobRunner implements Job {
                             JobStatusEnum.SCHEDULED.getCode(),
                             JobStatusEnum.READY.getCode()));
             if (jobInfo == null) {
-                log.warn("the job: {} is no longer exists or not in ready/scheduled status, {}", code, jobInfo);
+                log.warn("the job is no longer exists or not in ready/scheduled status, {}", code);
                 return;
             }
 
             // step 2: replace variables in the sql statement
-            for (SqlVar sqlVar : SqlVar.values()) {
+            // parse all variables in subject
+            JobInfo finalJobInfo = jobInfo;
+            Map<SqlVar, String> sqlVarValueMap = Arrays.stream(SqlVar.values())
+                    .filter(sqlVar -> finalJobInfo.getSubject().contains(sqlVar.variable))
+                    .map(sqlVar -> Pair.of(sqlVar, sqlVar.valueProvider.apply(finalJobInfo).toString()))
+                    .collect(toMap(Pair::getLeft, Pair::getRight));
+            // replace variable with actual value
+            for (Map.Entry<SqlVar, String> entry : sqlVarValueMap.entrySet()) {
                 String originSubject = jobInfo.getSubject();
-                String distSubject = originSubject.replace(sqlVar.variable, sqlVar.valueProvider.apply(jobInfo).toString());
+                String distSubject = originSubject.replace(entry.getKey().variable, entry.getValue());
                 jobInfo.setSubject(distSubject);
             }
 
@@ -93,6 +104,7 @@ public class JobRunner implements Job {
             JobRunInfo jobRunInfo = new JobRunInfo();
             jobRunInfo.setJobId(jobInfo.getId());
             jobRunInfo.setStatus(0);
+            jobRunInfo.setVariables(JsonUtil.toJsonString(sqlVarValueMap));
             jobRunInfo.setBackInfo(JsonUtil.toJsonString(callback));
             jobRunInfo.setSubmitUser("quartz");
             jobRunInfo.setSubmitTime(LocalDateTime.now());
