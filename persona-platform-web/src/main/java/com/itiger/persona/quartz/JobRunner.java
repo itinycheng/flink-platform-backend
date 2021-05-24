@@ -5,6 +5,7 @@ import com.itiger.persona.command.CommandExecutor;
 import com.itiger.persona.command.JobCallback;
 import com.itiger.persona.command.JobCommand;
 import com.itiger.persona.command.JobCommandBuilder;
+import com.itiger.persona.common.enums.JobStatusEnum;
 import com.itiger.persona.common.exception.FlinkCommandGenException;
 import com.itiger.persona.common.util.JsonUtil;
 import com.itiger.persona.comn.SpringContext;
@@ -15,6 +16,7 @@ import com.itiger.persona.enums.SqlVar;
 import com.itiger.persona.service.IJobInfoService;
 import com.itiger.persona.service.IJobRunInfoService;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.tuple.Pair;
 import org.quartz.Job;
 import org.quartz.JobDetail;
 import org.quartz.JobExecutionContext;
@@ -23,9 +25,12 @@ import org.quartz.JobKey;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+
+import static java.util.stream.Collectors.toMap;
 
 /**
  * submit job
@@ -45,13 +50,6 @@ public class JobRunner implements Job {
 
     private final List<JobCommandBuilder> jobCommandBuilders = SpringContext.getBeansOfType(JobCommandBuilder.class);
 
-//    @Override
-//    public void execute(JobExecutionContext context) {
-//        log.info("job run end!!!!");
-//
-//        return ;
-//    }
-
     @Override
     public void execute(JobExecutionContext context) {
         JobDetail detail = context.getJobDetail();
@@ -69,16 +67,25 @@ public class JobRunner implements Job {
 
             // step 1: get job info
             jobInfo = jobInfoService.getOne(new QueryWrapper<JobInfo>().lambda()
-                    .eq(JobInfo::getCode, code).eq(JobInfo::getStatus, 1));
-            if (jobInfo == null || jobInfo.getStatus() != 1) {
-                log.warn("the job: {} is no longer exists or not in open status, {}", code, jobInfo);
+                    .eq(JobInfo::getCode, code).in(JobInfo::getStatus,
+                            JobStatusEnum.SCHEDULED.getCode(),
+                            JobStatusEnum.READY.getCode()));
+            if (jobInfo == null) {
+                log.warn("the job is no longer exists or not in ready/scheduled status, {}", code);
                 return;
             }
 
             // step 2: replace variables in the sql statement
-            for (SqlVar sqlVar : SqlVar.values()) {
+            // parse all variables in subject
+            JobInfo finalJobInfo = jobInfo;
+            Map<SqlVar, String> sqlVarValueMap = Arrays.stream(SqlVar.values())
+                    .filter(sqlVar -> finalJobInfo.getSubject().contains(sqlVar.variable))
+                    .map(sqlVar -> Pair.of(sqlVar, sqlVar.valueProvider.apply(finalJobInfo).toString()))
+                    .collect(toMap(Pair::getLeft, Pair::getRight));
+            // replace variable with actual value
+            for (Map.Entry<SqlVar, String> entry : sqlVarValueMap.entrySet()) {
                 String originSubject = jobInfo.getSubject();
-                String distSubject = originSubject.replace(sqlVar.variable, sqlVar.valueProvider.apply(jobInfo).toString());
+                String distSubject = originSubject.replace(entry.getKey().variable, entry.getValue());
                 jobInfo.setSubject(distSubject);
             }
 
@@ -97,6 +104,7 @@ public class JobRunner implements Job {
             JobRunInfo jobRunInfo = new JobRunInfo();
             jobRunInfo.setJobId(jobInfo.getId());
             jobRunInfo.setStatus(0);
+            jobRunInfo.setVariables(JsonUtil.toJsonString(sqlVarValueMap));
             jobRunInfo.setBackInfo(JsonUtil.toJsonString(callback));
             jobRunInfo.setSubmitUser("quartz");
             jobRunInfo.setSubmitTime(LocalDateTime.now());

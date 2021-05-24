@@ -23,6 +23,10 @@
             <artifactId>junit</artifactId>
         </dependency>
         <dependency>
+            <groupId>commons-collections</groupId>
+            <artifactId>commons-collections</artifactId>
+        </dependency>
+        <dependency>
             <groupId>com.itiger.persona</groupId>
             <artifactId>persona-platform-common</artifactId>
             <version>${persona-platform.version}</version>
