@@ -26,9 +26,9 @@ public interface JobRunInfoMapper extends BaseMapper<JobRunInfo> {
             "select \n" +
             "back_info \n" +
             "id \n" +
-            "status \n" +
+            "`status` \n" +
             "from signature\n" +
-            "where status in (2,3,4)\n" +
+            "where `status` in (2,3,4)\n" +
             "</script>";
     @Select(SELECT_JOB_STATES)
     List<Map<String,Object>> selectJobStates();
