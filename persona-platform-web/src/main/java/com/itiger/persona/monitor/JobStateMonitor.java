@@ -17,6 +17,7 @@ import org.apache.http.impl.client.HttpClients;
 import org.apache.http.util.EntityUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
@@ -71,26 +72,38 @@ public class JobStateMonitor {
                             Integer preStatus = (Integer) job.get("status");
                             String url = "http://10.8.12.12:8088/ws/v1/cluster/apps/" + appId;
                             log.info("获取Job状态 appId={} url={}", appId, url);
-                            String res = HttpUtil.buildRestTemplate(HttpUtil.TIME_OUT_1_M).getForObject(url, String.class);
+                            ResponseEntity<String> responseEntity = HttpUtil.buildRestTemplate(HttpUtil.TIME_OUT_1_M).getForEntity(url, String.class);
+                            //String res = HttpUtil.buildRestTemplate(HttpUtil.TIME_OUT_1_M).getForObject(url, String.class);
+                            String res = responseEntity.getBody();
+                            int statusCodeValue = responseEntity.getStatusCodeValue();
+                            boolean updateUnknown = true;
                             if(StringUtils.isNotBlank(res)) {
                                 JSONObject jsonObject = JSON.parseObject(res);
                                 if(jsonObject.containsKey("app")) {
                                     JSONObject app = jsonObject.getObject("app", JSONObject.class);
                                     if(app.containsKey("state")) {
+                                        updateUnknown = false;
                                         String state = app.getObject("state", String.class);
                                         Integer newStatus = JobYarnStatusEnum.getCodeByDesc(state);
                                         if(newStatus != null && !newStatus.equals(preStatus)){
                                             JobRunInfo runInfo = JobRunInfo.builder().id((Long) job.get("id")).status(newStatus).build();
                                             iJobRunInfoService.updateById(runInfo);
                                         }
-                                    } else{
+                                    }
+                                    else{
                                         log.warn("请求状态失败:state key 不存在 url={}", url);
                                     }
                                 } else {
                                     log.warn("请求状态失败:app key 不存在 url={}", url);
                                 }
-                            } else {
+                            }
+                            else {
                                 log.error("请求状态失败:返回结果为空 url={}", url);
+                            }
+                            if (statusCodeValue == 200 && updateUnknown)
+                            {
+                                JobRunInfo runInfo = JobRunInfo.builder().id((Long) job.get("id")).status(0).build();
+                                iJobRunInfoService.updateById(runInfo);
                             }
                         }
                     }
