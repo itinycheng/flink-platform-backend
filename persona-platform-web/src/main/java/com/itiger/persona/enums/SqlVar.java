@@ -18,7 +18,10 @@ public enum SqlVar {
     CURRENT_TIMESTAMP("$currentTimestamp", (Object obj) -> System.currentTimeMillis()),
 
     CURRENT_TIME_MINUS("$currentTimeMinus", (Object obj) ->
-            DateUtil.format(System.currentTimeMillis(), "yyyyMMddHHmm"));
+            DateUtil.format(System.currentTimeMillis(), "yyyyMMddHHmm")),
+
+    TODAY_YYYYMMDD("$today_yyyyMMdd", (Object obj) ->
+            DateUtil.format(System.currentTimeMillis(), "yyyyMMdd"));
 
     public final String variable;
 
