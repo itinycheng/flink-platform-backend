@@ -1,4 +1,4 @@
-package com.itiger.persona.flink.udf;
+package com.itiger.persona.flink.udf.business;
 
 import com.itiger.persona.common.util.FunctionUtil;
 import com.itiger.persona.common.util.JsonUtil;
