@@ -46,7 +46,7 @@
         <scala.binary.version>2.11</scala.binary.version>
         <mybatis-plus.version>3.4.2</mybatis-plus.version>
         <dynamic-datasource.version>3.3.2</dynamic-datasource.version>
-        <maven-shade-plugin.version>3.2.4</maven-shade-plugin.version>
+        <maven-shade-plugin.version>3.2.1</maven-shade-plugin.version>
         <maven-compiler-plugin.version>3.8.1</maven-compiler-plugin.version>
     </properties>
 
