@@ -1,6 +1,9 @@
 package com.itiger.persona.flink.udf.common;
 
 import java.util.Arrays;
+import java.util.Map;
+
+import static java.util.stream.Collectors.toMap;
 
 /**
  * @author tiny.wang
@@ -16,11 +19,11 @@ public enum DataType {
     STRING,
     BOOL;
 
+    private static final Map<String, DataType> ENUM_MAP = Arrays.stream(values())
+            .collect(toMap(Enum::name, dataType -> dataType));
+
     public static DataType of(String type) {
-        return Arrays.stream(values())
-                .filter(dataType -> dataType.name().equalsIgnoreCase(type))
-                .findFirst()
-                .orElse(null);
+        return ENUM_MAP.get(type.toUpperCase());
     }
 
 }
