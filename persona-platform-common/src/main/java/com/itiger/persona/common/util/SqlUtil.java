@@ -1,5 +1,7 @@
 package com.itiger.persona.common.util;
 
+import org.apache.commons.lang3.StringUtils;
+
 import java.util.Arrays;
 import java.util.stream.Collectors;
 
@@ -21,6 +23,7 @@ public class SqlUtil {
         // delete comments
         String stmt = Arrays.stream(statement.split(SQL_LINE_SEPARATOR))
                 .map(String::trim)
+                .filter(StringUtils::isNotBlank)
                 .filter(segment -> !segment.startsWith(SQL_COMMENT_SYMBOL))
                 .collect(Collectors.joining(SQL_LINE_SEPARATOR));
         // delete ';'

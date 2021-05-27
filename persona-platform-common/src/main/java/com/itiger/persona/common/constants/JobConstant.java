@@ -54,6 +54,6 @@ public class JobConstant {
 
     public static final int SQL_PATTERN_CONFIGS = Pattern.CASE_INSENSITIVE | Pattern.MULTILINE | Pattern.DOTALL;
 
-    public static final Pattern SQL_PATTERN = Pattern.compile("\\S+.*?;$", SQL_PATTERN_CONFIGS);
+    public static final Pattern SQL_PATTERN = Pattern.compile("\\S+.*?;\\s*$", SQL_PATTERN_CONFIGS);
 
 }
