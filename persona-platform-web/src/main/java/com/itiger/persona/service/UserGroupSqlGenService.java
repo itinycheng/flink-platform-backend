@@ -62,6 +62,9 @@ public class UserGroupSqlGenService {
 
     private static final String INSERT_SELECT_ONE_COLUMN = "SELECT %s AS result_value FROM \n";
 
+    /**
+     * TODO MAP, LIST_MAP unsupported, need parse column.key to column['key']
+     */
     private static final String INSERT_SELECT_MULTI_COLUMNS = "SELECT " + PLACEHOLDER_UDF_NAME + "(MAP[%s]) AS result_value FROM \n";
 
     /**

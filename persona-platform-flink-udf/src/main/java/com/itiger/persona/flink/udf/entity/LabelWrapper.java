@@ -8,10 +8,15 @@ import lombok.Data;
  * @author tiny.wang
  */
 @Data
-public class UserLabel {
+public class LabelWrapper {
+
     private Long sign_id;
+
     private String desc;
+
     private String value;
+
     private Double weight;
+
     private Long valid_time;
 }

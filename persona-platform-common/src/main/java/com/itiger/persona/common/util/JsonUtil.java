@@ -24,11 +24,12 @@ import java.util.stream.Collectors;
 public class JsonUtil {
 
     public static List<String> toList(String res) {
-        return Optional.ofNullable((List<Object>) JSON.parseArray(res))
-                .orElse(Collections.emptyList())
-                .stream()
-                .map(Object::toString)
-                .collect(Collectors.toList());
+        return toList(res, String.class);
+    }
+
+    public static <T> List<T> toList(String res, Class<T> clazz) {
+        return Optional.ofNullable(JSON.parseArray(res, clazz))
+                .orElse(Collections.emptyList());
     }
 
     public static Map<String, Object> toMap(String res) {
