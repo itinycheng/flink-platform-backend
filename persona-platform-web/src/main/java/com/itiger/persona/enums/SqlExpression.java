@@ -35,7 +35,9 @@ public enum SqlExpression {
      * udf expression
      * only for data type of list
      */
-    CONTAINS(" " + PLACEHOLDER_UDF_NAME + "(%s, %s) = 1 ");
+    CONTAINS(" " + PLACEHOLDER_UDF_NAME + "(%s, %s) = 1 "),
+
+    JOIN_TABLE_FUNC(" lateral table(" + PLACEHOLDER_UDF_NAME + "(%s)) as t(%s) ");
 
     public static final List<SqlExpression> SUPPORT_MULTI_INPUT_PARAMETER = Arrays.asList(IN, NOT_IN);
 
