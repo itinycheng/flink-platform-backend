@@ -160,7 +160,7 @@ public class UserGroupSqlGenService {
         // add uuid to each subQuery's select list
         grouped.entrySet().stream()
                 .filter(entry -> entry.getValue().stream().noneMatch(identifier -> UUID.equalsIgnoreCase(identifier.getName())))
-                .forEach(entry -> entry.getValue().add(new SqlIdentifier(entry.getKey(), UUID)));
+                .forEach(entry -> entry.getValue().add(SqlIdentifier.of(entry.getKey(), UUID)));
         String selectStatement = identifiers.stream().map(SqlIdentifier::toColumnAsStatement).collect(joining(COMMA));
         String tableStatement = grouped.entrySet().stream().map(entry -> String.join(SPACE, BRACKET_LEFT, SELECT,
                 entry.getValue().stream().map(SqlIdentifier::toSimpleColumnStatement).collect(joining(COMMA)),
@@ -169,11 +169,11 @@ public class UserGroupSqlGenService {
                 .collect(joining(COMMA));
         List<String> tableAliasList = new ArrayList<>(grouped.keySet());
         String where = IntStream.range(0, tableAliasList.size() - 1)
-                .mapToObj(i -> Pair.of(new SqlIdentifier(tableAliasList.get(i), UUID), new SqlIdentifier(tableAliasList.get(i + 1), UUID)))
+                .mapToObj(i -> Pair.of(SqlIdentifier.of(tableAliasList.get(i), UUID), SqlIdentifier.of(tableAliasList.get(i + 1), UUID)))
                 .map(pair -> String.format(SqlExpression.EQ.expression, pair.getLeft().toColumnStatement(), pair.getRight().toColumnStatement()))
                 .collect(joining(SqlExpression.AND.name()));
         String subQueryStatement = String.join(SPACE, BRACKET_LEFT, SELECT, selectStatement, FROM, tableStatement, WHERE, where, BRACKET_RIGHT);
-        return new SqlIdentifier(SOURCE_TABLE_IDENTIFIER.getQualifier(), subQueryStatement);
+        return SqlIdentifier.of(SOURCE_TABLE_IDENTIFIER.getQualifier(), subQueryStatement);
     }
 
     private String generatePartitionSegment(String accountType) {
@@ -235,7 +235,7 @@ public class UserGroupSqlGenService {
         switch (signature.getDataType()) {
             case MAP:
                 String[] columnAndKey = column.getName().split("\\.");
-                column = new SqlIdentifier(column.getQualifier(), columnAndKey[0]);
+                column = SqlIdentifier.of(column.getQualifier(), columnAndKey[0]);
                 String newColumnName = subQueryExists ? column.newColumnName() : column.toSimpleColumnStatement();
                 return String.join(EMPTY, newColumnName, "['", columnAndKey[1], "']");
             case STRING:

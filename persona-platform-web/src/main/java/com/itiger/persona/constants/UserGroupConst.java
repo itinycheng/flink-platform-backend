@@ -7,7 +7,7 @@ import com.itiger.persona.parser.SqlIdentifier;
  */
 public class UserGroupConst {
 
-    public static final SqlIdentifier SOURCE_TABLE_IDENTIFIER = new SqlIdentifier("v1", "t_hive_user_signature_data_v1");
+    public static final SqlIdentifier SOURCE_TABLE_IDENTIFIER = SqlIdentifier.of("v1", "t_hive_user_signature_data_v1");
 
     public static final String QUERY_SOURCE_TABLE_PARTITIONS = "show partitions t_hive_user_signature_data_v1 PARTITION(account_type = 'BUS')";
 
