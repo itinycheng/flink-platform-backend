@@ -3,7 +3,7 @@ package com.itiger.persona.flink.udf.business;
 import com.itiger.persona.common.util.FunctionUtil;
 import com.itiger.persona.common.util.JsonUtil;
 import com.itiger.persona.flink.udf.common.DataType;
-import com.itiger.persona.flink.udf.entity.UserLabel;
+import com.itiger.persona.flink.udf.entity.LabelWrapper;
 import lombok.val;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.math.NumberUtils;
@@ -20,7 +20,7 @@ import java.util.Optional;
 public class UserLabelValueFunction extends ScalarFunction {
 
     public Object eval(String json, String type) {
-        val userLabel = FunctionUtil.getOrDefault(() -> JsonUtil.toBean(json, UserLabel.class), null);
+        val userLabel = FunctionUtil.getOrDefault(() -> JsonUtil.toBean(json, LabelWrapper.class), null);
         String value = userLabel != null ? userLabel.getValue() : null;
         if (value == null) {
             return null;
