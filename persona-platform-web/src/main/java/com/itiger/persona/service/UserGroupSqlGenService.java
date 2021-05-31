@@ -36,7 +36,6 @@ import static com.itiger.persona.common.constants.Constant.LINE_SEPARATOR;
 import static com.itiger.persona.common.constants.Constant.SINGLE_QUOTE;
 import static com.itiger.persona.common.constants.Constant.SLASH;
 import static com.itiger.persona.common.constants.Constant.SPACE;
-import static com.itiger.persona.common.constants.Constant.STAR;
 import static com.itiger.persona.constants.SqlConstant.FROM;
 import static com.itiger.persona.constants.SqlConstant.SELECT;
 import static com.itiger.persona.constants.SqlConstant.WHERE;
@@ -82,18 +81,16 @@ public class UserGroupSqlGenService {
 
     public String generateInsertSelect(SqlSelect sqlSelect) {
         List<String> sqls = new ArrayList<>();
-        final Set<SqlIdentifier> allIdentifiers = getAllSqlIdentifiers(sqlSelect);
-        final boolean subQueryExists = isSubQueryNeeded(allIdentifiers);
         // select columns from
-        String selectStatement = generateSelectStatement(sqlSelect, subQueryExists);
+        String selectStatement = generateSelectStatement(sqlSelect.getSelectList());
         // join primary table and lateral table together
-        String tableStatement = generateTableStatement(sqlSelect, allIdentifiers, subQueryExists);
-        String lateralTableStatement = generateLateralTableStatement(sqlSelect, allIdentifiers);
+        String tableStatement = generateTableStatement(sqlSelect);
+        String lateralTableStatement = generateLateralTableStatement(sqlSelect);
         if (StringUtils.isNotBlank(lateralTableStatement)) {
             tableStatement = String.join(COMMA, tableStatement, lateralTableStatement);
         }
         // where
-        String whereStatement = generateWhereStatement(sqlSelect, subQueryExists);
+        String whereStatement = generateWhereStatement(sqlSelect.getWhere());
         // add required udfs
         Optional.ofNullable(UDFS.get()).ifPresent(udfs -> {
             sqls.addAll(udfs);
@@ -104,22 +101,22 @@ public class UserGroupSqlGenService {
         return String.join(LINE_SEPARATOR, sqls);
     }
 
-    private String generateLateralTableStatement(SqlSelect sqlSelect, Set<SqlIdentifier> allIdentifiers) {
+    private String generateLateralTableStatement(SqlSelect sqlSelect) {
         return null;
     }
 
-    public String generateSelectStatement(SqlSelect sqlSelect, boolean subQueryExists) {
+    public String generateSelectStatement(List<SqlIdentifier> selectList) {
         String insertSelectExpr;
         String insertSelectList;
-        if (sqlSelect.getSelectList().size() <= 1) {
+        if (selectList.size() <= 1) {
             insertSelectExpr = INSERT_SELECT_ONE_COLUMN;
-            insertSelectList = sqlSelect.getSelectList().get(0).correctColumnName(subQueryExists);
+            insertSelectList = selectList.get(0).newColumnName();
         } else {
             // add udf to thread local cache
             cacheUdf(SqlUdf.TO_STRING.createStatement);
             insertSelectExpr = INSERT_SELECT_MULTI_COLUMNS.replace(PLACEHOLDER_UDF_NAME, SqlUdf.TO_STRING.name);
-            insertSelectList = sqlSelect.getSelectList().stream()
-                    .map(identifier -> identifier.correctColumnName(subQueryExists))
+            insertSelectList = selectList.stream()
+                    .map(SqlIdentifier::newColumnName)
                     .map(columnName -> String.join(COMMA,
                             String.join(EMPTY, SINGLE_QUOTE, columnName, SINGLE_QUOTE)
                             , String.join(EMPTY, BACK_TICK, columnName, BACK_TICK)))
@@ -128,22 +125,24 @@ public class UserGroupSqlGenService {
         return String.format(insertSelectExpr, insertSelectList);
     }
 
-    public String generateTableStatement(SqlSelect sqlSelect, Set<SqlIdentifier> identifiers, boolean subQueryExists) {
+    public String generateTableStatement(SqlSelect sqlSelect) {
+        final Set<SqlIdentifier> allIdentifiers = getAllSqlIdentifiers(sqlSelect);
         // from table
-        if (subQueryExists) {
-            return generateSubQueryStatement(identifiers).toTableString();
+        if (isSubQueryNeeded(allIdentifiers)) {
+            return generateSubQueryStatement(allIdentifiers);
         } else {
-            String accountType = identifiers.stream().map(SqlIdentifier::getQualifier).findFirst()
+            String accountType = allIdentifiers.stream().map(SqlIdentifier::getQualifier).findFirst()
                     .orElseThrow(() -> new RuntimeException("no sql identifier found"));
             String whichPartition = generatePartitionSegment(accountType);
-            return String.join(SPACE, BRACKET_LEFT, SELECT, STAR,
+            String selectList = allIdentifiers.stream().map(SqlIdentifier::toColumnAsStatement).collect(joining(COMMA));
+            return String.join(SPACE, BRACKET_LEFT, SELECT, selectList,
                     FROM, sqlSelect.getFrom().getName(),
                     WHERE, whichPartition, BRACKET_RIGHT, sqlSelect.getFrom().getQualifier());
         }
     }
 
-    public String generateWhereStatement(SqlSelect sqlSelect, boolean subQueryExists) {
-        String where = generateWhereSegment(sqlSelect.getWhere(), subQueryExists).trim();
+    public String generateWhereStatement(SqlWhere sqlWhere) {
+        String where = generateWhereSegment(sqlWhere).trim();
         if (where.startsWith(BRACKET_LEFT)) {
             where = where.substring(1, where.length() - 1);
         }
@@ -163,7 +162,7 @@ public class UserGroupSqlGenService {
         return identifiers.stream().map(SqlIdentifier::getQualifier).distinct().count() > 1;
     }
 
-    public SqlIdentifier generateSubQueryStatement(Set<SqlIdentifier> identifiers) {
+    public String generateSubQueryStatement(Set<SqlIdentifier> identifiers) {
         Map<String, List<SqlIdentifier>> grouped = identifiers.stream().collect(groupingBy(SqlIdentifier::getQualifier));
         // add uuid to each subQuery's select list
         grouped.entrySet().stream()
@@ -181,7 +180,7 @@ public class UserGroupSqlGenService {
                 .map(pair -> String.format(SqlExpression.EQ.expression, pair.getLeft().toColumnStatement(), pair.getRight().toColumnStatement()))
                 .collect(joining(SqlExpression.AND.name()));
         String subQueryStatement = String.join(SPACE, BRACKET_LEFT, SELECT, selectStatement, FROM, tableStatement, WHERE, where, BRACKET_RIGHT);
-        return SqlIdentifier.of(SOURCE_TABLE_IDENTIFIER.getQualifier(), subQueryStatement);
+        return String.join(SPACE, subQueryStatement, SOURCE_TABLE_IDENTIFIER.getQualifier());
     }
 
     private String generatePartitionSegment(String accountType) {
@@ -201,7 +200,7 @@ public class UserGroupSqlGenService {
         return String.format(SqlExpression.AND.expression, dtStatement, accountTypeStatement);
     }
 
-    private String generateWhereSegment(SqlWhere where, boolean subQueryExists) {
+    private String generateWhereSegment(SqlWhere where) {
         if (where == null) {
             return StringUtils.EMPTY;
         } else if (where instanceof CompositeSqlWhere) {
@@ -209,23 +208,23 @@ public class UserGroupSqlGenService {
             CompositeSqlWhere compositeCondition = (CompositeSqlWhere) where;
             SqlExpression sqlExpr = SqlExpression.of(compositeCondition.getRelation());
             for (SqlWhere condition : compositeCondition.getConditions()) {
-                conditionList.add(generateWhereSegment(condition, subQueryExists));
+                conditionList.add(generateWhereSegment(condition));
             }
             String joined = String.join(sqlExpr.name(), conditionList);
             return String.join(EMPTY, BRACKET_LEFT, joined, BRACKET_RIGHT);
         } else if (where instanceof SimpleSqlWhere) {
-            return generateSimpleWhereSegment((SimpleSqlWhere) where, subQueryExists);
+            return generateSimpleWhereSegment((SimpleSqlWhere) where);
         } else {
             throw new RuntimeException("unknown condition type");
         }
     }
 
-    private String generateSimpleWhereSegment(SimpleSqlWhere simpleWhere, boolean subQueryExists) {
+    private String generateSimpleWhereSegment(SimpleSqlWhere simpleWhere) {
         SqlExpression operatorExpr = simpleWhere.getOperator();
         // fill operands to object array
         Object[] formatted = new Object[simpleWhere.getOperands().length + 1];
         Signature signature = getSignature(simpleWhere.getColumn().getName());
-        formatted[0] = decorateWhereColumn(simpleWhere.getColumn(), signature, subQueryExists);
+        formatted[0] = decorateWhereColumn(simpleWhere.getColumn(), signature);
         Pair<String, Object[]> udfAndOperands = decorateWhereOperands(simpleWhere, signature);
         // replace variable in sql expression
         String udfName = udfAndOperands.getLeft();
@@ -239,19 +238,19 @@ public class UserGroupSqlGenService {
         return String.format(expression, formatted);
     }
 
-    private String decorateWhereColumn(SqlIdentifier column, Signature signature, boolean subQueryExists) {
+    private String decorateWhereColumn(SqlIdentifier column, Signature signature) {
         switch (signature.getDataType()) {
             case MAP:
                 String[] columnAndKey = column.getName().split("\\.");
                 column = SqlIdentifier.of(column.getQualifier(), columnAndKey[0]);
-                String newColumnName = subQueryExists ? column.newColumnName() : column.toSimpleColumnStatement();
+                String newColumnName = column.newColumnName();
                 return String.join(EMPTY, newColumnName, "['", columnAndKey[1], "']");
             case STRING:
             case NUMBER:
             case LIST:
             case LIST_MAP:
             default:
-                return subQueryExists ? column.newColumnName() : column.toSimpleColumnStatement();
+                return column.newColumnName();
         }
     }
 
