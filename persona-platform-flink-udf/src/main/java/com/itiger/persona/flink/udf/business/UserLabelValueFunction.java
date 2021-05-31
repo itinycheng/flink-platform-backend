@@ -21,10 +21,11 @@ public class UserLabelValueFunction extends ScalarFunction {
 
     public Object eval(String json, String type) {
         val userLabel = FunctionUtil.getOrDefault(() -> JsonUtil.toBean(json, LabelWrapper.class), null);
-        String value = userLabel != null ? userLabel.getValue() : null;
-        if (value == null) {
+        Object valueObj = userLabel != null ? userLabel.getValue() : null;
+        if (valueObj == null) {
             return null;
         }
+        String value = valueObj.toString();
         DataType dataType = DataType.of(type);
         switch (dataType) {
             case INT:
