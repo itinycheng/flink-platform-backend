@@ -1,11 +1,8 @@
-package com.itiger.persona;
+package com.itiger.persona.udf;
 
 import com.itiger.persona.common.constants.Constant;
 import org.junit.Test;
 
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -14,7 +11,7 @@ import java.util.regex.Pattern;
 /**
  * Unit test for simple App.
  */
-public class UDfTest {
+public class UdfTest {
     @Test
     public void test0() {
         System.out.println(Arrays.toString("a|b|c".split(Constant.OR)));

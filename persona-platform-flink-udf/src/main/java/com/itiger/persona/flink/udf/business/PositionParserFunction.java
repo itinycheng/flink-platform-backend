@@ -1,7 +1,9 @@
 package com.itiger.persona.flink.udf.business;
 
 import com.itiger.persona.common.util.JsonUtil;
+import com.itiger.persona.common.util.Preconditions;
 import com.itiger.persona.flink.udf.entity.PositionLabel;
+import com.itiger.persona.flink.udf.util.UdfUtil;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.flink.table.annotation.DataTypeHint;
 import org.apache.flink.table.annotation.FunctionHint;
@@ -10,6 +12,7 @@ import org.apache.flink.types.Row;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * <pre>
@@ -39,13 +42,23 @@ import java.util.List;
  *
  * @author tiny.wang
  */
-@FunctionHint(output = @DataTypeHint("ROW<symbol STRING, cost_level INTEGER, strike STRING, currency STRING, expiry STRING, c_right STRING, status STRING, ts BIGINT>"))
+@FunctionHint(output = @DataTypeHint("ROW<symbol STRING, expiry STRING, strike STRING, c_right STRING, currency STRING, cost_level INTEGER, status STRING, ts BIGINT>"))
 public class PositionParserFunction extends TableFunction<Row> {
+
+    public PositionParserFunction() {
+        // validate columns' definition
+        String tableDescription = this.getClass().getAnnotation(FunctionHint.class)
+                .output().value();
+        String expectDescription = UdfUtil.extractSqlColumnAnnotation(PositionLabel.class)
+                .stream().map(sqlColumn -> String.join(" ", sqlColumn.name(), sqlColumn.type().sqlType))
+                .collect(Collectors.joining(", ", "ROW<", ">"));
+        Preconditions.checkThrow(!tableDescription.equalsIgnoreCase(expectDescription),
+                () -> new RuntimeException("value of @DataTypeHint isn't correct"));
+    }
 
     public void eval(String str) {
         List<PositionLabel> positions = JsonUtil.toList(str, PositionLabel.class);
         collectOut(positions);
-
     }
 
     public void eval(List<String> list) {
@@ -65,11 +78,11 @@ public class PositionParserFunction extends TableFunction<Row> {
         }
         for (PositionLabel position : positions) {
             collect(Row.of(position.getSymbol(),
-                    position.getCostLevel(),
-                    position.getStrike(),
-                    position.getCurrency(),
                     position.getExpiry(),
+                    position.getStrike(),
                     position.getRight(),
+                    position.getCurrency(),
+                    position.getCostLevel(),
                     position.getStatus(),
                     position.getTimestamp()));
         }
