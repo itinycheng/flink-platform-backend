@@ -63,7 +63,7 @@ public class UserGroupSqlGenService {
     private static final String INSERT_SELECT_ONE_COLUMN = "SELECT %s AS result_value FROM \n";
 
     /**
-     * TODO MAP, LIST_MAP unsupported, need parse column.key to column['key']
+     * TODO MAP, LIST_MAP unsupported, need convert column.key to column['key']
      */
     private static final String INSERT_SELECT_MULTI_COLUMNS = "SELECT " + PLACEHOLDER_UDF_NAME + "(MAP[%s]) AS result_value FROM \n";
 
@@ -86,8 +86,12 @@ public class UserGroupSqlGenService {
         final boolean subQueryExists = isSubQueryNeeded(allIdentifiers);
         // select columns from
         String selectStatement = generateSelectStatement(sqlSelect, subQueryExists);
-        // table
+        // join primary table and lateral table together
         String tableStatement = generateTableStatement(sqlSelect, allIdentifiers, subQueryExists);
+        String lateralTableStatement = generateLateralTableStatement(sqlSelect, allIdentifiers);
+        if (StringUtils.isNotBlank(lateralTableStatement)) {
+            tableStatement = String.join(COMMA, tableStatement, lateralTableStatement);
+        }
         // where
         String whereStatement = generateWhereStatement(sqlSelect, subQueryExists);
         // add required udfs
@@ -98,6 +102,10 @@ public class UserGroupSqlGenService {
         // add full string of insert overwrite statement to sql list
         sqls.add(String.join(SPACE, INSERT_OVERWRITE_STATEMENT, selectStatement, tableStatement, whereStatement));
         return String.join(LINE_SEPARATOR, sqls);
+    }
+
+    private String generateLateralTableStatement(SqlSelect sqlSelect, Set<SqlIdentifier> allIdentifiers) {
+        return null;
     }
 
     public String generateSelectStatement(SqlSelect sqlSelect, boolean subQueryExists) {

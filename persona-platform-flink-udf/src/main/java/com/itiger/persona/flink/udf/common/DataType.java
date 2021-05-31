@@ -9,15 +9,22 @@ import static java.util.stream.Collectors.toMap;
  * @author tiny.wang
  */
 public enum DataType {
+
     /**
      * enums
      */
-    INT,
-    LONG,
-    FLOAT,
-    DOUBLE,
-    STRING,
-    BOOL;
+    INT("INTEGER"),
+    LONG("BIGINT"),
+    FLOAT("FLOAT"),
+    DOUBLE("DOUBLE"),
+    STRING("STRING"),
+    BOOL("BOOLEAN");
+
+    public final String sqlType;
+
+    DataType(String sqlType) {
+        this.sqlType = sqlType;
+    }
 
     private static final Map<String, DataType> ENUM_MAP = Arrays.stream(values())
             .collect(toMap(Enum::name, dataType -> dataType));
