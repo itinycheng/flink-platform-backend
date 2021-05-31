@@ -14,7 +14,7 @@ public class LabelWrapper {
 
     private String desc;
 
-    private String value;
+    private Object value;
 
     private Double weight;
 
