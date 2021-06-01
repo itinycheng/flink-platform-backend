@@ -9,7 +9,9 @@ public enum SqlUdf {
      * to string
      */
     TO_STRING("to_string", "CREATE TEMPORARY SYSTEM FUNCTION to_string as 'com.itiger.persona.flink.udf.ToStringFunction' language java;"),
-    LIST_CONTAINS("list_contains", "CREATE TEMPORARY SYSTEM FUNCTION list_contains as 'com.itiger.persona.flink.udf.ListContainsValueFunction' language java;");
+    LIST_CONTAINS("list_contains", "CREATE TEMPORARY SYSTEM FUNCTION list_contains as 'com.itiger.persona.flink.udf.ListContainsValueFunction' language java;"),
+    UDF_EXPRESSION("", "CREATE TEMPORARY SYSTEM FUNCTION %s as '%s' language java;");
+
 
     public final String name;
 

@@ -11,7 +11,7 @@ import static java.util.stream.Collectors.toList;
 /**
  * @author tiny.wang
  */
-public class UdfUtil {
+public class ClassUtil {
 
     public static List<SqlColumn> extractSqlColumnAnnotation(Class<?> clazz) {
         return Arrays.stream(clazz.getDeclaredFields())

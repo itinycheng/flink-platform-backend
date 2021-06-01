@@ -4,14 +4,19 @@ import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.itiger.persona.common.enums.SqlDataType;
+import com.itiger.persona.flink.udf.business.AbstractTableFunction;
+import com.itiger.persona.flink.udf.common.SqlColumn;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.experimental.Accessors;
+import lombok.val;
 
 import java.io.Serializable;
+import java.lang.reflect.Field;
+import java.util.List;
 
 /**
  * <p>
@@ -58,6 +63,9 @@ public class Signature implements Serializable {
 
     private String parser;
 
+    @TableField(exist = false)
+    private transient LabelParser labelParser;
+
     /**
      * 计算规则
      */
@@ -79,5 +87,26 @@ public class Signature implements Serializable {
      */
     private Long updateTime;
 
+    @SuppressWarnings("unchecked")
+    public LabelParser getLabelParser() {
+        if (this.labelParser != null) {
+            return labelParser;
+        }
+        try {
+            Class<?> udfClass = Class.forName(this.parser);
+            val udfInstance = (AbstractTableFunction<?, ?>) udfClass.newInstance();
+            Field tableClassField = udfClass.getField("tableClass");
+            Object tableClass = tableClassField.get(udfInstance);
+            Field tableColumnsField = udfClass.getField("tableColumns");
+            Object tableColumns = tableColumnsField.get(udfInstance);
+            Field functionNameField = udfClass.getField("functionName");
+            Object functionName = functionNameField.get(udfInstance);
+            this.labelParser = new LabelParser((String) functionName, udfClass,
+                    (Class<?>) tableClass, (List<SqlColumn>) tableColumns);
+            return labelParser;
+        } catch (Exception ex) {
+            throw new RuntimeException("parser class: {} cannot be parsed");
+        }
+    }
 
 }

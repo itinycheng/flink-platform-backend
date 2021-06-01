@@ -1,18 +1,15 @@
 package com.itiger.persona.flink.udf.business;
 
 import com.itiger.persona.common.util.JsonUtil;
-import com.itiger.persona.common.util.Preconditions;
+import com.itiger.persona.flink.udf.common.FunctionName;
 import com.itiger.persona.flink.udf.entity.PositionLabel;
-import com.itiger.persona.flink.udf.util.UdfUtil;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.flink.table.annotation.DataTypeHint;
 import org.apache.flink.table.annotation.FunctionHint;
-import org.apache.flink.table.functions.TableFunction;
 import org.apache.flink.types.Row;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * <pre>
@@ -42,19 +39,9 @@ import java.util.stream.Collectors;
  *
  * @author tiny.wang
  */
+@FunctionName("position_table")
 @FunctionHint(output = @DataTypeHint("ROW<symbol STRING, expiry STRING, strike STRING, c_right STRING, currency STRING, cost_level INTEGER, status STRING, ts BIGINT>"))
-public class PositionParserFunction extends TableFunction<Row> {
-
-    public PositionParserFunction() {
-        // validate columns' definition
-        String tableDescription = this.getClass().getAnnotation(FunctionHint.class)
-                .output().value();
-        String expectDescription = UdfUtil.extractSqlColumnAnnotation(PositionLabel.class)
-                .stream().map(sqlColumn -> String.join(" ", sqlColumn.name(), sqlColumn.type().sqlType))
-                .collect(Collectors.joining(", ", "ROW<", ">"));
-        Preconditions.checkThrow(!tableDescription.equalsIgnoreCase(expectDescription),
-                () -> new RuntimeException("value of @DataTypeHint isn't correct"));
-    }
+public class PositionParserFunction extends AbstractTableFunction<PositionLabel, Row> {
 
     public void eval(String str) {
         List<PositionLabel> positions = JsonUtil.toList(str, PositionLabel.class);

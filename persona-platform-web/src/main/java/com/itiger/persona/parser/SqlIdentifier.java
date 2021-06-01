@@ -27,18 +27,13 @@ public class SqlIdentifier {
 
     private String[] names;
 
-    public String toTableString() {
-        return String.join(SPACE, names[0], qualifier);
-    }
-
     public String toSimpleColumnStatement() {
         String backTick = Constant.BACK_TICK;
         return String.join(EMPTY, backTick, names[0], backTick);
     }
 
     public String toColumnStatement() {
-        String backTick = Constant.BACK_TICK;
-        String quotedName = String.join(EMPTY, backTick, names[0], backTick);
+        String quotedName = toSimpleColumnStatement();
         return String.join(DOT, qualifier, quotedName);
     }
 
@@ -48,14 +43,6 @@ public class SqlIdentifier {
 
     public String newColumnName() {
         return String.join(UNDERSCORE, qualifier.toLowerCase(), names[0]);
-    }
-
-    public String correctColumnName(boolean isNew) {
-        if (isNew) {
-            return newColumnName();
-        } else {
-            return getName();
-        }
     }
 
     public String getName() {
