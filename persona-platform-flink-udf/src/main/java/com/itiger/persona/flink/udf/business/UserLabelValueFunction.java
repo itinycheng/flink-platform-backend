@@ -1,8 +1,8 @@
 package com.itiger.persona.flink.udf.business;
 
+import com.itiger.persona.common.enums.SqlDataType;
 import com.itiger.persona.common.util.FunctionUtil;
 import com.itiger.persona.common.util.JsonUtil;
-import com.itiger.persona.flink.udf.common.DataType;
 import com.itiger.persona.flink.udf.entity.LabelWrapper;
 import lombok.val;
 import org.apache.commons.lang3.BooleanUtils;
@@ -26,7 +26,7 @@ public class UserLabelValueFunction extends ScalarFunction {
             return null;
         }
         String value = valueObj.toString();
-        DataType dataType = DataType.of(type);
+        SqlDataType dataType = SqlDataType.of(type);
         switch (dataType) {
             case INT:
                 return NumberUtils.toInt(value);
@@ -52,8 +52,8 @@ public class UserLabelValueFunction extends ScalarFunction {
                     if (!callContext.isArgumentLiteral(1) || callContext.isArgumentNull(1)) {
                         throw callContext.newValidationError("Literal expected for second argument.");
                     }
-                    DataType dataType = callContext.getArgumentValue(1, String.class)
-                            .map(DataType::of).orElse(DataType.STRING);
+                    SqlDataType dataType = callContext.getArgumentValue(1, String.class)
+                            .map(SqlDataType::of).orElse(SqlDataType.STRING);
                     switch (dataType) {
                         case INT:
                             return Optional.of(DataTypes.INT().nullable());

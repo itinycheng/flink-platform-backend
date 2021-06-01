@@ -23,6 +23,8 @@ public class SqlParserTest {
 
     SqlSelect simpleSqlSelect;
 
+    SqlSelect listMapSqlSelect;
+
     UserGroupSqlGenService userGroupSqlGenService;
 
     @Before
@@ -99,6 +101,31 @@ public class SqlParserTest {
 
         this.simpleSqlSelect = sqlSelect;
 
+        sqlSelect = new SqlSelect();
+        subCondition1 = new SimpleSqlWhere();
+        subCondition1.setType("simple");
+        subCondition1.setOperator(SqlExpression.IN);
+        subCondition1.setColumn(SqlIdentifier.of("bus", "position_stk", "symbol"));
+        subCondition1.setOperands(new String[]{"TSLA"});
+
+        subCondition2 = new SimpleSqlWhere();
+        subCondition2.setType("simple");
+        subCondition2.setOperator(SqlExpression.EQ);
+        subCondition2.setColumn(SqlIdentifier.of("bus", "position_opt", "symbol"));
+        subCondition2.setOperands(new String[]{"NIO"});
+
+        condition2 = new CompositeSqlWhere();
+        condition2.setType("composite");
+        condition2.setRelation(SqlExpression.OR.name());
+        condition2.setConditions(Arrays.asList(subCondition1, subCondition2));
+
+        sqlSelect.setWhere(condition2);
+        sqlSelect.setFrom(UserGroupConst.SOURCE_TABLE_IDENTIFIER);
+        sqlSelect.setSelectList(Arrays.asList(SqlIdentifier.of("bus", "uuid"),
+                SqlIdentifier.of("bus", "region")));
+
+        this.listMapSqlSelect = sqlSelect;
+
         this.userGroupSqlGenService = new UserGroupSqlGenService();
     }
 
@@ -135,6 +162,12 @@ public class SqlParserTest {
     @Test
     public void test5() {
         String insertSelect = userGroupSqlGenService.generateInsertSelect(simpleSqlSelect);
+        System.out.println(insertSelect);
+    }
+
+    @Test
+    public void test6() {
+        String insertSelect = userGroupSqlGenService.generateInsertSelect(listMapSqlSelect);
         System.out.println(insertSelect);
     }
 

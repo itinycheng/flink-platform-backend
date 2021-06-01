@@ -2,10 +2,12 @@ package com.itiger.persona.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.itiger.persona.common.enums.SqlDataType;
+import com.itiger.persona.entity.LabelParser;
 import com.itiger.persona.entity.Signature;
 import com.itiger.persona.enums.SqlExpression;
 import com.itiger.persona.enums.SqlUdf;
 import com.itiger.persona.enums.SqlVar;
+import com.itiger.persona.flink.udf.common.SqlColumn;
 import com.itiger.persona.parser.CompositeSqlWhere;
 import com.itiger.persona.parser.SimpleSqlWhere;
 import com.itiger.persona.parser.SqlIdentifier;
@@ -36,6 +38,7 @@ import static com.itiger.persona.common.constants.Constant.LINE_SEPARATOR;
 import static com.itiger.persona.common.constants.Constant.SINGLE_QUOTE;
 import static com.itiger.persona.common.constants.Constant.SLASH;
 import static com.itiger.persona.common.constants.Constant.SPACE;
+import static com.itiger.persona.common.constants.Constant.UNDERSCORE;
 import static com.itiger.persona.constants.SqlConstant.FROM;
 import static com.itiger.persona.constants.SqlConstant.SELECT;
 import static com.itiger.persona.constants.SqlConstant.WHERE;
@@ -47,6 +50,7 @@ import static com.itiger.persona.constants.UserGroupConst.SOURCE_TABLE_DT_PARTIT
 import static com.itiger.persona.constants.UserGroupConst.SOURCE_TABLE_IDENTIFIER;
 import static com.itiger.persona.constants.UserGroupConst.UUID;
 import static com.itiger.persona.enums.SqlUdf.LIST_CONTAINS;
+import static com.itiger.persona.enums.SqlUdf.UDF_EXPRESSION;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.joining;
 
@@ -102,7 +106,33 @@ public class UserGroupSqlGenService {
     }
 
     private String generateLateralTableStatement(SqlSelect sqlSelect) {
-        return null;
+        return sqlSelect.getSelectList().stream()
+                .map(identifier -> Pair.of(identifier, getSignature(identifier.getName())))
+                .filter(pair -> SqlDataType.LIST_MAP.equals(pair.getRight().getDataType()))
+                .map(this::generateLateralTableSegment)
+                .collect(joining(COMMA + LINE_SEPARATOR));
+    }
+
+    /**
+     * only AbstractTableFunction supported
+     */
+    public String generateLateralTableSegment(Pair<SqlIdentifier, Signature> pair) {
+        try {
+            Signature signature = pair.getRight();
+            SqlIdentifier identifier = pair.getLeft();
+            LabelParser labelParser = signature.getLabelParser();
+            String[] split = identifier.getName().split(UNDERSCORE);
+            final String prefix = split[split.length - 1];
+            String expression = SqlExpression.JOIN_TABLE_FUNC.expression
+                    .replace(PLACEHOLDER_UDF_NAME, labelParser.getFunctionName());
+            return String.format(expression, identifier.newColumnName()
+                    , labelParser.getDataColumns().stream()
+                            .map(sqlColumn -> String.join(UNDERSCORE, prefix, sqlColumn.name()))
+                            .collect(joining(COMMA))
+            );
+        } catch (Exception e) {
+            throw new RuntimeException("generate lateral table failed", e);
+        }
     }
 
     public String generateSelectStatement(List<SqlIdentifier> selectList) {
@@ -245,10 +275,13 @@ public class UserGroupSqlGenService {
                 column = SqlIdentifier.of(column.getQualifier(), columnAndKey[0]);
                 String newColumnName = column.newColumnName();
                 return String.join(EMPTY, newColumnName, "['", columnAndKey[1], "']");
+            case LIST_MAP:
+                String[] split = column.getName().split(UNDERSCORE);
+                final String prefix = split[split.length - 1];
+                return String.join(UNDERSCORE, prefix, column.getNames()[1]);
             case STRING:
             case NUMBER:
             case LIST:
-            case LIST_MAP:
             default:
                 return column.newColumnName();
         }
@@ -258,25 +291,37 @@ public class UserGroupSqlGenService {
         String[] operands = simpleWhere.getOperands();
         SqlExpression operatorExpr = simpleWhere.getOperator();
         SqlDataType sqlDataType = signature.getDataType();
-        //TODO check the list of sql expressions supported by sql data type
+        // TODO check the list of sql expressions supported by sql data type
         switch (sqlDataType) {
             case NUMBER:
             case STRING:
             case MAP:
-                Object[] simpleTypeOperands = Arrays.stream(operands)
+                return Pair.of(null, Arrays.stream(operands)
                         .map(operand -> decorateWhereOperand(operatorExpr, operand, sqlDataType))
-                        .toArray();
-                return Pair.of(null, simpleTypeOperands);
+                        .toArray());
             case LIST:
                 if (operatorExpr != SqlExpression.CONTAINS) {
-                    throw new RuntimeException("Currently support sql expression `CONTAINS`");
+                    throw new RuntimeException("Currently only support sql expression `CONTAINS`");
                 }
                 cacheUdf(LIST_CONTAINS.createStatement);
-                Object[] listTypeOperands = Arrays.stream(operands)
+                return Pair.of(LIST_CONTAINS.name, Arrays.stream(operands)
                         .map(operand -> decorateWhereOperand(operatorExpr, operand, SqlDataType.STRING))
-                        .toArray();
-                return Pair.of(LIST_CONTAINS.name, listTypeOperands);
+                        .toArray());
             case LIST_MAP:
+                LabelParser labelParser = signature.getLabelParser();
+                String createParserStatement = String.format(UDF_EXPRESSION.createStatement,
+                        labelParser.getFunctionName(),
+                        labelParser.getFunctionClass().getCanonicalName());
+                cacheUdf(createParserStatement);
+                List<SqlColumn> dataColumns = labelParser.getDataColumns();
+                SqlIdentifier column = simpleWhere.getColumn();
+                SqlColumn dataColumn = dataColumns.stream()
+                        .filter(sqlColumn -> sqlColumn.name().equalsIgnoreCase(column.getNames()[1]))
+                        .findFirst()
+                        .orElseThrow(() -> new RuntimeException("value at the second index of names[] not found"));
+                return Pair.of(null, Arrays.stream(operands)
+                        .map(operand -> decorateWhereOperand(operatorExpr, operand, dataColumn.type()))
+                        .toArray());
             default:
                 throw new RuntimeException(String.format("Unsupported sql data type %s", sqlDataType.name()));
         }
