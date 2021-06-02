@@ -120,7 +120,7 @@ public class UserGroupSqlGenService {
         try {
             Signature signature = pair.getRight();
             SqlIdentifier identifier = pair.getLeft();
-            LabelParser labelParser = signature.getLabelParser();
+            LabelParser labelParser = signature.getOrCreateLabelParser();
             String[] split = identifier.getName().split(UNDERSCORE);
             final String prefix = split[split.length - 1];
             String expression = SqlExpression.JOIN_TABLE_FUNC.expression
@@ -308,7 +308,7 @@ public class UserGroupSqlGenService {
                         .map(operand -> decorateWhereOperand(operatorExpr, operand, DataType.STRING))
                         .toArray());
             case LIST_MAP:
-                LabelParser labelParser = signature.getLabelParser();
+                LabelParser labelParser = signature.getOrCreateLabelParser();
                 String createParserStatement = String.format(UDF_EXPRESSION.createStatement,
                         labelParser.getFunctionName(),
                         labelParser.getFunctionClass().getCanonicalName());

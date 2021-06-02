@@ -3,6 +3,7 @@ package com.itiger.persona.entity;
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.itiger.persona.common.enums.DataType;
 import com.itiger.persona.flink.udf.business.AbstractTableFunction;
 import com.itiger.persona.flink.udf.common.SqlColumn;
@@ -13,6 +14,7 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.experimental.Accessors;
 import lombok.val;
+import org.apache.commons.lang3.StringUtils;
 
 import java.io.Serializable;
 import java.lang.reflect.Field;
@@ -63,6 +65,7 @@ public class Signature implements Serializable {
 
     private String parser;
 
+    @JsonIgnore
     @TableField(exist = false)
     private transient LabelParser labelParser;
 
@@ -88,12 +91,12 @@ public class Signature implements Serializable {
     private Long updateTime;
 
     @SuppressWarnings("unchecked")
-    public LabelParser getLabelParser() {
-        if (this.labelParser != null) {
+    public LabelParser getOrCreateLabelParser() {
+        if (labelParser != null || StringUtils.isBlank(parser)) {
             return labelParser;
         }
         try {
-            Class<?> udfClass = Class.forName(this.parser);
+            Class<?> udfClass = Class.forName(parser);
             val udfInstance = (AbstractTableFunction<?, ?>) udfClass.newInstance();
             Field tableClassField = udfClass.getField("tableClass");
             Object tableClass = tableClassField.get(udfInstance);
@@ -105,7 +108,7 @@ public class Signature implements Serializable {
                     (Class<?>) tableClass, (List<SqlColumn>) tableColumns);
             return labelParser;
         } catch (Exception ex) {
-            throw new RuntimeException("parser class: {} cannot be parsed");
+            throw new RuntimeException(String.format("parser class: %s cannot be parsed", parser));
         }
     }
 
