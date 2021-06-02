@@ -10,13 +10,12 @@ import static java.util.stream.Collectors.toMap;
 /**
  * @author tiger
  */
-
-public enum SqlDataType {
+public enum DataType {
     /**
      * data type
      */
     @Deprecated
-    NUMBER(EMPTY, "DOUBLE"),
+    NUMBER(EMPTY, "UNDEFINED"),
 
     STRING(SINGLE_QUOTE, "STRING"),
 
@@ -40,15 +39,15 @@ public enum SqlDataType {
 
     public final String sqlType;
 
-    SqlDataType(String quote, String sqlType) {
+    DataType(String quote, String sqlType) {
         this.quote = quote;
         this.sqlType = sqlType;
     }
 
-    private static final Map<String, SqlDataType> ENUM_MAP = Arrays.stream(values())
+    private static final Map<String, DataType> ENUM_MAP = Arrays.stream(values())
             .collect(toMap(Enum::name, dataType -> dataType));
 
-    public static SqlDataType of(String type) {
+    public static DataType of(String type) {
         return ENUM_MAP.get(type.toUpperCase());
     }
 }
