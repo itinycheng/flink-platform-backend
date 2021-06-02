@@ -63,12 +63,12 @@ public class UserGroupSqlGenService {
 
     private static final String INSERT_OVERWRITE_EXPR = "INSERT OVERWRITE `t_hive_user_group_result` PARTITION(id = '%s', ts = %s) \n";
 
-    private static final String INSERT_SELECT_ONE_COLUMN = "SELECT %s AS result_value FROM \n";
+    private static final String INSERT_SELECT_ONE_COLUMN = "SELECT DISTINCT %s AS result_value FROM \n";
 
     /**
      * TODO MAP, LIST_MAP unsupported, need convert column.key to column['key']
      */
-    private static final String INSERT_SELECT_MULTI_COLUMNS = "SELECT " + PLACEHOLDER_UDF_NAME + "(MAP[%s]) AS result_value FROM \n";
+    private static final String INSERT_SELECT_MULTI_COLUMNS = "SELECT DISTINCT " + PLACEHOLDER_UDF_NAME + "(MAP[%s]) AS result_value FROM \n";
 
     /**
      * insert overwrite table
