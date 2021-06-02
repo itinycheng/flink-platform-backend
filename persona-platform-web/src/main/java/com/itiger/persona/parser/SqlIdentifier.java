@@ -34,7 +34,7 @@ public class SqlIdentifier {
 
     public String toColumnStatement() {
         String quotedName = toSimpleColumnStatement();
-        return String.join(DOT, qualifier, quotedName);
+        return String.join(DOT, qualifier.toLowerCase(), quotedName);
     }
 
     public String toColumnAsStatement() {

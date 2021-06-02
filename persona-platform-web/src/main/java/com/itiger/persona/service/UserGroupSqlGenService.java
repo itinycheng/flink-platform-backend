@@ -161,12 +161,12 @@ public class UserGroupSqlGenService {
         if (isSubQueryNeeded(allIdentifiers)) {
             return generateSubQueryStatement(allIdentifiers);
         } else {
-            String accountType = allIdentifiers.stream().map(SqlIdentifier::getQualifier).findFirst()
+            SqlIdentifier sqlIdentifier = allIdentifiers.stream().findFirst()
                     .orElseThrow(() -> new RuntimeException("no sql identifier found"));
-            String whichPartition = generatePartitionSegment(accountType);
+            String whichPartition = generatePartitionSegment(sqlIdentifier.getQualifier());
             String selectList = allIdentifiers.stream().map(SqlIdentifier::toColumnAsStatement).collect(joining(COMMA));
             return String.join(SPACE, BRACKET_LEFT, SELECT, selectList,
-                    FROM, sqlSelect.getFrom().getName(),
+                    FROM, sqlSelect.getFrom().getName(), sqlIdentifier.getQualifier().toLowerCase(),
                     WHERE, whichPartition, BRACKET_RIGHT, sqlSelect.getFrom().getQualifier());
         }
     }
