@@ -1,7 +1,7 @@
 package com.itiger.persona.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import com.itiger.persona.common.enums.SqlDataType;
+import com.itiger.persona.common.enums.DataType;
 import com.itiger.persona.entity.LabelParser;
 import com.itiger.persona.entity.Signature;
 import com.itiger.persona.enums.SqlExpression;
@@ -75,7 +75,7 @@ public class UserGroupSqlGenService {
      */
     private static final String INSERT_OVERWRITE_STATEMENT = String.format(INSERT_OVERWRITE_EXPR, SqlVar.JOB_CODE.variable, SqlVar.CURRENT_TIMESTAMP.variable);
 
-    private static final ThreadLocal<List<String>> UDFS = new ThreadLocal<>();
+    private static final ThreadLocal<Set<String>> UDFS = new ThreadLocal<>();
 
     @Resource
     private ISignatureService iSignatureService;
@@ -106,9 +106,9 @@ public class UserGroupSqlGenService {
     }
 
     private String generateLateralTableStatement(SqlSelect sqlSelect) {
-        return sqlSelect.getSelectList().stream()
+        return sqlSelect.getWhere().exhaustiveSqlIdentifiers().stream()
                 .map(identifier -> Pair.of(identifier, getSignature(identifier.getName())))
-                .filter(pair -> SqlDataType.LIST_MAP.equals(pair.getRight().getDataType()))
+                .filter(pair -> DataType.LIST_MAP.equals(pair.getRight().getDataType()))
                 .map(this::generateLateralTableSegment)
                 .collect(joining(COMMA + LINE_SEPARATOR));
     }
@@ -226,7 +226,7 @@ public class UserGroupSqlGenService {
                 .orElseThrow(() -> new RuntimeException("maximum dt not found"));
         String dtStatement = String.format(SqlExpression.EQ.expression, SOURCE_TABLE_DT_PARTITION, maxDt);
         String accountTypeStatement = String.format(SqlExpression.EQ.expression, SOURCE_TABLE_ACCOUNT_TYPE_PARTITION,
-                String.join(EMPTY, SqlDataType.STRING.quote, accountType.toUpperCase(), SqlDataType.STRING.quote));
+                String.join(EMPTY, DataType.STRING.quote, accountType.toUpperCase(), DataType.STRING.quote));
         return String.format(SqlExpression.AND.expression, dtStatement, accountTypeStatement);
     }
 
@@ -290,14 +290,14 @@ public class UserGroupSqlGenService {
     private Pair<String, Object[]> decorateWhereOperands(SimpleSqlWhere simpleWhere, Signature signature) {
         String[] operands = simpleWhere.getOperands();
         SqlExpression operatorExpr = simpleWhere.getOperator();
-        SqlDataType sqlDataType = signature.getDataType();
+        DataType dataType = signature.getDataType();
         // TODO check the list of sql expressions supported by sql data type
-        switch (sqlDataType) {
+        switch (dataType) {
             case NUMBER:
             case STRING:
             case MAP:
                 return Pair.of(null, Arrays.stream(operands)
-                        .map(operand -> decorateWhereOperand(operatorExpr, operand, sqlDataType))
+                        .map(operand -> decorateWhereOperand(operatorExpr, operand, dataType))
                         .toArray());
             case LIST:
                 if (operatorExpr != SqlExpression.CONTAINS) {
@@ -305,7 +305,7 @@ public class UserGroupSqlGenService {
                 }
                 cacheUdf(LIST_CONTAINS.createStatement);
                 return Pair.of(LIST_CONTAINS.name, Arrays.stream(operands)
-                        .map(operand -> decorateWhereOperand(operatorExpr, operand, SqlDataType.STRING))
+                        .map(operand -> decorateWhereOperand(operatorExpr, operand, DataType.STRING))
                         .toArray());
             case LIST_MAP:
                 LabelParser labelParser = signature.getLabelParser();
@@ -323,17 +323,17 @@ public class UserGroupSqlGenService {
                         .map(operand -> decorateWhereOperand(operatorExpr, operand, dataColumn.type()))
                         .toArray());
             default:
-                throw new RuntimeException(String.format("Unsupported sql data type %s", sqlDataType.name()));
+                throw new RuntimeException(String.format("Unsupported sql data type %s", dataType.name()));
         }
     }
 
-    private String decorateWhereOperand(SqlExpression operatorExpr, String operand, SqlDataType sqlDataType) {
-        if (operatorExpr.isSupportMultiParameter() && !EMPTY.equals(sqlDataType.quote)) {
+    private String decorateWhereOperand(SqlExpression operatorExpr, String operand, DataType dataType) {
+        if (operatorExpr.isSupportMultiParameter() && !EMPTY.equals(dataType.quote)) {
             return Arrays.stream(operand.split(COMMA))
-                    .map(item -> String.join(EMPTY, sqlDataType.quote, item, sqlDataType.quote))
+                    .map(item -> String.join(EMPTY, dataType.quote, item, dataType.quote))
                     .collect(joining(COMMA));
         } else {
-            return String.join(EMPTY, sqlDataType.quote, operand, sqlDataType.quote);
+            return String.join(EMPTY, dataType.quote, operand, dataType.quote);
         }
     }
 
@@ -343,9 +343,9 @@ public class UserGroupSqlGenService {
     }
 
     private void cacheUdf(String udfStatement) {
-        List<String> list = UDFS.get();
+        Set<String> list = UDFS.get();
         if (list == null) {
-            list = new ArrayList<>();
+            list = new HashSet<>();
             UDFS.set(list);
         }
         list.add(udfStatement);

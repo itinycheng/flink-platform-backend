@@ -1,6 +1,6 @@
 package com.itiger.persona.flink.udf.common;
 
-import com.itiger.persona.common.enums.SqlDataType;
+import com.itiger.persona.common.enums.DataType;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -20,6 +20,6 @@ public @interface SqlColumn {
 
     String name() default "";
 
-    SqlDataType type() default SqlDataType.STRING;
+    DataType type() default DataType.STRING;
 
 }

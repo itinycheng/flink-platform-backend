@@ -3,7 +3,7 @@ package com.itiger.persona.entity;
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
-import com.itiger.persona.common.enums.SqlDataType;
+import com.itiger.persona.common.enums.DataType;
 import com.itiger.persona.flink.udf.business.AbstractTableFunction;
 import com.itiger.persona.flink.udf.common.SqlColumn;
 import lombok.AllArgsConstructor;
@@ -57,7 +57,7 @@ public class Signature implements Serializable {
      */
     private Integer type;
 
-    private SqlDataType dataType;
+    private DataType dataType;
 
     private String accountType;
 
