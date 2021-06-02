@@ -106,7 +106,7 @@ public class SqlParserTest {
         subCondition1.setType("simple");
         subCondition1.setOperator(SqlExpression.IN);
         subCondition1.setColumn(SqlIdentifier.of("bus", "position_stk", "symbol"));
-        subCondition1.setOperands(new String[]{"TSLA"});
+        subCondition1.setOperands(new String[]{"TSLA,LI"});
 
         subCondition2 = new SimpleSqlWhere();
         subCondition2.setType("simple");
