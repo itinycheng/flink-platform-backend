@@ -164,7 +164,7 @@ public class UserGroupSqlGenService {
             SqlIdentifier sqlIdentifier = allIdentifiers.stream().findFirst()
                     .orElseThrow(() -> new RuntimeException("no sql identifier found"));
             String whichPartition = generatePartitionSegment(sqlIdentifier.getQualifier());
-            String selectList = allIdentifiers.stream().map(SqlIdentifier::toColumnAsStatement).collect(joining(COMMA));
+            String selectList = allIdentifiers.stream().map(SqlIdentifier::toColumnAsStatement).distinct().collect(joining(COMMA));
             return String.join(SPACE, BRACKET_LEFT, SELECT, selectList,
                     FROM, sqlSelect.getFrom().getName(), sqlIdentifier.getQualifier().toLowerCase(),
                     WHERE, whichPartition, BRACKET_RIGHT, sqlSelect.getFrom().getQualifier());
@@ -198,7 +198,7 @@ public class UserGroupSqlGenService {
         grouped.entrySet().stream()
                 .filter(entry -> entry.getValue().stream().noneMatch(identifier -> UUID.equalsIgnoreCase(identifier.getName())))
                 .forEach(entry -> entry.getValue().add(SqlIdentifier.of(entry.getKey(), UUID)));
-        String selectStatement = identifiers.stream().map(SqlIdentifier::toColumnAsStatement).collect(joining(COMMA));
+        String selectStatement = identifiers.stream().map(SqlIdentifier::toColumnAsStatement).distinct().collect(joining(COMMA));
         String tableStatement = grouped.entrySet().stream().map(entry -> String.join(SPACE, BRACKET_LEFT, SELECT,
                 entry.getValue().stream().map(SqlIdentifier::toSimpleColumnStatement).collect(joining(COMMA)),
                 FROM, SOURCE_TABLE_IDENTIFIER.getName(), WHERE, generatePartitionSegment(entry.getKey())
