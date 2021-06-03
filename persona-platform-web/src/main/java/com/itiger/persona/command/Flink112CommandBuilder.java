@@ -6,12 +6,12 @@ import com.itiger.persona.entity.JobInfo;
 import com.itiger.persona.enums.DeployMode;
 import com.itiger.persona.enums.JobType;
 import com.itiger.persona.service.HdfsService;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.hadoop.fs.Path;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.Resource;
-import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -22,6 +22,7 @@ import static com.itiger.persona.common.constants.JobConstant.YARN_NAME;
 /**
  * @author tiny.wang
  */
+@Slf4j
 @Component("flink112CommandBuilder")
 public class Flink112CommandBuilder implements JobCommandBuilder {
 
@@ -82,11 +83,15 @@ public class Flink112CommandBuilder implements JobCommandBuilder {
         return command;
     }
 
-    private String getLocalPathOfSqlJarFile() throws IOException {
+    private String getLocalPathOfSqlJarFile() {
         Path hdfsJarPath = new Path(hdfsJarFile);
         String sqlJarName = hdfsJarPath.getName();
         String localFile = String.join("/", ROOT_DIR, jobJarDir, sqlJarName);
-        hdfsService.copyFileToLocalIfChanged(hdfsJarPath, new Path(localFile));
+        try {
+            hdfsService.copyFileToLocalIfChanged(hdfsJarPath, new Path(localFile));
+        } catch (Exception e) {
+            log.error("copy {} from hdfs to local disk failed", sqlJarName, e);
+        }
         return localFile;
     }
 }

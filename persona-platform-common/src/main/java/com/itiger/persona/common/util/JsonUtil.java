@@ -3,6 +3,7 @@ package com.itiger.persona.common.util;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.serializer.SerializerFeature;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.ObjectUtils;
 
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
@@ -27,13 +28,13 @@ public class JsonUtil {
     }
 
     public static <T> List<T> toList(String res, Class<T> clazz) {
-        return FunctionUtil.getOrDefault(() -> JSON.parseArray(res, clazz),
-                Collections.emptyList());
+        List<T> orDefault = FunctionUtil.getOrDefault(() -> JSON.parseArray(res, clazz), null);
+        return ObjectUtils.defaultIfNull(orDefault, Collections.emptyList());
     }
 
     public static Map<String, Object> toMap(String res) {
-        return FunctionUtil.getOrDefault(() -> JSON.parseObject(res),
-                Collections.emptyMap());
+        Map<String, Object> orDefault = FunctionUtil.getOrDefault(() -> JSON.parseObject(res), null);
+        return ObjectUtils.defaultIfNull(orDefault, Collections.emptyMap());
     }
 
     public static Map<String, String> toStrMap(String res) {
