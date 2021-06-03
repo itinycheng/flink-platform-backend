@@ -59,8 +59,15 @@ public class RedisConfig {
         return jackson2JsonRedisSerializer;
     }
 
-    @Bean
+    @Bean(value = "cache_manager")
     public CacheManager cacheManager() {
+        return RedisCacheManager.builder(RedisCacheWriter.nonLockingRedisCacheWriter(Objects.requireNonNull(redisTemplate.getConnectionFactory())))
+                .cacheDefaults(RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofSeconds(60)))
+                .build();
+    }
+
+    @Bean(value = "token_cache")
+    public CacheManager tokenCacheManager() {
         return RedisCacheManager.builder(RedisCacheWriter.nonLockingRedisCacheWriter(Objects.requireNonNull(redisTemplate.getConnectionFactory())))
                 .cacheDefaults(RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofSeconds(60)))
                 .build();

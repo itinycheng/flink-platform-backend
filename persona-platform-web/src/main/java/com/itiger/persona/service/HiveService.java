@@ -2,6 +2,7 @@ package com.itiger.persona.service;
 
 import com.baomidou.dynamic.datasource.annotation.DS;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheConfig;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
@@ -17,6 +18,7 @@ import java.util.List;
 @Slf4j
 @Service
 @DS("hive")
+@CacheConfig(cacheManager = "cache_manager")
 public class HiveService {
 
     @Resource
