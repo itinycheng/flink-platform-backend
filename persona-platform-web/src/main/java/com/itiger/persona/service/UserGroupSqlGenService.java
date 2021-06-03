@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.IntStream;
 
 import static com.itiger.persona.common.constants.Constant.AS;
@@ -106,10 +107,11 @@ public class UserGroupSqlGenService {
     }
 
     private String generateLateralTableStatement(SqlSelect sqlSelect) {
+        AtomicInteger index = new AtomicInteger(0);
         return sqlSelect.getWhere().exhaustiveSqlIdentifiers().stream()
                 .map(identifier -> Pair.of(identifier, getSignature(identifier.getName())))
                 .filter(pair -> DataType.LIST_MAP.equals(pair.getRight().getDataType()))
-                .map(this::generateLateralTableSegment)
+                .map(pair -> generateLateralTableSegment(pair, index.incrementAndGet()))
                 .distinct()
                 .collect(joining(COMMA + LINE_SEPARATOR));
     }
@@ -117,7 +119,7 @@ public class UserGroupSqlGenService {
     /**
      * only AbstractTableFunction supported
      */
-    public String generateLateralTableSegment(Pair<SqlIdentifier, Signature> pair) {
+    public String generateLateralTableSegment(Pair<SqlIdentifier, Signature> pair, int index) {
         try {
             Signature signature = pair.getRight();
             SqlIdentifier identifier = pair.getLeft();
@@ -126,7 +128,7 @@ public class UserGroupSqlGenService {
             final String prefix = split[split.length - 1];
             String expression = SqlExpression.JOIN_TABLE_FUNC.expression
                     .replace(PLACEHOLDER_UDF_NAME, labelParser.getFunctionName());
-            return String.format(expression, identifier.newColumnName()
+            return String.format(expression, identifier.newColumnName(), index
                     , labelParser.getDataColumns().stream()
                             .map(sqlColumn -> String.join(UNDERSCORE, prefix, sqlColumn.name()))
                             .collect(joining(COMMA))
