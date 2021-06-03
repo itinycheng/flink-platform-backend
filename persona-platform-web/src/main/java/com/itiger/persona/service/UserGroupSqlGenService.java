@@ -110,6 +110,7 @@ public class UserGroupSqlGenService {
                 .map(identifier -> Pair.of(identifier, getSignature(identifier.getName())))
                 .filter(pair -> DataType.LIST_MAP.equals(pair.getRight().getDataType()))
                 .map(this::generateLateralTableSegment)
+                .distinct()
                 .collect(joining(COMMA + LINE_SEPARATOR));
     }
 
