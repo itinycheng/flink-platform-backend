@@ -8,7 +8,6 @@ import org.apache.flink.table.annotation.DataTypeHint;
 import org.apache.flink.table.annotation.FunctionHint;
 import org.apache.flink.types.Row;
 
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -44,35 +43,31 @@ import java.util.List;
 public class PositionParserFunction extends AbstractTableFunction<PositionLabel, Row> {
 
     public void eval(String str) {
-        List<PositionLabel> positions = JsonUtil.toList(str, PositionLabel.class);
-        collectOut(positions);
+        JsonUtil.toList(str, PositionLabel.class)
+                .forEach(this::collectOut);
     }
 
     public void eval(List<String> list) {
         if (CollectionUtils.isEmpty(list)) {
             return;
         }
-        List<PositionLabel> positions = new ArrayList<>(list.size());
         for (String str : list) {
-            positions.add(JsonUtil.toBean(str, PositionLabel.class));
+            collectOut(JsonUtil.toBean(str, PositionLabel.class));
         }
-        collectOut(positions);
     }
 
-    private void collectOut(List<PositionLabel> positions) {
-        if (CollectionUtils.isEmpty(positions)) {
+    private void collectOut(PositionLabel position) {
+        if (position == null) {
             return;
         }
-        for (PositionLabel position : positions) {
-            collect(Row.of(position.getSymbol(),
-                    position.getExpiry(),
-                    position.getStrike(),
-                    position.getRight(),
-                    position.getCurrency(),
-                    position.getCostLevel(),
-                    position.getStatus(),
-                    position.getTimestamp()));
-        }
+        collect(Row.of(position.getSymbol(),
+                position.getExpiry(),
+                position.getStrike(),
+                position.getRight(),
+                position.getCurrency(),
+                position.getCostLevel(),
+                position.getStatus(),
+                position.getTimestamp()));
     }
 
 }
