@@ -12,7 +12,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
@@ -28,13 +27,13 @@ public class JsonUtil {
     }
 
     public static <T> List<T> toList(String res, Class<T> clazz) {
-        return Optional.ofNullable(JSON.parseArray(res, clazz))
-                .orElse(Collections.emptyList());
+        return FunctionUtil.getOrDefault(() -> JSON.parseArray(res, clazz),
+                Collections.emptyList());
     }
 
     public static Map<String, Object> toMap(String res) {
-        return Optional.ofNullable((Map<String, Object>) JSON.parseObject(res))
-                .orElse(Collections.emptyMap());
+        return FunctionUtil.getOrDefault(() -> JSON.parseObject(res),
+                Collections.emptyMap());
     }
 
     public static Map<String, String> toStrMap(String res) {
@@ -47,7 +46,7 @@ public class JsonUtil {
     }
 
     public static <T> T toBean(String res, Class<T> clazz) {
-        return JSON.parseObject(res, clazz);
+        return FunctionUtil.getOrDefault(() -> JSON.parseObject(res, clazz), null);
     }
 
     public static <T> T toBean(Path path, Class<T> clazz) throws Exception {
