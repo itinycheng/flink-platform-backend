@@ -40,7 +40,7 @@ public enum SqlExpression {
     /**
      * only for data type of list_map
      */
-    JOIN_TABLE_FUNC(" lateral table(" + PLACEHOLDER_UDF_NAME + "(%s)) as t(%s) ");
+    JOIN_TABLE_FUNC(" LATERAL TABLE(" + PLACEHOLDER_UDF_NAME + "(%s)) as t%d(%s) ");
 
     public static final List<SqlExpression> SUPPORT_MULTI_INPUT_PARAMETER = Arrays.asList(IN, NOT_IN);
 
