@@ -1,6 +1,7 @@
 package com.itiger.persona.flink.udf.business;
 
 import com.alibaba.fastjson.JSON;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.flink.table.functions.ScalarFunction;
 
@@ -18,7 +19,9 @@ public class ListParseFunction extends ScalarFunction {
     public List<String> eval(String value) {
         if (StringUtils.isNotBlank(value)) {
             List<String> list = JSON.parseObject(value, List.class);
-            return list;
+            if(CollectionUtils.isNotEmpty(list)) {
+                return list;
+            }
         }
         return null;
 
