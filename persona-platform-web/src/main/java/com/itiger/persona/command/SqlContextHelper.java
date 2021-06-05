@@ -23,10 +23,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 
-import static com.itiger.persona.common.constants.JobConstant.DOT;
+import static com.itiger.persona.common.constants.Constant.DOT;
+import static com.itiger.persona.common.constants.Constant.SEMICOLON;
 import static com.itiger.persona.common.constants.JobConstant.JSON_FILE_SUFFIX;
 import static com.itiger.persona.common.constants.JobConstant.ROOT_DIR;
-import static com.itiger.persona.common.constants.JobConstant.SEMICOLON;
 import static com.itiger.persona.common.constants.JobConstant.SQL_PATTERN;
 import static java.util.stream.Collectors.toList;
 

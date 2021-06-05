@@ -13,6 +13,14 @@ import lombok.NoArgsConstructor;
 @EqualsAndHashCode
 public class UserGroupRequest {
 
+    /**
+     * job run id
+     */
+    private Long runId;
+
+    /**
+     * job id
+     */
     private Long id;
 
     private String name;
