@@ -3,13 +3,9 @@ package com.itiger.persona.mapper;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.itiger.persona.entity.JobRunInfo;
 import org.apache.ibatis.annotations.Mapper;
-import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 import org.apache.ibatis.annotations.Update;
 import org.springframework.stereotype.Repository;
-
-import java.util.List;
-import java.util.Map;
 
 /**
  * <p>
@@ -22,32 +18,23 @@ import java.util.Map;
 @Repository
 @Mapper
 public interface JobRunInfoMapper extends BaseMapper<JobRunInfo> {
-    String SELECT_JOB_STATES = "<script>" +
-            "select \n" +
-            "back_info \n" +
-            "id \n" +
-            "`status` \n" +
-            "from signature\n" +
-            "where `status` in (2,3,4)\n" +
-            "</script>";
-    @Select(SELECT_JOB_STATES)
-    List<Map<String,Object>> selectJobStates();
 
-    String SELECT_BY_ID = "<script>" +
-            "select \n" +
-            "* \n" +
-            "from signature\n" +
-            "where id = #{id}\n" +
-            "</script>";
-    @Select(SELECT_BY_ID)
-    List<Map<String,Object>> selectById(@Param("id") Integer id);
+    /**
+     * get latest run info by job_id
+     *
+     * @param jobId job id
+     * @return job run info
+     */
+    @Select("select * from t_job_run_info where job_id = #{jobId} order by id desc limit 1")
+    JobRunInfo selectLatestByJobId(Long jobId);
 
-    String UPDATE_JOB_STATES = "<script>" +
-            "update \n" +
-            "signature\n" +
-            "set status = #{status} \n" +
-            "where id = #{id}\n" +
-            "</script>";
-    @Update(UPDATE_JOB_STATES)
-    void updateJobState(@Param("id") Integer id, @Param("status") Integer status);
+    /**
+     * update result size
+     *
+     * @param id   id
+     * @param size result size
+     * @return updated items size
+     */
+    @Update("update t_job_run_info set result_size = #{size} where id = #{id}")
+    int updateResultSize(Long id, Long size);
 }

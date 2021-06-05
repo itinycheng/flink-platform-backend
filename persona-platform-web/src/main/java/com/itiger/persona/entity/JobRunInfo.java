@@ -3,6 +3,7 @@ package com.itiger.persona.entity;
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
+import com.itiger.persona.command.JobStatistics;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -55,6 +56,11 @@ public class JobRunInfo implements Serializable {
      * yarn application id
      */
     private String backInfo;
+
+    /**
+     * store json data of {@link JobStatistics}
+     */
+    private Long resultSize;
 
     /**
      * submit user

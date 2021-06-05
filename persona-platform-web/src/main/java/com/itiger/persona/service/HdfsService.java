@@ -11,11 +11,13 @@ import org.springframework.stereotype.Service;
 import javax.annotation.Resource;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.LineNumberReader;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static com.itiger.persona.common.constants.JobConstant.DOT;
+import static com.itiger.persona.common.constants.Constant.DOT;
 
 /**
  * service for upload/download hdfs
@@ -42,10 +44,6 @@ public class HdfsService {
         }
     }
 
-    public void moveFromLocalFile(Path localFile, Path hdfsPath) throws IOException {
-        fileSystem.moveFromLocalFile(localFile, hdfsPath);
-    }
-
     public List<Path> listVisibleFiles(String dir) throws IOException {
         return Arrays.stream(fileSystem.listStatus(new Path(dir),
                 path -> !path.getName().startsWith(DOT)))
@@ -55,5 +53,24 @@ public class HdfsService {
 
     public Pair<String, InputStream> inputStream(Path path) throws IOException {
         return Pair.of(path.getName(), fileSystem.open(path));
+    }
+
+    public boolean exists(String dir) {
+        try {
+            return fileSystem.exists(new Path(dir));
+        } catch (Exception e) {
+            log.error("exception found", e);
+            return false;
+        }
+    }
+
+    public int lineNumber(Path file) {
+        try (InputStream inputStream = inputStream(file).getRight();
+             LineNumberReader lineNumberReader = new LineNumberReader(new InputStreamReader(inputStream))) {
+            lineNumberReader.skip(Long.MAX_VALUE);
+            return lineNumberReader.getLineNumber();
+        } catch (Exception e) {
+            throw new RuntimeException(String.format("calc line number of File: %s failed", file.toString()));
+        }
     }
 }

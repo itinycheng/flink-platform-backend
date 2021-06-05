@@ -5,7 +5,7 @@ import org.apache.commons.lang3.StringUtils;
 import java.util.Arrays;
 import java.util.stream.Collectors;
 
-import static com.itiger.persona.common.constants.JobConstant.SEMICOLON;
+import static com.itiger.persona.common.constants.Constant.SEMICOLON;
 import static com.itiger.persona.common.constants.JobConstant.SQL_COMMENT_SYMBOL;
 import static com.itiger.persona.common.constants.JobConstant.SQL_LINE_SEPARATOR;
 

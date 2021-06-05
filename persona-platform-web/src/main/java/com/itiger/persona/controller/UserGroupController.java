@@ -1,6 +1,7 @@
 package com.itiger.persona.controller;
 
 import com.itiger.persona.common.enums.ExecutionMode;
+import com.itiger.persona.common.enums.ResponseStatus;
 import com.itiger.persona.common.util.JsonUtil;
 import com.itiger.persona.common.util.UuidGenerator;
 import com.itiger.persona.constants.UserGroupConst;
@@ -13,8 +14,10 @@ import com.itiger.persona.parser.SqlIdentifier;
 import com.itiger.persona.parser.SqlSelect;
 import com.itiger.persona.service.IJobInfoService;
 import com.itiger.persona.service.JobInfoQuartzService;
+import com.itiger.persona.service.UserGroupService;
 import com.itiger.persona.service.UserGroupSqlGenService;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.ObjectUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -43,6 +46,9 @@ public class UserGroupController {
 
     @Resource
     public JobInfoQuartzService jobInfoQuartzService;
+
+    @Resource
+    private UserGroupService userGroupService;
 
     @PostMapping(value = "/sqlGenerator/insertSelect")
     public ResultInfo insertSelect(@RequestBody SqlSelect sqlSelect) {
@@ -78,5 +84,19 @@ public class UserGroupController {
         jobInfoQuartzService.runOnce(jobInfo);
         jobInfoQuartzService.addJobToQuartz(jobInfo);
         return ResultInfo.success(jobInfo.getId());
+    }
+
+    @PostMapping(value = "/resultSize")
+    public ResultInfo resultSize(@RequestBody UserGroupRequest userGroupRequest) {
+        if (userGroupRequest == null
+                || ObjectUtils.defaultIfNull(userGroupRequest.getId(), 0L) <= 0) {
+            return ResultInfo.failure(ResponseStatus.ERROR_PARAMETER);
+        }
+        long resultSize = userGroupService.getResultSize(userGroupRequest.getId());
+        if (resultSize < 0) {
+            return ResultInfo.failure(ResponseStatus.SERVICE_ERROR);
+        } else {
+            return ResultInfo.success(resultSize);
+        }
     }
 }

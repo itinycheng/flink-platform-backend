@@ -26,11 +26,11 @@ public class JobConstant {
 
     public static final String YARN_NAME = "yarn.application.name";
 
-    public static final String JDBC_URL = "jdbc-url";
+    public static final String JDBC_URL = "jdbc.url";
 
-    public static final String JDBC_USERNAME = "jdbc-username";
+    public static final String JDBC_USERNAME = "jdbc.username";
 
-    public static final String JDBC_PASSWORD = "jdbc-password";
+    public static final String JDBC_PASSWORD = "jdbc.password";
 
     public static final String TIDB_DATABASE_URL = "tidb.database.url";
 
@@ -39,10 +39,6 @@ public class JobConstant {
     public static final String TIDB_PASSWORD = "tidb.password";
 
     public static final String TIDB_FILTER_PUSH_DOWN = "tidb.filter-push-down";
-
-    public final static String SEMICOLON = ";";
-
-    public final static String DOT = ".";
 
     public final static String SQL_LINE_SEPARATOR = "\n";
 
