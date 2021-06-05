@@ -7,6 +7,8 @@ import com.itiger.persona.mapper.JobRunInfoMapper;
 import com.itiger.persona.service.IJobRunInfoService;
 import org.springframework.stereotype.Service;
 
+import javax.annotation.Resource;
+
 /**
  * <p>
  * job run info 服务实现类
@@ -18,5 +20,13 @@ import org.springframework.stereotype.Service;
 @Service
 @DS("master_platform")
 public class JobRunInfoServiceImpl extends ServiceImpl<JobRunInfoMapper, JobRunInfo> implements IJobRunInfoService {
+
+    @Resource
+    private JobRunInfoMapper jobRunInfoMapper;
+
+    @Override
+    public JobRunInfo getLatestByJobId(Long jobId) {
+        return jobRunInfoMapper.selectLatestByJobId(jobId);
+    }
 
 }
