@@ -13,5 +13,11 @@ import com.itiger.persona.entity.JobRunInfo;
  */
 public interface IJobRunInfoService extends IService<JobRunInfo> {
 
-
+    /**
+     * get latest by job id
+     *
+     * @param jobId job id
+     * @return job run info
+     */
+    JobRunInfo getLatestByJobId(Long jobId);
 }
