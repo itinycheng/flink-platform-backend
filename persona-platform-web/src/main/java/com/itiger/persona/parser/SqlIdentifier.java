@@ -1,5 +1,6 @@
 package com.itiger.persona.parser;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.itiger.persona.common.constants.Constant;
 import com.itiger.persona.common.util.Preconditions;
 import lombok.AllArgsConstructor;
@@ -45,6 +46,7 @@ public class SqlIdentifier {
         return String.join(UNDERSCORE, qualifier.toLowerCase(), names[0]);
     }
 
+    @JsonIgnore
     public String getName() {
         return this.names[0];
     }

@@ -1,5 +1,6 @@
 package com.itiger.persona.controller;
 
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.itiger.persona.common.enums.ExecutionMode;
 import com.itiger.persona.common.enums.JobYarnStatusEnum;
 import com.itiger.persona.common.enums.ResponseStatus;
@@ -91,12 +92,14 @@ public class UserGroupController {
             jobInfo.setSqlPlan(JsonUtil.toJsonString(userGroupRequest.getSelect()));
             jobInfo.setCatalogs("[1]");
             jobInfo.setStatus(3);
-            if (jobInfo.getId() == null) {
+            if (userGroupRequest.getId() == null) {
                 jobInfo.setCode(UuidGenerator.generateShortUuid());
             }
             jobInfoService.saveOrUpdate(jobInfo);
-            jobInfoQuartzService.runOnce(jobInfo);
-            jobInfoQuartzService.addJobToQuartz(jobInfo);
+            if (userGroupRequest.getId() != null) {
+                jobInfoQuartzService.runOnce(jobInfo);
+                jobInfoQuartzService.addJobToQuartz(jobInfo);
+            }
             return ResultInfo.success(jobInfo.getId());
         } catch (Exception e) {
             log.error("create or update user group failed", e);
@@ -112,7 +115,14 @@ public class UserGroupController {
                     || ObjectUtils.defaultIfNull(userGroupRequest.getId(), 0L) <= 0) {
                 return ResultInfo.failure(ResponseStatus.ERROR_PARAMETER);
             }
-            jobRunInfo = jobRunInfoService.getLatestByJobId(userGroupRequest.getId());
+
+            Long runId = userGroupRequest.getRunId();
+            if (runId != null) {
+                jobRunInfo = jobRunInfoService.getOne(new QueryWrapper<JobRunInfo>().lambda().eq(JobRunInfo::getId, runId));
+            } else {
+                jobRunInfo = jobRunInfoService.getLatestByJobId(userGroupRequest.getId());
+            }
+
             if (jobRunInfo.getResultSize() != null) {
                 return ResultInfo.success(jobRunInfo.getResultSize());
             } else {
