@@ -95,8 +95,8 @@ public class UserGroupController {
             if (userGroupRequest.getId() == null) {
                 jobInfo.setCode(UuidGenerator.generateShortUuid());
             }
-            jobInfoService.saveOrUpdate(jobInfo);
-            if (userGroupRequest.getId() != null) {
+            boolean bool = jobInfoService.saveOrUpdate(jobInfo);
+            if (bool && userGroupRequest.getId() == null) {
                 jobInfoQuartzService.runOnce(jobInfo);
                 jobInfoQuartzService.addJobToQuartz(jobInfo);
             }
