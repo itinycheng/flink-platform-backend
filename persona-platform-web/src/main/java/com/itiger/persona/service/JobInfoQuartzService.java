@@ -1,9 +1,11 @@
 package com.itiger.persona.service;
 
+import com.itiger.persona.common.util.DateUtil;
 import com.itiger.persona.comn.QuartzException;
 import com.itiger.persona.entity.JobInfo;
 import com.itiger.persona.quartz.JobRunner;
 import lombok.extern.slf4j.Slf4j;
+import org.quartz.CronExpression;
 import org.quartz.CronTrigger;
 import org.quartz.JobDetail;
 import org.quartz.JobKey;
@@ -16,6 +18,9 @@ import org.quartz.utils.Key;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
+
+import java.text.ParseException;
+import java.util.Date;
 
 import static org.quartz.CronScheduleBuilder.cronSchedule;
 import static org.quartz.JobBuilder.newJob;
@@ -42,6 +47,7 @@ public class JobInfoQuartzService {
         boolean added = false;
         try {
             checkQuartzSchedulerStarted();
+            checkQuartzScheduleInterval(jobInfo.getCronExpr());
             boolean jobExists = isJobExists(jobInfo);
             boolean triggerExists = isTriggerExists(jobInfo);
             if (jobExists || triggerExists) {
@@ -51,7 +57,7 @@ public class JobInfoQuartzService {
                 added = true;
             }
         } catch (Exception e) {
-            log.error("add quartz job failed", e);
+            throw new QuartzException("add quartz job failed", e);
         }
         return added;
     }
@@ -59,8 +65,7 @@ public class JobInfoQuartzService {
     /**
      * 移除一个任务
      *
-     * @param jobCode
-     *            任务名
+     * @param jobCode 任务名
      */
     public void removeJob(String jobCode) {
         try {
@@ -125,6 +130,15 @@ public class JobInfoQuartzService {
     private void checkQuartzSchedulerStarted() throws SchedulerException {
         if (!scheduler.isStarted()) {
             throw new QuartzException("quartz scheduler is not started");
+        }
+    }
+
+    public static void checkQuartzScheduleInterval(String cronExpr) throws ParseException {
+        CronExpression cronExpression = new CronExpression(cronExpr);
+        Date validTime1 = cronExpression.getNextValidTimeAfter(new Date());
+        Date validTime2 = cronExpression.getNextValidTimeAfter(validTime1);
+        if (validTime2.getTime() - validTime1.getTime() < DateUtil.MILLIS_PER_MINUTE) {
+            throw new QuartzException(" schedule interval must bigger than 1 minute");
         }
     }
 

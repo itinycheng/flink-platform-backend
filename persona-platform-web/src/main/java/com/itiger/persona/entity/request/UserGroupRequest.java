@@ -4,6 +4,9 @@ import com.itiger.persona.parser.SqlSelect;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
+
+import java.util.Random;
 
 /**
  * @author tiny.wang
@@ -35,4 +38,17 @@ public class UserGroupRequest {
 
     private SqlSelect select;
 
+    public void setCronExpr(String cronExpr) {
+        String expr;
+        if (StringUtils.isNotBlank(cronExpr)) {
+            expr = cronExpr;
+        } else {
+            Random random = new Random();
+            int second = random.nextInt(60);
+            int minute = random.nextInt(60);
+            int hour = random.nextInt(9);
+            expr = String.format("%d %d %d * * ?", second, minute, hour);
+        }
+        this.cronExpr = expr;
+    }
 }

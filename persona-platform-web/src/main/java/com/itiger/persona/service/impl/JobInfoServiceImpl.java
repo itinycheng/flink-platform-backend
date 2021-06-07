@@ -3,14 +3,12 @@ package com.itiger.persona.service.impl;
 import com.baomidou.dynamic.datasource.annotation.DS;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.itiger.persona.common.enums.JobStatusEnum;
-import com.itiger.persona.entity.JobInfo;
 import com.itiger.persona.common.enums.ResponseStatus;
 import com.itiger.persona.common.exception.DefinitionException;
-import com.itiger.persona.service.IJobInfoService;
+import com.itiger.persona.entity.JobInfo;
 import com.itiger.persona.mapper.JobInfoMapper;
+import com.itiger.persona.service.IJobInfoService;
 import com.itiger.persona.service.JobInfoQuartzService;
-import org.quartz.impl.QuartzServer;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
