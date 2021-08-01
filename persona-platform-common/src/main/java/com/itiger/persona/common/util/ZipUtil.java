@@ -13,6 +13,8 @@ import java.util.List;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
+import static com.itiger.persona.common.constants.Constant.SLASH;
+
 /**
  * compress to zip file
  *
@@ -104,14 +106,14 @@ public class ZipUtil {
             File[] listFiles = sourceFile.listFiles();
             if (listFiles == null || listFiles.length == 0) {
                 if (keepDirStructure) {
-                    zos.putNextEntry(new ZipEntry(name + "/"));
+                    zos.putNextEntry(new ZipEntry(name + SLASH));
                     zos.closeEntry();
                 }
 
             } else {
                 for (File file : listFiles) {
                     if (keepDirStructure) {
-                        compress(file, zos, name + "/" + file.getName(), keepDirStructure);
+                        compress(file, zos, name + SLASH + file.getName(), keepDirStructure);
                     } else {
                         compress(file, zos, file.getName(), keepDirStructure);
                     }

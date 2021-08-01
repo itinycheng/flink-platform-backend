@@ -75,6 +75,7 @@ flink:
     command: /data0/app/flink-1.12.0/bin/flink
     jar-file: hdfs:///flink/jars/job_jar/persona-platform-flink.jar
     class-name: com.itiger.persona.flink.Sql112Application
+    yarn-provided-lib-dirs: hdfs:///flink/jars/flink_1.12.0/lib/
 
 hadoop:
   user: admin

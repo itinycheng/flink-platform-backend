@@ -24,7 +24,9 @@ public class JobConstant {
 
     public static final String HADOOP_USER_NAME = "HADOOP_USER_NAME";
 
-    public static final String YARN_NAME = "yarn.application.name";
+    public static final String YARN_APPLICATION_NAME = "yarn.application.name";
+
+    public static final String YARN_PROVIDED_LIB_DIRS = "yarn.provided.lib.dirs";
 
     public static final String JDBC_URL = "jdbc.url";
 

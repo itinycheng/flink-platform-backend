@@ -25,6 +25,7 @@ import java.util.regex.Matcher;
 
 import static com.itiger.persona.common.constants.Constant.DOT;
 import static com.itiger.persona.common.constants.Constant.SEMICOLON;
+import static com.itiger.persona.common.constants.Constant.SLASH;
 import static com.itiger.persona.common.constants.JobConstant.JSON_FILE_SUFFIX;
 import static com.itiger.persona.common.constants.JobConstant.ROOT_DIR;
 import static com.itiger.persona.common.constants.JobConstant.SQL_PATTERN;
@@ -55,7 +56,7 @@ public class SqlContextHelper {
         sqlContext.setId(jobInfo.getCode());
         sqlContext.setSqls(toSqls(jobInfo.getSubject()));
         sqlContext.setExecMode(jobInfo.getExecMode());
-        sqlContext.setExtJars(Collections.emptyList());
+        sqlContext.setExtJars(JsonUtil.toList(jobInfo.getExtJars()));
         sqlContext.setConfigs(toConfigs(jobInfo.getConfig()));
         sqlContext.setCatalogs(toCatalogs(jobInfo.getCatalogs()));
         sqlContext.setFunctions(toFunctions(jobInfo.getConfig()));
@@ -106,7 +107,7 @@ public class SqlContextHelper {
     public String saveToFile(String fileName, SqlContext sqlContext) {
         try {
             String json = JsonUtil.toJsonString(sqlContext);
-            String sqlFilePath = String.join("/", ROOT_DIR, sqlDir, fileName);
+            String sqlFilePath = String.join(SLASH, ROOT_DIR, sqlDir, fileName);
             FileUtils.write(new File(sqlFilePath), json, StandardCharsets.UTF_8);
             log.info("serial sql context to local disk successfully, path: {}, data: {}", sqlFilePath, json);
             return sqlFilePath;

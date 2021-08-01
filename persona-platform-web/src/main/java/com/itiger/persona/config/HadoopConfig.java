@@ -11,6 +11,7 @@ import java.io.File;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
+import static com.itiger.persona.common.constants.Constant.SLASH;
 import static com.itiger.persona.common.constants.JobConstant.ROOT_DIR;
 
 /**
@@ -57,7 +58,7 @@ public class HadoopConfig {
 
     @Bean("localDataDir")
     public Path createDataDir() {
-        String dataDir = ROOT_DIR + "/" + localDataDir;
+        String dataDir = ROOT_DIR + SLASH + localDataDir;
         Path path = Paths.get(dataDir);
         File file = path.toFile();
         if (!file.exists()) {
