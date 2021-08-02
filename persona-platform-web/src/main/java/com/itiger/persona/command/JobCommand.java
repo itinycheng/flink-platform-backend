@@ -3,6 +3,7 @@ package com.itiger.persona.command;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.net.URL;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -28,7 +29,7 @@ public class JobCommand {
 
     private String mainJar;
 
-    private List<String> classpaths;
+    private List<URL> classpaths;
 
     public String toCommandString() {
         StringBuilder command = new StringBuilder(prefix + LINE_SEPARATOR);
