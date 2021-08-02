@@ -12,6 +12,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.Resource;
+import java.net.URL;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -62,7 +64,7 @@ public class Flink112CommandBuilder implements JobCommandBuilder {
     }
 
     @Override
-    public JobCommand buildCommand(JobInfo jobInfo) {
+    public JobCommand buildCommand(JobInfo jobInfo) throws Exception {
         JobCommand command = new JobCommand();
         DeployMode deployMode = jobInfo.getDeployMode();
         String execMode = String.format(EXEC_MODE, deployMode.mode, deployMode.target);
@@ -76,7 +78,7 @@ public class Flink112CommandBuilder implements JobCommandBuilder {
         // add lib dirs and user classpaths
         List<String> extJarList = JsonUtil.toList(jobInfo.getExtJars());
         configs.put(YARN_PROVIDED_LIB_DIRS, getMergedLibDirs(extJarList));
-        List<String> classpaths = getOrCreateClasspaths(jobInfo.getCode(), extJarList);
+        List<URL> classpaths = getOrCreateClasspaths(jobInfo.getCode(), extJarList);
         command.setClasspaths(classpaths);
         switch (jobInfo.getType()) {
             case FLINK_JAR:
@@ -105,13 +107,13 @@ public class Flink112CommandBuilder implements JobCommandBuilder {
                 : providedLibDirs;
     }
 
-    private List<String> getOrCreateClasspaths(String jobCode, List<String> extJarList) {
-        List<String> classpaths = new ArrayList<>(extJarList.size());
+    private List<URL> getOrCreateClasspaths(String jobCode, List<String> extJarList) throws Exception {
+        List<URL> classpaths = new ArrayList<>(extJarList.size());
         for (String hdfsExtJar : extJarList) {
             String extJarName = new Path(hdfsExtJar).getName();
             String localPath = String.join(SLASH, ROOT_DIR, jobJarDir, jobCode, extJarName);
             copyToLocalIfChanged(hdfsExtJar, localPath);
-            classpaths.add(localPath);
+            classpaths.add(Paths.get(localPath).toUri().toURL());
         }
         return classpaths;
     }
