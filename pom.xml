@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
@@ -11,11 +11,11 @@
     </parent>
 
     <groupId>com.itiger.persona</groupId>
-    <artifactId>persona-platform-backend</artifactId>
+    <artifactId>flink-platform-backend</artifactId>
     <packaging>pom</packaging>
     <version>0.0.1</version>
 
-    <name>persona-platform-backend</name>
+    <name>flink-platform-backend</name>
     <!-- FIXME change it to the project's website -->
     <url>http://www.example.com</url>
 
@@ -24,7 +24,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
-        <persona-platform.version>0.0.1</persona-platform.version>
+        <flink-platform.version>0.0.1</flink-platform.version>
         <spring.boot.version>2.4.4</spring.boot.version>
         <guava.version>29.0-jre</guava.version>
         <commons-pool2.version>2.9.0</commons-pool2.version>
@@ -227,8 +227,7 @@
                                     </filter>
                                 </filters>
                                 <transformers>
-                                    <transformer
-                                            implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
+                                    <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
                                 </transformers>
                             </configuration>
                         </execution>
@@ -239,10 +238,10 @@
     </build>
 
     <modules>
-        <module>persona-platform-web</module>
-        <module>persona-platform-common</module>
-        <module>persona-platform-flink</module>
-        <module>persona-platform-flink-udf</module>
-        <module>persona-platform-monitor</module>
+        <module>flink-platform-web</module>
+        <module>flink-platform-common</module>
+        <module>flink-platform-core</module>
+        <module>flink-platform-udf</module>
+        <module>flink-platform-monitor</module>
     </modules>
 </project>

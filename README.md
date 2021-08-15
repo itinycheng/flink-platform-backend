@@ -1,3 +1,3 @@
-# persona-platform-web
+# flink-platform-web
 
-persona platform: run Flink SQL, query persona info, and more 
+persona platform: run Flink SQL, query persona info, and more
