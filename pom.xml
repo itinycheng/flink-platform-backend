@@ -10,7 +10,7 @@
         <version>2.4.4</version>
     </parent>
 
-    <groupId>com.itiger.persona</groupId>
+    <groupId>com.flink.platform</groupId>
     <artifactId>flink-platform-backend</artifactId>
     <packaging>pom</packaging>
     <version>0.0.1</version>

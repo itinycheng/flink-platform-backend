@@ -6,7 +6,7 @@
 
     <parent>
         <artifactId>flink-platform-backend</artifactId>
-        <groupId>com.itiger.persona</groupId>
+        <groupId>com.flink.platform</groupId>
         <version>0.0.1</version>
     </parent>
 
@@ -27,7 +27,7 @@
             <artifactId>snakeyaml</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.itiger.persona</groupId>
+            <groupId>com.flink.platform</groupId>
             <artifactId>flink-platform-udf</artifactId>
             <version>${flink-platform.version}</version>
         </dependency>
@@ -68,19 +68,19 @@
                     <relocations>
                         <relocation>
                             <pattern>org.yaml</pattern>
-                            <shadedPattern>com.itiger.persona.shaded.org.yaml</shadedPattern>
+                            <shadedPattern>com.flink.platform.shaded.org.yaml</shadedPattern>
                         </relocation>
                         <relocation>
                             <pattern>lombok</pattern>
-                            <shadedPattern>com.itiger.persona.shaded.lombok</shadedPattern>
+                            <shadedPattern>com.flink.platform.shaded.lombok</shadedPattern>
                         </relocation>
                         <relocation>
                             <pattern>org.apache.commons</pattern>
-                            <shadedPattern>com.itiger.persona.shaded.org.apache.commons</shadedPattern>
+                            <shadedPattern>com.flink.platform.shaded.org.apache.commons</shadedPattern>
                         </relocation>
                         <relocation>
                             <pattern>com.alibaba.fastjson</pattern>
-                            <shadedPattern>com.itiger.persona.shaded.com.alibaba.fastjson</shadedPattern>
+                            <shadedPattern>com.flink.platform.shaded.com.alibaba.fastjson</shadedPattern>
                         </relocation>
                     </relocations>
                 </configuration>
