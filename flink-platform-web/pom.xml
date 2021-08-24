@@ -3,7 +3,7 @@
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
         <artifactId>flink-platform-backend</artifactId>
-        <groupId>com.itiger.persona</groupId>
+        <groupId>com.flink.platform</groupId>
         <version>0.0.1</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
@@ -16,7 +16,7 @@
             <artifactId>junit</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.itiger.persona</groupId>
+            <groupId>com.flink.platform</groupId>
             <artifactId>flink-platform-udf</artifactId>
             <version>${flink-platform.version}</version>
         </dependency>
@@ -52,12 +52,12 @@
             </exclusions>
         </dependency>
         <dependency>
-            <groupId>com.itiger.persona</groupId>
+            <groupId>com.flink.platform</groupId>
             <artifactId>flink-platform-common</artifactId>
             <version>${flink-platform.version}</version>
         </dependency>
         <dependency>
-            <groupId>com.itiger.persona</groupId>
+            <groupId>com.flink.platform</groupId>
             <artifactId>flink-platform-monitor</artifactId>
             <version>${flink-platform.version}</version>
         </dependency>

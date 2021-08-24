@@ -6,7 +6,7 @@
 
     <parent>
         <artifactId>flink-platform-backend</artifactId>
-        <groupId>com.itiger.persona</groupId>
+        <groupId>com.flink.platform</groupId>
         <version>0.0.1</version>
     </parent>
 
