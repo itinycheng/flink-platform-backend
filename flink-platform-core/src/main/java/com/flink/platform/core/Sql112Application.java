@@ -23,7 +23,7 @@ import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 
 /**
- * must input a valid sql context file
+ * must input a context file whose sql is validated
  *
  * @author tiny.wang
  */

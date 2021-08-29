@@ -18,7 +18,6 @@ import org.quartz.utils.Key;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
-
 import java.text.ParseException;
 import java.util.Date;
 
@@ -68,20 +67,8 @@ public class JobInfoQuartzService {
      * @param jobCode 任务名
      */
     public void removeJob(String jobCode) {
-        try {
-            // 通过触发器名和组名获取TriggerKey
-            TriggerKey triggerKey = TriggerKey.triggerKey(jobCode, Key.DEFAULT_GROUP);
-            // 通过任务名和组名获取JobKey
-            JobKey jobKey = JobKey.jobKey(jobCode, Key.DEFAULT_GROUP);
-            // 停止触发器
-            scheduler.pauseTrigger(triggerKey);
-            // 移除触发器
-            scheduler.unscheduleJob(triggerKey);
-            // 删除任务
-            scheduler.deleteJob(jobKey);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+        deleteTrigger(jobCode, Key.DEFAULT_GROUP);
+        deleteJob(jobCode, Key.DEFAULT_GROUP);
     }
 
     public synchronized boolean runOnce(JobInfo jobInfo) {
@@ -99,6 +86,25 @@ public class JobInfoQuartzService {
         } catch (Exception e) {
             log.error("failed to run quartz job once time", e);
             return false;
+        }
+    }
+
+    public void deleteTrigger(String name, String group) {
+        try {
+            TriggerKey triggerKey = TriggerKey.triggerKey(name, group);
+            scheduler.pauseTrigger(triggerKey);
+            scheduler.unscheduleJob(triggerKey);
+        } catch (Exception e) {
+            log.error("delete quartz trigger failed.", e);
+        }
+    }
+
+    public void deleteJob(String name, String group) {
+        try {
+            JobKey jobKey = JobKey.jobKey(name, group);
+            scheduler.deleteJob(jobKey);
+        } catch (Exception e) {
+            log.error("delete quartz job failed.", e);
         }
     }
 
