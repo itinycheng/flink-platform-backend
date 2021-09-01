@@ -1,5 +1,6 @@
 package com.flink.platform.common.util;
 
+import com.flink.platform.common.constants.Constant;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.Arrays;
@@ -25,7 +26,7 @@ public class SqlUtil {
                 .map(String::trim)
                 .filter(StringUtils::isNotBlank)
                 .filter(segment -> !segment.startsWith(SQL_COMMENT_SYMBOL))
-                .collect(Collectors.joining(SQL_LINE_SEPARATOR));
+                .collect(Collectors.joining(Constant.SPACE + SQL_LINE_SEPARATOR));
         // delete ';'
         if (stmt.endsWith(SEMICOLON)) {
             stmt = stmt.substring(0, stmt.length() - 1).trim();

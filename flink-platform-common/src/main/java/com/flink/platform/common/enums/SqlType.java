@@ -1,8 +1,8 @@
 package com.flink.platform.common.enums;
 
 import com.flink.platform.common.constants.JobConstant;
-import com.flink.platform.common.job.Sql;
 import com.flink.platform.common.exception.FlinkJobGenException;
+import com.flink.platform.common.job.Sql;
 import com.flink.platform.common.util.SqlUtil;
 
 import java.util.Arrays;
@@ -22,55 +22,55 @@ public enum SqlType {
     /**
      * sql type enum
      */
-    SELECT("(SELECT.*)",
+    SELECT("SELECT.*",
             (operands) -> Optional.of(new String[]{operands[0]})),
 
-    INSERT_INTO("(INSERT\\s+INTO.*)",
+    INSERT_INTO("INSERT\\s+INTO.*",
             (operands) -> Optional.of(new String[]{operands[0]})),
 
-    INSERT_OVERWRITE("(INSERT\\s+OVERWRITE.*)",
+    INSERT_OVERWRITE("INSERT\\s+OVERWRITE.*",
             (operands) -> Optional.of(new String[]{operands[0]})),
 
-    USE("(USE\\s+(?!CATALOG)(.*))",
+    USE("USE\\s+(?!CATALOG)(.*)",
             (operands) -> Optional.of(new String[]{operands[0]})),
 
-    USE_CATALOG("(USE\\s+CATALOG.*)",
+    USE_CATALOG("USE\\s+CATALOG.*",
             (operands) -> Optional.of(new String[]{operands[0]})),
 
-    CREATE_CATALOG("(CREATE\\s+CATALOG.*)",
+    CREATE_CATALOG("CREATE\\s+CATALOG.*",
             (operands) -> Optional.of(new String[]{operands[0]})),
 
-    CREATE_DATABASE("(CREATE\\s+DATABASE.*)",
+    CREATE_DATABASE("CREATE\\s+DATABASE.*",
             (operands) -> Optional.of(new String[]{operands[0]})),
 
-    CREATE_TABLE("(CREATE\\s+TABLE.*)",
+    CREATE_TABLE("CREATE\\s+TABLE.*",
             (operands) -> Optional.of(new String[]{operands[0]})),
 
-    CREATE_VIEW("(CREATE\\s+(TEMPORARY)?\\s+VIEW.*)",
+    CREATE_VIEW("CREATE\\s+(TEMPORARY)?\\s+VIEW.*",
             (operands) -> Optional.of(new String[]{operands[0]})),
 
-    CREATE_FUNCTION("(CREATE\\s+(TEMPORARY|TEMPORARY\\s+SYSTEM)?\\s+FUNCTION.*)",
+    CREATE_FUNCTION("CREATE\\s+(TEMPORARY|TEMPORARY\\s+SYSTEM)?\\s+FUNCTION.*",
             (operands) -> Optional.of(new String[]{operands[0]})),
 
-    DROP_DATABASE("(DROP\\s+DATABASE.*)",
+    DROP_DATABASE("DROP\\s+DATABASE.*",
             (operands) -> Optional.of(new String[]{operands[0]})),
 
-    DROP_TABLE("(DROP\\s+TABLE.*)",
+    DROP_TABLE("DROP\\s+TABLE.*",
             (operands) -> Optional.of(new String[]{operands[0]})),
 
-    DROP_VIEW("(DROP\\s+(TEMPORARY)?\\s+VIEW.*)",
+    DROP_VIEW("DROP\\s+(TEMPORARY)?\\s+VIEW.*",
             (operands) -> Optional.of(new String[]{operands[0]})),
 
-    DROP_FUNCTION("(DROP\\s+(TEMPORARY|TEMPORARY\\s+SYSTEM)?\\s+FUNCTION.*)",
+    DROP_FUNCTION("DROP\\s+(TEMPORARY|TEMPORARY\\s+SYSTEM)?\\s+FUNCTION.*",
             (operands) -> Optional.of(new String[]{operands[0]})),
 
-    ALTER_DATABASE("(ALTER\\s+DATABASE.*)",
+    ALTER_DATABASE("ALTER\\s+DATABASE.*",
             (operands) -> Optional.of(new String[]{operands[0]})),
 
-    ALTER_TABLE("(ALTER\\s+TABLE.*)",
+    ALTER_TABLE("ALTER\\s+TABLE.*",
             (operands) -> Optional.of(new String[]{operands[0]})),
 
-    ALTER_FUNCTION("(ALTER\\s+(TEMPORARY|TEMPORARY\\s+SYSTEM)?\\s+FUNCTION.*)",
+    ALTER_FUNCTION("ALTER\\s+(TEMPORARY|TEMPORARY\\s+SYSTEM)?\\s+FUNCTION.*",
             (operands) -> Optional.of(new String[]{operands[0]})),
 
     SHOW_CATALOGS("SHOW\\s+CATALOGS",
@@ -88,17 +88,17 @@ public enum SqlType {
     SHOW_MODULES("SHOW\\s+MODULES",
             (operands) -> Optional.of(new String[]{"SHOW MODULES"})),
 
-    DESCRIBE("(DESCRIBE.*)",
+    DESCRIBE("DESCRIBE.*",
             (operands) -> Optional.of(new String[]{operands[0]})),
 
-    EXPLAIN("(EXPLAIN\\s+PLAN\\s+FOR.*)",
+    EXPLAIN("EXPLAIN\\s+PLAN\\s+FOR.*",
             (operands) -> Optional.of(new String[]{operands[0]})),
 
     SET("SET\\s+(\\S+)\\s*=\\s*(.*)",
             (operands) -> {
-                final int len = 2;
+                final int len = 3;
                 if (operands.length == len) {
-                    return Optional.of(new String[]{operands[0], operands[1]});
+                    return Optional.of(new String[]{operands[1], operands[2]});
                 } else {
                     throw new FlinkJobGenException(String.format("parse set statement failed, operands: %s",
                             Arrays.toString(operands)));
@@ -121,8 +121,9 @@ public enum SqlType {
         for (SqlType type : values()) {
             Matcher matcher = type.pattern.matcher(stmt);
             if (matcher.matches()) {
+                int matchedNum = matcher.groupCount() + 1;
                 return type.operandConverter.apply(Stream.iterate(0, i -> i + 1)
-                        .limit(matcher.groupCount())
+                        .limit(matchedNum)
                         .map(matcher::group)
                         .toArray(String[]::new))
                         .map((operands) -> new Sql(type, operands))

@@ -8,29 +8,49 @@ import java.util.TreeMap;
 import java.util.stream.Stream;
 
 public class SqlTypeTest {
+
+    @Test
+    public void test0() {
+        System.out.println(SqlType.parse("select  \n * from table "));
+        System.out.println(SqlType.parse("insert into \n table select "));
+        System.out.println(SqlType.parse("insert \n overwrite     "));
+        System.out.println(SqlType.parse("use db     "));
+        System.out.println(SqlType.parse("use \n catalog \n test     "));
+    }
+
     @Test
     public void test1() {
-        System.out.println(SqlType.parse("create     "));
-        System.out.println(SqlType.parse("create     view"));
+        System.out.println(SqlType.parse("create   \n catalog \n test "));
+        System.out.println(SqlType.parse("create  \n database \n test   "));
+        System.out.println(SqlType.parse("create  \n table \n test   "));
         System.out.println(SqlType.parse("create \n view"));
+        System.out.println(SqlType.parse("create     view"));
         System.out.println(SqlType.parse("create \r\n view"));
-        System.out.println(SqlType.parse("create TEMPORARY view"));
+        System.out.println(SqlType.parse("create \n TEMPORARY \n view"));
+        System.out.println(SqlType.parse("create  function     "));
+        System.out.println(SqlType.parse("create   temporary   function "));
+        System.out.println(SqlType.parse("create \n   temporary  \n  system  \n  function   "));
+        // System.out.println(SqlType.parse("create \n   temporary error \n  system  \n  function   "));
         System.out.println("~end1~");
     }
 
     @Test
     public void test2() {
-        System.out.println("create \n\n\n d".trim());
-        System.out.println("\n\n\ncreate \n\n\n d".trim());
+        System.out.println(SqlType.parse("drop\n database \n db"));
+        System.out.println(SqlType.parse("drop\n table \n tab"));
+        System.out.println(SqlType.parse("drop\n temporary \n view v"));
+        System.out.println(SqlType.parse("drop\n table \n tab"));
+        System.out.println(SqlType.parse("drop\n temporary \n function f "));
+        System.out.println(SqlType.parse("drop\n temporary  \n system \n function f "));
         System.out.println("~end2~");
     }
 
     @Test
     public void test3() {
-        System.out.println(SqlType.parse("create  function     "));
-        System.out.println(SqlType.parse("create   TEMPORARY   function "));
-        System.out.println(SqlType.parse("create \n   TEMPORARY  \n  SYSTEM  \n  function   "));
-        System.out.println(SqlType.parse("create \n   TEMPORARY error \n  SYSTEM  \n  function   "));
+        System.out.println(SqlType.parse("alter\n database \n db"));
+        System.out.println(SqlType.parse("alter\n table \n tb"));
+        System.out.println(SqlType.parse("alter\n temporary \n function f"));
+        System.out.println(SqlType.parse("alter\n temporary  \n system \n function f"));
         System.out.println("~end3~");
     }
 
@@ -41,9 +61,13 @@ public class SqlTypeTest {
 
     @Test
     public void test5() {
-        System.out.println(SqlType.parse("insert  into  table where a = 1   "));
-        System.out.println(SqlType.parse("insert  \n  overwrite "));
-        System.out.println(SqlType.parse("insert   "));
+        System.out.println(SqlType.parse("show  catalogs "));
+        System.out.println(SqlType.parse("show  \n  databases "));
+        System.out.println(SqlType.parse("show tables   "));
+        System.out.println(SqlType.parse("show functions   "));
+        System.out.println(SqlType.parse("show modules   "));
+        System.out.println(SqlType.parse("describe tab   "));
+        System.out.println(SqlType.parse("explain plan for  \n select "));
         System.out.println("~end5~");
     }
 
