@@ -1,7 +1,7 @@
 package com.flink.platform.web.enums;
 
 /**
- * @author tiger
+ * @author tiny.wang
  */
 public enum JobType {
     /**

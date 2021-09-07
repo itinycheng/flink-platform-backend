@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * @author tiger
+ * @author tiny.wang
  */
 @RestController
 @RequestMapping("/enums")

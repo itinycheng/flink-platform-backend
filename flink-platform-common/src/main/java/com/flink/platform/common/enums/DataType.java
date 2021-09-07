@@ -8,7 +8,7 @@ import static com.flink.platform.common.constants.Constant.SINGLE_QUOTE;
 import static java.util.stream.Collectors.toMap;
 
 /**
- * @author tiger
+ * @author tiny.wang
  */
 public enum DataType {
     /**

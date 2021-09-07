@@ -21,14 +21,7 @@ import java.time.Duration;
 import java.util.Objects;
 
 /**
- * <p>
- *
- * </p>
- *
- * @author Shik
- * @project optimus
- * @package com.itiger.ssp.optimus.config
- * @since 2018-12-03
+ * @author tiny.wang
  */
 @Configuration
 @EnableCaching
