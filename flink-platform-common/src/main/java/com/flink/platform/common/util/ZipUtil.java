@@ -125,9 +125,9 @@ public class ZipUtil {
 
     public static void main(String[] args) throws Exception {
         List<File> fileList = new ArrayList<>();
-        fileList.add(new File("/Users/tiger/Downloads/hive-exec-2.1.1.jar"));
-        fileList.add(new File("/Users/tiger/Downloads/hive-hcatalog-core-2.1.1.jar"));
-        FileOutputStream fos2 = new FileOutputStream(new File("/Users/tiger/Downloads/mytest02.zip"));
+        fileList.add(new File("/Users/tiny/Downloads/hive-exec-2.1.1.jar"));
+        fileList.add(new File("/Users/tiny/Downloads/hive-hcatalog-core-2.1.1.jar"));
+        FileOutputStream fos2 = new FileOutputStream(new File("/Users/tiny/Downloads/mytest02.zip"));
         ZipUtil.toZip(fileList, fos2);
     }
 }

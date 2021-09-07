@@ -10,7 +10,7 @@ import lombok.NoArgsConstructor;
 /**
  * response skeleton
  *
- * @author tiger
+ * @author tiny.wang
  */
 @Builder
 @Data

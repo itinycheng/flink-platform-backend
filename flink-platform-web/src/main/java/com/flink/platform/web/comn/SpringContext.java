@@ -9,7 +9,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * @author tiger
+ * @author tiny.wang
  */
 @Component
 public class SpringContext implements ApplicationContextAware {

@@ -3,7 +3,7 @@ package com.flink.platform.udf.util;
 import java.util.Arrays;
 
 /**
- * @author tiger
+ * @author tiny.wang
  */
 public class ObjectUtil {
 
