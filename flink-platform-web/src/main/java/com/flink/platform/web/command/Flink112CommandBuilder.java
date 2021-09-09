@@ -1,6 +1,6 @@
 package com.flink.platform.web.command;
 
-import com.flink.platform.common.exception.FlinkCommandGenException;
+import com.flink.platform.common.exception.JobCommandGenException;
 import com.flink.platform.common.util.JsonUtil;
 import com.flink.platform.web.entity.JobInfo;
 import com.flink.platform.web.enums.DeployMode;
@@ -31,7 +31,7 @@ import static com.flink.platform.common.constants.JobConstant.YARN_PROVIDED_LIB_
  */
 @Slf4j
 @Component("flink112CommandBuilder")
-public class Flink112CommandBuilder implements JobCommandBuilder {
+public class Flink112CommandBuilder implements CommandBuilder {
 
     private static final List<JobType> SUPPORTED_JOB_TYPES = Arrays.asList(JobType.FLINK_JAR, JobType.FLINK_SQL);
 
@@ -65,7 +65,7 @@ public class Flink112CommandBuilder implements JobCommandBuilder {
 
     @Override
     public JobCommand buildCommand(JobInfo jobInfo) throws Exception {
-        JobCommand command = new JobCommand();
+        FlinkCommand command = new FlinkCommand();
         DeployMode deployMode = jobInfo.getDeployMode();
         String execMode = String.format(EXEC_MODE, deployMode.mode, deployMode.target);
         command.setPrefix(commandBinPath + execMode);
@@ -94,7 +94,7 @@ public class Flink112CommandBuilder implements JobCommandBuilder {
                 command.setMainClass(sqlClassName);
                 break;
             default:
-                throw new FlinkCommandGenException("unsupported job type");
+                throw new JobCommandGenException("unsupported job type");
         }
         return command;
     }
@@ -129,7 +129,7 @@ public class Flink112CommandBuilder implements JobCommandBuilder {
         try {
             hdfsService.copyFileToLocalIfChanged(new Path(hdfsFile), new Path(localFile));
         } catch (Exception e) {
-            throw new FlinkCommandGenException(String.format("Copy %s from hdfs to local disk failed", hdfsFile), e);
+            throw new JobCommandGenException(String.format("Copy %s from hdfs to local disk failed", hdfsFile), e);
         }
     }
 }

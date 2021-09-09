@@ -1,14 +1,15 @@
 package com.flink.platform.web.quartz;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import com.flink.platform.web.command.CommandExecutor;
-import com.flink.platform.web.command.JobCallback;
-import com.flink.platform.web.command.JobCommand;
-import com.flink.platform.web.command.JobCommandBuilder;
 import com.flink.platform.common.enums.JobStatusEnum;
 import com.flink.platform.common.enums.JobYarnStatusEnum;
-import com.flink.platform.common.exception.FlinkCommandGenException;
+import com.flink.platform.common.exception.JobCommandGenException;
 import com.flink.platform.common.util.JsonUtil;
+import com.flink.platform.web.command.CommandBuilder;
+import com.flink.platform.web.command.CommandExecutor;
+import com.flink.platform.web.command.FlinkCommand;
+import com.flink.platform.web.command.JobCallback;
+import com.flink.platform.web.command.JobCommand;
 import com.flink.platform.web.comn.SpringContext;
 import com.flink.platform.web.entity.JobInfo;
 import com.flink.platform.web.entity.JobRunInfo;
@@ -47,9 +48,9 @@ public class JobRunner implements Job {
 
     private final IJobRunInfoService jobRunInfoService = SpringContext.getBean(IJobRunInfoService.class);
 
-    private final CommandExecutor commandExecutor = SpringContext.getBean(CommandExecutor.class);
+    private final List<CommandExecutor> jobCommandExecutors = SpringContext.getBeansOfType(CommandExecutor.class);
 
-    private final List<JobCommandBuilder> jobCommandBuilders = SpringContext.getBeansOfType(JobCommandBuilder.class);
+    private final List<CommandBuilder> jobCommandBuilders = SpringContext.getBeansOfType(CommandBuilder.class);
 
     @Override
     public void execute(JobExecutionContext context) {
@@ -90,16 +91,21 @@ public class JobRunner implements Job {
                 jobInfo.setSubject(distSubject);
             }
 
-            // step 3: build shell command, create a SqlContext if needed
             JobType jobType = jobInfo.getType();
+
+            // step 3: build shell command, create a SqlContext if needed
             jobCommand = jobCommandBuilders.stream()
                     .filter(builder -> builder.isSupported(jobType))
                     .findFirst()
-                    .orElseThrow(() -> new FlinkCommandGenException("no available job command builder"))
+                    .orElseThrow(() -> new JobCommandGenException("No available job command builder"))
                     .buildCommand(jobInfo);
 
             // step 4: submit job
-            JobCallback callback = commandExecutor.execCommand(jobCommand.toCommandString());
+            JobCallback callback = jobCommandExecutors.stream()
+                    .filter(executor -> executor.isSupported(jobType))
+                    .findFirst()
+                    .orElseThrow(() -> new JobCommandGenException("No available job command executor"))
+                    .execCommand(jobCommand.toCommandString());
 
             // step 5: write msg back to db
             JobRunInfo jobRunInfo = new JobRunInfo();
@@ -116,10 +122,12 @@ public class JobRunner implements Job {
             RUNNER_MAP.remove(code);
             if (jobInfo != null
                     && jobInfo.getType() == JobType.FLINK_SQL
-                    && jobCommand != null
-                    && jobCommand.getMainArgs() != null) {
+                    && jobCommand != null) {
                 try {
-                    Files.deleteIfExists(Paths.get(jobCommand.getMainArgs()));
+                    FlinkCommand flinkCommand = (FlinkCommand) jobCommand;
+                    if (flinkCommand.getMainArgs() != null) {
+                        Files.deleteIfExists(Paths.get(flinkCommand.getMainArgs()));
+                    }
                 } catch (Exception e) {
                     log.warn("delete sql context file failed", e);
                 }

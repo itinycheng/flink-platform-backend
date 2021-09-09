@@ -1,6 +1,6 @@
 package com.flink.platform.web;
 
-import com.flink.platform.web.command.CommandExecutor;
+import com.flink.platform.web.command.FlinkCommandExecutor;
 import com.flink.platform.web.enums.SqlVar;
 import org.junit.Assert;
 import org.junit.Test;
@@ -21,8 +21,8 @@ public class CommandTest {
 
     @Test
     public void testExtractAppIdAndJobId() {
-        String appId = CommandExecutor.extractApplicationId(yarnClientMessage);
-        String jobId = CommandExecutor.extractJobId(yarnClientMessage);
+        String appId = FlinkCommandExecutor.extractApplicationId(yarnClientMessage);
+        String jobId = FlinkCommandExecutor.extractJobId(yarnClientMessage);
         Assert.assertEquals("application_1616984365313_0284", appId);
         Assert.assertEquals("698185836ffa4165f35c71627eb8c6f7", jobId);
     }

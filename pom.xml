@@ -38,6 +38,7 @@
         <jackson.version>2.11.4</jackson.version>
         <slf4j.version>1.7.30</slf4j.version>
         <mysql.version>5.1.49</mysql.version>
+        <clickhouse-jdbc.version>0.3.1</clickhouse-jdbc.version>
         <druid.version>1.2.5</druid.version>
         <flink.version>1.12.0</flink.version>
         <flink.scope>provided</flink.scope>
@@ -94,6 +95,11 @@
                 <groupId>com.baomidou</groupId>
                 <artifactId>dynamic-datasource-spring-boot-starter</artifactId>
                 <version>${dynamic-datasource.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>ru.yandex.clickhouse</groupId>
+                <artifactId>clickhouse-jdbc</artifactId>
+                <version>${clickhouse-jdbc.version}</version>
             </dependency>
             <!-- flink -->
             <dependency>
