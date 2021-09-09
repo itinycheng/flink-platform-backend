@@ -103,7 +103,9 @@ public enum SqlType {
                     throw new FlinkJobGenException(String.format("parse set statement failed, operands: %s",
                             Arrays.toString(operands)));
                 }
-            });
+            }),
+
+    OPTIMIZE("OPTIMIZE\\s+TABLE.*", (operands) -> Optional.of(new String[]{operands[0]}));
 
     public final Pattern pattern;
 

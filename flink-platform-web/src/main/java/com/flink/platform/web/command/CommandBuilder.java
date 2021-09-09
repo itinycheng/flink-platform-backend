@@ -1,13 +1,12 @@
 package com.flink.platform.web.command;
 
+import com.flink.platform.web.entity.JobInfo;
 import com.flink.platform.web.enums.JobType;
 
 /**
- * TODO parse result
- *
  * @author tiny.wang
  */
-public interface CommandExecutor {
+public interface CommandBuilder {
 
     /**
      * whether support
@@ -18,12 +17,12 @@ public interface CommandExecutor {
     boolean isSupported(JobType jobType);
 
     /**
-     * execute command
+     * build a command from JobInfo
      *
-     * @param command command to exec
-     * @return execute result
-     * @throws Exception execute exception
+     * @param jobInfo job info
+     * @return shell command
+     * @throws Exception IO exception
      */
-    JobCallback execCommand(String command) throws Exception;
+    JobCommand buildCommand(JobInfo jobInfo) throws Exception;
 
 }
