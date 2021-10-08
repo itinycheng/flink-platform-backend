@@ -17,7 +17,7 @@ public class CommonJarCommandBuilder implements CommandBuilder {
     private static final List<JobType> SUPPORTED_JOB_TYPES = Collections.singletonList(JobType.COMMON_JAR);
 
     @Override
-    public boolean isSupported(JobType jobType) {
+    public boolean isSupported(JobType jobType, String version) {
         return SUPPORTED_JOB_TYPES.contains(jobType);
     }
 

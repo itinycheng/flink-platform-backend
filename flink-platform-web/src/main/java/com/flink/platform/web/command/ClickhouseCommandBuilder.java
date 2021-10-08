@@ -25,7 +25,7 @@ public class ClickhouseCommandBuilder implements CommandBuilder {
     private SqlContextHelper sqlContextHelper;
 
     @Override
-    public boolean isSupported(JobType jobType) {
+    public boolean isSupported(JobType jobType, String version) {
         return jobType == CLICKHOUSE_SQL;
     }
 
