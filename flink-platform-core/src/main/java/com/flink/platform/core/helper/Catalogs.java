@@ -1,10 +1,12 @@
 package com.flink.platform.core.helper;
 
-import com.flink.platform.common.job.Catalog;
 import com.flink.platform.common.constants.JobConstant;
-import com.flink.platform.common.util.Preconditions;
 import com.flink.platform.common.exception.FlinkJobGenException;
+import com.flink.platform.common.job.Catalog;
+import com.flink.platform.common.util.Preconditions;
 import io.tidb.bigdata.flink.tidb.TiDBCatalog;
+import org.apache.flink.connector.clickhouse.catalog.ClickHouseCatalog;
+import org.apache.flink.connector.clickhouse.config.ClickHouseConfig;
 import org.apache.flink.connector.jdbc.catalog.JdbcCatalog;
 import org.apache.flink.table.api.TableEnvironment;
 import org.apache.flink.table.catalog.GenericInMemoryCatalog;
@@ -49,6 +51,13 @@ public class Catalogs {
                         catalog.getDefaultDatabase(), catalog.getConfigs());
                 tidbcatalog.open();
                 tEnv.registerCatalog(catalog.getName(), tidbcatalog);
+                break;
+            case CLICKHOUSE:
+                catalog.getConfigs()
+                        .put(ClickHouseConfig.DATABASE_NAME, catalog.getDefaultDatabase());
+                ClickHouseCatalog clickHouseCatalog =
+                        new ClickHouseCatalog(catalog.getName(), catalog.getConfigs());
+                tEnv.registerCatalog(catalog.getName(), clickHouseCatalog);
                 break;
             case MEMORY:
                 GenericInMemoryCatalog memoryCatalog =
