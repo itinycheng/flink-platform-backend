@@ -14,7 +14,7 @@ public interface CommandBuilder {
      * @param jobType job type
      * @return whether support
      */
-    boolean isSupported(JobType jobType);
+    boolean isSupported(JobType jobType, String version);
 
     /**
      * build a command from JobInfo

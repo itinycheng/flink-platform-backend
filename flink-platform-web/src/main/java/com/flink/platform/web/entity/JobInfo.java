@@ -59,6 +59,11 @@ public class JobInfo implements Serializable {
     private JobType type;
 
     /**
+     * version
+     */
+    private String version;
+
+    /**
      * config for run job
      */
     private String config;

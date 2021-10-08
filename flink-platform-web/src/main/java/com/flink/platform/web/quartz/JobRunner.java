@@ -92,10 +92,11 @@ public class JobRunner implements Job {
             }
 
             JobType jobType = jobInfo.getType();
+            String version = jobInfo.getVersion();
 
             // step 3: build shell command, create a SqlContext if needed
             jobCommand = jobCommandBuilders.stream()
-                    .filter(builder -> builder.isSupported(jobType))
+                    .filter(builder -> builder.isSupported(jobType, version))
                     .findFirst()
                     .orElseThrow(() -> new JobCommandGenException("No available job command builder"))
                     .buildCommand(jobInfo);
