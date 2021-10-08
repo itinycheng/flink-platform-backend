@@ -16,6 +16,8 @@ public enum CatalogType {
 
     JDBC,
 
-    POSTGRES;
+    POSTGRES,
+
+    CLICKHOUSE
 
 }
