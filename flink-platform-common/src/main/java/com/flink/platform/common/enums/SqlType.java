@@ -43,7 +43,7 @@ public enum SqlType {
     CREATE_DATABASE("CREATE\\s+DATABASE.*",
             (operands) -> Optional.of(new String[]{operands[0]})),
 
-    CREATE_TABLE("CREATE\\s+TABLE.*",
+    CREATE_TABLE("CREATE\\s+(TEMPORARY)?\\s+TABLE.*",
             (operands) -> Optional.of(new String[]{operands[0]})),
 
     CREATE_VIEW("CREATE\\s+(TEMPORARY)?\\s+VIEW.*",

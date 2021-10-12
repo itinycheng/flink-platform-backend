@@ -23,6 +23,7 @@ public class SqlTypeTest {
         System.out.println(SqlType.parse("create   \n catalog \n test "));
         System.out.println(SqlType.parse("create  \n database \n test   "));
         System.out.println(SqlType.parse("create  \n table \n test   "));
+        System.out.println(SqlType.parse("create  TEMPORARY \n table test"));
         System.out.println(SqlType.parse("create \n view"));
         System.out.println(SqlType.parse("create     view"));
         System.out.println(SqlType.parse("create \r\n view"));
