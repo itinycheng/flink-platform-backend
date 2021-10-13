@@ -20,13 +20,15 @@ public class SqlTypeTest {
 
     @Test
     public void test1() {
-        System.out.println(SqlType.parse("create   \n catalog \n test "));
         System.out.println(SqlType.parse("create  \n database \n test   "));
         System.out.println(SqlType.parse("create  \n table \n test   "));
-        System.out.println(SqlType.parse("create  TEMPORARY \n table test"));
+        System.out.println(SqlType.parse("create table \n test   "));
+        System.out.println(SqlType.parse("create TEMPORARY \n table test"));
         System.out.println(SqlType.parse("create \n view"));
         System.out.println(SqlType.parse("create     view"));
+        System.out.println(SqlType.parse("create view"));
         System.out.println(SqlType.parse("create \r\n view"));
+        System.out.println(SqlType.parse("create TEMPORARY \n view"));
         System.out.println(SqlType.parse("create \n TEMPORARY \n view"));
         System.out.println(SqlType.parse("create  function     "));
         System.out.println(SqlType.parse("create   temporary   function "));
@@ -41,6 +43,7 @@ public class SqlTypeTest {
         System.out.println(SqlType.parse("drop\n table \n tab"));
         System.out.println(SqlType.parse("drop\n temporary \n view v"));
         System.out.println(SqlType.parse("drop\n table \n tab"));
+        System.out.println(SqlType.parse("drop function f "));
         System.out.println(SqlType.parse("drop\n temporary \n function f "));
         System.out.println(SqlType.parse("drop\n temporary  \n system \n function f "));
         System.out.println("~end2~");

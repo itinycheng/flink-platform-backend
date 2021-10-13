@@ -43,13 +43,13 @@ public enum SqlType {
     CREATE_DATABASE("CREATE\\s+DATABASE.*",
             (operands) -> Optional.of(new String[]{operands[0]})),
 
-    CREATE_TABLE("CREATE\\s+(TEMPORARY)?\\s+TABLE.*",
+    CREATE_TABLE("CREATE(\\s+TEMPORARY)?\\s+TABLE.*",
             (operands) -> Optional.of(new String[]{operands[0]})),
 
-    CREATE_VIEW("CREATE\\s+(TEMPORARY)?\\s+VIEW.*",
+    CREATE_VIEW("CREATE(\\s+TEMPORARY)?\\s+VIEW.*",
             (operands) -> Optional.of(new String[]{operands[0]})),
 
-    CREATE_FUNCTION("CREATE\\s+(TEMPORARY|TEMPORARY\\s+SYSTEM)?\\s+FUNCTION.*",
+    CREATE_FUNCTION("CREATE(\\s+TEMPORARY|\\s+TEMPORARY\\s+SYSTEM)?\\s+FUNCTION.*",
             (operands) -> Optional.of(new String[]{operands[0]})),
 
     DROP_DATABASE("DROP\\s+DATABASE.*",
@@ -58,10 +58,10 @@ public enum SqlType {
     DROP_TABLE("DROP\\s+TABLE.*",
             (operands) -> Optional.of(new String[]{operands[0]})),
 
-    DROP_VIEW("DROP\\s+(TEMPORARY)?\\s+VIEW.*",
+    DROP_VIEW("DROP(\\s+TEMPORARY)?\\s+VIEW.*",
             (operands) -> Optional.of(new String[]{operands[0]})),
 
-    DROP_FUNCTION("DROP\\s+(TEMPORARY|TEMPORARY\\s+SYSTEM)?\\s+FUNCTION.*",
+    DROP_FUNCTION("DROP(\\s+TEMPORARY|\\s+TEMPORARY\\s+SYSTEM)?\\s+FUNCTION.*",
             (operands) -> Optional.of(new String[]{operands[0]})),
 
     ALTER_DATABASE("ALTER\\s+DATABASE.*",
@@ -70,7 +70,7 @@ public enum SqlType {
     ALTER_TABLE("ALTER\\s+TABLE.*",
             (operands) -> Optional.of(new String[]{operands[0]})),
 
-    ALTER_FUNCTION("ALTER\\s+(TEMPORARY|TEMPORARY\\s+SYSTEM)?\\s+FUNCTION.*",
+    ALTER_FUNCTION("ALTER(\\s+TEMPORARY|\\s+TEMPORARY\\s+SYSTEM)?\\s+FUNCTION.*",
             (operands) -> Optional.of(new String[]{operands[0]})),
 
     SHOW_CATALOGS("SHOW\\s+CATALOGS",
