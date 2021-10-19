@@ -12,7 +12,6 @@ import com.flink.platform.web.entity.response.ResultInfo;
 import com.flink.platform.web.entity.response.SignatureResponse;
 import com.flink.platform.web.service.ISignatureService;
 import com.flink.platform.web.service.ISignatureValueService;
-import com.flink.platform.web.service.RedisService;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -40,9 +39,6 @@ import java.util.stream.Collectors;
 @RestController
 @RequestMapping("/signature")
 public class SignatureController {
-
-    @Autowired
-    private RedisService redisService;
 
     @Autowired
     private ISignatureService iSignatureService;
@@ -101,10 +97,7 @@ public class SignatureController {
                 if (Objects.isNull(one)) {
                     signature.setStatus(1);
                     signature.setCreateTime(Instant.now().toEpochMilli());
-                    Boolean save = this.iSignatureService.save(signature);
-                    if (save) {
-                        this.redisService.initSignatureInfo();
-                    }
+                    this.iSignatureService.save(signature);
                     return ResultInfo.success(true);
                 } else {
                     throw new DefinitionException(ResponseStatus.ERROR_PARAMETER);
@@ -112,10 +105,7 @@ public class SignatureController {
             } else {
                 // update
                 signature.setUpdateTime(Instant.now().toEpochMilli());
-                Boolean save = this.iSignatureService.updateById(signature);
-                if (save) {
-                    this.redisService.initSignatureInfo();
-                }
+                this.iSignatureService.updateById(signature);
                 return ResultInfo.success(true);
             }
         } else {
