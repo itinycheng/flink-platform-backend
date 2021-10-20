@@ -15,23 +15,17 @@ import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
 import javax.servlet.http.HttpServletRequest;
+
 import java.util.Objects;
 import java.util.Optional;
 
-/**
- * @Author Shik
- * @Title: HeaderCheckerAspect
- * @ProjectName: datapipeline
- * @Description: TODO
- * @Date: 2021/3/3 下午5:40
- */
+/** Token checker aspect. */
 @Slf4j
 @Aspect
 @Component
 public class TokenCheckerAspect {
 
-    @Autowired
-    private IReqTokenService iReqTokenService;
+    @Autowired private IReqTokenService iReqTokenService;
 
     @Before("@within(tokenChecker)")
     public void doBeforeForClass(TokenChecker tokenChecker) {
@@ -49,7 +43,7 @@ public class TokenCheckerAspect {
         String headerName = tokenChecker.token();
 
         String token = request.getHeader(headerName);
-        if(StringUtils.isBlank(token)) {
+        if (StringUtils.isBlank(token)) {
             token = request.getParameter(headerName);
         }
 
@@ -63,17 +57,14 @@ public class TokenCheckerAspect {
         } else {
             throw new DefinitionException(ResponseStatus.UNAUTHORIZED);
         }
-
     }
 
-    /**
-     * Return request current thread bound or null if none bound.
-     *
-     * @return Current request or null
-     */
+    /** Return request current thread bound or null if none bound. */
     private HttpServletRequest currentRequest() {
-        ServletRequestAttributes servletRequestAttributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
-        return Optional.ofNullable(servletRequestAttributes).map(ServletRequestAttributes::getRequest).orElse(null);
+        ServletRequestAttributes servletRequestAttributes =
+                (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+        return Optional.ofNullable(servletRequestAttributes)
+                .map(ServletRequestAttributes::getRequest)
+                .orElse(null);
     }
-
 }

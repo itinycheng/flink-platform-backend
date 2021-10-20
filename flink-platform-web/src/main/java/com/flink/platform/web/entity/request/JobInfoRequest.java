@@ -10,13 +10,7 @@ import lombok.experimental.Accessors;
 
 import java.util.List;
 
-/**
- * @Author Shik
- * @Title: TJobInfoRequest
- * @ProjectName: flink-platform-backend
- * @Description: TODO
- * @Date: 2021/4/14 上午10:50
- */
+/** Job request info. */
 @Data
 @EqualsAndHashCode(callSuper = false)
 @Accessors(chain = true)

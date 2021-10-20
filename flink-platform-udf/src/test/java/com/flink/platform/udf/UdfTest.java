@@ -8,9 +8,7 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-/**
- * Unit test for simple App.
- */
+/** Unit test for simple App. */
 public class UdfTest {
     @Test
     public void test0() {
@@ -38,6 +36,5 @@ public class UdfTest {
             String replace = date.replace("-", "");
             System.out.println(replace);
         }
-
     }
 }

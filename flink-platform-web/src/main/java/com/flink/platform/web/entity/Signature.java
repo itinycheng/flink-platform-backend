@@ -20,14 +20,7 @@ import java.io.Serializable;
 import java.lang.reflect.Field;
 import java.util.List;
 
-/**
- * <p>
- *
- * </p>
- *
- * @author shik
- * @since 2020-10-16
- */
+/** Signature. */
 @Data
 @EqualsAndHashCode(callSuper = false)
 @Accessors(chain = true)
@@ -38,25 +31,17 @@ public class Signature implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    /**
-     * 主键id
-     */
+    /** 主键id. */
     @TableId(value = "id", type = IdType.AUTO)
     private Long id;
 
-    /**
-     * 标签名称
-     */
+    /** 标签名称. */
     private String name;
 
-    /**
-     * 标签状态，1:有效，0:无效
-     */
+    /** 标签状态，1:有效，0:无效. */
     private Integer status;
 
-    /**
-     * 标签类型，1:统计标签，2:规则标签，3:预测标签
-     */
+    /** 标签类型，1:统计标签，2:规则标签，3:预测标签. */
     private Integer type;
 
     private DataType dataType;
@@ -69,25 +54,17 @@ public class Signature implements Serializable {
     @TableField(exist = false)
     private transient LabelParser labelParser;
 
-    /**
-     * 计算规则
-     */
+    /** 计算规则. */
     private String rule;
 
-    /**
-     * 标签描述
-     */
+    /** 标签描述. */
     @TableField(value = "`desc`")
     private String desc;
 
-    /**
-     * 创建时间
-     */
+    /** 创建时间. */
     private Long createTime;
 
-    /**
-     * 修改时间
-     */
+    /** 修改时间. */
     private Long updateTime;
 
     @SuppressWarnings("unchecked")
@@ -104,12 +81,15 @@ public class Signature implements Serializable {
             Object tableColumns = tableColumnsField.get(udfInstance);
             Field functionNameField = udfClass.getField("functionName");
             Object functionName = functionNameField.get(udfInstance);
-            this.labelParser = new LabelParser((String) functionName, udfClass,
-                    (Class<?>) tableClass, (List<SqlColumn>) tableColumns);
+            this.labelParser =
+                    new LabelParser(
+                            (String) functionName,
+                            udfClass,
+                            (Class<?>) tableClass,
+                            (List<SqlColumn>) tableColumns);
             return labelParser;
         } catch (Exception ex) {
             throw new RuntimeException(String.format("parser class: %s cannot be parsed", parser));
         }
     }
-
 }

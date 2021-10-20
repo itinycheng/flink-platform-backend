@@ -12,27 +12,18 @@ import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
-/**
- * <p>
- * 服务实现类
- * </p>
- *
- * @author shik
- * @since 2021-03-03
- */
+/** Req token service impl. */
 @Service
 @DS("master_1")
 @CacheConfig(cacheNames = "req_token", cacheManager = "token_cache")
-public class ReqTokenServiceImpl extends ServiceImpl<ReqTokenMapper, ReqToken> implements IReqTokenService {
+public class ReqTokenServiceImpl extends ServiceImpl<ReqTokenMapper, ReqToken>
+        implements IReqTokenService {
 
     @Override
     @Cacheable(key = "'token:'+#p0")
     public ReqToken getByToken(String token) {
 
-        ReqToken one = super.getOne(new QueryWrapper<ReqToken>().lambda()
-                .eq(ReqToken::getToken, token));
-
-        return one;
+        return super.getOne(new QueryWrapper<ReqToken>().lambda().eq(ReqToken::getToken, token));
     }
 
     @Override

@@ -10,13 +10,7 @@ import lombok.experimental.Accessors;
 
 import java.util.List;
 
-/**
- * @Author Shik
- * @Title: SignatureResponse
- * @ProjectName: flink-platform-backend
- * @Description: TODO
- * @Date: 2021/5/14 下午4:09
- */
+/** signature response. */
 @Data
 @EqualsAndHashCode(callSuper = false)
 @Accessors(chain = true)
@@ -25,5 +19,4 @@ import java.util.List;
 public class SignatureResponse extends Signature {
 
     private List<SignatureValue> values;
-
 }

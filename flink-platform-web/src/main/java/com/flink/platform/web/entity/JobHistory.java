@@ -15,14 +15,7 @@ import lombok.experimental.Accessors;
 import java.io.Serializable;
 import java.time.LocalDateTime;
 
-/**
- * <p>
- * job modify info
- * </p>
- *
- * @author shik
- * @since 2021-04-14
- */
+/** Job modify info. */
 @Data
 @EqualsAndHashCode(callSuper = false)
 @Accessors(chain = true)
@@ -37,84 +30,51 @@ public class JobHistory implements Serializable {
     @TableId(value = "id", type = IdType.AUTO)
     private Long id;
 
-    /**
-     * job info id
-     */
+    /** job info id. */
     private String jobId;
 
-    /**
-     * job name
-     */
+    /** job name. */
     private String jobName;
 
-    /**
-     * job desc
-     */
+    /** job desc. */
     private String jobDesc;
 
-    /**
-     * job type
-     */
+    /** job type. */
     private String jobType;
 
-    /**
-     * config for run job
-     */
+    /** config for run job. */
     private String jobConfig;
 
-    /**
-     * deploy mode
-     */
+    /** deploy mode. */
     private DeployMode deployMode;
 
-    /**
-     * execution mode
-     */
+    /** execution mode. */
     private ExecutionMode execMode;
 
-    /**
-     * cron expression
-     */
+    /** cron expression. */
     private String cronExpr;
 
-    /**
-     * sql or jar path
-     */
+    /** sql or jar path. */
     private String subject;
 
-    /**
-     * catalog id list
-     */
+    /** catalog id list. */
     private String catalogs;
 
-    /**
-     * external jars
-     */
+    /** external jars. */
     private String extJars;
 
-    /**
-     * main args
-     */
+    /** main args. */
     private String mainArgs;
 
-    /**
-     * main class
-     */
+    /** main class. */
     private String mainClass;
 
-    /**
-     * -1: delete, 0: close, 1: open
-     */
+    /** -1: delete, 0: close, 1: open. */
     private Integer status;
 
-    /**
-     * modify user
-     */
+    /** modify user. */
     private String modifyUser;
 
-    /**
-     * modify time
-     */
+    /** modify time. */
     private LocalDateTime modifyTime;
-
 }

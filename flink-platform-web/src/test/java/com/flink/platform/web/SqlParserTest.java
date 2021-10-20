@@ -17,6 +17,7 @@ import org.junit.Test;
 import java.util.Arrays;
 import java.util.List;
 
+/** sql parser test. */
 public class SqlParserTest {
 
     SqlSelect sqlSelect;
@@ -35,19 +36,19 @@ public class SqlParserTest {
         condition1.setType("simple");
         condition1.setOperator(SqlExpression.EQ);
         condition1.setColumn(SqlIdentifier.of("common", "user_type"));
-        condition1.setOperands(new String[]{"3"});
+        condition1.setOperands(new String[] {"3"});
 
         SimpleSqlWhere subCondition1 = new SimpleSqlWhere();
         subCondition1.setType("simple");
         subCondition1.setOperator(SqlExpression.GT);
         subCondition1.setColumn(SqlIdentifier.of("bus", "license"));
-        subCondition1.setOperands(new String[]{"TBNZ"});
+        subCondition1.setOperands(new String[] {"TBNZ"});
 
         SimpleSqlWhere subCondition2 = new SimpleSqlWhere();
         subCondition2.setType("simple");
         subCondition2.setOperator(SqlExpression.CONTAINS);
         subCondition2.setColumn(SqlIdentifier.of("ib", "license"));
-        subCondition2.setOperands(new String[]{"TBNZ&TBSG"});
+        subCondition2.setOperands(new String[] {"TBNZ&TBSG"});
 
         CompositeSqlWhere condition2 = new CompositeSqlWhere();
         condition2.setType("composite");
@@ -61,8 +62,9 @@ public class SqlParserTest {
 
         sqlSelect.setWhere(where);
         sqlSelect.setFrom(UserGroupConst.SOURCE_TABLE_IDENTIFIER);
-        sqlSelect.setSelectList(Arrays.asList(SqlIdentifier.of("bus", "uuid"),
-                SqlIdentifier.of("common", "region")));
+        sqlSelect.setSelectList(
+                Arrays.asList(
+                        SqlIdentifier.of("bus", "uuid"), SqlIdentifier.of("common", "region")));
         this.sqlSelect = sqlSelect;
 
         sqlSelect = new SqlSelect();
@@ -70,19 +72,19 @@ public class SqlParserTest {
         condition1.setType("simple");
         condition1.setOperator(SqlExpression.EQ);
         condition1.setColumn(SqlIdentifier.of("bus", "user_type"));
-        condition1.setOperands(new String[]{"3"});
+        condition1.setOperands(new String[] {"3"});
 
         subCondition1 = new SimpleSqlWhere();
         subCondition1.setType("simple");
         subCondition1.setOperator(SqlExpression.GT);
         subCondition1.setColumn(SqlIdentifier.of("bus", "license"));
-        subCondition1.setOperands(new String[]{"TBNZ"});
+        subCondition1.setOperands(new String[] {"TBNZ"});
 
         subCondition2 = new SimpleSqlWhere();
         subCondition2.setType("simple");
         subCondition2.setOperator(SqlExpression.LE);
         subCondition2.setColumn(SqlIdentifier.of("bus", "license"));
-        subCondition2.setOperands(new String[]{"TBNZ"});
+        subCondition2.setOperands(new String[] {"TBNZ"});
 
         condition2 = new CompositeSqlWhere();
         condition2.setType("composite");
@@ -96,8 +98,8 @@ public class SqlParserTest {
 
         sqlSelect.setWhere(where);
         sqlSelect.setFrom(UserGroupConst.SOURCE_TABLE_IDENTIFIER);
-        sqlSelect.setSelectList(Arrays.asList(SqlIdentifier.of("bus", "uuid"),
-                SqlIdentifier.of("bus", "region")));
+        sqlSelect.setSelectList(
+                Arrays.asList(SqlIdentifier.of("bus", "uuid"), SqlIdentifier.of("bus", "region")));
 
         this.simpleSqlSelect = sqlSelect;
 
@@ -106,13 +108,13 @@ public class SqlParserTest {
         subCondition1.setType("simple");
         subCondition1.setOperator(SqlExpression.IN);
         subCondition1.setColumn(SqlIdentifier.of("bus", "position_stk", "symbol"));
-        subCondition1.setOperands(new String[]{"TSLA,LI"});
+        subCondition1.setOperands(new String[] {"TSLA,LI"});
 
         subCondition2 = new SimpleSqlWhere();
         subCondition2.setType("simple");
         subCondition2.setOperator(SqlExpression.EQ);
         subCondition2.setColumn(SqlIdentifier.of("bus", "position_opt", "symbol"));
-        subCondition2.setOperands(new String[]{"NIO"});
+        subCondition2.setOperands(new String[] {"NIO"});
 
         condition2 = new CompositeSqlWhere();
         condition2.setType("composite");
@@ -121,8 +123,8 @@ public class SqlParserTest {
 
         sqlSelect.setWhere(condition2);
         sqlSelect.setFrom(UserGroupConst.SOURCE_TABLE_IDENTIFIER);
-        sqlSelect.setSelectList(Arrays.asList(SqlIdentifier.of("bus", "uuid"),
-                SqlIdentifier.of("bus", "region")));
+        sqlSelect.setSelectList(
+                Arrays.asList(SqlIdentifier.of("bus", "uuid"), SqlIdentifier.of("bus", "region")));
 
         this.listMapSqlSelect = sqlSelect;
 
@@ -170,5 +172,4 @@ public class SqlParserTest {
         String insertSelect = userGroupSqlGenService.generateInsertSelect(listMapSqlSelect);
         System.out.println(insertSelect);
     }
-
 }

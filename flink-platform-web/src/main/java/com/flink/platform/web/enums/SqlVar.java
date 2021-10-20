@@ -5,23 +5,21 @@ import com.flink.platform.web.entity.JobInfo;
 
 import java.util.function.Function;
 
-/**
- * @author tiny.wang
- */
+/** sql var. */
 public enum SqlVar {
 
-    /**
-     * sql variable
-     */
+    /** sql variables. */
     JOB_CODE("$jobCode", (Object obj) -> ((JobInfo) obj).getCode()),
 
     CURRENT_TIMESTAMP("$currentTimestamp", (Object obj) -> System.currentTimeMillis()),
 
-    CURRENT_TIME_MINUS("$currentTimeMinus", (Object obj) ->
-            DateUtil.format(System.currentTimeMillis(), "yyyyMMddHHmm")),
+    CURRENT_TIME_MINUS(
+            "$currentTimeMinus",
+            (Object obj) -> DateUtil.format(System.currentTimeMillis(), "yyyyMMddHHmm")),
 
-    TODAY_YYYYMMDD("$today_yyyyMMdd", (Object obj) ->
-            DateUtil.format(System.currentTimeMillis(), "yyyyMMdd"));
+    TODAY_YYYYMMDD(
+            "$today_yyyyMMdd",
+            (Object obj) -> DateUtil.format(System.currentTimeMillis(), "yyyyMMdd"));
 
     public final String variable;
 

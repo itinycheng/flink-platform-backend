@@ -1,13 +1,7 @@
 package com.flink.platform.common.enums;
 
-/**
- * @author tiny.wang
- */
+/** catalog type. */
 public enum CatalogType {
-
-    /**
-     * catalog type
-     */
     MEMORY,
 
     HIVE,
@@ -19,5 +13,4 @@ public enum CatalogType {
     POSTGRES,
 
     CLICKHOUSE
-
 }

@@ -15,6 +15,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.Resource;
+
 import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -31,9 +32,7 @@ import static com.flink.platform.common.constants.JobConstant.ROOT_DIR;
 import static com.flink.platform.common.constants.JobConstant.SQL_PATTERN;
 import static java.util.stream.Collectors.toList;
 
-/**
- * @author tiny.wang
- */
+/** Sql context helper. */
 @Slf4j
 @Component("sqlContextHelper")
 public class SqlContextHelper {
@@ -41,13 +40,13 @@ public class SqlContextHelper {
     @Value("${flink.local.sql-dir}")
     private String sqlDir;
 
-    @Resource
-    private ICatalogInfoService catalogInfoService;
+    @Resource private ICatalogInfoService catalogInfoService;
 
     public String convertFromAndSaveToFile(JobInfo jobInfo) {
         SqlContext sqlContext = convertFrom(jobInfo);
         long timestamp = System.currentTimeMillis();
-        String fileName = String.join(DOT, jobInfo.getCode(), String.valueOf(timestamp), JSON_FILE_SUFFIX);
+        String fileName =
+                String.join(DOT, jobInfo.getCode(), String.valueOf(timestamp), JSON_FILE_SUFFIX);
         return saveToFile(fileName, sqlContext);
     }
 
@@ -63,9 +62,7 @@ public class SqlContextHelper {
         return sqlContext;
     }
 
-    /**
-     * no use
-     */
+    /** no use. */
     private List<Function> toFunctions(String jobConfig) {
         return Collections.emptyList();
     }
@@ -74,11 +71,14 @@ public class SqlContextHelper {
         return JsonUtil.toList(catalogs).stream()
                 .map(Long::parseLong)
                 .map(id -> catalogInfoService.getById(id))
-                .map(catalogInfo -> new Catalog(catalogInfo.getName(),
-                        catalogInfo.getType(),
-                        catalogInfo.getDefaultDatabase(),
-                        catalogInfo.getConfigPath(),
-                        JsonUtil.toStrMap(catalogInfo.getConfigs())))
+                .map(
+                        catalogInfo ->
+                                new Catalog(
+                                        catalogInfo.getName(),
+                                        catalogInfo.getType(),
+                                        catalogInfo.getDefaultDatabase(),
+                                        catalogInfo.getConfigPath(),
+                                        JsonUtil.toStrMap(catalogInfo.getConfigs())))
                 .collect(toList());
     }
 
@@ -109,7 +109,10 @@ public class SqlContextHelper {
             String json = JsonUtil.toJsonString(sqlContext);
             String sqlFilePath = String.join(SLASH, ROOT_DIR, sqlDir, fileName);
             FileUtils.write(new File(sqlFilePath), json, StandardCharsets.UTF_8);
-            log.info("serial sql context to local disk successfully, path: {}, data: {}", sqlFilePath, json);
+            log.info(
+                    "serial sql context to local disk successfully, path: {}, data: {}",
+                    sqlFilePath,
+                    json);
             return sqlFilePath;
         } catch (Exception e) {
             throw new JobCommandGenException("serde sql context to local disk failed", e);
@@ -117,7 +120,9 @@ public class SqlContextHelper {
     }
 
     public static void main(String[] args) {
-        Matcher matcher = SQL_PATTERN.matcher("set a =\n b;\nset c = d;\n select * from a where  name = ';';");
+        Matcher matcher =
+                SQL_PATTERN.matcher(
+                        "set a =\n b;\nset c = d;\n select * from a where  name = ';';");
         while (matcher.find()) {
             System.out.println("item: " + matcher.group());
         }

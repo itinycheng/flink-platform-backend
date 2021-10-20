@@ -15,16 +15,14 @@ import java.util.stream.Collectors;
 import static com.fasterxml.jackson.annotation.JsonTypeInfo.As;
 import static com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 
-/**
- * @author tiny.wang
- */
+/** sql where. */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @JsonTypeInfo(use = Id.NAME, include = As.EXISTING_PROPERTY, property = "type", visible = true)
 @JsonSubTypes({
-        @JsonSubTypes.Type(value = CompositeSqlWhere.class, name = "composite"),
-        @JsonSubTypes.Type(value = SimpleSqlWhere.class, name = "simple")
+    @JsonSubTypes.Type(value = CompositeSqlWhere.class, name = "composite"),
+    @JsonSubTypes.Type(value = SimpleSqlWhere.class, name = "simple")
 })
 public class SqlWhere {
 
@@ -38,12 +36,12 @@ public class SqlWhere {
             identifierSet.add(column);
         } else if (this instanceof CompositeSqlWhere) {
             CompositeSqlWhere compositeSqlWhere = (CompositeSqlWhere) this;
-            List<SqlIdentifier> identifiers = compositeSqlWhere.getConditions().stream()
-                    .flatMap(sqlWhere -> sqlWhere.exhaustiveSqlIdentifiers().stream())
-                    .collect(Collectors.toList());
+            List<SqlIdentifier> identifiers =
+                    compositeSqlWhere.getConditions().stream()
+                            .flatMap(sqlWhere -> sqlWhere.exhaustiveSqlIdentifiers().stream())
+                            .collect(Collectors.toList());
             identifierSet.addAll(identifiers);
         }
         return new ArrayList<>(identifierSet);
     }
-
 }

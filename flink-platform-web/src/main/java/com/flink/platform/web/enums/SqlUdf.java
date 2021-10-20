@@ -1,17 +1,14 @@
 package com.flink.platform.web.enums;
 
-/**
- * @author tiny.wang
- */
+/** sql udf. */
 public enum SqlUdf {
-
-    /**
-     * to string
-     */
-    TO_STRING("to_string", "CREATE TEMPORARY SYSTEM FUNCTION to_string as 'com.flink.platform.udf.ToStringFunction' language java;"),
-    LIST_CONTAINS("list_contains", "CREATE TEMPORARY SYSTEM FUNCTION list_contains as 'com.flink.platform.udf.ListContainsValueFunction' language java;"),
+    TO_STRING(
+            "to_string",
+            "CREATE TEMPORARY SYSTEM FUNCTION to_string as 'com.flink.platform.udf.ToStringFunction' language java;"),
+    LIST_CONTAINS(
+            "list_contains",
+            "CREATE TEMPORARY SYSTEM FUNCTION list_contains as 'com.flink.platform.udf.ListContainsValueFunction' language java;"),
     UDF_EXPRESSION("", "CREATE TEMPORARY SYSTEM FUNCTION %s as '%s' language java;");
-
 
     public final String name;
 
@@ -21,5 +18,4 @@ public enum SqlUdf {
         this.name = name;
         this.createStatement = createStatement;
     }
-
 }

@@ -3,16 +3,12 @@ package com.flink.platform.common.exception;
 import com.flink.platform.common.enums.ResponseStatus;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
-/**
- * @Author Shik
- * @Title: DefinitionException
- * @ProjectName: datapipeline
- * @Description: TODO
- * @Date: 2021/3/3 下午2:43
- */
+/** exception. */
 @Data
+@EqualsAndHashCode(callSuper = true)
 @AllArgsConstructor
 @NoArgsConstructor
 public class DefinitionException extends RuntimeException {
@@ -24,5 +20,4 @@ public class DefinitionException extends RuntimeException {
         this.code = responseStatus.getCode();
         this.msg = responseStatus.getDesc();
     }
-
 }

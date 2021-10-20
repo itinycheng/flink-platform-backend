@@ -1,8 +1,6 @@
 package com.flink.platform.common.constants;
 
-/**
- * @author tiny.wang
- */
+/** constant. */
 public class Constant {
 
     public static final String COMMA = ",";
@@ -35,11 +33,9 @@ public class Constant {
 
     public static final String BRACKET_RIGHT = ")";
 
-    public final static String LINE_SEPARATOR = "\n";
+    public static final String LINE_SEPARATOR = "\n";
 
-    public final static String EQUAL = "=";
+    public static final String EQUAL = "=";
 
-    public final static String SLASH = "/";
-
+    public static final String SLASH = "/";
 }
-

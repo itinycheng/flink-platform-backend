@@ -1,13 +1,8 @@
 package com.flink.platform.common.enums;
 
-
-/**
- * @author tiny.wang
- */
+/** response status. */
 public enum ResponseStatus {
-    /**
-     * response status
-     */
+    /** response status. */
     SUCCESS(200, "success"),
     EXCESSIVE_FREQUENCY(201, "Excessive frequency"),
     ERROR_PARAMETER(301, "illegal input parameter"),

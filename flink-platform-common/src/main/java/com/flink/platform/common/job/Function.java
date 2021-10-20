@@ -3,11 +3,7 @@ package com.flink.platform.common.job;
 import com.flink.platform.common.enums.FunctionType;
 import lombok.Data;
 
-/**
- * function udf
- *
- * @author tiny.wang
- */
+/** function udf. */
 @Data
 public class Function {
 
@@ -16,5 +12,4 @@ public class Function {
     private FunctionType type;
 
     private String clazz;
-
 }

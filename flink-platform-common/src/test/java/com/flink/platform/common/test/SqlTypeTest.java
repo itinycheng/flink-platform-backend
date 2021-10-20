@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.TreeMap;
 import java.util.stream.Stream;
 
+/** sql type test. */
 public class SqlTypeTest {
 
     @Test
@@ -33,7 +34,8 @@ public class SqlTypeTest {
         System.out.println(SqlType.parse("create  function     "));
         System.out.println(SqlType.parse("create   temporary   function "));
         System.out.println(SqlType.parse("create \n   temporary  \n  system  \n  function   "));
-        // System.out.println(SqlType.parse("create \n   temporary error \n  system  \n  function   "));
+        // System.out.println(SqlType.parse("create \n   temporary error \n  system  \n  function
+        // "));
         System.out.println("~end1~");
     }
 

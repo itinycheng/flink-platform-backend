@@ -14,11 +14,7 @@ import java.nio.file.Paths;
 import static com.flink.platform.common.constants.Constant.SLASH;
 import static com.flink.platform.common.constants.JobConstant.ROOT_DIR;
 
-/**
- * create hdfs instance
- *
- * @author tiny.wang
- */
+/** Create hdfs instance. */
 @Configuration
 @Slf4j
 public class HadoopConfig {

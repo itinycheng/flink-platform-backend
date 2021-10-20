@@ -1,15 +1,10 @@
 package com.flink.platform.web.command;
 
-/**
- * TODO
- * build call back info
- *
- * @author tiny.wang
- */
+/** build call back info. */
 public interface JobCallbackBuilder {
 
     /**
-     * extract app id
+     * extract app id.
      *
      * @param message job command message
      * @return application id
@@ -17,7 +12,7 @@ public interface JobCallbackBuilder {
     String extractApplicationId(String message);
 
     /**
-     * extract job id
+     * extract job id.
      *
      * @param message job command message
      * @return job id

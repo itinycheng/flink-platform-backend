@@ -13,22 +13,17 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.annotation.Resource;
+
 import java.util.Objects;
 
-/**
- * all about quartz operations
- *
- * @author tiny.wang
- */
+/** all about quartz operations. */
 @RestController
 @RequestMapping("/jobInfo/quartz")
 public class JobQuartzController {
 
-    @Resource
-    public JobInfoQuartzService jobInfoQuartzService;
+    @Resource public JobInfoQuartzService jobInfoQuartzService;
 
-    @Resource
-    private IJobInfoService iJobInfoService;
+    @Resource private IJobInfoService iJobInfoService;
 
     @GetMapping(value = "/runOnce/{jobId}")
     public ResultInfo runOnce(@PathVariable Long jobId) {
@@ -47,8 +42,8 @@ public class JobQuartzController {
     }
 
     @GetMapping(value = "/delete")
-    public ResultInfo delete(@RequestParam(name = "name") String name,
-                             @RequestParam(name = "group") String group) {
+    public ResultInfo delete(
+            @RequestParam(name = "name") String name, @RequestParam(name = "group") String group) {
         jobInfoQuartzService.deleteTrigger(name, group);
         jobInfoQuartzService.deleteJob(name, group);
         return ResultInfo.success(null);

@@ -13,22 +13,16 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
+
 import java.time.LocalDateTime;
 
-/**
- * <p>
- * job config info 服务实现类
- * </p>
- *
- * @author shik
- * @since 2021-04-14
- */
+/** job config info. */
 @Service
 @DS("master_platform")
-public class JobInfoServiceImpl extends ServiceImpl<JobInfoMapper, JobInfo> implements IJobInfoService {
+public class JobInfoServiceImpl extends ServiceImpl<JobInfoMapper, JobInfo>
+        implements IJobInfoService {
 
-    @Resource
-    public JobInfoQuartzService jobInfoQuartzService;
+    @Resource public JobInfoQuartzService jobInfoQuartzService;
 
     @Transactional(rollbackFor = RuntimeException.class)
     @Override
@@ -38,7 +32,7 @@ public class JobInfoServiceImpl extends ServiceImpl<JobInfoMapper, JobInfo> impl
             throw new DefinitionException(ResponseStatus.SERVICE_ERROR);
         }
         return true;
-//        return jobInfoQuartzService.addJobToQuartz(jobInfo);
+        //        return jobInfoQuartzService.addJobToQuartz(jobInfo);
     }
 
     @Transactional(rollbackFor = RuntimeException.class)

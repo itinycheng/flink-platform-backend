@@ -1,6 +1,5 @@
 package com.flink.platform.web.util;
 
-
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.HttpHeaders;
@@ -8,22 +7,21 @@ import org.springframework.http.MediaType;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.web.client.RestTemplate;
 
+/** Http utils. */
 @Slf4j
 public class HttpUtil {
 
+    public static final int TIME_OUT_30_S = 1000 * 30;
 
-    public final static int TIME_OUT_30_S = 1000 * 30;
+    public static final int TIME_OUT_15_S = 1000 * 15;
 
-    public final static int TIME_OUT_15_S = 1000 * 15;
+    public static final int TIME_OUT_20_S = 1000 * 20;
 
-    public final static int TIME_OUT_20_S = 1000 * 20;
+    public static final int TIME_OUT_3_S = 1000 * 3;
 
-    public final static int TIME_OUT_3_S = 1000 * 3;
+    public static final int TIME_OUT_5_M = 1000 * 60 * 5;
 
-    public final static int TIME_OUT_5_M = 1000 * 60 * 5;
-
-    public final static int TIME_OUT_1_M = 1000 * 60 * 1;
-
+    public static final int TIME_OUT_1_M = 1000 * 60 * 1;
 
     public static HttpHeaders buildHttpHeaders(String contentType) {
         HttpHeaders httpHeaders = new HttpHeaders();
@@ -45,11 +43,8 @@ public class HttpUtil {
         return restTemplate;
     }
 
-
-    public static String buildUrl(String domain,String urn){
+    public static String buildUrl(String domain, String urn) {
 
         return new StringBuilder(domain).append(urn).toString();
     }
-
 }
-

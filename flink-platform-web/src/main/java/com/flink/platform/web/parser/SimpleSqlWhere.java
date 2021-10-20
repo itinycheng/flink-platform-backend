@@ -6,9 +6,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
-/**
- * @author tiny.wang
- */
+/** Simple sql where. */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -20,5 +18,4 @@ public class SimpleSqlWhere extends SqlWhere {
     private SqlIdentifier column;
 
     private String[] operands;
-
 }

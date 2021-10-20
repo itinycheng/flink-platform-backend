@@ -9,13 +9,7 @@ import lombok.experimental.Accessors;
 
 import java.util.List;
 
-/**
- * @Author Shik
- * @Title: CatalogInfoRequest
- * @ProjectName: flink-platform-backend
- * @Description: TODO
- * @Date: 2021/5/13 下午2:09
- */
+/** Catalog info request. */
 @Data
 @EqualsAndHashCode(callSuper = false)
 @Accessors(chain = true)
@@ -24,5 +18,4 @@ import java.util.List;
 public class CatalogInfoRequest extends CatalogInfo {
 
     private List<String> catalogIds;
-
 }

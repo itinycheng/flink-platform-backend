@@ -4,9 +4,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-/**
- * @author tiny.wang
- */
+/** function utils. */
 public class FunctionUtil {
 
     public static <A> Consumer<A> uncheckedConsumer(ConsumerWithException<A, ?> func) {
@@ -57,40 +55,30 @@ public class FunctionUtil {
         }
     }
 
+    /**
+     * A functional interface for a {@link java.util.function.Function} that may throw exceptions.
+     */
     @FunctionalInterface
     public interface FunctionWithException<T, R, E extends Throwable> {
 
-        /**
-         * Calls this function.
-         *
-         * @param value The argument to the function.
-         * @return The result of thus supplier.
-         * @throws E This function may throw an exception.
-         */
         R apply(T value) throws E;
     }
 
+    /**
+     * A functional interface for a {@link java.util.function.Supplier} that may throw exceptions.
+     */
     @FunctionalInterface
     public interface SupplierWithException<R, E extends Throwable> {
 
-        /**
-         * Gets the result of this supplier.
-         *
-         * @return The result of thus supplier.
-         * @throws E This function may throw an exception.
-         */
         R get() throws E;
     }
 
+    /**
+     * A functional interface for a {@link java.util.function.Consumer} that may throw exceptions.
+     */
     @FunctionalInterface
     public interface ConsumerWithException<T, E extends Throwable> {
 
-        /**
-         * Performs this operation on the given argument.
-         *
-         * @param t the input argument
-         * @throws E on errors during consumption
-         */
         void accept(T t) throws E;
     }
 }

@@ -4,9 +4,7 @@ import com.flink.platform.common.enums.DataType;
 import com.flink.platform.udf.common.SqlColumn;
 import lombok.Data;
 
-/**
- * @author tiny.wang
- */
+/** Position label. */
 @Data
 public class PositionLabel {
 
@@ -33,6 +31,4 @@ public class PositionLabel {
 
     @SqlColumn(priority = 8, name = "ts", type = DataType.LONG)
     private Long timestamp;
-
 }
-

@@ -2,15 +2,11 @@ package com.flink.platform.udf.entity;
 
 import lombok.Data;
 
-/**
- * user label
- *
- * @author tiny.wang
- */
+/** User label. */
 @Data
 public class LabelWrapper {
 
-    private Long sign_id;
+    private Long signId;
 
     private String desc;
 
@@ -18,5 +14,5 @@ public class LabelWrapper {
 
     private Double weight;
 
-    private Long valid_time;
+    private Long validTime;
 }

@@ -10,30 +10,21 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.servlet.http.HttpServletRequest;
+
 import java.util.List;
 
-/**
- * @Author Shik
- * @Title: CatalogInfoController
- * @ProjectName: flink-platform-backend
- * @Description: TODO
- * @Date: 2021/5/13 下午2:06
- */
+/** Catalog info controller. */
 @RestController
 @RequestMapping("/catalog-info")
 public class CatalogInfoController {
 
-    @Autowired
-    private ICatalogInfoService iCatalogInfoService;
+    @Autowired private ICatalogInfoService iCatalogInfoService;
 
     @GetMapping
-    public ResultInfo list(CatalogInfoRequest catalogInfoRequest,
-                           HttpServletRequest request) {
+    public ResultInfo list(CatalogInfoRequest catalogInfoRequest, HttpServletRequest request) {
 
         List<CatalogInfo> list = this.iCatalogInfoService.list();
 
         return ResultInfo.success(list);
-
     }
-
 }

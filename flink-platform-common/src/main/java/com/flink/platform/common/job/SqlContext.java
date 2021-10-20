@@ -6,11 +6,7 @@ import lombok.Data;
 import java.util.List;
 import java.util.Map;
 
-/**
- * sql context
- *
- * @author tiny.wang
- */
+/** sql context. */
 @Data
 public class SqlContext {
 
@@ -20,20 +16,13 @@ public class SqlContext {
 
     private ExecutionMode execMode;
 
-    /**
-     * currently not in use
-     */
     private List<String> extJars;
 
-    /**
-     * flink-conf.yaml configs
-     */
+    /** flink-conf.yaml configs. */
     private Map<String, String> configs;
 
     private List<Catalog> catalogs;
 
-    /**
-     * currently not in use
-     */
+    /** currently not in use. */
     private List<Function> functions;
 }

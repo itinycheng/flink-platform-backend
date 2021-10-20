@@ -4,11 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-/**
- * call back info from the command line
- *
- * @author tiny.wang
- */
+/** call back info from the command line. */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

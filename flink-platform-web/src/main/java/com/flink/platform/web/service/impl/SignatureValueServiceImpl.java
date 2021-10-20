@@ -7,14 +7,8 @@ import com.flink.platform.web.mapper.SignatureValueMapper;
 import com.flink.platform.web.service.ISignatureValueService;
 import org.springframework.stereotype.Service;
 
-/**
- * @Author Shik
- * @Title: SignatureValueServiceImpl
- * @ProjectName: flink-platform-backend
- * @Description: TODO
- * @Date: 2021/5/17 上午10:45
- */
+/** Signature value service impl. */
 @Service
 @DS("signature")
-public class SignatureValueServiceImpl extends ServiceImpl<SignatureValueMapper, SignatureValue> implements ISignatureValueService {
-}
+public class SignatureValueServiceImpl extends ServiceImpl<SignatureValueMapper, SignatureValue>
+        implements ISignatureValueService {}

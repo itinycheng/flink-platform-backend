@@ -30,6 +30,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.annotation.Resource;
+
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -37,33 +38,27 @@ import java.util.List;
 import static com.flink.platform.web.constants.UserGroupConst.COMMON;
 import static com.flink.platform.web.constants.UserGroupConst.UUID;
 
-/**
- * @author tiny.wang
- */
+/** User group controller. */
 @Slf4j
 @RestController
 @RequestMapping("/userGroup")
 public class UserGroupController {
 
-    private static final List<Integer> FINAL_STATUS = Arrays.asList(
-            JobYarnStatusEnum.FINISHED.getCode(),
-            JobYarnStatusEnum.FAILED.getCode(),
-            JobYarnStatusEnum.KILLED.getCode());
+    private static final List<Integer> FINAL_STATUS =
+            Arrays.asList(
+                    JobYarnStatusEnum.FINISHED.getCode(),
+                    JobYarnStatusEnum.FAILED.getCode(),
+                    JobYarnStatusEnum.KILLED.getCode());
 
-    @Resource
-    private UserGroupSqlGenService sqlGenService;
+    @Resource private UserGroupSqlGenService sqlGenService;
 
-    @Resource
-    private IJobInfoService jobInfoService;
+    @Resource private IJobInfoService jobInfoService;
 
-    @Resource
-    private IJobRunInfoService jobRunInfoService;
+    @Resource private IJobRunInfoService jobRunInfoService;
 
-    @Resource
-    public JobInfoQuartzService jobInfoQuartzService;
+    @Resource public JobInfoQuartzService jobInfoQuartzService;
 
-    @Resource
-    private UserGroupService userGroupService;
+    @Resource private UserGroupService userGroupService;
 
     @PostMapping(value = "/sqlGenerator/insertSelect")
     public ResultInfo insertSelect(@RequestBody SqlSelect sqlSelect) {
@@ -71,7 +66,8 @@ public class UserGroupController {
         sqlSelect.setFrom(UserGroupConst.SOURCE_TABLE_IDENTIFIER);
         // set default select list
         List<SqlIdentifier> identifiers = sqlSelect.getWhere().exhaustiveSqlIdentifiers();
-        String qualifier = CollectionUtils.isEmpty(identifiers) ? COMMON : identifiers.get(0).getQualifier();
+        String qualifier =
+                CollectionUtils.isEmpty(identifiers) ? COMMON : identifiers.get(0).getQualifier();
         sqlSelect.setSelectList(Collections.singletonList(SqlIdentifier.of(qualifier, UUID)));
         // generate sql
         String sqlString = sqlGenService.generateInsertSelect(sqlSelect);
@@ -118,7 +114,11 @@ public class UserGroupController {
 
             Long runId = userGroupRequest.getRunId();
             if (runId != null) {
-                jobRunInfo = jobRunInfoService.getOne(new QueryWrapper<JobRunInfo>().lambda().eq(JobRunInfo::getId, runId));
+                jobRunInfo =
+                        jobRunInfoService.getOne(
+                                new QueryWrapper<JobRunInfo>()
+                                        .lambda()
+                                        .eq(JobRunInfo::getId, runId));
             } else {
                 jobRunInfo = jobRunInfoService.getLatestByJobId(userGroupRequest.getId());
             }
@@ -128,8 +128,9 @@ public class UserGroupController {
             } else {
                 long resultSize = 0;
                 if (FINAL_STATUS.contains(jobRunInfo.getStatus())) {
-                    resultSize = userGroupService.getAndStoreResultSize(jobRunInfo.getId(),
-                            jobRunInfo.getVariables());
+                    resultSize =
+                            userGroupService.getAndStoreResultSize(
+                                    jobRunInfo.getId(), jobRunInfo.getVariables());
                 }
                 return ResultInfo.success(resultSize);
             }
@@ -138,5 +139,4 @@ public class UserGroupController {
             return ResultInfo.failure(ResponseStatus.SERVICE_ERROR);
         }
     }
-
 }

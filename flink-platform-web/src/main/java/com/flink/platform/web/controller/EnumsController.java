@@ -1,8 +1,8 @@
 package com.flink.platform.web.controller;
 
+import com.flink.platform.web.entity.response.ResultInfo;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import com.flink.platform.web.entity.response.ResultInfo;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -11,14 +11,12 @@ import java.lang.reflect.Method;
 import java.util.List;
 import java.util.Map;
 
-/**
- * @author tiny.wang
- */
+/** Enums controller. */
 @RestController
 @RequestMapping("/enums")
 public class EnumsController {
 
-    private final static String CLASS_PATH_PREFIX = "com.flink.platform.common.enums";
+    private static final String CLASS_PATH_PREFIX = "com.flink.platform.common.enums";
 
     @GetMapping
     public ResultInfo list(String enumsClass) {
@@ -43,5 +41,4 @@ public class EnumsController {
         }
         return ResultInfo.success(enums);
     }
-
 }

@@ -8,6 +8,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.Date;
 
+/** Quartz test. */
 public class QuartzTest {
 
     @Test
@@ -16,6 +17,7 @@ public class QuartzTest {
         LocalDateTime of = LocalDateTime.of(2021, 5, 21, 3, 0);
         Date from = Date.from(of.toInstant(ZoneOffset.of("+8")));
         System.out.println(cronExpression.getNextValidTimeAfter(from));
-        System.out.println(cronExpression.getNextValidTimeAfter(cronExpression.getNextValidTimeAfter(from)));
+        System.out.println(
+                cronExpression.getNextValidTimeAfter(cronExpression.getNextValidTimeAfter(from)));
     }
 }

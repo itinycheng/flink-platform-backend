@@ -6,23 +6,12 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-/**
- * @Author Shik
- * @Title: HeaderChecker
- * @ProjectName: datapipeline
- * @Description: TODO
- * @Date: 2021/3/3 下午5:39
- */
+/** Token checker. */
 @Documented
-@Target({ElementType.METHOD,ElementType.TYPE})
+@Target({ElementType.METHOD, ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
 public @interface TokenChecker {
 
-    /**
-     * Without default value means this argument is required
-     *
-     * @return Header names
-     */
+    /** Without default value means this argument is required. */
     String token() default "authorization";
-
 }

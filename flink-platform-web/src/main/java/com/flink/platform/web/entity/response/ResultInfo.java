@@ -7,11 +7,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-/**
- * response skeleton
- *
- * @author tiny.wang
- */
+/** Response skeleton. */
 @Builder
 @Data
 @AllArgsConstructor
@@ -33,9 +29,7 @@ public class ResultInfo {
         return resultInfo;
     }
 
-    /**
-     * 自定义异常返回的结果
-     */
+    /** 自定义异常返回的结果. */
     public static ResultInfo defineError(DefinitionException de) {
         ResultInfo result = new ResultInfo();
         result.setCode(de.getCode());
@@ -43,9 +37,7 @@ public class ResultInfo {
         return result;
     }
 
-    /**
-     * 其他异常处理方法返回的结果
-     */
+    /** 其他异常处理方法返回的结果. */
     public static ResultInfo failure(ResponseStatus responseStatus) {
         ResultInfo result = new ResultInfo();
         result.setDesc(responseStatus.getDesc());

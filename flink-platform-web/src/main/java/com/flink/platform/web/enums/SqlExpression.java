@@ -5,13 +5,9 @@ import java.util.List;
 
 import static com.flink.platform.web.constants.UserGroupConst.PLACEHOLDER_UDF_NAME;
 
-/**
- * @author tiny.wang
- */
+/** Sql expression. */
 public enum SqlExpression {
-    /**
-     * sql expression
-     */
+    /** sql expression. */
     AND(" %s AND %s "),
     OR(" %s OR %s "),
     IN(" %s IN (%s) "),
@@ -31,18 +27,14 @@ public enum SqlExpression {
     ASC(" ORDER BY %s ASC "),
     DESC(" ORDER BY %s DESC "),
 
-    /**
-     * udf expression
-     * only for data type of list
-     */
+    /** udf expression only for data type of list. */
     CONTAINS(" " + PLACEHOLDER_UDF_NAME + "(%s, %s) = 1 "),
 
-    /**
-     * only for data type of list_map
-     */
+    /** only for data type of list_map. */
     JOIN_TABLE_FUNC(" LATERAL TABLE(" + PLACEHOLDER_UDF_NAME + "(%s)) as t%d(%s) ");
 
-    public static final List<SqlExpression> SUPPORT_MULTI_INPUT_PARAMETER = Arrays.asList(IN, NOT_IN);
+    public static final List<SqlExpression> SUPPORT_MULTI_INPUT_PARAMETER =
+            Arrays.asList(IN, NOT_IN);
 
     public final String expression;
 

@@ -1,8 +1,6 @@
 package com.flink.platform.web.comn;
 
-/**
- * @author tiny.wang
- */
+/** Quartz exception. */
 public class QuartzException extends RuntimeException {
 
     public QuartzException(String message) {
