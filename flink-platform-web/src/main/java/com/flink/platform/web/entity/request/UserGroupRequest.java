@@ -8,22 +8,16 @@ import org.apache.commons.lang3.StringUtils;
 
 import java.util.Random;
 
-/**
- * @author tiny.wang
- */
+/** User group request. */
 @Data
 @NoArgsConstructor
 @EqualsAndHashCode
 public class UserGroupRequest {
 
-    /**
-     * job run id
-     */
+    /** job run id. */
     private Long runId;
 
-    /**
-     * job id
-     */
+    /** job id. */
     private Long id;
 
     private String name;

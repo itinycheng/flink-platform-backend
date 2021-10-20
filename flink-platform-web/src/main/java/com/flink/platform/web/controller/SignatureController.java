@@ -24,56 +24,71 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.servlet.http.HttpServletRequest;
+
 import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-/**
- * @Author Shik
- * @Title: SignatureController
- * @ProjectName: datapipeline
- * @Description: TODO
- * @Date: 2020/11/26 下午5:03
- */
+/** Signature controller. */
 @RestController
 @RequestMapping("/signature")
 public class SignatureController {
 
-    @Autowired
-    private ISignatureService iSignatureService;
+    @Autowired private ISignatureService iSignatureService;
 
-    @Autowired
-    private ISignatureValueService iSignatureValueService;
+    @Autowired private ISignatureValueService iSignatureValueService;
 
     @GetMapping("list")
     public ResultInfo list(HttpServletRequest request) {
 
         List<Signature> list = this.iSignatureService.list();
-        List<SignatureResponse> responseList = list.stream().map(item -> {
-            List<SignatureValue> signatureValueList = this.iSignatureValueService.list(new QueryWrapper<SignatureValue>().lambda().eq(SignatureValue::getSignId, item.getId()));
-            SignatureResponse response = new SignatureResponse();
-            BeanUtils.copyProperties(item, response);
-            response.setValues(signatureValueList);
-            return response;
-        }).collect(Collectors.toList());
+        List<SignatureResponse> responseList =
+                list.stream()
+                        .map(
+                                item -> {
+                                    List<SignatureValue> signatureValueList =
+                                            this.iSignatureValueService.list(
+                                                    new QueryWrapper<SignatureValue>()
+                                                            .lambda()
+                                                            .eq(
+                                                                    SignatureValue::getSignId,
+                                                                    item.getId()));
+                                    SignatureResponse response = new SignatureResponse();
+                                    BeanUtils.copyProperties(item, response);
+                                    response.setValues(signatureValueList);
+                                    return response;
+                                })
+                        .collect(Collectors.toList());
 
         return ResultInfo.success(responseList);
-
     }
 
     @GetMapping
-    public ResultInfo get(@RequestParam(name = "page", required = false, defaultValue = "1") Integer page,
-                          @RequestParam(name = "size", required = false, defaultValue = "10") Integer size,
-                          SignatureRequest signatureRequest,
-                          HttpServletRequest request) {
+    public ResultInfo get(
+            @RequestParam(name = "page", required = false, defaultValue = "1") Integer page,
+            @RequestParam(name = "size", required = false, defaultValue = "10") Integer size,
+            SignatureRequest signatureRequest,
+            HttpServletRequest request) {
 
         Page pager = new Page<>(page, size);
-        IPage iPage = this.iSignatureService.page(pager, new QueryWrapper<Signature>().lambda()
-                .eq(Objects.nonNull(signatureRequest.getStatus()), Signature::getStatus, signatureRequest.getStatus())
-                .like(StringUtils.isNotBlank(signatureRequest.getName()), Signature::getName, signatureRequest.getName())
-                .like(StringUtils.isNotBlank(signatureRequest.getAccountType()), Signature::getAccountType, signatureRequest.getAccountType())
-        );
+        IPage iPage =
+                this.iSignatureService.page(
+                        pager,
+                        new QueryWrapper<Signature>()
+                                .lambda()
+                                .eq(
+                                        Objects.nonNull(signatureRequest.getStatus()),
+                                        Signature::getStatus,
+                                        signatureRequest.getStatus())
+                                .like(
+                                        StringUtils.isNotBlank(signatureRequest.getName()),
+                                        Signature::getName,
+                                        signatureRequest.getName())
+                                .like(
+                                        StringUtils.isNotBlank(signatureRequest.getAccountType()),
+                                        Signature::getAccountType,
+                                        signatureRequest.getAccountType()));
 
         return ResultInfo.success(iPage);
     }
@@ -85,14 +100,19 @@ public class SignatureController {
     }
 
     @PostMapping
-    public ResultInfo saveOrUpdate(HttpServletRequest request, @RequestBody SignatureRequest signature) {
+    public ResultInfo saveOrUpdate(
+            HttpServletRequest request, @RequestBody SignatureRequest signature) {
         if (StringUtils.isNotBlank(signature.getName())) {
 
             this.buildSignature(signature);
 
             // save
             if (Objects.isNull(signature.getId())) {
-                Signature one = this.iSignatureService.getOne(new QueryWrapper<Signature>().lambda().eq(Signature::getName, signature.getName()));
+                Signature one =
+                        this.iSignatureService.getOne(
+                                new QueryWrapper<Signature>()
+                                        .lambda()
+                                        .eq(Signature::getName, signature.getName()));
 
                 if (Objects.isNull(one)) {
                     signature.setStatus(1);
@@ -111,13 +131,13 @@ public class SignatureController {
         } else {
             throw new DefinitionException(ResponseStatus.ERROR_PARAMETER);
         }
-
     }
 
     private void buildSignature(SignatureRequest signature) {
 
-        signature.setAccountType(Objects.nonNull(signature.getAccountTypeList()) ? StringUtils.join(signature.getAccountTypeList(), ",") : "");
-
+        signature.setAccountType(
+                Objects.nonNull(signature.getAccountTypeList())
+                        ? StringUtils.join(signature.getAccountTypeList(), ",")
+                        : "");
     }
-
 }

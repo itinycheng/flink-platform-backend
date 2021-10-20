@@ -9,9 +9,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-/**
- * @author tiny.wang
- */
+/** read/write file test. */
 public class FileTest {
 
     @Test

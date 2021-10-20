@@ -12,13 +12,7 @@ import lombok.experimental.Accessors;
 
 import java.io.Serializable;
 
-/**
- * @Author Shik
- * @Title: SignatureValue
- * @ProjectName: flink-platform-backend
- * @Description: TODO
- * @Date: 2021/5/14 下午4:10
- */
+/** Signature value. */
 @Data
 @EqualsAndHashCode(callSuper = false)
 @Accessors(chain = true)
@@ -29,9 +23,6 @@ public class SignatureValue implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    /**
-     * 主键id
-     */
     @TableId(value = "id", type = IdType.AUTO)
     private Long id;
 
@@ -41,5 +32,4 @@ public class SignatureValue implements Serializable {
 
     @TableField("`desc`")
     private String desc;
-
 }

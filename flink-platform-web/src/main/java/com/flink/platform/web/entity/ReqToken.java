@@ -7,14 +7,7 @@ import lombok.EqualsAndHashCode;
 
 import java.io.Serializable;
 
-/**
- * <p>
- * 
- * </p>
- *
- * @author shik
- * @since 2021-03-03
- */
+/** Request token. */
 @Data
 @EqualsAndHashCode(callSuper = false)
 public class ReqToken implements Serializable {
@@ -24,24 +17,16 @@ public class ReqToken implements Serializable {
     @TableId(value = "id", type = IdType.AUTO)
     private Integer id;
 
-    /**
-     * 请求token
-     */
+    /** 请求token. */
     private String token;
 
-    /**
-     * 状态
-     */
+    /** 状态. */
     private Boolean status;
 
-    /**
-     * 用户
-     */
+    /** 用户. */
     private String username;
 
     private Long createTime;
 
     private Long updateTime;
-
-
 }

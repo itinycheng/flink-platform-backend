@@ -6,10 +6,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 
-/**
- * starter
- * @author tiny.wang
- */
+/** starter. */
 @EnableCaching
 @EnableTransactionManagement
 @SpringBootApplication(exclude = DruidDataSourceAutoConfigure.class)
@@ -18,5 +15,4 @@ public class PlatformWebApplication {
     public static void main(String[] args) {
         SpringApplication.run(PlatformWebApplication.class, args);
     }
-
 }

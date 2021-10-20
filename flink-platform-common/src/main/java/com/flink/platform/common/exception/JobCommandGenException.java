@@ -1,10 +1,6 @@
 package com.flink.platform.common.exception;
 
-/**
- * flink command generate exception
- *
- * @author tiny.wang
- */
+/** flink command generate exception. */
 public class JobCommandGenException extends RuntimeException {
 
     public JobCommandGenException(String message) {
@@ -14,5 +10,4 @@ public class JobCommandGenException extends RuntimeException {
     public JobCommandGenException(String message, Throwable cause) {
         super(message, cause);
     }
-
 }

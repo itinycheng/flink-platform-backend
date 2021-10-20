@@ -3,13 +3,11 @@ package com.flink.platform.web.command;
 import com.flink.platform.web.entity.JobInfo;
 import com.flink.platform.web.enums.JobType;
 
-/**
- * @author tiny.wang
- */
+/** Job command builder. */
 public interface JobCommandBuilder {
 
     /**
-     * whether support
+     * whether support.
      *
      * @param jobType job type
      * @return whether support
@@ -17,12 +15,11 @@ public interface JobCommandBuilder {
     boolean isSupported(JobType jobType);
 
     /**
-     * build a command from JobInfo
+     * build a command from JobInfo.
      *
      * @param jobInfo job info
      * @return shell command
      * @throws Exception IO exception
      */
     JobCommand buildCommand(JobInfo jobInfo) throws Exception;
-
 }

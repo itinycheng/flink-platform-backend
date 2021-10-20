@@ -18,6 +18,7 @@ import org.quartz.utils.Key;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
+
 import java.text.ParseException;
 import java.util.Date;
 
@@ -25,9 +26,7 @@ import static org.quartz.CronScheduleBuilder.cronSchedule;
 import static org.quartz.JobBuilder.newJob;
 import static org.quartz.TriggerBuilder.newTrigger;
 
-/**
- * @author tiny.wang
- */
+/** Job info quartz service. */
 @Slf4j
 @Service
 public class JobInfoQuartzService {
@@ -39,9 +38,7 @@ public class JobInfoQuartzService {
     @Resource(name = "quartzScheduler")
     Scheduler scheduler;
 
-    /**
-     * add trigger or throw Exception
-     */
+    /** add trigger or throw Exception. */
     public synchronized boolean addJobToQuartz(JobInfo jobInfo) {
         boolean added = false;
         try {
@@ -61,11 +58,6 @@ public class JobInfoQuartzService {
         return added;
     }
 
-    /**
-     * 移除一个任务
-     *
-     * @param jobCode 任务名
-     */
     public void removeJob(String jobCode) {
         deleteTrigger(jobCode, Key.DEFAULT_GROUP);
         deleteJob(jobCode, Key.DEFAULT_GROUP);
@@ -74,13 +66,16 @@ public class JobInfoQuartzService {
     public synchronized boolean runOnce(JobInfo jobInfo) {
         try {
             checkQuartzSchedulerStarted();
-            JobDetail jobDetail = newJob(JobRunner.class)
-                    .withIdentity(jobInfo.getCode(), GROUP_RUN_ONCE)
-                    .usingJobData(JOB_NAME, jobInfo.getName())
-                    .build();
-            Trigger simpleTrigger = TriggerBuilder.newTrigger()
-                    .withIdentity(jobInfo.getCode(), GROUP_RUN_ONCE)
-                    .startNow().build();
+            JobDetail jobDetail =
+                    newJob(JobRunner.class)
+                            .withIdentity(jobInfo.getCode(), GROUP_RUN_ONCE)
+                            .usingJobData(JOB_NAME, jobInfo.getName())
+                            .build();
+            Trigger simpleTrigger =
+                    TriggerBuilder.newTrigger()
+                            .withIdentity(jobInfo.getCode(), GROUP_RUN_ONCE)
+                            .startNow()
+                            .build();
             scheduler.scheduleJob(jobDetail, simpleTrigger);
             return true;
         } catch (Exception e) {
@@ -121,15 +116,17 @@ public class JobInfoQuartzService {
     }
 
     private void addTrigger(JobInfo jobInfo) throws SchedulerException {
-        JobDetail jobDetail = newJob(JobRunner.class)
-                .withIdentity(jobInfo.getCode(), Key.DEFAULT_GROUP)
-                .usingJobData(JOB_NAME, jobInfo.getName())
-                .build();
-        CronTrigger trigger = newTrigger()
-                .withIdentity(jobInfo.getCode(), Key.DEFAULT_GROUP)
-                .withSchedule(cronSchedule(jobInfo.getCronExpr()))
-                .startNow()
-                .build();
+        JobDetail jobDetail =
+                newJob(JobRunner.class)
+                        .withIdentity(jobInfo.getCode(), Key.DEFAULT_GROUP)
+                        .usingJobData(JOB_NAME, jobInfo.getName())
+                        .build();
+        CronTrigger trigger =
+                newTrigger()
+                        .withIdentity(jobInfo.getCode(), Key.DEFAULT_GROUP)
+                        .withSchedule(cronSchedule(jobInfo.getCronExpr()))
+                        .startNow()
+                        .build();
         scheduler.scheduleJob(jobDetail, trigger);
     }
 
@@ -147,5 +144,4 @@ public class JobInfoQuartzService {
             throw new QuartzException(" schedule interval must bigger than 1 minute");
         }
     }
-
 }

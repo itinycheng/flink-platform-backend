@@ -6,11 +6,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-/**
- * create flink env config instance
- *
- * @author tiny.wang
- */
+/** Create flink env config instance. */
 @Configuration
 @Setter
 @Getter

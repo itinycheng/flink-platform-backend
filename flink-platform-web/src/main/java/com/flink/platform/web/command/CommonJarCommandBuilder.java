@@ -8,13 +8,12 @@ import org.springframework.stereotype.Component;
 import java.util.Collections;
 import java.util.List;
 
-/**
- * @author tiny.wang
- */
+/** Common jar command builder. */
 @Component("commonJarCommandBuilder")
 public class CommonJarCommandBuilder implements CommandBuilder {
 
-    private static final List<JobType> SUPPORTED_JOB_TYPES = Collections.singletonList(JobType.COMMON_JAR);
+    private static final List<JobType> SUPPORTED_JOB_TYPES =
+            Collections.singletonList(JobType.COMMON_JAR);
 
     @Override
     public boolean isSupported(JobType jobType, String version) {

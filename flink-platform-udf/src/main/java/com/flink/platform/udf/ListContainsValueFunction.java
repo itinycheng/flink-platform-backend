@@ -1,9 +1,10 @@
 package com.flink.platform.udf;
 
+import org.apache.flink.table.functions.ScalarFunction;
+
 import com.flink.platform.udf.util.ObjectUtil;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.flink.table.functions.ScalarFunction;
 
 import java.util.Arrays;
 import java.util.List;
@@ -11,9 +12,7 @@ import java.util.List;
 import static com.flink.platform.common.constants.Constant.AND;
 import static com.flink.platform.common.constants.Constant.OR;
 
-/**
- * @author tiny.wang
- */
+/** list contains. */
 public class ListContainsValueFunction extends ScalarFunction {
 
     private static final int ZERO = 0;
@@ -25,8 +24,7 @@ public class ListContainsValueFunction extends ScalarFunction {
     }
 
     public int internalEval(List<?> columnValues, String inputValue) {
-        if (CollectionUtils.isEmpty(columnValues)
-                || StringUtils.isBlank(inputValue)) {
+        if (CollectionUtils.isEmpty(columnValues) || StringUtils.isBlank(inputValue)) {
             return ZERO;
         }
         // and | or operator
@@ -37,9 +35,9 @@ public class ListContainsValueFunction extends ScalarFunction {
         } else {
             inputItems = inputValue.split(AND);
         }
-        return orOperator ?
-                isAnyContained(columnValues, inputItems) :
-                isAllContained(columnValues, inputItems);
+        return orOperator
+                ? isAnyContained(columnValues, inputItems)
+                : isAllContained(columnValues, inputItems);
     }
 
     private int isAllContained(List<?> columnValues, String[] inputItems) {
@@ -53,5 +51,4 @@ public class ListContainsValueFunction extends ScalarFunction {
         boolean bool = Arrays.stream(cast).anyMatch(columnValues::contains);
         return bool ? ONE : ZERO;
     }
-
 }

@@ -3,11 +3,7 @@ package com.flink.platform.web.command;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-/**
- * statistic of submitted jobs
- *
- * @author tiny.wang
- */
+/** statistic of submitted jobs. */
 @Data
 @NoArgsConstructor
 public class JobStatistics {

@@ -11,9 +11,7 @@ import java.util.Objects;
 
 import static java.util.stream.Collectors.toMap;
 
-/**
- * @author tiny.wang
- */
+/** load default flink config. */
 public class ConfigLoader {
 
     private static final String DEFAULT_CONFIG = "flink-default.yaml";
@@ -25,7 +23,10 @@ public class ConfigLoader {
             Map<String, Map<String, Object>> configMap = new Yaml().load(resourceAsStream);
             return configMap.getOrDefault(execMode.name().toLowerCase(), Collections.emptyMap())
                     .entrySet().stream()
-                    .filter(entry -> Objects.nonNull(entry.getKey()) && Objects.nonNull(entry.getValue()))
+                    .filter(
+                            entry ->
+                                    Objects.nonNull(entry.getKey())
+                                            && Objects.nonNull(entry.getValue()))
                     .collect(toMap(Map.Entry::getKey, entry -> entry.getValue().toString()));
         } catch (Exception e) {
             throw new FlinkJobGenException("cannot load flink-default.yml", e);

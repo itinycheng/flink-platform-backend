@@ -6,9 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 
-/**
- * @author tiny.wang
- */
+/** Flink 1.12 command builder. */
 @Slf4j
 @Component("flink112CommandBuilder")
 public class Flink112CommandBuilder extends FlinkCommandBuilder {

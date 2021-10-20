@@ -7,11 +7,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-/**
- * sql column description
- *
- * @author tiny.wang
- */
+/** Sql column description. */
 @Target(ElementType.FIELD)
 @Retention(RetentionPolicy.RUNTIME)
 public @interface SqlColumn {
@@ -21,5 +17,4 @@ public @interface SqlColumn {
     String name() default "";
 
     DataType type() default DataType.STRING;
-
 }

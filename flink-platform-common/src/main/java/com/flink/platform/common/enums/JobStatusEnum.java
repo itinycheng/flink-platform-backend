@@ -1,14 +1,7 @@
 package com.flink.platform.common.enums;
 
-/**
- * @Author Shik
- * @Title: SignatureTypeEnum
- * @ProjectName: datapipeline
- * @Description: TODO
- * @Date: 2021/3/30 下午4:43
- */
+/** job status. */
 public enum JobStatusEnum {
-
     NEW(1, "new"),
     READY(2, "ready"),
     SCHEDULED(3, "scheduled"),

@@ -2,15 +2,11 @@ package com.flink.platform.common.enums;
 
 import lombok.Getter;
 
-/**
- * @author tiny.wang
- */
+/** execution mode. */
 @Getter
 public enum ExecutionMode {
 
-    /**
-     * runtime execution mode
-     */
+    /** runtime execution mode. */
     STREAMING,
 
     BATCH

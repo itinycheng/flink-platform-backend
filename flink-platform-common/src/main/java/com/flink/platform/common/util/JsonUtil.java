@@ -15,11 +15,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-/**
- * json utils
- *
- * @author tiny.wang
- */
+/** json utils. */
 @Slf4j
 public class JsonUtil {
 
@@ -33,17 +29,17 @@ public class JsonUtil {
     }
 
     public static Map<String, Object> toMap(String res) {
-        Map<String, Object> orDefault = FunctionUtil.getOrDefault(() -> JSON.parseObject(res), null);
+        Map<String, Object> orDefault =
+                FunctionUtil.getOrDefault(() -> JSON.parseObject(res), null);
         return ObjectUtils.defaultIfNull(orDefault, Collections.emptyMap());
     }
 
     public static Map<String, String> toStrMap(String res) {
-        return JsonUtil.toMap(res)
-                .entrySet()
-                .stream()
+        return JsonUtil.toMap(res).entrySet().stream()
                 .filter(entry -> Objects.nonNull(entry.getValue()))
-                .collect(Collectors.toMap(Map.Entry::getKey,
-                        entry -> String.valueOf(entry.getValue())));
+                .collect(
+                        Collectors.toMap(
+                                Map.Entry::getKey, entry -> String.valueOf(entry.getValue())));
     }
 
     public static <T> T toBean(String res, Class<T> clazz) {
@@ -58,5 +54,4 @@ public class JsonUtil {
     public static String toJsonString(Object obj) {
         return JSON.toJSONString(obj, SerializerFeature.WriteMapNullValue);
     }
-
 }

@@ -2,15 +2,11 @@ package com.flink.platform.web.command;
 
 import com.flink.platform.web.enums.JobType;
 
-/**
- * TODO parse result
- *
- * @author tiny.wang
- */
+/** parse result. */
 public interface CommandExecutor {
 
     /**
-     * whether support
+     * whether support.
      *
      * @param jobType job type
      * @return whether support
@@ -18,12 +14,11 @@ public interface CommandExecutor {
     boolean isSupported(JobType jobType);
 
     /**
-     * execute command
+     * execute command.
      *
      * @param command command to exec
      * @return execute result
      * @throws Exception execute exception
      */
     JobCallback execCommand(String command) throws Exception;
-
 }

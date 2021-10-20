@@ -9,14 +9,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.Resource;
+
 import java.util.ArrayList;
 import java.util.List;
 
 import static com.flink.platform.web.enums.JobType.CLICKHOUSE_SQL;
 
-/**
- * @author tiny.wang
- */
+/** Clickhouse command builder. */
 @Slf4j
 @Component("clickhouseCommandBuilder")
 public class ClickhouseCommandBuilder implements CommandBuilder {
@@ -34,7 +33,8 @@ public class ClickhouseCommandBuilder implements CommandBuilder {
         List<String> sqlList = new ArrayList<>();
         for (Sql sql : sqlContextHelper.toSqls(jobInfo.getSubject())) {
             if (SqlType.OPTIMIZE != sql.getType()) {
-                throw new JobCommandGenException("Clickhouse command builder only support optimize statement.");
+                throw new JobCommandGenException(
+                        "Clickhouse command builder only support optimize statement.");
             }
             sqlList.add(sql.getOperands()[0]);
         }

@@ -19,16 +19,13 @@ import static com.flink.platform.common.constants.JobConstant.HADOOP_USER_NAME;
 import static com.flink.platform.common.constants.JobConstant.JOB_ID_PATTERN;
 import static java.util.stream.Collectors.joining;
 
-/**
- * TODO parse result
- *
- * @author tiny.wang
- */
+/** Flink command executor. */
 @Slf4j
 @Component("flinkCommandExecutor")
 public class FlinkCommandExecutor implements CommandExecutor {
 
-    private static final List<JobType> SUPPORTED_JOB_TYPES = Arrays.asList(JobType.FLINK_JAR, JobType.FLINK_SQL);
+    private static final List<JobType> SUPPORTED_JOB_TYPES =
+            Arrays.asList(JobType.FLINK_JAR, JobType.FLINK_SQL);
 
     @Value("${hadoop.user}")
     private String hadoopUser;
@@ -41,11 +38,22 @@ public class FlinkCommandExecutor implements CommandExecutor {
     @Override
     public JobCallback execCommand(String command) throws Exception {
         log.info("exec command: {}", command);
-        Process process = Runtime.getRuntime().exec(command,
-                new String[]{String.format("%s=%s", HADOOP_USER_NAME, hadoopUser)});
+        Process process =
+                Runtime.getRuntime()
+                        .exec(
+                                command,
+                                new String[] {
+                                    String.format("%s=%s", HADOOP_USER_NAME, hadoopUser)
+                                });
         process.waitFor();
-        try (BufferedReader stdReader = new BufferedReader(new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8));
-             BufferedReader errReader = new BufferedReader(new InputStreamReader(process.getErrorStream(), StandardCharsets.UTF_8))) {
+        try (BufferedReader stdReader =
+                        new BufferedReader(
+                                new InputStreamReader(
+                                        process.getInputStream(), StandardCharsets.UTF_8));
+                BufferedReader errReader =
+                        new BufferedReader(
+                                new InputStreamReader(
+                                        process.getErrorStream(), StandardCharsets.UTF_8))) {
             String stdMsg = stdReader.lines().collect(joining(LINE_SEPARATOR));
             String errMsg = errReader.lines().collect(joining(LINE_SEPARATOR));
             String appId = extractApplicationId(stdMsg);
@@ -81,5 +89,4 @@ public class FlinkCommandExecutor implements CommandExecutor {
             return null;
         }
     }
-
 }

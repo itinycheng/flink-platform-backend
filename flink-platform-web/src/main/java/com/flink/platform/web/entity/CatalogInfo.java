@@ -12,14 +12,7 @@ import lombok.NoArgsConstructor;
 import java.io.Serializable;
 import java.time.LocalDateTime;
 
-/**
- * <p>
- * job catalog info
- * </p>
- *
- * @author shik
- * @since 2021-04-22
- */
+/** Job catalog info. */
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
@@ -32,44 +25,27 @@ public class CatalogInfo implements Serializable {
     @TableId(value = "id", type = IdType.AUTO)
     private Long id;
 
-    /**
-     * catalog name
-     */
+    /** catalog name. */
     private String name;
 
-    /**
-     * catalog type
-     */
+    /** catalog type. */
     private CatalogType type;
 
-    /**
-     * catalog desc
-     */
+    /** catalog desc. */
     private String description;
 
-    /**
-     * default database
-     */
+    /** default database. */
     private String defaultDatabase;
 
-    /**
-     * config dir path
-     */
+    /** config dir path. */
     private String configPath;
 
-    /**
-     * config properties
-     */
+    /** config properties. */
     private String configs;
 
-    /**
-     * create user
-     */
+    /** create user. */
     private String createUser;
 
-    /**
-     * create time
-     */
+    /** create time. */
     private LocalDateTime createTime;
-
 }

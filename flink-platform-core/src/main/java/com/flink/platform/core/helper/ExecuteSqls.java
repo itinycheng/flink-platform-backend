@@ -1,10 +1,11 @@
 package com.flink.platform.core.helper;
 
-import com.flink.platform.common.exception.FlinkJobGenException;
-import com.flink.platform.common.job.Sql;
-import com.flink.platform.common.enums.SqlType;
 import org.apache.flink.table.api.StatementSet;
 import org.apache.flink.table.api.TableEnvironment;
+
+import com.flink.platform.common.enums.SqlType;
+import com.flink.platform.common.exception.FlinkJobGenException;
+import com.flink.platform.common.job.Sql;
 
 import java.util.List;
 import java.util.Set;
@@ -14,14 +15,11 @@ import static com.flink.platform.common.enums.SqlType.INSERT_INTO;
 import static com.flink.platform.common.enums.SqlType.INSERT_OVERWRITE;
 import static java.util.stream.Collectors.toSet;
 
-/**
- * exec sqls sequentially
- *
- * @author tiny.wang
- */
+/** exec sqls sequentially. */
 public class ExecuteSqls {
 
-    private static final Set<SqlType> INSERT_TYPES = Stream.of(INSERT_INTO, INSERT_OVERWRITE).collect(toSet());
+    private static final Set<SqlType> INSERT_TYPES =
+            Stream.of(INSERT_INTO, INSERT_OVERWRITE).collect(toSet());
 
     public static void execSqls(TableEnvironment tEnv, List<Sql> sqls) {
         StatementSet statementSet = tEnv.createStatementSet();
@@ -67,6 +65,5 @@ public class ExecuteSqls {
             default:
                 throw new FlinkJobGenException(String.format("Unknown sql type, sql: %s", sql));
         }
-
     }
 }

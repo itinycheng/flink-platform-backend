@@ -15,9 +15,7 @@ import static com.flink.platform.common.constants.Constant.EMPTY;
 import static com.flink.platform.common.constants.Constant.SPACE;
 import static com.flink.platform.common.constants.Constant.UNDERSCORE;
 
-/**
- * @author tiny.wang
- */
+/** Sql identifier. */
 @Data
 @EqualsAndHashCode
 @NoArgsConstructor
@@ -52,9 +50,10 @@ public class SqlIdentifier {
     }
 
     public static SqlIdentifier of(String qualifier, String... names) {
-        Preconditions.checkThrow(StringUtils.isBlank(qualifier),
-                () -> new RuntimeException("qualifier is null"));
-        Preconditions.checkThrow(names == null || names.length == 0,
+        Preconditions.checkThrow(
+                StringUtils.isBlank(qualifier), () -> new RuntimeException("qualifier is null"));
+        Preconditions.checkThrow(
+                names == null || names.length == 0,
                 () -> new RuntimeException("qualifier is null"));
         return new SqlIdentifier(qualifier, names);
     }

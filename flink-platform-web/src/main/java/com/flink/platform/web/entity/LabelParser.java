@@ -7,9 +7,7 @@ import lombok.NoArgsConstructor;
 
 import java.util.List;
 
-/**
- * @author tiny.wang
- */
+/** Label parser. */
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
@@ -22,5 +20,4 @@ public class LabelParser {
     private Class<?> dataClass;
 
     private List<SqlColumn> dataColumns;
-
 }

@@ -6,9 +6,7 @@ import lombok.NoArgsConstructor;
 
 import java.util.List;
 
-/**
- * @author tiny.wang
- */
+/** Sql select. */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

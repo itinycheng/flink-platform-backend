@@ -2,12 +2,12 @@ package com.flink.platform.web.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.flink.platform.common.enums.DataType;
+import com.flink.platform.udf.common.SqlColumn;
 import com.flink.platform.web.entity.LabelParser;
 import com.flink.platform.web.entity.Signature;
 import com.flink.platform.web.enums.SqlExpression;
 import com.flink.platform.web.enums.SqlUdf;
 import com.flink.platform.web.enums.SqlVar;
-import com.flink.platform.udf.common.SqlColumn;
 import com.flink.platform.web.parser.CompositeSqlWhere;
 import com.flink.platform.web.parser.SimpleSqlWhere;
 import com.flink.platform.web.parser.SqlIdentifier;
@@ -19,6 +19,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -55,34 +56,33 @@ import static com.flink.platform.web.enums.SqlUdf.UDF_EXPRESSION;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.joining;
 
-/**
- * @author tiny.wang
- */
+/** User group sql gen service. */
 @Service
 @Slf4j
 public class UserGroupSqlGenService {
 
-    private static final String INSERT_OVERWRITE_EXPR = "INSERT OVERWRITE `t_hive_user_group_result` PARTITION(id = '%s', ts = %s) \n";
+    private static final String INSERT_OVERWRITE_EXPR =
+            "INSERT OVERWRITE `t_hive_user_group_result` PARTITION(id = '%s', ts = %s) \n";
 
-    private static final String INSERT_SELECT_ONE_COLUMN = "SELECT DISTINCT %s AS result_value FROM \n";
+    private static final String INSERT_SELECT_ONE_COLUMN =
+            "SELECT DISTINCT %s AS result_value FROM \n";
 
-    /**
-     * TODO MAP, LIST_MAP unsupported, need convert column.key to column['key']
-     */
-    private static final String INSERT_SELECT_MULTI_COLUMNS = "SELECT DISTINCT " + PLACEHOLDER_UDF_NAME + "(MAP[%s]) AS result_value FROM \n";
+    /** TODO MAP, LIST_MAP unsupported, need convert column.key to column['key']. */
+    private static final String INSERT_SELECT_MULTI_COLUMNS =
+            "SELECT DISTINCT " + PLACEHOLDER_UDF_NAME + "(MAP[%s]) AS result_value FROM \n";
 
-    /**
-     * insert overwrite table
-     */
-    private static final String INSERT_OVERWRITE_STATEMENT = String.format(INSERT_OVERWRITE_EXPR, SqlVar.JOB_CODE.variable, SqlVar.CURRENT_TIMESTAMP.variable);
+    /** insert overwrite table. */
+    private static final String INSERT_OVERWRITE_STATEMENT =
+            String.format(
+                    INSERT_OVERWRITE_EXPR,
+                    SqlVar.JOB_CODE.variable,
+                    SqlVar.CURRENT_TIMESTAMP.variable);
 
     private static final ThreadLocal<Set<String>> UDFS = new ThreadLocal<>();
 
-    @Resource
-    private ISignatureService iSignatureService;
+    @Resource private ISignatureService iSignatureService;
 
-    @Resource
-    private HiveService hiveService;
+    @Resource private HiveService hiveService;
 
     public String generateInsertSelect(SqlSelect sqlSelect) {
         List<String> sqls = new ArrayList<>();
@@ -97,12 +97,20 @@ public class UserGroupSqlGenService {
         // where
         String whereStatement = generateWhereStatement(sqlSelect.getWhere());
         // add required udfs
-        Optional.ofNullable(UDFS.get()).ifPresent(udfs -> {
-            sqls.addAll(udfs);
-            UDFS.remove();
-        });
+        Optional.ofNullable(UDFS.get())
+                .ifPresent(
+                        udfs -> {
+                            sqls.addAll(udfs);
+                            UDFS.remove();
+                        });
         // add full string of insert overwrite statement to sql list
-        sqls.add(String.join(SPACE, INSERT_OVERWRITE_STATEMENT, selectStatement, tableStatement, whereStatement));
+        sqls.add(
+                String.join(
+                        SPACE,
+                        INSERT_OVERWRITE_STATEMENT,
+                        selectStatement,
+                        tableStatement,
+                        whereStatement));
         return String.join(LINE_SEPARATOR, sqls);
     }
 
@@ -116,9 +124,7 @@ public class UserGroupSqlGenService {
                 .collect(joining(COMMA + LINE_SEPARATOR));
     }
 
-    /**
-     * only AbstractTableFunction supported
-     */
+    /** only AbstractTableFunction supported. */
     public String generateLateralTableSegment(Pair<SqlIdentifier, Signature> pair, int index) {
         try {
             Signature signature = pair.getRight();
@@ -126,13 +132,16 @@ public class UserGroupSqlGenService {
             LabelParser labelParser = signature.getOrCreateLabelParser();
             String[] split = identifier.getName().split(UNDERSCORE);
             final String prefix = split[split.length - 1];
-            String expression = SqlExpression.JOIN_TABLE_FUNC.expression
-                    .replace(PLACEHOLDER_UDF_NAME, labelParser.getFunctionName());
-            return String.format(expression, identifier.newColumnName(), index
-                    , labelParser.getDataColumns().stream()
+            String expression =
+                    SqlExpression.JOIN_TABLE_FUNC.expression.replace(
+                            PLACEHOLDER_UDF_NAME, labelParser.getFunctionName());
+            return String.format(
+                    expression,
+                    identifier.newColumnName(),
+                    index,
+                    labelParser.getDataColumns().stream()
                             .map(sqlColumn -> String.join(UNDERSCORE, prefix, sqlColumn.name()))
-                            .collect(joining(COMMA))
-            );
+                            .collect(joining(COMMA)));
         } catch (Exception e) {
             throw new RuntimeException("generate lateral table failed", e);
         }
@@ -147,13 +156,27 @@ public class UserGroupSqlGenService {
         } else {
             // add udf to thread local cache
             cacheUdf(SqlUdf.TO_STRING.createStatement);
-            insertSelectExpr = INSERT_SELECT_MULTI_COLUMNS.replace(PLACEHOLDER_UDF_NAME, SqlUdf.TO_STRING.name);
-            insertSelectList = selectList.stream()
-                    .map(SqlIdentifier::newColumnName)
-                    .map(columnName -> String.join(COMMA,
-                            String.join(EMPTY, SINGLE_QUOTE, columnName, SINGLE_QUOTE)
-                            , String.join(EMPTY, BACK_TICK, columnName, BACK_TICK)))
-                    .collect(joining(COMMA));
+            insertSelectExpr =
+                    INSERT_SELECT_MULTI_COLUMNS.replace(
+                            PLACEHOLDER_UDF_NAME, SqlUdf.TO_STRING.name);
+            insertSelectList =
+                    selectList.stream()
+                            .map(SqlIdentifier::newColumnName)
+                            .map(
+                                    columnName ->
+                                            String.join(
+                                                    COMMA,
+                                                    String.join(
+                                                            EMPTY,
+                                                            SINGLE_QUOTE,
+                                                            columnName,
+                                                            SINGLE_QUOTE),
+                                                    String.join(
+                                                            EMPTY,
+                                                            BACK_TICK,
+                                                            columnName,
+                                                            BACK_TICK)))
+                            .collect(joining(COMMA));
         }
         return String.format(insertSelectExpr, insertSelectList);
     }
@@ -164,13 +187,28 @@ public class UserGroupSqlGenService {
         if (isSubQueryNeeded(allIdentifiers)) {
             return generateSubQueryStatement(allIdentifiers);
         } else {
-            SqlIdentifier sqlIdentifier = allIdentifiers.stream().findFirst()
-                    .orElseThrow(() -> new RuntimeException("no sql identifier found"));
+            SqlIdentifier sqlIdentifier =
+                    allIdentifiers.stream()
+                            .findFirst()
+                            .orElseThrow(() -> new RuntimeException("no sql identifier found"));
             String whichPartition = generatePartitionSegment(sqlIdentifier.getQualifier());
-            String selectList = allIdentifiers.stream().map(SqlIdentifier::toColumnAsStatement).distinct().collect(joining(COMMA));
-            return String.join(SPACE, BRACKET_LEFT, SELECT, selectList,
-                    FROM, sqlSelect.getFrom().getName(), sqlIdentifier.getQualifier().toLowerCase(),
-                    WHERE, whichPartition, BRACKET_RIGHT, sqlSelect.getFrom().getQualifier());
+            String selectList =
+                    allIdentifiers.stream()
+                            .map(SqlIdentifier::toColumnAsStatement)
+                            .distinct()
+                            .collect(joining(COMMA));
+            return String.join(
+                    SPACE,
+                    BRACKET_LEFT,
+                    SELECT,
+                    selectList,
+                    FROM,
+                    sqlSelect.getFrom().getName(),
+                    sqlIdentifier.getQualifier().toLowerCase(),
+                    WHERE,
+                    whichPartition,
+                    BRACKET_RIGHT,
+                    sqlSelect.getFrom().getQualifier());
         }
     }
 
@@ -196,40 +234,100 @@ public class UserGroupSqlGenService {
     }
 
     public String generateSubQueryStatement(Set<SqlIdentifier> identifiers) {
-        Map<String, List<SqlIdentifier>> grouped = identifiers.stream().collect(groupingBy(SqlIdentifier::getQualifier));
+        Map<String, List<SqlIdentifier>> grouped =
+                identifiers.stream().collect(groupingBy(SqlIdentifier::getQualifier));
         // add uuid to each subQuery's select list
         grouped.entrySet().stream()
-                .filter(entry -> entry.getValue().stream().noneMatch(identifier -> UUID.equalsIgnoreCase(identifier.getName())))
+                .filter(
+                        entry ->
+                                entry.getValue().stream()
+                                        .noneMatch(
+                                                identifier ->
+                                                        UUID.equalsIgnoreCase(
+                                                                identifier.getName())))
                 .forEach(entry -> entry.getValue().add(SqlIdentifier.of(entry.getKey(), UUID)));
-        String selectStatement = identifiers.stream().map(SqlIdentifier::toColumnAsStatement).distinct().collect(joining(COMMA));
-        String tableStatement = grouped.entrySet().stream().map(entry -> String.join(SPACE, BRACKET_LEFT, SELECT,
-                entry.getValue().stream().map(SqlIdentifier::toSimpleColumnStatement).collect(joining(COMMA)),
-                FROM, SOURCE_TABLE_IDENTIFIER.getName(), WHERE, generatePartitionSegment(entry.getKey())
-                , BRACKET_RIGHT, AS, entry.getKey()))
-                .collect(joining(COMMA));
+        String selectStatement =
+                identifiers.stream()
+                        .map(SqlIdentifier::toColumnAsStatement)
+                        .distinct()
+                        .collect(joining(COMMA));
+        String tableStatement =
+                grouped.entrySet().stream()
+                        .map(
+                                entry ->
+                                        String.join(
+                                                SPACE,
+                                                BRACKET_LEFT,
+                                                SELECT,
+                                                entry.getValue().stream()
+                                                        .map(SqlIdentifier::toSimpleColumnStatement)
+                                                        .collect(joining(COMMA)),
+                                                FROM,
+                                                SOURCE_TABLE_IDENTIFIER.getName(),
+                                                WHERE,
+                                                generatePartitionSegment(entry.getKey()),
+                                                BRACKET_RIGHT,
+                                                AS,
+                                                entry.getKey()))
+                        .collect(joining(COMMA));
         List<String> tableAliasList = new ArrayList<>(grouped.keySet());
-        String where = IntStream.range(0, tableAliasList.size() - 1)
-                .mapToObj(i -> Pair.of(SqlIdentifier.of(tableAliasList.get(i), UUID), SqlIdentifier.of(tableAliasList.get(i + 1), UUID)))
-                .map(pair -> String.format(SqlExpression.EQ.expression, pair.getLeft().toColumnStatement(), pair.getRight().toColumnStatement()))
-                .collect(joining(SqlExpression.AND.name()));
-        String subQueryStatement = String.join(SPACE, BRACKET_LEFT, SELECT, selectStatement, FROM, tableStatement, WHERE, where, BRACKET_RIGHT);
+        String where =
+                IntStream.range(0, tableAliasList.size() - 1)
+                        .mapToObj(
+                                i ->
+                                        Pair.of(
+                                                SqlIdentifier.of(tableAliasList.get(i), UUID),
+                                                SqlIdentifier.of(tableAliasList.get(i + 1), UUID)))
+                        .map(
+                                pair ->
+                                        String.format(
+                                                SqlExpression.EQ.expression,
+                                                pair.getLeft().toColumnStatement(),
+                                                pair.getRight().toColumnStatement()))
+                        .collect(joining(SqlExpression.AND.name()));
+        String subQueryStatement =
+                String.join(
+                        SPACE,
+                        BRACKET_LEFT,
+                        SELECT,
+                        selectStatement,
+                        FROM,
+                        tableStatement,
+                        WHERE,
+                        where,
+                        BRACKET_RIGHT);
         return String.join(SPACE, subQueryStatement, SOURCE_TABLE_IDENTIFIER.getQualifier());
     }
 
     private String generatePartitionSegment(String accountType) {
         List<String> partitions = hiveService.getList(QUERY_SOURCE_TABLE_PARTITIONS);
-        long maxDt = partitions.stream()
-                .map(partition -> Arrays.stream(partition.split(SLASH))
-                        .filter(p -> p.startsWith(DT_PARTITION_PREFIX))
-                        .map(pa -> pa.replace(DT_PARTITION_PREFIX, EMPTY))
-                        .map(Long::parseLong)
-                        .findFirst().orElseThrow(() -> new RuntimeException("can not parse partition: dt")))
-                .mapToLong(ts -> ts)
-                .max()
-                .orElseThrow(() -> new RuntimeException("maximum dt not found"));
-        String dtStatement = String.format(SqlExpression.EQ.expression, SOURCE_TABLE_DT_PARTITION, maxDt);
-        String accountTypeStatement = String.format(SqlExpression.EQ.expression, SOURCE_TABLE_ACCOUNT_TYPE_PARTITION,
-                String.join(EMPTY, DataType.STRING.quote, accountType.toUpperCase(), DataType.STRING.quote));
+        long maxDt =
+                partitions.stream()
+                        .map(
+                                partition ->
+                                        Arrays.stream(partition.split(SLASH))
+                                                .filter(p -> p.startsWith(DT_PARTITION_PREFIX))
+                                                .map(pa -> pa.replace(DT_PARTITION_PREFIX, EMPTY))
+                                                .map(Long::parseLong)
+                                                .findFirst()
+                                                .orElseThrow(
+                                                        () ->
+                                                                new RuntimeException(
+                                                                        "can not parse partition: dt")))
+                        .mapToLong(ts -> ts)
+                        .max()
+                        .orElseThrow(() -> new RuntimeException("maximum dt not found"));
+        String dtStatement =
+                String.format(SqlExpression.EQ.expression, SOURCE_TABLE_DT_PARTITION, maxDt);
+        String accountTypeStatement =
+                String.format(
+                        SqlExpression.EQ.expression,
+                        SOURCE_TABLE_ACCOUNT_TYPE_PARTITION,
+                        String.join(
+                                EMPTY,
+                                DataType.STRING.quote,
+                                accountType.toUpperCase(),
+                                DataType.STRING.quote));
         return String.format(SqlExpression.AND.expression, dtStatement, accountTypeStatement);
     }
 
@@ -290,7 +388,8 @@ public class UserGroupSqlGenService {
         }
     }
 
-    private Pair<String, Object[]> decorateWhereOperands(SimpleSqlWhere simpleWhere, Signature signature) {
+    private Pair<String, Object[]> decorateWhereOperands(
+            SimpleSqlWhere simpleWhere, Signature signature) {
         String[] operands = simpleWhere.getOperands();
         SqlExpression operatorExpr = simpleWhere.getOperator();
         DataType dataType = signature.getDataType();
@@ -299,38 +398,65 @@ public class UserGroupSqlGenService {
             case NUMBER:
             case STRING:
             case MAP:
-                return Pair.of(null, Arrays.stream(operands)
-                        .map(operand -> decorateWhereOperand(operatorExpr, operand, dataType))
-                        .toArray());
+                return Pair.of(
+                        null,
+                        Arrays.stream(operands)
+                                .map(
+                                        operand ->
+                                                decorateWhereOperand(
+                                                        operatorExpr, operand, dataType))
+                                .toArray());
             case LIST:
                 if (operatorExpr != SqlExpression.CONTAINS) {
                     throw new RuntimeException("Currently only support sql expression `CONTAINS`");
                 }
                 cacheUdf(LIST_CONTAINS.createStatement);
-                return Pair.of(LIST_CONTAINS.name, Arrays.stream(operands)
-                        .map(operand -> decorateWhereOperand(operatorExpr, operand, DataType.STRING))
-                        .toArray());
+                return Pair.of(
+                        LIST_CONTAINS.name,
+                        Arrays.stream(operands)
+                                .map(
+                                        operand ->
+                                                decorateWhereOperand(
+                                                        operatorExpr, operand, DataType.STRING))
+                                .toArray());
             case LIST_MAP:
                 LabelParser labelParser = signature.getOrCreateLabelParser();
-                String createParserStatement = String.format(UDF_EXPRESSION.createStatement,
-                        labelParser.getFunctionName(),
-                        labelParser.getFunctionClass().getCanonicalName());
+                String createParserStatement =
+                        String.format(
+                                UDF_EXPRESSION.createStatement,
+                                labelParser.getFunctionName(),
+                                labelParser.getFunctionClass().getCanonicalName());
                 cacheUdf(createParserStatement);
                 List<SqlColumn> dataColumns = labelParser.getDataColumns();
                 SqlIdentifier column = simpleWhere.getColumn();
-                SqlColumn dataColumn = dataColumns.stream()
-                        .filter(sqlColumn -> sqlColumn.name().equalsIgnoreCase(column.getNames()[1]))
-                        .findFirst()
-                        .orElseThrow(() -> new RuntimeException("value at the second index of names[] not found"));
-                return Pair.of(null, Arrays.stream(operands)
-                        .map(operand -> decorateWhereOperand(operatorExpr, operand, dataColumn.type()))
-                        .toArray());
+                SqlColumn dataColumn =
+                        dataColumns.stream()
+                                .filter(
+                                        sqlColumn ->
+                                                sqlColumn
+                                                        .name()
+                                                        .equalsIgnoreCase(column.getNames()[1]))
+                                .findFirst()
+                                .orElseThrow(
+                                        () ->
+                                                new RuntimeException(
+                                                        "value at the second index of names[] not found"));
+                return Pair.of(
+                        null,
+                        Arrays.stream(operands)
+                                .map(
+                                        operand ->
+                                                decorateWhereOperand(
+                                                        operatorExpr, operand, dataColumn.type()))
+                                .toArray());
             default:
-                throw new RuntimeException(String.format("Unsupported sql data type %s", dataType.name()));
+                throw new RuntimeException(
+                        String.format("Unsupported sql data type %s", dataType.name()));
         }
     }
 
-    private String decorateWhereOperand(SqlExpression operatorExpr, String operand, DataType dataType) {
+    private String decorateWhereOperand(
+            SqlExpression operatorExpr, String operand, DataType dataType) {
         if (operatorExpr.isSupportMultiParameter() && !EMPTY.equals(dataType.quote)) {
             return Arrays.stream(operand.split(COMMA))
                     .map(item -> String.join(EMPTY, dataType.quote, item, dataType.quote))
@@ -341,8 +467,8 @@ public class UserGroupSqlGenService {
     }
 
     private Signature getSignature(String columnName) {
-        return iSignatureService.getOne(new QueryWrapper<Signature>().lambda()
-                .eq(Signature::getName, columnName));
+        return iSignatureService.getOne(
+                new QueryWrapper<Signature>().lambda().eq(Signature::getName, columnName));
     }
 
     private void cacheUdf(String udfStatement) {
@@ -353,5 +479,4 @@ public class UserGroupSqlGenService {
         }
         list.add(udfStatement);
     }
-
 }

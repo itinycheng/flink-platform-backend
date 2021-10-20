@@ -7,9 +7,7 @@ import lombok.NoArgsConstructor;
 
 import java.util.List;
 
-/**
- * @author tiny.wang
- */
+/** Sql order by. */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -18,5 +16,4 @@ public class SqlOrderBy {
     private SqlExpression type;
 
     private List<SqlIdentifier> items;
-
 }

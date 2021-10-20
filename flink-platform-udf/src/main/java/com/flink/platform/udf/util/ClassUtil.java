@@ -8,9 +8,7 @@ import java.util.List;
 
 import static java.util.stream.Collectors.toList;
 
-/**
- * @author tiny.wang
- */
+/** Class utils. */
 public class ClassUtil {
 
     public static List<SqlColumn> extractSqlColumnAnnotation(Class<?> clazz) {

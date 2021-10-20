@@ -7,11 +7,7 @@ import lombok.NoArgsConstructor;
 
 import java.util.List;
 
-/**
- * job command
- *
- * @author tiny.wang
- */
+/** clickhouse command. */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -19,12 +15,9 @@ public class ClickhouseCommand implements JobCommand {
 
     private List<String> sqls;
 
-    /**
-     * build a command
-     */
+    /** build a command. */
     @Override
     public String toCommandString() {
         return JsonUtil.toJsonString(sqls);
     }
-
 }

@@ -16,22 +16,16 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.servlet.http.HttpServletRequest;
+
 import java.util.List;
 import java.util.Objects;
 
-/**
- * @Author Shik
- * @Title: SignatureValueController
- * @ProjectName: flink-platform-backend
- * @Description: TODO
- * @Date: 2021/5/17 下午2:46
- */
+/** Signature value controller. */
 @RestController
 @RequestMapping("/signature-value")
 public class SignatureValueController {
 
-    @Autowired
-    private ISignatureValueService iSignatureValueService;
+    @Autowired private ISignatureValueService iSignatureValueService;
 
     @GetMapping("list")
     public ResultInfo list(HttpServletRequest request) {
@@ -39,28 +33,33 @@ public class SignatureValueController {
         List<SignatureValue> list = this.iSignatureValueService.list();
 
         return ResultInfo.success(list);
-
     }
 
-    @GetMapping("list/{sign_id}")
-    public ResultInfo list(@PathVariable Long sign_id, HttpServletRequest request) {
+    @GetMapping("list/{signId}")
+    public ResultInfo list(@PathVariable Long signId, HttpServletRequest request) {
 
-        List<SignatureValue> list = this.iSignatureValueService.list(new QueryWrapper<SignatureValue>().lambda().eq(SignatureValue::getSignId, sign_id));
+        List<SignatureValue> list =
+                this.iSignatureValueService.list(
+                        new QueryWrapper<SignatureValue>()
+                                .lambda()
+                                .eq(SignatureValue::getSignId, signId));
 
         return ResultInfo.success(list);
-
     }
 
     @PostMapping
-    public ResultInfo saveOrUpdate(HttpServletRequest request, @RequestBody SignatureValue signatureValue) {
+    public ResultInfo saveOrUpdate(
+            HttpServletRequest request, @RequestBody SignatureValue signatureValue) {
         if (StringUtils.isNotBlank(signatureValue.getValue())) {
 
             // save
             if (Objects.isNull(signatureValue.getId())) {
-                SignatureValue one = this.iSignatureValueService.getOne(
-                        new QueryWrapper<SignatureValue>().lambda()
-                                .eq(SignatureValue::getSignId, signatureValue.getSignId())
-                                .eq(SignatureValue::getValue, signatureValue.getValue()));
+                SignatureValue one =
+                        this.iSignatureValueService.getOne(
+                                new QueryWrapper<SignatureValue>()
+                                        .lambda()
+                                        .eq(SignatureValue::getSignId, signatureValue.getSignId())
+                                        .eq(SignatureValue::getValue, signatureValue.getValue()));
 
                 if (Objects.isNull(one)) {
                     Boolean save = this.iSignatureValueService.save(signatureValue);
@@ -76,8 +75,5 @@ public class SignatureValueController {
         } else {
             throw new DefinitionException(ResponseStatus.ERROR_PARAMETER);
         }
-
     }
-
-
 }

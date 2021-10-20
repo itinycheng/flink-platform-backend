@@ -7,9 +7,7 @@ import lombok.NoArgsConstructor;
 
 import java.util.Map;
 
-/**
- * @author tiny.wang
- */
+/** flink catalog. */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

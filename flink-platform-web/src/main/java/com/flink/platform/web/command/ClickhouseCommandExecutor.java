@@ -8,21 +8,19 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.Resource;
+
 import java.util.ArrayList;
 import java.util.List;
 
 import static com.flink.platform.web.enums.JobType.CLICKHOUSE_SQL;
 
-/**
- * @author tiny.wang
- */
+/** Clickhouse command executor. */
 @Slf4j
 @DS("clickhouse")
 @Component("clickhouseCommandExecutor")
 public class ClickhouseCommandExecutor implements CommandExecutor {
 
-    @Resource
-    private JdbcTemplate clickhouseJdbcTemplate;
+    @Resource private JdbcTemplate clickhouseJdbcTemplate;
 
     @Override
     public boolean isSupported(JobType jobType) {
@@ -32,17 +30,21 @@ public class ClickhouseCommandExecutor implements CommandExecutor {
     @Override
     public JobCallback execCommand(String command) {
         List<String> exceptionMessages = new ArrayList<>();
-        JsonUtil.toList(command).forEach(sql -> {
-            try {
-                log.info("exec clickhouse sql: {}", sql);
-                clickhouseJdbcTemplate.execute(sql);
-            } catch (Exception e) {
-                exceptionMessages.add(e.getMessage());
-                log.error("Execute clickhouse sql: {} failed.", sql, e);
-            }
-        });
+        JsonUtil.toList(command)
+                .forEach(
+                        sql -> {
+                            try {
+                                log.info("exec clickhouse sql: {}", sql);
+                                clickhouseJdbcTemplate.execute(sql);
+                            } catch (Exception e) {
+                                exceptionMessages.add(e.getMessage());
+                                log.error("Execute clickhouse sql: {} failed.", sql, e);
+                            }
+                        });
 
-        return new JobCallback(null, null,
+        return new JobCallback(
+                null,
+                null,
                 exceptionMessages.isEmpty() ? "success" : JsonUtil.toJsonString(exceptionMessages));
     }
 }

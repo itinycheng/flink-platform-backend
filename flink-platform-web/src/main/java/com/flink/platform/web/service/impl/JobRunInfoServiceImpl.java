@@ -9,24 +9,16 @@ import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
 
-/**
- * <p>
- * job run info 服务实现类
- * </p>
- *
- * @author shik
- * @since 2021-04-14
- */
+/** job run info. */
 @Service
 @DS("master_platform")
-public class JobRunInfoServiceImpl extends ServiceImpl<JobRunInfoMapper, JobRunInfo> implements IJobRunInfoService {
+public class JobRunInfoServiceImpl extends ServiceImpl<JobRunInfoMapper, JobRunInfo>
+        implements IJobRunInfoService {
 
-    @Resource
-    private JobRunInfoMapper jobRunInfoMapper;
+    @Resource private JobRunInfoMapper jobRunInfoMapper;
 
     @Override
     public JobRunInfo getLatestByJobId(Long jobId) {
         return jobRunInfoMapper.selectLatestByJobId(jobId);
     }
-
 }

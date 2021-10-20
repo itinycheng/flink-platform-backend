@@ -7,9 +7,7 @@ import org.junit.Test;
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * Unit test for simple App.
- */
+/** Unit test for simple App. */
 public class YamlTest {
 
     @Test

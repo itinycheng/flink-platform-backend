@@ -12,6 +12,7 @@ import org.apache.hadoop.fs.Path;
 import org.springframework.beans.factory.annotation.Value;
 
 import javax.annotation.Resource;
+
 import java.net.URL;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -26,9 +27,7 @@ import static com.flink.platform.common.constants.JobConstant.ROOT_DIR;
 import static com.flink.platform.common.constants.JobConstant.YARN_APPLICATION_NAME;
 import static com.flink.platform.common.constants.JobConstant.YARN_PROVIDED_LIB_DIRS;
 
-/**
- * @author tiny.wang
- */
+/** Flink command builder. */
 @Slf4j
 public abstract class FlinkCommandBuilder implements CommandBuilder {
 
@@ -43,8 +42,7 @@ public abstract class FlinkCommandBuilder implements CommandBuilder {
     @Resource(name = "sqlContextHelper")
     private SqlContextHelper sqlContextHelper;
 
-    @Resource
-    private HdfsService hdfsService;
+    @Resource private HdfsService hdfsService;
 
     private final FlinkConfig flinkConfig;
 
@@ -54,8 +52,7 @@ public abstract class FlinkCommandBuilder implements CommandBuilder {
 
     @Override
     public boolean isSupported(JobType jobType, String version) {
-        return SUPPORTED_JOB_TYPES.contains(jobType)
-                && flinkConfig.getVersion().equals(version);
+        return SUPPORTED_JOB_TYPES.contains(jobType) && flinkConfig.getVersion().equals(version);
     }
 
     @Override
@@ -95,8 +92,11 @@ public abstract class FlinkCommandBuilder implements CommandBuilder {
     }
 
     private Object getMergedLibDirs(List<String> extJarList) {
-        String userLibDirs = extJarList.stream().map(s -> s.substring(0, s.lastIndexOf(SLASH)))
-                .distinct().collect(Collectors.joining(SEMICOLON));
+        String userLibDirs =
+                extJarList.stream()
+                        .map(s -> s.substring(0, s.lastIndexOf(SLASH)))
+                        .distinct()
+                        .collect(Collectors.joining(SEMICOLON));
         return userLibDirs.length() > 0
                 ? String.join(SEMICOLON, flinkConfig.getLibDirs(), userLibDirs)
                 : flinkConfig.getLibDirs();

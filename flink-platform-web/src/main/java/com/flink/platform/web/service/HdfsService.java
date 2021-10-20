@@ -9,6 +9,7 @@ import org.apache.hadoop.fs.Path;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -19,17 +20,12 @@ import java.util.stream.Collectors;
 
 import static com.flink.platform.common.constants.Constant.DOT;
 
-/**
- * service for upload/download hdfs
- *
- * @author tiny.wang
- */
+/** service for upload/download hdfs. */
 @Slf4j
 @Service
 public class HdfsService {
 
-    @Resource
-    private FileSystem fileSystem;
+    @Resource private FileSystem fileSystem;
 
     public void copyFileToLocalIfChanged(Path hdfsFile, Path localFile) throws IOException {
         boolean isCopy = true;
@@ -45,8 +41,9 @@ public class HdfsService {
     }
 
     public List<Path> listVisibleFiles(String dir) throws IOException {
-        return Arrays.stream(fileSystem.listStatus(new Path(dir),
-                path -> !path.getName().startsWith(DOT)))
+        return Arrays.stream(
+                        fileSystem.listStatus(
+                                new Path(dir), path -> !path.getName().startsWith(DOT)))
                 .map(FileStatus::getPath)
                 .collect(Collectors.toList());
     }
@@ -66,11 +63,13 @@ public class HdfsService {
 
     public int lineNumber(Path file) {
         try (InputStream inputStream = inputStream(file).getRight();
-             LineNumberReader lineNumberReader = new LineNumberReader(new InputStreamReader(inputStream))) {
+                LineNumberReader lineNumberReader =
+                        new LineNumberReader(new InputStreamReader(inputStream))) {
             lineNumberReader.skip(Long.MAX_VALUE);
             return lineNumberReader.getLineNumber();
         } catch (Exception e) {
-            throw new RuntimeException(String.format("calc line number of File: %s failed", file.toString()));
+            throw new RuntimeException(
+                    String.format("calc line number of File: %s failed", file.toString()));
         }
     }
 }

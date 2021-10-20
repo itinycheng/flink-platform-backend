@@ -1,10 +1,12 @@
 package com.flink.platform.core;
 
+import org.apache.flink.table.api.TableEnvironment;
+
+import com.flink.platform.common.enums.SqlType;
 import com.flink.platform.common.job.Catalog;
 import com.flink.platform.common.job.Function;
 import com.flink.platform.common.job.Sql;
 import com.flink.platform.common.job.SqlContext;
-import com.flink.platform.common.enums.SqlType;
 import com.flink.platform.common.util.JsonUtil;
 import com.flink.platform.core.common.ConfigLoader;
 import com.flink.platform.core.helper.Catalogs;
@@ -12,7 +14,6 @@ import com.flink.platform.core.helper.Configurations;
 import com.flink.platform.core.helper.ExecuteSqls;
 import com.flink.platform.core.helper.ExecutionEnvs;
 import com.flink.platform.core.helper.Functions;
-import org.apache.flink.table.api.TableEnvironment;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -22,11 +23,7 @@ import java.util.Map;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 
-/**
- * must input a context file whose sql is validated
- *
- * @author tiny.wang
- */
+/** Must input a context file whose sql is validated. */
 public class Sql112Application {
 
     public static void main(String[] args) throws Exception {
@@ -38,10 +35,11 @@ public class Sql112Application {
         TableEnvironment tEnv = ExecutionEnvs.createExecutionEnv(sqlContext.getExecMode());
         Map<String, String> configMap = ConfigLoader.loadDefault(sqlContext.getExecMode());
         configMap.putAll(sqlContext.getConfigs());
-        configMap.putAll(sqlContext.getSqls().stream()
-                .filter(sql -> SqlType.SET.equals(sql.getType()))
-                .map(Sql::getOperands)
-                .collect(toMap(operands -> operands[0], operands -> operands[1])));
+        configMap.putAll(
+                sqlContext.getSqls().stream()
+                        .filter(sql -> SqlType.SET.equals(sql.getType()))
+                        .map(Sql::getOperands)
+                        .collect(toMap(operands -> operands[0], operands -> operands[1])));
         configMap.forEach((key, value) -> Configurations.setConfig(tEnv, key, value));
 
         // step 2: add catalog
@@ -53,10 +51,10 @@ public class Sql112Application {
         Functions.registerFunctionsToTableEnv(tEnv, functions);
 
         // step 4: exec sql
-        List<Sql> executableSqls = sqlContext.getSqls().stream()
-                .filter(sql -> !SqlType.SET.equals(sql.getType()))
-                .collect(toList());
+        List<Sql> executableSqls =
+                sqlContext.getSqls().stream()
+                        .filter(sql -> !SqlType.SET.equals(sql.getType()))
+                        .collect(toList());
         ExecuteSqls.execSqls(tEnv, executableSqls);
     }
-
 }

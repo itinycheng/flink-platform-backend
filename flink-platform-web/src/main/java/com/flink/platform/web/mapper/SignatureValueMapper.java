@@ -4,14 +4,6 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.flink.platform.web.entity.SignatureValue;
 import org.apache.ibatis.annotations.Mapper;
 
-/**
- * @Author Shik
- * @Title: SignatureValueMapper
- * @ProjectName: flink-platform-backend
- * @Description: TODO
- * @Date: 2021/5/17 上午10:42
- */
+/** Signature value mapper. */
 @Mapper
-public interface SignatureValueMapper extends BaseMapper<SignatureValue> {
-
-}
+public interface SignatureValueMapper extends BaseMapper<SignatureValue> {}

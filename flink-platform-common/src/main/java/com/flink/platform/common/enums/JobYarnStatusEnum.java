@@ -1,5 +1,6 @@
 package com.flink.platform.common.enums;
 
+/** job yarn status enums. */
 public enum JobYarnStatusEnum {
     UNKNOWN(0, "UNKNOWN"),
     RUNNING(1, "RUNNING"),
@@ -53,5 +54,4 @@ public enum JobYarnStatusEnum {
         }
         return null;
     }
-
 }

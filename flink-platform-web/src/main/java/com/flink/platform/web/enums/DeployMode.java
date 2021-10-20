@@ -1,13 +1,9 @@
 package com.flink.platform.web.enums;
 
-/**
- * @author tiny.wang
- */
+/** deploy mode. */
 public enum DeployMode {
 
-    /**
-     * deploy mode
-     */
+    /** deploy mode. */
     RUN_LOCAL("", ""),
     FLINK_YARN_PER("run", "yarn-per-job"),
     FLINK_YARN_SESSION("run", "yarn-session"),

@@ -23,25 +23,29 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Objects;
 
-/**
- * manage job info
- */
+/** manage job info. */
 @RestController
 @RequestMapping("/t-job-info")
 public class JobInfoController {
 
-    @Autowired
-    private IJobInfoService iJobInfoService;
+    @Autowired private IJobInfoService iJobInfoService;
 
     @GetMapping
-    public ResultInfo get(@RequestParam(name = "page", required = false, defaultValue = "1") Integer page,
-                          @RequestParam(name = "size", required = false, defaultValue = "10") Integer size,
-                          JobInfoRequest jobInfoRequest) {
+    public ResultInfo get(
+            @RequestParam(name = "page", required = false, defaultValue = "1") Integer page,
+            @RequestParam(name = "size", required = false, defaultValue = "10") Integer size,
+            JobInfoRequest jobInfoRequest) {
 
         Page<JobInfo> pager = new Page<>(page, size);
-        IPage<JobInfo> iPage = this.iJobInfoService.page(pager, new QueryWrapper<JobInfo>().lambda()
-                .eq(Objects.nonNull(jobInfoRequest.getStatus()), JobInfo::getStatus, jobInfoRequest.getStatus())
-        );
+        IPage<JobInfo> iPage =
+                this.iJobInfoService.page(
+                        pager,
+                        new QueryWrapper<JobInfo>()
+                                .lambda()
+                                .eq(
+                                        Objects.nonNull(jobInfoRequest.getStatus()),
+                                        JobInfo::getStatus,
+                                        jobInfoRequest.getStatus()));
 
         return ResultInfo.success(iPage);
     }
@@ -86,7 +90,11 @@ public class JobInfoController {
         if (StringUtils.isNotBlank(jobInfoRequest.getName())) {
             // save
             if (Objects.isNull(jobInfoRequest.getId())) {
-                JobInfo one = this.iJobInfoService.getOne(new QueryWrapper<JobInfo>().lambda().eq(JobInfo::getName, jobInfoRequest.getName()));
+                JobInfo one =
+                        this.iJobInfoService.getOne(
+                                new QueryWrapper<JobInfo>()
+                                        .lambda()
+                                        .eq(JobInfo::getName, jobInfoRequest.getName()));
                 if (Objects.isNull(one)) {
                     // TODO set time status
                     this.buildJobInfo(jobInfoRequest);
@@ -104,7 +112,6 @@ public class JobInfoController {
         } else {
             throw new DefinitionException(ResponseStatus.ERROR_PARAMETER);
         }
-
     }
 
     private void buildJobInfo(JobInfoRequest tJobInfoRequest) {
@@ -120,7 +127,9 @@ public class JobInfoController {
             tJobInfoRequest.setSubject(tJobInfoRequest.getSqlMain());
         }
 
-        tJobInfoRequest.setCatalogs(Objects.nonNull(tJobInfoRequest.getCatalogIds()) ? tJobInfoRequest.getCatalogIds().toString() : "");
+        tJobInfoRequest.setCatalogs(
+                Objects.nonNull(tJobInfoRequest.getCatalogIds())
+                        ? tJobInfoRequest.getCatalogIds().toString()
+                        : "");
     }
-
 }

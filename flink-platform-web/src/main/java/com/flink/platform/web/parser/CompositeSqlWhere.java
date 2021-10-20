@@ -7,9 +7,7 @@ import lombok.NoArgsConstructor;
 
 import java.util.List;
 
-/**
- * @author tiny.wang
- */
+/** Composite sql where. */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -19,5 +17,4 @@ public class CompositeSqlWhere extends SqlWhere {
     private String relation;
 
     private List<SqlWhere> conditions;
-
 }

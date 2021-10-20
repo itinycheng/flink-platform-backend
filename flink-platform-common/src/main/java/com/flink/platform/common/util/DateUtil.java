@@ -9,9 +9,7 @@ import java.time.format.DateTimeFormatterBuilder;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-/**
- * @author tiny.wang
- */
+/** date utils. */
 public class DateUtil {
 
     public static final long MILLIS_PER_MINUTE = DateUtils.MILLIS_PER_MINUTE;
@@ -24,9 +22,12 @@ public class DateUtil {
     }
 
     private static DateTimeFormatter getFormatter(String format) {
-        return FORMATTERS.computeIfAbsent(format, s -> new DateTimeFormatterBuilder()
-                .appendPattern(s)
-                .toFormatter()
-                .withZone(ZoneId.of("+8")));
+        return FORMATTERS.computeIfAbsent(
+                format,
+                s ->
+                        new DateTimeFormatterBuilder()
+                                .appendPattern(s)
+                                .toFormatter()
+                                .withZone(ZoneId.of("+8")));
     }
 }

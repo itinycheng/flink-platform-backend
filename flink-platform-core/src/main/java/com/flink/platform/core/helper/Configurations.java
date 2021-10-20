@@ -3,11 +3,7 @@ package com.flink.platform.core.helper;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.table.api.TableEnvironment;
 
-/**
- * add configuration
- *
- * @author tiny.wang
- */
+/** add configuration. */
 public class Configurations {
 
     public static void setConfig(TableEnvironment tEnv, String key, String value) {
@@ -15,5 +11,4 @@ public class Configurations {
         System.out.printf("add configuration, %s=%s%n", key, value);
         config.setString(key, value);
     }
-
 }
