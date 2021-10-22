@@ -1,19 +1,9 @@
 package com.flink.platform.common.constants;
 
-import com.flink.platform.common.util.FunctionUtil;
-
-import java.net.InetAddress;
 import java.util.regex.Pattern;
 
 /** constant values for key. */
 public class JobConstant {
-
-    public static final String HOST_IP =
-            FunctionUtil.getOrDefault(() -> InetAddress.getLocalHost().getHostAddress(), "");
-
-    public static final String ROOT_DIR = System.getProperty("user.dir");
-
-    public static final String LINE_SEPARATOR = System.lineSeparator();
 
     public static final Pattern APP_ID_PATTERN =
             Pattern.compile("yarn\\s+application\\s+-kill\\s+(\\S+)");

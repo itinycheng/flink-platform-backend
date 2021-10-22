@@ -1,7 +1,16 @@
 package com.flink.platform.common.constants;
 
+import com.flink.platform.common.util.FunctionUtil;
+
+import java.net.InetAddress;
+
 /** constant. */
 public class Constant {
+
+    public static final String HOST_IP =
+            FunctionUtil.getOrDefault(() -> InetAddress.getLocalHost().getHostAddress(), "");
+
+    public static final String ROOT_DIR = System.getProperty("user.dir");
 
     public static final String COMMA = ",";
 

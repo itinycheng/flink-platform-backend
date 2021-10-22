@@ -25,10 +25,10 @@ import java.util.Map;
 import java.util.regex.Matcher;
 
 import static com.flink.platform.common.constants.Constant.DOT;
+import static com.flink.platform.common.constants.Constant.ROOT_DIR;
 import static com.flink.platform.common.constants.Constant.SEMICOLON;
 import static com.flink.platform.common.constants.Constant.SLASH;
 import static com.flink.platform.common.constants.JobConstant.JSON_FILE_SUFFIX;
-import static com.flink.platform.common.constants.JobConstant.ROOT_DIR;
 import static com.flink.platform.common.constants.JobConstant.SQL_PATTERN;
 import static java.util.stream.Collectors.toList;
 
