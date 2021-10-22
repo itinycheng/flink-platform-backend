@@ -21,9 +21,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import static com.flink.platform.common.constants.Constant.ROOT_DIR;
 import static com.flink.platform.common.constants.Constant.SEMICOLON;
 import static com.flink.platform.common.constants.Constant.SLASH;
-import static com.flink.platform.common.constants.JobConstant.ROOT_DIR;
 import static com.flink.platform.common.constants.JobConstant.YARN_APPLICATION_NAME;
 import static com.flink.platform.common.constants.JobConstant.YARN_PROVIDED_LIB_DIRS;
 

@@ -27,7 +27,7 @@ public class FlinkCommandExecutor implements CommandExecutor {
     private static final List<JobType> SUPPORTED_JOB_TYPES =
             Arrays.asList(JobType.FLINK_JAR, JobType.FLINK_SQL);
 
-    @Value("${hadoop.user}")
+    @Value("${hadoop.username}")
     private String hadoopUser;
 
     @Override
