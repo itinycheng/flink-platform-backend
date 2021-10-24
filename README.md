@@ -1,3 +1,4 @@
 # flink-platform-web
 
-flink platform: run Flink SQL, query user profile info, and more
+Submit Flink SQL, ClickHouse SQL, etc.
+Convert json to Flink/ClickHouse SQL.
