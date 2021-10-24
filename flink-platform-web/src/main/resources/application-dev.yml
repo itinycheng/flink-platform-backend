@@ -1,0 +1,103 @@
+server:
+  tomcat:
+    uri-encoding: UTF-8
+    threads:
+      max: 1000
+      min-spare: 30
+  port: 9104
+
+spring:
+  application:
+    name: flink-platform-backend
+  redis:
+    password: 123456
+    sentinel:
+      master: mymaster
+      nodes: 0.0.0.0:26380,0.0.0.0:26381,0.0.0.0:26382
+    lettuce:
+      pool:
+        max-active: 20
+        max-idle: 20
+        max-wait: -1ms
+        min-idle: 5
+  datasource:
+    dynamic:
+      # strict: true
+      datasource:
+        master_platform:
+          url: jdbc:mysql://0.0.0.0:3306/platform?allowMultiQueries=true&useUnicode=true&characterEncoding=UTF-8
+          username: root
+          password: 123456
+          driver-class-name: com.mysql.jdbc.Driver
+        signature:
+          url: jdbc:mysql://0.0.0.0:3306/test?allowMultiQueries=true&useUnicode=true&characterEncoding=UTF-8
+          username: root
+          password: 123456
+          driver-class-name: com.mysql.jdbc.Driver
+        hive:
+          url: jdbc:hive2://0.0.0.0:10000/signature
+          username: root
+          password: 123456
+          driver-class-name: org.apache.hive.jdbc.HiveDriver
+        clickhouse:
+          url: jdbc:clickhouse://0.0.0.0:8123,0.0.0.0:8123,0.0.0.0:8123
+          username: commonuser
+          password: Jv1lxZHS
+          driver-class-name: com.alibaba.druid.support.clickhouse.BalancedClickhouseDriver
+  quartz:
+    job-store-type: jdbc
+    overwrite-existing-jobs: true
+    startup-delay: 5s
+    jdbc:
+      initialize-schema: never
+    properties:
+      org:
+        quartz:
+          scheduler:
+            instanceName: quartzScheduler
+            instanceId: AUTO
+          jobStore:
+            class: org.quartz.impl.jdbcjobstore.JobStoreTX
+            driverDelegateClass: org.quartz.impl.jdbcjobstore.StdJDBCDelegate
+            isClustered: true
+            clusterCheckinInterval: 10000
+            useProperties: false
+            misfireThreshold: 5000
+          threadPool:
+            class: org.quartz.simpl.SimpleThreadPool
+            threadCount: 20
+            threadPriority: 5
+            threadsInheritContextClassLoaderOfInitializingThread: true
+
+flink:
+  local:
+    sql-dir: sql_file
+    jar-dir: job_jar
+  sql112:
+    version: 1.12.0
+    command-path: /data0/app/flink-1.12.0/bin/flink
+    jar-file: hdfs:///flink/jars/job_jar/flink-platform-core.jar
+    class-name: com.flink.platform.core.Sql112Application
+    lib-dirs: hdfs:///flink/jars/flink_1.12.0/lib/
+  sql113:
+    version: 1.13.2
+    command-path: /data0/app/flink-1.13.2/bin/flink
+    jar-file: hdfs:///flink/jars/job_jar/flink-platform-core.jar
+    class-name: com.flink.platform.core.Sql113Application
+    lib-dirs: hdfs:///flink/jars/flink_1.13.2/lib/
+
+hadoop:
+  username: admin
+  local-dir-name: data_dir
+  properties:
+    fs.hdfs.impl: org.apache.hadoop.hdfs.DistributedFileSystem
+    fs.defaultFS: hdfs://nameservice1
+    ha.zookeeper.quorum: 0.0.0.0:2181,0.0.0.0:2181,0.0.0.0:2181
+    dfs.client.failover.proxy.provider.nameservice1: org.apache.hadoop.hdfs.server.namenode.ha.ConfiguredFailoverProxyProvider
+    dfs.ha.automatic-failover.enabled.nameservice1: true
+    dfs.nameservices: nameservice1
+    dfs.ha.namenodes.nameservice1: namenode39,namenode127
+    dfs.namenode.rpc-address.nameservice1.namenode39: 0.0.0.0:8020
+    dfs.namenode.rpc-address.nameservice1.namenode127: 0.0.0.0:8020
+    dfs.namenode.servicerpc-address.nameservice1.namenode39: 0.0.0.0:8022
+    dfs.namenode.servicerpc-address.nameservice1.namenode127: 0.0.0.0:8022
