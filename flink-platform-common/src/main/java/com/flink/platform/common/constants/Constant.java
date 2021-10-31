@@ -14,6 +14,8 @@ public class Constant {
 
     public static final String COMMA = ",";
 
+    public static final String COLON = ":";
+
     public static final String AND = "&";
 
     public static final String OR = "|";
