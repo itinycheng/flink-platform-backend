@@ -12,17 +12,17 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class ResultInfo {
+public class ResultInfo<T> {
 
     private int code;
 
     private String desc;
 
-    private Object result;
+    private T result;
 
-    public static ResultInfo success(Object result) {
+    public static <T> ResultInfo<T> success(T result) {
         ResponseStatus status = ResponseStatus.SUCCESS;
-        ResultInfo resultInfo = new ResultInfo();
+        ResultInfo<T> resultInfo = new ResultInfo<>();
         resultInfo.setCode(status.getCode());
         resultInfo.setDesc(status.getDesc());
         resultInfo.setResult(result);
@@ -30,16 +30,16 @@ public class ResultInfo {
     }
 
     /** 自定义异常返回的结果. */
-    public static ResultInfo defineError(DefinitionException de) {
-        ResultInfo result = new ResultInfo();
+    public static <T> ResultInfo<T> defineError(DefinitionException de) {
+        ResultInfo<T> result = new ResultInfo<>();
         result.setCode(de.getCode());
         result.setDesc(de.getMsg());
         return result;
     }
 
     /** 其他异常处理方法返回的结果. */
-    public static ResultInfo failure(ResponseStatus responseStatus) {
-        ResultInfo result = new ResultInfo();
+    public static <T> ResultInfo<T> failure(ResponseStatus responseStatus) {
+        ResultInfo<T> result = new ResultInfo<>();
         result.setDesc(responseStatus.getDesc());
         result.setCode(responseStatus.getCode());
         return result;

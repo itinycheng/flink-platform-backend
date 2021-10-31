@@ -37,8 +37,7 @@ public class JobStateMonitor {
 
     public static int lock = 0;
 
-    @Autowired
-    private IJobRunInfoService iJobRunInfoService;
+    @Autowired private IJobRunInfoService iJobRunInfoService;
 
     @Value("${hadoop.yarn-web-path}")
     private String yarnWebPath;
@@ -136,8 +135,7 @@ public class JobStateMonitor {
         // curl -u hadoop:123456 -H "Accept: application/json" -H "Content-type: application/json"
         try (final CloseableHttpClient httpclient = HttpClients.createDefault()) {
             final HttpPut httpput =
-                    new HttpPut(yarnWebPath + "/ws/v1/cluster/apps/" + appId
-                            + "/state");
+                    new HttpPut(yarnWebPath + "/ws/v1/cluster/apps/" + appId + "/state");
 
             JSONObject params = new JSONObject();
 

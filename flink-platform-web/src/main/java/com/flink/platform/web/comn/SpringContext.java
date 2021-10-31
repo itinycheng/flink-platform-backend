@@ -46,4 +46,8 @@ public class SpringContext implements ApplicationContextAware {
     public static String getEnv() {
         return applicationContext.getEnvironment().getActiveProfiles()[0];
     }
+
+    public static String getServerPort() {
+        return applicationContext.getEnvironment().getProperty("server.port");
+    }
 }
