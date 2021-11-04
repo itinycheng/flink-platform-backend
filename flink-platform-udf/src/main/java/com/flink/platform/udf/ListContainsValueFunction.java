@@ -3,7 +3,7 @@ package com.flink.platform.udf;
 import org.apache.flink.table.functions.ScalarFunction;
 
 import com.flink.platform.udf.util.ObjectUtil;
-import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.Arrays;
