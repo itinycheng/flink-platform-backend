@@ -24,10 +24,6 @@
 			<artifactId>junit</artifactId>
 		</dependency>
 		<dependency>
-			<groupId>commons-collections</groupId>
-			<artifactId>commons-collections</artifactId>
-		</dependency>
-		<dependency>
 			<groupId>com.flink.platform</groupId>
 			<artifactId>flink-platform-common</artifactId>
 			<version>${flink-platform.version}</version>

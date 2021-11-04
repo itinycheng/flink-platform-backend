@@ -21,7 +21,7 @@ import com.flink.platform.web.service.JobInfoQuartzService;
 import com.flink.platform.web.service.UserGroupService;
 import com.flink.platform.web.service.UserGroupSqlGenService;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.web.bind.annotation.PostMapping;

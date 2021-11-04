@@ -10,7 +10,7 @@ import com.flink.platform.web.parser.SqlIdentifier;
 import com.flink.platform.web.parser.SqlSelect;
 import com.flink.platform.web.parser.SqlWhere;
 import com.flink.platform.web.service.UserGroupSqlGenService;
-import org.apache.commons.collections.ListUtils;
+import org.apache.commons.collections4.ListUtils;
 import org.junit.Before;
 import org.junit.Test;
 

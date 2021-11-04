@@ -32,7 +32,7 @@
 		<commons-lang3.version>3.5</commons-lang3.version>
 		<commons-io.version>2.7</commons-io.version>
 		<commons.beanutils.version>1.7.0</commons.beanutils.version>
-		<commons-collections.version>3.2.2</commons-collections.version>
+		<commons-collections4.version>4.4</commons-collections4.version>
 		<lombok.version>1.18.12</lombok.version>
 		<fastjson.version>1.2.75</fastjson.version>
 		<jackson.version>2.11.4</jackson.version>
@@ -63,9 +63,9 @@
 				<scope>test</scope>
 			</dependency>
 			<dependency>
-				<groupId>commons-collections</groupId>
-				<artifactId>commons-collections</artifactId>
-				<version>${commons-collections.version}</version>
+				<groupId>org.apache.commons</groupId>
+				<artifactId>commons-collections4</artifactId>
+				<version>${commons-collections4.version}</version>
 			</dependency>
 			<dependency>
 				<groupId>com.google.guava</groupId>

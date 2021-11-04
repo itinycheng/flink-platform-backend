@@ -7,7 +7,7 @@ import org.apache.flink.types.Row;
 import com.flink.platform.common.util.JsonUtil;
 import com.flink.platform.udf.common.FunctionName;
 import com.flink.platform.udf.entity.PositionLabel;
-import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections4.CollectionUtils;
 
 import java.util.List;
 
