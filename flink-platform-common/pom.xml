@@ -11,7 +11,6 @@
 	</parent>
 
 	<artifactId>flink-platform-common</artifactId>
-	<version>0.0.1</version>
 	<name>flink-platform-common</name>
 
 	<properties>
