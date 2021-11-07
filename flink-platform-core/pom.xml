@@ -12,11 +12,7 @@
 	</parent>
 
 	<artifactId>flink-platform-core</artifactId>
-	<version>0.0.1</version>
-
 	<name>flink-platform-core</name>
-	<!-- FIXME change it to the project's website -->
-	<url>http://www.example.com</url>
 
 	<dependencies>
 		<dependency>

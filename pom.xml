@@ -309,5 +309,6 @@
 		<module>flink-platform-core</module>
 		<module>flink-platform-udf</module>
 		<module>flink-platform-monitor</module>
+		<module>flink-platform-dao</module>
 	</modules>
 </project>
