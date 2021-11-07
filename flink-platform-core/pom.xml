@@ -16,17 +16,13 @@
 
 	<dependencies>
 		<dependency>
-			<groupId>junit</groupId>
-			<artifactId>junit</artifactId>
-		</dependency>
-		<dependency>
 			<groupId>org.yaml</groupId>
 			<artifactId>snakeyaml</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>com.flink.platform</groupId>
 			<artifactId>flink-platform-udf</artifactId>
-			<version>${flink-platform.version}</version>
+			<version>${project.version}</version>
 		</dependency>
 		<!-- flink -->
 		<dependency>

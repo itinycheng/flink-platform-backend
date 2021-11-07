@@ -2,9 +2,9 @@ package com.flink.platform.web.config.aspect;
 
 import com.flink.platform.common.enums.ResponseStatus;
 import com.flink.platform.common.exception.DefinitionException;
+import com.flink.platform.dao.entity.ReqToken;
+import com.flink.platform.dao.service.ReqTokenService;
 import com.flink.platform.web.config.annotation.TokenChecker;
-import com.flink.platform.web.entity.ReqToken;
-import com.flink.platform.web.service.IReqTokenService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.aspectj.lang.annotation.Aspect;
@@ -25,7 +25,7 @@ import java.util.Optional;
 @Component
 public class TokenCheckerAspect {
 
-    @Autowired private IReqTokenService iReqTokenService;
+    @Autowired private ReqTokenService iReqTokenService;
 
     @Before("@within(tokenChecker)")
     public void doBeforeForClass(TokenChecker tokenChecker) {

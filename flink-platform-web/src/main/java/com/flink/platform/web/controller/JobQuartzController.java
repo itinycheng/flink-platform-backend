@@ -1,11 +1,11 @@
 package com.flink.platform.web.controller;
 
-import com.flink.platform.common.enums.JobStatusEnum;
+import com.flink.platform.common.enums.JobStatus;
 import com.flink.platform.common.enums.ResponseStatus;
-import com.flink.platform.web.entity.JobInfo;
+import com.flink.platform.dao.entity.JobInfo;
+import com.flink.platform.dao.service.JobInfoService;
 import com.flink.platform.web.entity.response.ResultInfo;
-import com.flink.platform.web.service.IJobInfoService;
-import com.flink.platform.web.service.JobInfoQuartzService;
+import com.flink.platform.web.service.QuartzService;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -21,20 +21,20 @@ import java.util.Objects;
 @RequestMapping("/jobInfo/quartz")
 public class JobQuartzController {
 
-    @Resource public JobInfoQuartzService jobInfoQuartzService;
+    @Resource public QuartzService quartzService;
 
-    @Resource private IJobInfoService iJobInfoService;
+    @Resource private JobInfoService jobInfoService;
 
     @GetMapping(value = "/runOnce/{jobId}")
-    public ResultInfo runOnce(@PathVariable Long jobId) {
-        JobInfo jobInfo = iJobInfoService.getById(jobId);
+    public ResultInfo<Long> runOnce(@PathVariable Long jobId) {
+        JobInfo jobInfo = jobInfoService.getById(jobId);
 
         if (Objects.nonNull(jobInfo)) {
-            jobInfo.setStatus(JobStatusEnum.READY.getCode());
-            this.iJobInfoService.updateById(jobInfo);
+            jobInfo.setStatus(JobStatus.READY.getCode());
+            this.jobInfoService.updateById(jobInfo);
         }
 
-        if (jobInfoQuartzService.runOnce(jobInfo)) {
+        if (quartzService.runOnce(jobInfo)) {
             return ResultInfo.success(jobId);
         } else {
             return ResultInfo.failure(ResponseStatus.SERVICE_ERROR);
@@ -42,10 +42,10 @@ public class JobQuartzController {
     }
 
     @GetMapping(value = "/delete")
-    public ResultInfo delete(
+    public ResultInfo<Object> delete(
             @RequestParam(name = "name") String name, @RequestParam(name = "group") String group) {
-        jobInfoQuartzService.deleteTrigger(name, group);
-        jobInfoQuartzService.deleteJob(name, group);
+        quartzService.deleteTrigger(name, group);
+        quartzService.deleteJob(name, group);
         return ResultInfo.success(null);
     }
 }

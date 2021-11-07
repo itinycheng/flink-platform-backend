@@ -1,7 +1,7 @@
 package com.flink.platform.web.entity.response;
 
-import com.flink.platform.web.entity.Signature;
-import com.flink.platform.web.entity.SignatureValue;
+import com.flink.platform.dao.entity.Signature;
+import com.flink.platform.dao.entity.SignatureValue;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;

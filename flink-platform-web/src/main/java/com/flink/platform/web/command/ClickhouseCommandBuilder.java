@@ -1,10 +1,10 @@
 package com.flink.platform.web.command;
 
+import com.flink.platform.common.enums.JobType;
 import com.flink.platform.common.enums.SqlType;
 import com.flink.platform.common.exception.JobCommandGenException;
 import com.flink.platform.common.job.Sql;
-import com.flink.platform.web.entity.JobInfo;
-import com.flink.platform.web.enums.JobType;
+import com.flink.platform.dao.entity.JobInfo;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
@@ -13,7 +13,7 @@ import javax.annotation.Resource;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.flink.platform.web.enums.JobType.CLICKHOUSE_SQL;
+import static com.flink.platform.common.enums.JobType.CLICKHOUSE_SQL;
 
 /** Clickhouse command builder. */
 @Slf4j

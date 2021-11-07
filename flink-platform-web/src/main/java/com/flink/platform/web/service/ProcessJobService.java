@@ -1,18 +1,20 @@
 package com.flink.platform.web.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import com.flink.platform.common.enums.JobStatusEnum;
+import com.flink.platform.common.enums.JobStatus;
+import com.flink.platform.common.enums.JobType;
 import com.flink.platform.common.enums.JobYarnStatusEnum;
 import com.flink.platform.common.exception.JobCommandGenException;
 import com.flink.platform.common.util.JsonUtil;
+import com.flink.platform.dao.entity.JobInfo;
+import com.flink.platform.dao.entity.JobRunInfo;
+import com.flink.platform.dao.service.JobInfoService;
+import com.flink.platform.dao.service.JobRunInfoService;
 import com.flink.platform.web.command.CommandBuilder;
 import com.flink.platform.web.command.CommandExecutor;
 import com.flink.platform.web.command.FlinkCommand;
 import com.flink.platform.web.command.JobCallback;
 import com.flink.platform.web.command.JobCommand;
-import com.flink.platform.web.entity.JobInfo;
-import com.flink.platform.web.entity.JobRunInfo;
-import com.flink.platform.web.enums.JobType;
 import com.flink.platform.web.enums.SqlVar;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
@@ -33,9 +35,9 @@ import static java.util.stream.Collectors.toMap;
 @Service
 public class ProcessJobService {
 
-    private final IJobInfoService iJobInfoService;
+    private final JobInfoService jobInfoService;
 
-    private final IJobRunInfoService jobRunInfoService;
+    private final JobRunInfoService jobRunInfoService;
 
     private final List<CommandBuilder> jobCommandBuilders;
 
@@ -43,11 +45,11 @@ public class ProcessJobService {
 
     @Autowired
     public ProcessJobService(
-            IJobInfoService iJobInfoService,
-            IJobRunInfoService jobRunInfoService,
+            JobInfoService jobInfoService,
+            JobRunInfoService jobRunInfoService,
             List<CommandBuilder> jobCommandBuilders,
             List<CommandExecutor> jobCommandExecutors) {
-        this.iJobInfoService = iJobInfoService;
+        this.jobInfoService = jobInfoService;
         this.jobRunInfoService = jobRunInfoService;
         this.jobCommandBuilders = jobCommandBuilders;
         this.jobCommandExecutors = jobCommandExecutors;
@@ -60,11 +62,11 @@ public class ProcessJobService {
         try {
             // step 1: get job info
             jobInfo =
-                    iJobInfoService.getOne(
+                    jobInfoService.getOne(
                             new QueryWrapper<JobInfo>()
                                     .lambda()
                                     .eq(JobInfo::getCode, jobCode)
-                                    .ne(JobInfo::getStatus, JobStatusEnum.DELETE.getCode()));
+                                    .ne(JobInfo::getStatus, JobStatus.DELETE.getCode()));
             if (jobInfo == null) {
                 throw new JobCommandGenException(
                         String.format(

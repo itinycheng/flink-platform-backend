@@ -19,7 +19,7 @@ public class EnumsController {
     private static final String CLASS_PATH_PREFIX = "com.flink.platform.common.enums";
 
     @GetMapping
-    public ResultInfo list(String enumsClass) {
+    public ResultInfo<List<Map<String, Object>>> list(String enumsClass) {
         List<Map<String, Object>> enums = Lists.newArrayList();
         String clazz = CLASS_PATH_PREFIX + "." + enumsClass;
         try {

@@ -5,13 +5,13 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.flink.platform.common.enums.ResponseStatus;
 import com.flink.platform.common.exception.DefinitionException;
-import com.flink.platform.web.entity.Signature;
-import com.flink.platform.web.entity.SignatureValue;
+import com.flink.platform.dao.entity.Signature;
+import com.flink.platform.dao.entity.SignatureValue;
+import com.flink.platform.dao.service.SignatureService;
+import com.flink.platform.dao.service.SignatureValueService;
 import com.flink.platform.web.entity.request.SignatureRequest;
 import com.flink.platform.web.entity.response.ResultInfo;
 import com.flink.platform.web.entity.response.SignatureResponse;
-import com.flink.platform.web.service.ISignatureService;
-import com.flink.platform.web.service.ISignatureValueService;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,8 +23,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import javax.servlet.http.HttpServletRequest;
-
 import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
@@ -35,20 +33,20 @@ import java.util.stream.Collectors;
 @RequestMapping("/signature")
 public class SignatureController {
 
-    @Autowired private ISignatureService iSignatureService;
+    @Autowired private SignatureService signatureService;
 
-    @Autowired private ISignatureValueService iSignatureValueService;
+    @Autowired private SignatureValueService signatureValueService;
 
     @GetMapping("list")
-    public ResultInfo list(HttpServletRequest request) {
+    public ResultInfo<List<SignatureResponse>> list() {
 
-        List<Signature> list = this.iSignatureService.list();
+        List<Signature> list = this.signatureService.list();
         List<SignatureResponse> responseList =
                 list.stream()
                         .map(
                                 item -> {
                                     List<SignatureValue> signatureValueList =
-                                            this.iSignatureValueService.list(
+                                            this.signatureValueService.list(
                                                     new QueryWrapper<SignatureValue>()
                                                             .lambda()
                                                             .eq(
@@ -65,15 +63,14 @@ public class SignatureController {
     }
 
     @GetMapping
-    public ResultInfo get(
+    public ResultInfo<IPage<Signature>> get(
             @RequestParam(name = "page", required = false, defaultValue = "1") Integer page,
             @RequestParam(name = "size", required = false, defaultValue = "10") Integer size,
-            SignatureRequest signatureRequest,
-            HttpServletRequest request) {
+            SignatureRequest signatureRequest) {
 
-        Page pager = new Page<>(page, size);
-        IPage iPage =
-                this.iSignatureService.page(
+        Page<Signature> pager = new Page<>(page, size);
+        IPage<Signature> iPage =
+                this.signatureService.page(
                         pager,
                         new QueryWrapper<Signature>()
                                 .lambda()
@@ -94,14 +91,13 @@ public class SignatureController {
     }
 
     @GetMapping(value = "{id}")
-    public ResultInfo getOne(@PathVariable String id, HttpServletRequest request) {
-        Signature signature = this.iSignatureService.getById(id);
+    public ResultInfo<Signature> getOne(@PathVariable String id) {
+        Signature signature = this.signatureService.getById(id);
         return ResultInfo.success(signature);
     }
 
     @PostMapping
-    public ResultInfo saveOrUpdate(
-            HttpServletRequest request, @RequestBody SignatureRequest signature) {
+    public ResultInfo<Boolean> saveOrUpdate(@RequestBody SignatureRequest signature) {
         if (StringUtils.isNotBlank(signature.getName())) {
 
             this.buildSignature(signature);
@@ -109,7 +105,7 @@ public class SignatureController {
             // save
             if (Objects.isNull(signature.getId())) {
                 Signature one =
-                        this.iSignatureService.getOne(
+                        this.signatureService.getOne(
                                 new QueryWrapper<Signature>()
                                         .lambda()
                                         .eq(Signature::getName, signature.getName()));
@@ -117,7 +113,7 @@ public class SignatureController {
                 if (Objects.isNull(one)) {
                     signature.setStatus(1);
                     signature.setCreateTime(Instant.now().toEpochMilli());
-                    this.iSignatureService.save(signature);
+                    this.signatureService.save(signature);
                     return ResultInfo.success(true);
                 } else {
                     throw new DefinitionException(ResponseStatus.ERROR_PARAMETER);
@@ -125,7 +121,7 @@ public class SignatureController {
             } else {
                 // update
                 signature.setUpdateTime(Instant.now().toEpochMilli());
-                this.iSignatureService.updateById(signature);
+                this.signatureService.updateById(signature);
                 return ResultInfo.success(true);
             }
         } else {

@@ -2,9 +2,10 @@ package com.flink.platform.web.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.flink.platform.common.enums.DataType;
+import com.flink.platform.dao.entity.LabelParser;
+import com.flink.platform.dao.entity.Signature;
+import com.flink.platform.dao.service.SignatureService;
 import com.flink.platform.udf.common.SqlColumn;
-import com.flink.platform.web.entity.LabelParser;
-import com.flink.platform.web.entity.Signature;
 import com.flink.platform.web.enums.SqlExpression;
 import com.flink.platform.web.enums.SqlUdf;
 import com.flink.platform.web.enums.SqlVar;
@@ -80,7 +81,7 @@ public class UserGroupSqlGenService {
 
     private static final ThreadLocal<Set<String>> UDFS = new ThreadLocal<>();
 
-    @Resource private ISignatureService iSignatureService;
+    @Resource private SignatureService iSignatureService;
 
     @Resource private HiveService hiveService;
 

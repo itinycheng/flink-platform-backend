@@ -1,6 +1,6 @@
 package com.flink.platform.web.entity.request;
 
-import com.flink.platform.web.entity.CatalogInfo;
+import com.flink.platform.dao.entity.CatalogInfo;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;

@@ -1,7 +1,7 @@
 package com.flink.platform.web.command;
 
-import com.flink.platform.web.entity.JobInfo;
-import com.flink.platform.web.enums.JobType;
+import com.flink.platform.common.enums.JobType;
+import com.flink.platform.dao.entity.JobInfo;
 
 /** Job command builder. */
 public interface JobCommandBuilder {

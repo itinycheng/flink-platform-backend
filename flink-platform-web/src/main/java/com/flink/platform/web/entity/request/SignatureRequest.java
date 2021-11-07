@@ -1,6 +1,6 @@
 package com.flink.platform.web.entity.request;
 
-import com.flink.platform.web.entity.Signature;
+import com.flink.platform.dao.entity.Signature;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
