@@ -1,6 +1,6 @@
 package com.flink.platform.web.command;
 
-import com.flink.platform.web.enums.JobType;
+import com.flink.platform.common.enums.JobType;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;

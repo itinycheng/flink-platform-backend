@@ -1,11 +1,11 @@
 package com.flink.platform.web.command;
 
+import com.flink.platform.common.enums.DeployMode;
+import com.flink.platform.common.enums.JobType;
 import com.flink.platform.common.exception.JobCommandGenException;
 import com.flink.platform.common.util.JsonUtil;
+import com.flink.platform.dao.entity.JobInfo;
 import com.flink.platform.web.config.FlinkConfig;
-import com.flink.platform.web.entity.JobInfo;
-import com.flink.platform.web.enums.DeployMode;
-import com.flink.platform.web.enums.JobType;
 import com.flink.platform.web.service.HdfsService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.hadoop.fs.Path;

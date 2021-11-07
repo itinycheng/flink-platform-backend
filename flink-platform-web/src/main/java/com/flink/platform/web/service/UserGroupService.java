@@ -2,8 +2,8 @@ package com.flink.platform.web.service;
 
 import com.flink.platform.common.util.FunctionUtil;
 import com.flink.platform.common.util.JsonUtil;
+import com.flink.platform.dao.mapper.JobRunInfoMapper;
 import com.flink.platform.web.enums.SqlVar;
-import com.flink.platform.web.mapper.JobRunInfoMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 

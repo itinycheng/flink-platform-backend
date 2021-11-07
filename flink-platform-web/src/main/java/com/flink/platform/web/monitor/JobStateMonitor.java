@@ -4,8 +4,8 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.flink.platform.common.enums.JobYarnStatusEnum;
-import com.flink.platform.web.entity.JobRunInfo;
-import com.flink.platform.web.service.IJobRunInfoService;
+import com.flink.platform.dao.entity.JobRunInfo;
+import com.flink.platform.dao.service.JobRunInfoService;
 import com.flink.platform.web.util.HttpUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -37,7 +37,7 @@ public class JobStateMonitor {
 
     public static int lock = 0;
 
-    @Autowired private IJobRunInfoService iJobRunInfoService;
+    @Autowired private JobRunInfoService iJobRunInfoService;
 
     @Value("${hadoop.yarn-web-path}")
     private String yarnWebPath;

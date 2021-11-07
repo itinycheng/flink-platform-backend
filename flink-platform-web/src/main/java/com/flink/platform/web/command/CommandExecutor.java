@@ -1,6 +1,6 @@
 package com.flink.platform.web.command;
 
-import com.flink.platform.web.enums.JobType;
+import com.flink.platform.common.enums.JobType;
 
 /** parse result. */
 public interface CommandExecutor {

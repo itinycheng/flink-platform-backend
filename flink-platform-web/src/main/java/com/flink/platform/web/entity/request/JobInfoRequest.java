@@ -1,7 +1,7 @@
 package com.flink.platform.web.entity.request;
 
-import com.flink.platform.web.entity.JobInfo;
-import com.flink.platform.web.enums.DeployMode;
+import com.flink.platform.common.enums.DeployMode;
+import com.flink.platform.dao.entity.JobInfo;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;

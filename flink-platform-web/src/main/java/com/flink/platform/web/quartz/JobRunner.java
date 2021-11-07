@@ -1,11 +1,11 @@
 package com.flink.platform.web.quartz;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import com.flink.platform.common.enums.JobStatusEnum;
+import com.flink.platform.common.enums.JobStatus;
+import com.flink.platform.dao.entity.JobInfo;
+import com.flink.platform.dao.service.JobInfoService;
 import com.flink.platform.web.comn.SpringContext;
-import com.flink.platform.web.entity.JobInfo;
 import com.flink.platform.web.entity.response.ResultInfo;
-import com.flink.platform.web.service.IJobInfoService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.quartz.Job;
@@ -31,7 +31,7 @@ public class JobRunner implements Job {
 
     private static final Map<String, Long> RUNNER_MAP = new ConcurrentHashMap<>();
 
-    private final IJobInfoService jobInfoService = SpringContext.getBean(IJobInfoService.class);
+    private final JobInfoService jobInfoService = SpringContext.getBean(JobInfoService.class);
 
     private final RestTemplate restTemplate = SpringContext.getBean(RestTemplate.class);
 
@@ -57,14 +57,14 @@ public class JobRunner implements Job {
                                     .eq(JobInfo::getCode, code)
                                     .in(
                                             JobInfo::getStatus,
-                                            JobStatusEnum.SCHEDULED.getCode(),
-                                            JobStatusEnum.READY.getCode()));
+                                            JobStatus.SCHEDULED.getCode(),
+                                            JobStatus.READY.getCode()));
             if (jobInfo == null) {
                 log.warn("The job is no longer exists or not in ready/scheduled status, {}", code);
                 return;
             }
 
-            // Step 2: build cluster url, set localhost as default url when not specified.
+            // Step 2: build cluster url, set localhost as default url if not specified.
             String routeUrl = jobInfo.getRouteUrl();
             if (StringUtils.isBlank(routeUrl)) {
                 routeUrl = String.join(COLON, LOCALHOST_URL, SpringContext.getServerPort());

@@ -1,8 +1,8 @@
 package com.flink.platform.web.command;
 
+import com.flink.platform.common.enums.JobType;
 import com.flink.platform.common.exception.JobCommandGenException;
-import com.flink.platform.web.entity.JobInfo;
-import com.flink.platform.web.enums.JobType;
+import com.flink.platform.dao.entity.JobInfo;
 import org.springframework.stereotype.Component;
 
 import java.util.Collections;

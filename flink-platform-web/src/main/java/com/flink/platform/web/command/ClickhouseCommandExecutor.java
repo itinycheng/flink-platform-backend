@@ -1,8 +1,8 @@
 package com.flink.platform.web.command;
 
 import com.baomidou.dynamic.datasource.annotation.DS;
+import com.flink.platform.common.enums.JobType;
 import com.flink.platform.common.util.JsonUtil;
-import com.flink.platform.web.enums.JobType;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
@@ -12,7 +12,7 @@ import javax.annotation.Resource;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.flink.platform.web.enums.JobType.CLICKHOUSE_SQL;
+import static com.flink.platform.common.enums.JobType.CLICKHOUSE_SQL;
 
 /** Clickhouse command executor. */
 @Slf4j

@@ -1,23 +1,23 @@
 package com.flink.platform.web.controller;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.flink.platform.common.enums.DeployMode;
 import com.flink.platform.common.enums.ExecutionMode;
+import com.flink.platform.common.enums.JobType;
 import com.flink.platform.common.enums.JobYarnStatusEnum;
 import com.flink.platform.common.enums.ResponseStatus;
 import com.flink.platform.common.util.JsonUtil;
 import com.flink.platform.common.util.UuidGenerator;
+import com.flink.platform.dao.entity.JobInfo;
+import com.flink.platform.dao.entity.JobRunInfo;
+import com.flink.platform.dao.service.JobInfoService;
+import com.flink.platform.dao.service.JobRunInfoService;
 import com.flink.platform.web.constants.UserGroupConst;
-import com.flink.platform.web.entity.JobInfo;
-import com.flink.platform.web.entity.JobRunInfo;
 import com.flink.platform.web.entity.request.UserGroupRequest;
 import com.flink.platform.web.entity.response.ResultInfo;
-import com.flink.platform.web.enums.DeployMode;
-import com.flink.platform.web.enums.JobType;
 import com.flink.platform.web.parser.SqlIdentifier;
 import com.flink.platform.web.parser.SqlSelect;
-import com.flink.platform.web.service.IJobInfoService;
-import com.flink.platform.web.service.IJobRunInfoService;
-import com.flink.platform.web.service.JobInfoQuartzService;
+import com.flink.platform.web.service.QuartzService;
 import com.flink.platform.web.service.UserGroupService;
 import com.flink.platform.web.service.UserGroupSqlGenService;
 import lombok.extern.slf4j.Slf4j;
@@ -52,16 +52,16 @@ public class UserGroupController {
 
     @Resource private UserGroupSqlGenService sqlGenService;
 
-    @Resource private IJobInfoService jobInfoService;
+    @Resource private JobInfoService jobInfoService;
 
-    @Resource private IJobRunInfoService jobRunInfoService;
+    @Resource private JobRunInfoService jobRunInfoService;
 
-    @Resource public JobInfoQuartzService jobInfoQuartzService;
+    @Resource private QuartzService quartzService;
 
     @Resource private UserGroupService userGroupService;
 
     @PostMapping(value = "/sqlGenerator/insertSelect")
-    public ResultInfo insertSelect(@RequestBody SqlSelect sqlSelect) {
+    public ResultInfo<String> insertSelect(@RequestBody SqlSelect sqlSelect) {
         // set default table for query from
         sqlSelect.setFrom(UserGroupConst.SOURCE_TABLE_IDENTIFIER);
         // set default select list
@@ -75,10 +75,10 @@ public class UserGroupController {
     }
 
     @PostMapping(value = "/createOrUpdate")
-    public ResultInfo createOrUpdate(@RequestBody UserGroupRequest userGroupRequest) {
+    public ResultInfo<Long> createOrUpdate(@RequestBody UserGroupRequest userGroupRequest) {
         try {
-            ResultInfo sqlInfo = insertSelect(userGroupRequest.getSelect());
-            String sql = sqlInfo.getResult().toString();
+            ResultInfo<String> sqlInfo = insertSelect(userGroupRequest.getSelect());
+            String sql = sqlInfo.getResult();
             JobInfo jobInfo = new JobInfo();
             BeanUtils.copyProperties(userGroupRequest, jobInfo);
             jobInfo.setSubject(sql);
@@ -93,8 +93,8 @@ public class UserGroupController {
             }
             boolean bool = jobInfoService.saveOrUpdate(jobInfo);
             if (bool && userGroupRequest.getId() == null) {
-                jobInfoQuartzService.runOnce(jobInfo);
-                jobInfoQuartzService.addJobToQuartz(jobInfo);
+                quartzService.runOnce(jobInfo);
+                quartzService.addJobToQuartz(jobInfo);
             }
             return ResultInfo.success(jobInfo.getId());
         } catch (Exception e) {
@@ -104,7 +104,7 @@ public class UserGroupController {
     }
 
     @PostMapping(value = "/resultSize")
-    public ResultInfo resultSize(@RequestBody UserGroupRequest userGroupRequest) {
+    public ResultInfo<Long> resultSize(@RequestBody UserGroupRequest userGroupRequest) {
         JobRunInfo jobRunInfo = null;
         try {
             if (userGroupRequest == null

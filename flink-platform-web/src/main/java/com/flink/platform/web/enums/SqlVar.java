@@ -1,7 +1,7 @@
 package com.flink.platform.web.enums;
 
 import com.flink.platform.common.util.DateUtil;
-import com.flink.platform.web.entity.JobInfo;
+import com.flink.platform.dao.entity.JobInfo;
 
 import java.util.function.Function;
 

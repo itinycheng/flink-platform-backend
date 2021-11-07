@@ -7,8 +7,8 @@ import com.flink.platform.common.job.Function;
 import com.flink.platform.common.job.Sql;
 import com.flink.platform.common.job.SqlContext;
 import com.flink.platform.common.util.JsonUtil;
-import com.flink.platform.web.entity.JobInfo;
-import com.flink.platform.web.service.ICatalogInfoService;
+import com.flink.platform.dao.entity.JobInfo;
+import com.flink.platform.dao.service.CatalogInfoService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
 import org.springframework.beans.factory.annotation.Value;
@@ -40,7 +40,7 @@ public class SqlContextHelper {
     @Value("${flink.local.sql-dir}")
     private String sqlDir;
 
-    @Resource private ICatalogInfoService catalogInfoService;
+    @Resource private CatalogInfoService catalogInfoService;
 
     public String convertFromAndSaveToFile(JobInfo jobInfo) {
         SqlContext sqlContext = convertFrom(jobInfo);
