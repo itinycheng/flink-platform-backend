@@ -1,9 +1,9 @@
 package com.flink.platform.web.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.flink.platform.common.enums.ExecutionStatus;
 import com.flink.platform.common.enums.JobStatus;
 import com.flink.platform.common.enums.JobType;
-import com.flink.platform.common.enums.JobYarnStatusEnum;
 import com.flink.platform.common.exception.JobCommandGenException;
 import com.flink.platform.common.util.JsonUtil;
 import com.flink.platform.dao.entity.JobInfo;
@@ -123,7 +123,10 @@ public class ProcessJobService {
             // step 5: write msg back to db
             JobRunInfo jobRunInfo = new JobRunInfo();
             jobRunInfo.setJobId(jobInfo.getId());
-            jobRunInfo.setStatus(JobYarnStatusEnum.NEW.getCode());
+            jobRunInfo.setJobType(jobInfo.getType());
+            jobRunInfo.setJobVersion(jobInfo.getVersion());
+            jobRunInfo.setJobDeployMode(jobInfo.getDeployMode());
+            jobRunInfo.setStatus(getInitExecutionStatus(jobType).getCode());
             jobRunInfo.setVariables(JsonUtil.toJsonString(sqlVarValueMap));
             jobRunInfo.setBackInfo(JsonUtil.toJsonString(callback));
             jobRunInfo.setSubmitUser("quartz");
@@ -149,6 +152,16 @@ public class ProcessJobService {
                     log.warn("Delete sql context file failed", e);
                 }
             }
+        }
+    }
+
+    private ExecutionStatus getInitExecutionStatus(JobType jobType) {
+        switch (jobType) {
+            case CLICKHOUSE_SQL:
+            case COMMON_JAR:
+                return ExecutionStatus.SUCCEEDED;
+            default:
+                return ExecutionStatus.UNDEFINED;
         }
     }
 }

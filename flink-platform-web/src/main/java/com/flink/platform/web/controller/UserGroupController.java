@@ -3,8 +3,8 @@ package com.flink.platform.web.controller;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.flink.platform.common.enums.DeployMode;
 import com.flink.platform.common.enums.ExecutionMode;
+import com.flink.platform.common.enums.ExecutionStatus;
 import com.flink.platform.common.enums.JobType;
-import com.flink.platform.common.enums.JobYarnStatusEnum;
 import com.flink.platform.common.enums.ResponseStatus;
 import com.flink.platform.common.util.JsonUtil;
 import com.flink.platform.common.util.UuidGenerator;
@@ -44,11 +44,9 @@ import static com.flink.platform.web.constants.UserGroupConst.UUID;
 @RequestMapping("/userGroup")
 public class UserGroupController {
 
-    private static final List<Integer> FINAL_STATUS =
+    private static final List<ExecutionStatus> FINAL_STATUS =
             Arrays.asList(
-                    JobYarnStatusEnum.FINISHED.getCode(),
-                    JobYarnStatusEnum.FAILED.getCode(),
-                    JobYarnStatusEnum.KILLED.getCode());
+                    ExecutionStatus.SUCCEEDED, ExecutionStatus.FAILED, ExecutionStatus.KILLED);
 
     @Resource private UserGroupSqlGenService sqlGenService;
 

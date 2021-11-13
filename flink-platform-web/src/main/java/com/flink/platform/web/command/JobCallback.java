@@ -10,9 +10,12 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class JobCallback {
 
+    /** flink job id. */
     private String jobId;
 
+    /** hadoop application id. */
     private String appId;
 
+    /** callback log. */
     private String message;
 }

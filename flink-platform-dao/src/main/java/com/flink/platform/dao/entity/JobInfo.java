@@ -79,7 +79,10 @@ public class JobInfo implements Serializable {
     /** cron expression for the job. */
     private String cronExpr;
 
-    /** route url. */
+    /**
+     * route url. <br>
+     * example: http://127.0.0.1
+     */
     private String routeUrl;
 
     /** create user. */

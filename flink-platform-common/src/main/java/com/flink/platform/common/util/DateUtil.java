@@ -12,6 +12,8 @@ import java.util.concurrent.ConcurrentHashMap;
 /** date utils. */
 public class DateUtil {
 
+    public static final ZoneId DEFAULT_ZONE_ID = ZoneId.systemDefault();
+
     public static final long MILLIS_PER_MINUTE = DateUtils.MILLIS_PER_MINUTE;
 
     private static final Map<String, DateTimeFormatter> FORMATTERS = new ConcurrentHashMap<>();

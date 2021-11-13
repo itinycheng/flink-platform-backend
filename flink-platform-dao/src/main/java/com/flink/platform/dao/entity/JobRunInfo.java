@@ -3,6 +3,8 @@ package com.flink.platform.dao.entity;
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
+import com.flink.platform.common.enums.DeployMode;
+import com.flink.platform.common.enums.JobType;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -30,6 +32,14 @@ public class JobRunInfo implements Serializable {
 
     /** unique code. */
     private Long jobId;
+
+    private JobType jobType;
+
+    private String jobVersion;
+
+    private DeployMode jobDeployMode;
+
+    private String jobRouteUrl;
 
     /** 0: unknown, 1: running, 2: finished, 3: failure. */
     private Integer status;
