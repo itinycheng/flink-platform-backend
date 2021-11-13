@@ -12,6 +12,8 @@ public class Constant {
 
     public static final String ROOT_DIR = System.getProperty("user.dir");
 
+    public static final String PATH_SEPARATOR = System.getProperty("path.separator");
+
     public static final String COMMA = ",";
 
     public static final String COLON = ":";

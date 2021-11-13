@@ -6,7 +6,6 @@ import org.apache.flink.table.functions.ScalarFunction;
 import org.apache.flink.table.types.inference.TypeInference;
 
 import com.flink.platform.common.enums.DataType;
-import com.flink.platform.common.util.FunctionUtil;
 import com.flink.platform.common.util.JsonUtil;
 import com.flink.platform.udf.entity.LabelWrapper;
 import lombok.val;
@@ -19,8 +18,7 @@ import java.util.Optional;
 public class UserLabelValueFunction extends ScalarFunction {
 
     public Object eval(String json, String type) {
-        val userLabel =
-                FunctionUtil.getOrDefault(() -> JsonUtil.toBean(json, LabelWrapper.class), null);
+        val userLabel = JsonUtil.toBean(json, LabelWrapper.class);
         Object valueObj = userLabel != null ? userLabel.getValue() : null;
         if (valueObj == null) {
             return null;

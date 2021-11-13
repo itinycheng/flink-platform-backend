@@ -1,50 +1,21 @@
 package com.flink.platform.web.util;
 
+import com.flink.platform.web.common.SpringContext;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
-import org.springframework.http.client.SimpleClientHttpRequestFactory;
-import org.springframework.web.client.RestTemplate;
+
+import static com.flink.platform.common.constants.Constant.COLON;
 
 /** Http utils. */
 @Slf4j
 public class HttpUtil {
 
-    public static final int TIME_OUT_30_S = 1000 * 30;
+    private static final String LOCALHOST_URL = "http://127.0.0.1";
 
-    public static final int TIME_OUT_15_S = 1000 * 15;
-
-    public static final int TIME_OUT_20_S = 1000 * 20;
-
-    public static final int TIME_OUT_3_S = 1000 * 3;
-
-    public static final int TIME_OUT_5_M = 1000 * 60 * 5;
-
-    public static final int TIME_OUT_1_M = 1000 * 60 * 1;
-
-    public static HttpHeaders buildHttpHeaders(String contentType) {
-        HttpHeaders httpHeaders = new HttpHeaders();
-        if (StringUtils.isEmpty(contentType)) {
-            httpHeaders.add("Content-Type", MediaType.APPLICATION_FORM_URLENCODED_VALUE);
-        } else {
-            httpHeaders.add("Content-Type", contentType);
+    public static String getUrlOrDefault(String routeUrl) {
+        if (StringUtils.isBlank(routeUrl)) {
+            routeUrl = String.join(COLON, LOCALHOST_URL, SpringContext.getServerPort());
         }
-        httpHeaders.add("X-Requested-With", "XMLHttpRequest");
-        httpHeaders.add("Accept", "text/plain;charset=utf-8");
-        return httpHeaders;
-    }
-
-    public static RestTemplate buildRestTemplate(Integer connectTimeout) {
-        SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
-        requestFactory.setConnectTimeout(connectTimeout);
-        requestFactory.setReadTimeout(connectTimeout);
-        RestTemplate restTemplate = new RestTemplate(requestFactory);
-        return restTemplate;
-    }
-
-    public static String buildUrl(String domain, String urn) {
-
-        return new StringBuilder(domain).append(urn).toString();
+        return routeUrl.endsWith("/") ? routeUrl.substring(0, routeUrl.lastIndexOf("/")) : routeUrl;
     }
 }

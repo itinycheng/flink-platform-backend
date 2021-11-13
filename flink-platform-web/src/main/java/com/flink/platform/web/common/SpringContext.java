@@ -1,4 +1,4 @@
-package com.flink.platform.web.comn;
+package com.flink.platform.web.common;
 
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;

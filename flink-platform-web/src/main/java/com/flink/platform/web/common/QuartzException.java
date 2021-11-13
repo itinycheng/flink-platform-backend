@@ -1,4 +1,4 @@
-package com.flink.platform.web.comn;
+package com.flink.platform.web.common;
 
 /** Quartz exception. */
 public class QuartzException extends RuntimeException {

@@ -6,7 +6,6 @@ public enum JobStatus {
     READY(2, "ready"),
     SCHEDULED(3, "scheduled"),
     STOPPED(4, "stopped"),
-    FAILED(5, "failed"),
     DELETE(-1, "delete");
 
     private int code;

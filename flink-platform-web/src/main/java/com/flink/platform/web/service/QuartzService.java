@@ -2,7 +2,7 @@ package com.flink.platform.web.service;
 
 import com.flink.platform.common.util.DateUtil;
 import com.flink.platform.dao.entity.JobInfo;
-import com.flink.platform.web.comn.QuartzException;
+import com.flink.platform.web.common.QuartzException;
 import com.flink.platform.web.quartz.JobRunner;
 import lombok.extern.slf4j.Slf4j;
 import org.quartz.CronExpression;

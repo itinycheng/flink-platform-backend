@@ -4,10 +4,10 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.flink.platform.common.enums.JobStatus;
 import com.flink.platform.dao.entity.JobInfo;
 import com.flink.platform.dao.service.JobInfoService;
-import com.flink.platform.web.comn.SpringContext;
+import com.flink.platform.web.common.SpringContext;
 import com.flink.platform.web.entity.response.ResultInfo;
+import com.flink.platform.web.util.HttpUtil;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
 import org.quartz.Job;
 import org.quartz.JobDetail;
 import org.quartz.JobExecutionContext;
@@ -19,15 +19,11 @@ import org.springframework.web.client.RestTemplate;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import static com.flink.platform.common.constants.Constant.COLON;
-
 /** submit job. */
 @Slf4j
 public class JobRunner implements Job {
 
     private static final String JOB_PROCESS_REST_PATH = "/internal/process/%s";
-
-    private static final String LOCALHOST_URL = "http://127.0.0.1";
 
     private static final Map<String, Long> RUNNER_MAP = new ConcurrentHashMap<>();
 
@@ -66,13 +62,7 @@ public class JobRunner implements Job {
 
             // Step 2: build cluster url, set localhost as default url if not specified.
             String routeUrl = jobInfo.getRouteUrl();
-            if (StringUtils.isBlank(routeUrl)) {
-                routeUrl = String.join(COLON, LOCALHOST_URL, SpringContext.getServerPort());
-            }
-            routeUrl =
-                    routeUrl.endsWith("/")
-                            ? routeUrl.substring(0, routeUrl.lastIndexOf("/"))
-                            : routeUrl;
+            routeUrl = HttpUtil.getUrlOrDefault(routeUrl);
 
             // Step 3: send http request.
             String httpUri = routeUrl + String.format(JOB_PROCESS_REST_PATH, code);
