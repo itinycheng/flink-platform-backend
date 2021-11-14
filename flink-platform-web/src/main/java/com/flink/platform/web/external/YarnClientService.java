@@ -10,10 +10,6 @@ import org.springframework.stereotype.Component;
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 
-import java.util.List;
-import java.util.Objects;
-import java.util.stream.Collectors;
-
 /** Yarn client service. */
 @Slf4j
 @Lazy
@@ -27,13 +23,6 @@ public class YarnClientService {
         yarnClient = YarnClient.createYarnClient();
         yarnClient.init(HadoopUtil.getHadoopConfiguration());
         yarnClient.start();
-    }
-
-    public List<ApplicationReport> getApplicationReports(List<String> applicationNames) {
-        return applicationNames.stream()
-                .map(this::getApplicationReport)
-                .filter(Objects::nonNull)
-                .collect(Collectors.toList());
     }
 
     public ApplicationReport getApplicationReport(String applicationName) {
