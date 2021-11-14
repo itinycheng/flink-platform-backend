@@ -1,57 +1,88 @@
 package com.flink.platform.common.util;
 
-import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.serializer.SerializerFeature;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.JavaType;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.ObjectUtils;
 
+import java.io.IOException;
 import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
-import java.util.stream.Collectors;
 
 /** json utils. */
 @Slf4j
 public class JsonUtil {
 
-    public static List<String> toList(String res) {
-        return toList(res, String.class);
+    public static final ObjectMapper MAPPER;
+
+    static {
+        MAPPER = new ObjectMapper();
+        MAPPER.setSerializationInclusion(JsonInclude.Include.ALWAYS);
+        MAPPER.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
     }
 
-    public static <T> List<T> toList(String res, Class<T> clazz) {
-        List<T> orDefault = FunctionUtil.getOrDefault(() -> JSON.parseArray(res, clazz), null);
-        return ObjectUtils.defaultIfNull(orDefault, Collections.emptyList());
+    public static List<String> toList(String json) {
+        try {
+            return MAPPER.readValue(json, new TypeReference<List<String>>() {});
+        } catch (Exception e) {
+            log.error("Failed to serial {} to List[String].", json, e);
+            return Collections.emptyList();
+        }
     }
 
-    public static Map<String, Object> toMap(String res) {
-        Map<String, Object> orDefault =
-                FunctionUtil.getOrDefault(() -> JSON.parseObject(res), null);
-        return ObjectUtils.defaultIfNull(orDefault, Collections.emptyMap());
+    public static <T> List<T> toList(String json, JavaType javaType) {
+        try {
+            return MAPPER.readValue(json, javaType);
+        } catch (Exception e) {
+            log.error("Failed to serial {} to List[T]", json, e);
+            return Collections.emptyList();
+        }
     }
 
-    public static Map<String, String> toStrMap(String res) {
-        return JsonUtil.toMap(res).entrySet().stream()
-                .filter(entry -> Objects.nonNull(entry.getValue()))
-                .collect(
-                        Collectors.toMap(
-                                Map.Entry::getKey, entry -> String.valueOf(entry.getValue())));
+    public static Map<String, Object> toMap(String json) {
+        try {
+            return MAPPER.readValue(json, new TypeReference<Map<String, Object>>() {});
+        } catch (Exception e) {
+            log.error("Failed to serial {} to Map[String, Object].", json, e);
+            return Collections.emptyMap();
+        }
+    }
+
+    public static Map<String, String> toStrMap(String json) {
+        try {
+            return MAPPER.readValue(json, new TypeReference<Map<String, String>>() {});
+        } catch (Exception e) {
+            log.error("Failed to serial {} to Map[String, String].", json, e);
+            return Collections.emptyMap();
+        }
     }
 
     public static <T> T toBean(String res, Class<T> clazz) {
-        return FunctionUtil.getOrDefault(() -> JSON.parseObject(res, clazz), null);
+        try {
+            return MAPPER.readValue(res, clazz);
+        } catch (Exception e) {
+            log.error("Failed to serial {} to {}.", res, clazz, e);
+            return null;
+        }
     }
 
-    public static <T> T toBean(Path path, Class<T> clazz) throws Exception {
+    public static <T> T toBean(Path path, Class<T> clazz) throws IOException {
         InputStream inputStream = Files.newInputStream(path);
-        return JSON.parseObject(inputStream, StandardCharsets.UTF_8, clazz);
+        return MAPPER.readValue(inputStream, clazz);
     }
 
     public static String toJsonString(Object obj) {
-        return JSON.toJSONString(obj, SerializerFeature.WriteMapNullValue);
+        try {
+            return MAPPER.writeValueAsString(obj);
+        } catch (Exception e) {
+            log.error("Failed to serial {}.", obj, e);
+            return null;
+        }
     }
 }

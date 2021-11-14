@@ -76,11 +76,6 @@
 							<shadedPattern>com.flink.platform.shaded.org.apache.commons
 							</shadedPattern>
 						</relocation>
-						<relocation>
-							<pattern>com.alibaba.fastjson</pattern>
-							<shadedPattern>com.flink.platform.shaded.com.alibaba.fastjson
-							</shadedPattern>
-						</relocation>
 					</relocations>
 				</configuration>
 			</plugin>
