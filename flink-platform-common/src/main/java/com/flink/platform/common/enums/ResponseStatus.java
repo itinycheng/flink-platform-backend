@@ -9,7 +9,8 @@ public enum ResponseStatus {
     UNAUTHORIZED(401, "Unauthorized"),
     SERVICE_ERROR(500, "service error"),
     SERVICE_TIMEOUT(501, "service timeout"),
-    USER_NOT_FOUNT(502, "user not found");
+    USER_NOT_FOUNT(502, "user not found"),
+    NOT_RUNNABLE_STATUS(503, "not runnable status");
 
     private final int code;
     private final String desc;

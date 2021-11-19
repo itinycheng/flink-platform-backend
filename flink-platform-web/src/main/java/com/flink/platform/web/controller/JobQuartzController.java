@@ -4,8 +4,11 @@ import com.flink.platform.common.enums.JobStatus;
 import com.flink.platform.common.enums.ResponseStatus;
 import com.flink.platform.dao.entity.JobInfo;
 import com.flink.platform.dao.service.JobInfoService;
+import com.flink.platform.web.entity.JobQuartzInfo;
 import com.flink.platform.web.entity.response.ResultInfo;
 import com.flink.platform.web.service.QuartzService;
+import org.quartz.JobKey;
+import org.quartz.TriggerKey;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -34,7 +37,7 @@ public class JobQuartzController {
             this.jobInfoService.updateById(jobInfo);
         }
 
-        if (quartzService.runOnce(jobInfo)) {
+        if (quartzService.runOnce(new JobQuartzInfo(jobInfo))) {
             return ResultInfo.success(jobId);
         } else {
             return ResultInfo.failure(ResponseStatus.SERVICE_ERROR);
@@ -44,8 +47,8 @@ public class JobQuartzController {
     @GetMapping(value = "/delete")
     public ResultInfo<Object> delete(
             @RequestParam(name = "name") String name, @RequestParam(name = "group") String group) {
-        quartzService.deleteTrigger(name, group);
-        quartzService.deleteJob(name, group);
+        quartzService.deleteTrigger(TriggerKey.triggerKey(name, group));
+        quartzService.deleteJob(JobKey.jobKey(name, group));
         return ResultInfo.success(null);
     }
 }
