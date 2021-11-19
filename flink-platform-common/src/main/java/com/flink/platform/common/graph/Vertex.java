@@ -1,14 +1,19 @@
 package com.flink.platform.common.graph;
 
-import lombok.Data;
+import com.flink.platform.common.util.Preconditions;
+import lombok.Getter;
 
 import java.util.Objects;
 
 /** Base class for vertex. */
-@Data
+@Getter
 public class Vertex<ID> {
 
     private final ID id;
+
+    public Vertex(ID id) {
+        this.id = Preconditions.checkNotNull(id);
+    }
 
     @Override
     public final boolean equals(Object o) {

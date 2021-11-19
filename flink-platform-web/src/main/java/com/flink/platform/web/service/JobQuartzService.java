@@ -5,6 +5,7 @@ import com.flink.platform.common.enums.ResponseStatus;
 import com.flink.platform.common.exception.DefinitionException;
 import com.flink.platform.dao.entity.JobInfo;
 import com.flink.platform.dao.service.JobInfoService;
+import com.flink.platform.web.entity.JobQuartzInfo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,7 +28,8 @@ public class JobQuartzService {
             throw new DefinitionException(ResponseStatus.SERVICE_ERROR);
         }
         // 移除job quartz
-        this.quartzService.removeJob(jobInfo.getCode());
+        JobQuartzInfo jobQuartzInfo = new JobQuartzInfo(jobInfo);
+        this.quartzService.removeJob(jobQuartzInfo);
         return true;
     }
 
@@ -38,7 +40,9 @@ public class JobQuartzService {
         if (!update) {
             throw new DefinitionException(ResponseStatus.SERVICE_ERROR);
         }
-        quartzService.removeJob(jobInfo.getCode());
-        return quartzService.addJobToQuartz(jobInfo);
+
+        JobQuartzInfo jobQuartzInfo = new JobQuartzInfo(jobInfo);
+        quartzService.removeJob(jobQuartzInfo);
+        return quartzService.addJobToQuartz(jobQuartzInfo);
     }
 }

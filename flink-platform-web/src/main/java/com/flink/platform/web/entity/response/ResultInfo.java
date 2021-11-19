@@ -2,15 +2,11 @@ package com.flink.platform.web.entity.response;
 
 import com.flink.platform.common.enums.ResponseStatus;
 import com.flink.platform.common.exception.DefinitionException;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /** Response skeleton. */
-@Builder
 @Data
-@AllArgsConstructor
 @NoArgsConstructor
 public class ResultInfo<T> {
 
@@ -42,6 +38,13 @@ public class ResultInfo<T> {
         ResultInfo<T> result = new ResultInfo<>();
         result.setDesc(responseStatus.getDesc());
         result.setCode(responseStatus.getCode());
+        return result;
+    }
+
+    public static <T> ResultInfo<T> failure(ResponseStatus responseStatus, String errorMsg) {
+        ResultInfo<T> result = new ResultInfo<>();
+        result.setCode(responseStatus.getCode());
+        result.setDesc(errorMsg);
         return result;
     }
 }

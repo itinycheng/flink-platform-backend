@@ -13,6 +13,7 @@ import com.flink.platform.dao.entity.JobRunInfo;
 import com.flink.platform.dao.service.JobInfoService;
 import com.flink.platform.dao.service.JobRunInfoService;
 import com.flink.platform.web.constants.UserGroupConst;
+import com.flink.platform.web.entity.JobQuartzInfo;
 import com.flink.platform.web.entity.request.UserGroupRequest;
 import com.flink.platform.web.entity.response.ResultInfo;
 import com.flink.platform.web.parser.SqlIdentifier;
@@ -91,8 +92,9 @@ public class UserGroupController {
             }
             boolean bool = jobInfoService.saveOrUpdate(jobInfo);
             if (bool && userGroupRequest.getId() == null) {
-                quartzService.runOnce(jobInfo);
-                quartzService.addJobToQuartz(jobInfo);
+                JobQuartzInfo jobQuartzInfo = new JobQuartzInfo(jobInfo);
+                quartzService.runOnce(jobQuartzInfo);
+                quartzService.addJobToQuartz(jobQuartzInfo);
             }
             return ResultInfo.success(jobInfo.getId());
         } catch (Exception e) {
