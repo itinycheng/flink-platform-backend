@@ -7,15 +7,15 @@ import java.util.Objects;
 
 /** edge. */
 @Getter
-public class Edge<Vertex> {
+public class Edge<VId> {
 
-    private final Vertex fromVertex;
+    private final VId fromVId;
 
-    private final Vertex toVertex;
+    private final VId toVId;
 
-    public Edge(Vertex fromVertex, Vertex toVertex) {
-        this.fromVertex = Preconditions.checkNotNull(fromVertex);
-        this.toVertex = Preconditions.checkNotNull(toVertex);
+    public Edge(VId fromVId, VId toVId) {
+        this.fromVId = Preconditions.checkNotNull(fromVId);
+        this.toVId = Preconditions.checkNotNull(toVId);
     }
 
     @Override
@@ -27,11 +27,15 @@ public class Edge<Vertex> {
             return false;
         }
         Edge<?> edge = (Edge<?>) o;
-        return fromVertex.equals(edge.fromVertex) && toVertex.equals(edge.toVertex);
+        return fromVId.equals(edge.fromVId) && toVId.equals(edge.toVId);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(fromVertex, toVertex);
+        return Objects.hash(fromVId, toVId);
+    }
+
+    public <T> T unwrap(Class<T> clazz) {
+        return clazz.isInstance(this) ? clazz.cast(this) : null;
     }
 }

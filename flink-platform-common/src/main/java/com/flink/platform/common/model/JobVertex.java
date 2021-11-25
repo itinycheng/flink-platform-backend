@@ -1,8 +1,8 @@
 package com.flink.platform.common.model;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.flink.platform.common.enums.ExecutionStatus;
 import com.flink.platform.common.graph.Vertex;
+import com.flink.platform.common.util.Preconditions;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -11,7 +11,7 @@ import lombok.Setter;
 @Setter
 public class JobVertex extends Vertex<Long> {
 
-    private Long jobId;
+    private final Long jobId;
 
     private Long jobRunId;
 
@@ -19,13 +19,8 @@ public class JobVertex extends Vertex<Long> {
 
     private ExecutionCondition precondition;
 
-    @JsonIgnore private Object object;
-
-    public JobVertex(Long id) {
+    public JobVertex(Long id, Long jobId) {
         super(id);
-    }
-
-    public <T> T unwrapObject(Class<T> clazz) {
-        return clazz.isInstance(object) ? clazz.cast(object) : null;
+        this.jobId = Preconditions.checkNotNull(jobId);
     }
 }

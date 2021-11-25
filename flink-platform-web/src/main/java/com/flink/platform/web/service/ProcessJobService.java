@@ -55,7 +55,7 @@ public class ProcessJobService {
         this.jobCommandExecutors = jobCommandExecutors;
     }
 
-    public Long processJob(final String jobCode) throws Exception {
+    public Long processJob(final String jobCode, final Long flowRunId) throws Exception {
         JobCommand jobCommand = null;
         JobInfo jobInfo = null;
 
@@ -126,6 +126,7 @@ public class ProcessJobService {
             jobRunInfo.setJobType(jobInfo.getType());
             jobRunInfo.setJobVersion(jobInfo.getVersion());
             jobRunInfo.setJobDeployMode(jobInfo.getDeployMode());
+            jobRunInfo.setFlowRunId(flowRunId);
             jobRunInfo.setStatus(getInitExecutionStatus(jobType).getCode());
             jobRunInfo.setVariables(JsonUtil.toJsonString(sqlVarValueMap));
             jobRunInfo.setBackInfo(JsonUtil.toJsonString(callback));

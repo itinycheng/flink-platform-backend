@@ -41,7 +41,8 @@ public class JobRunInfo implements Serializable {
 
     private String jobRouteUrl;
 
-    /** 0: unknown, 1: running, 2: finished, 3: failure. */
+    private Long flowRunId;
+
     private Integer status;
 
     /** sql variables type `Map[String, String]`. */

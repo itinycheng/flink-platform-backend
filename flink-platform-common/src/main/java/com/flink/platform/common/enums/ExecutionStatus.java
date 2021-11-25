@@ -3,7 +3,7 @@ package com.flink.platform.common.enums;
 import java.util.ArrayList;
 import java.util.List;
 
-/** job yarn status enums. */
+/** Execution status enums, used for Job and JobFlow. */
 public enum ExecutionStatus {
     UNDEFINED(-1, TerminalState.NON_TERMINAL),
     SUBMITTED(0, TerminalState.NON_TERMINAL),
@@ -43,5 +43,19 @@ public enum ExecutionStatus {
             }
         }
         return statusList;
+    }
+
+    public boolean isErrTerminalState() {
+        return this == FAILED || this == KILLED || this == ABNORMAL;
+    }
+
+    public static ExecutionStatus from(Integer code) {
+        for (ExecutionStatus value : values()) {
+            if (value.code == code) {
+                return value;
+            }
+        }
+
+        throw new IllegalArgumentException("Unknown execution status code: " + code);
     }
 }

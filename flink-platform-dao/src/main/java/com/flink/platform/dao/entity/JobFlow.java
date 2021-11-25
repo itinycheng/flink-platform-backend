@@ -35,6 +35,9 @@ public class JobFlow {
     /** user id. */
     private Long userId;
 
+    /** job flow description. */
+    private String description;
+
     /** crontab. */
     private String cronExpr;
 
@@ -45,8 +48,7 @@ public class JobFlow {
     /** version, use for DAG backward compatible? */
     private String version;
 
-    /** job flow description. */
-    private String description;
+    private Integer priority;
 
     /** email receivers. */
     @TableField(typeHandler = JacksonTypeHandler.class)

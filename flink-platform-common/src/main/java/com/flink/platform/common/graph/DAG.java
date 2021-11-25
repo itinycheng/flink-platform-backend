@@ -4,18 +4,22 @@ import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
+import static java.util.stream.Collectors.toList;
+
 /** Directed acyclic graph. */
 @Slf4j
 @Getter
-public class DAG<VId, V extends Vertex<VId>, E extends Edge<V>> {
+public class DAG<VId, V extends Vertex<VId>, E extends Edge<VId>> {
 
     private final ReadWriteLock lock = new ReentrantReadWriteLock();
 
@@ -46,8 +50,8 @@ public class DAG<VId, V extends Vertex<VId>, E extends Edge<V>> {
             if (!isLegalEdge(edge)) {
                 log.error(
                         "Add edge({} -> {}) is invalid, cause cycle.",
-                        edge.getFromVertex(),
-                        edge.getToVertex());
+                        edge.getFromVId(),
+                        edge.getToVId());
                 return false;
             }
 
@@ -58,82 +62,153 @@ public class DAG<VId, V extends Vertex<VId>, E extends Edge<V>> {
         }
     }
 
-    public Collection<V> getBeginVertices() {
-        Set<V> startVertices = new HashSet<>();
-        Set<V> endVertices = new HashSet<>();
-        for (E edge : edges) {
-            startVertices.add(edge.getFromVertex());
-            endVertices.add(edge.getToVertex());
+    public V getVertex(VId vertexId) {
+        for (V vertex : vertices) {
+            if (vertexId.equals(vertex.getId())) {
+                return vertex;
+            }
         }
-        return CollectionUtils.subtract(startVertices, endVertices);
+
+        throw new IllegalArgumentException("Vertex not found, vertexId = " + vertexId);
+    }
+
+    public Collection<E> getEdgesFromVertex(V fromVertex) {
+        lock.readLock().lock();
+
+        try {
+            List<E> vertices = new ArrayList<>();
+            for (E edge : edges) {
+                if (fromVertex.getId().equals(edge.getFromVId())) {
+                    vertices.add(edge);
+                }
+            }
+
+            return vertices;
+        } finally {
+            lock.readLock().unlock();
+        }
+    }
+
+    public Collection<V> getBeginVertices() {
+        lock.readLock().lock();
+
+        try {
+            Set<VId> startVertices = new HashSet<>();
+            Set<VId> endVertices = new HashSet<>();
+            for (E edge : edges) {
+                startVertices.add(edge.getFromVId());
+                endVertices.add(edge.getToVId());
+            }
+            return CollectionUtils.subtract(startVertices, endVertices).stream()
+                    .map(this::getVertex)
+                    .collect(toList());
+        } finally {
+            lock.readLock().unlock();
+        }
     }
 
     public Collection<V> getEndVertices() {
-        Set<V> startVertices = new HashSet<>();
-        Set<V> endVertices = new HashSet<>();
-        for (E edge : edges) {
-            startVertices.add(edge.getFromVertex());
-            endVertices.add(edge.getToVertex());
+        lock.readLock().lock();
+
+        try {
+            Set<VId> startVertices = new HashSet<>();
+            Set<VId> endVertices = new HashSet<>();
+            for (E edge : edges) {
+                startVertices.add(edge.getFromVId());
+                endVertices.add(edge.getToVId());
+            }
+            return CollectionUtils.subtract(endVertices, startVertices).stream()
+                    .map(this::getVertex)
+                    .collect(toList());
+        } finally {
+            lock.readLock().unlock();
         }
-        return CollectionUtils.subtract(endVertices, startVertices);
     }
 
     public Collection<V> getPreVertices(V vertex) {
-        Set<V> pre = new HashSet<>();
-        for (E edge : edges) {
-            if (vertex.equals(edge.getToVertex())) {
-                pre.add(edge.getFromVertex());
+        lock.readLock().lock();
+
+        try {
+            Set<VId> pre = new HashSet<>();
+            for (E edge : edges) {
+                if (vertex.equals(edge.getToVId())) {
+                    pre.add(edge.getFromVId());
+                }
             }
+            return pre.stream().map(this::getVertex).collect(toList());
+        } finally {
+            lock.readLock().unlock();
         }
-        return pre;
     }
 
     public Collection<V> getNextVertices(V vertex) {
-        Set<V> next = new HashSet<>();
+        lock.readLock().lock();
+
+        try {
+            Set<VId> next = new HashSet<>();
+            for (E edge : edges) {
+                if (vertex.equals(edge.getFromVId())) {
+                    next.add(edge.getToVId());
+                }
+            }
+            return next.stream().map(this::getVertex).collect(toList());
+        } finally {
+            lock.readLock().unlock();
+        }
+    }
+
+    public E getEdge(V fromVertex, V toVertex) {
         for (E edge : edges) {
-            if (vertex.equals(edge.getFromVertex())) {
-                next.add(edge.getToVertex());
+            if (edge.getFromVId().equals(fromVertex.getId())
+                    && edge.getToVId().equals(toVertex.getId())) {
+                return edge;
             }
         }
-        return next;
+
+        throw new IllegalArgumentException("No edge found");
     }
 
     private boolean isLegalEdge(E edge) {
-        if (!vertices.contains(edge.getFromVertex())) {
-            log.error("Edge fromVertex[{}] not found", edge.getFromVertex());
+        if (!vertices.contains(edge.getFromVId())) {
+            log.error("Edge fromVertex[{}] not found", edge.getFromVId());
             return false;
         }
 
-        if (!vertices.contains(edge.getToVertex())) {
-            log.error("Edge toVertex[{}] not found", edge.getToVertex());
+        if (!vertices.contains(edge.getToVId())) {
+            log.error("Edge toVertex[{}] not found", edge.getToVId());
             return false;
         }
 
-        if (edge.getFromVertex().equals(edge.getToVertex())) {
+        if (edge.getFromVId().equals(edge.getToVId())) {
             log.error(
                     "Edge fromNode({}) can't equals toNode({})",
-                    edge.getFromVertex(),
-                    edge.getToVertex());
+                    edge.getFromVId(),
+                    edge.getToVId());
             return false;
         }
 
         // Determine whether the DAG has cycled.
-        V fromVertex = edge.getFromVertex();
-        Queue<V> queue = new LinkedList<>();
-        queue.add(edge.getToVertex());
+        VId fromVertex = edge.getFromVId();
+        Queue<VId> queue = new LinkedList<>();
+        queue.add(edge.getToVId());
         while (!queue.isEmpty()) {
-            V key = queue.poll();
+            VId key = queue.poll();
             for (E e : edges) {
-                if (key.equals(e.getFromVertex())) {
-                    if (fromVertex.equals(e.getToVertex())) {
+                if (key.equals(e.getFromVId())) {
+                    if (fromVertex.equals(e.getToVId())) {
                         return false;
                     }
 
-                    queue.add(e.getToVertex());
+                    queue.add(e.getToVId());
                 }
             }
         }
 
         return true;
+    }
+
+    // TODO
+    public boolean hasCycle() {
+        return false;
     }
 }
