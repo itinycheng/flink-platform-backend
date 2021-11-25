@@ -15,7 +15,11 @@ import java.util.Map;
 @Data
 public class JobQuartzInfo implements IQuartzInfo {
 
+    public static final String FLOW_RUN_ID = "flow_run_id";
+
     private final JobInfo jobInfo;
+
+    private Map<String, Object> data;
 
     @Override
     public JobKey getJobKey() {
@@ -29,7 +33,15 @@ public class JobQuartzInfo implements IQuartzInfo {
 
     @Override
     public Map<String, Object> getData() {
-        return new HashMap<>();
+        return data;
+    }
+
+    public Map<String, Object> addData(String key, Object value) {
+        if (data == null) {
+            data = new HashMap<>();
+        }
+        data.put(key, value);
+        return data;
     }
 
     private String getName() {
@@ -37,7 +49,7 @@ public class JobQuartzInfo implements IQuartzInfo {
     }
 
     private String getGroup() {
-        //"JOB_INFO";
+        // "JOB_INFO";
         return Key.DEFAULT_GROUP;
     }
 

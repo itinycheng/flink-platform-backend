@@ -8,19 +8,12 @@ import lombok.Setter;
 /** json edge. */
 @Getter
 @Setter
-public class JobEdge extends Edge<JobVertex> {
+public class JobEdge extends Edge<Long> {
 
     private ExecutionStatus expectStatus;
 
-    private ExecutionStatus actualStatus;
-
-    public JobEdge(
-            JobVertex fromVertex,
-            JobVertex toVertex,
-            ExecutionStatus expectStatus,
-            ExecutionStatus actualStatus) {
+    public JobEdge(Long fromVertex, Long toVertex, ExecutionStatus expectStatus) {
         super(fromVertex, toVertex);
         this.expectStatus = expectStatus;
-        this.actualStatus = actualStatus;
     }
 }

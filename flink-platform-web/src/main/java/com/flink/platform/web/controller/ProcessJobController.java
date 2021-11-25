@@ -29,13 +29,13 @@ public class ProcessJobController {
 
     @Autowired private ProcessJobStatusService processJobStatusService;
 
-    @GetMapping(value = "/process/{jobCode}")
-    public ResultInfo<Long> process(@PathVariable String jobCode) {
+    @GetMapping(value = "/process/{jobCode}/{flowRunId}")
+    public ResultInfo<Long> process(@PathVariable String jobCode, @PathVariable Long flowRunId) {
         try {
             if (StringUtils.isBlank(jobCode)) {
                 return ResultInfo.failure(ERROR_PARAMETER);
             }
-            Long jobRunId = processJobService.processJob(jobCode);
+            Long jobRunId = processJobService.processJob(jobCode, flowRunId);
             return ResultInfo.success(jobRunId);
         } catch (Exception e) {
             log.error("Cannot exec job: {}", jobCode, e);

@@ -5,10 +5,13 @@ import com.flink.platform.common.enums.JobStatus;
 import com.flink.platform.dao.entity.JobInfo;
 import com.flink.platform.dao.service.JobInfoService;
 import com.flink.platform.web.common.SpringContext;
+import com.flink.platform.web.entity.JobQuartzInfo;
 import com.flink.platform.web.entity.response.ResultInfo;
 import com.flink.platform.web.util.HttpUtil;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.quartz.Job;
+import org.quartz.JobDataMap;
 import org.quartz.JobDetail;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobKey;
@@ -23,7 +26,7 @@ import java.util.concurrent.ConcurrentHashMap;
 @Slf4j
 public class JobRunner implements Job {
 
-    private static final String JOB_PROCESS_REST_PATH = "/internal/process/%s";
+    private static final String JOB_PROCESS_REST_PATH = "/internal/process/%s/%s";
 
     private static final Map<String, Long> RUNNER_MAP = new ConcurrentHashMap<>();
 
@@ -34,6 +37,7 @@ public class JobRunner implements Job {
     @Override
     public void execute(JobExecutionContext context) {
         JobDetail detail = context.getJobDetail();
+        JobDataMap jobDataMap = detail.getJobDataMap();
         JobKey key = detail.getKey();
         String code = key.getName();
 
@@ -65,7 +69,9 @@ public class JobRunner implements Job {
             routeUrl = HttpUtil.getUrlOrDefault(routeUrl);
 
             // Step 3: send http request.
-            String httpUri = routeUrl + String.format(JOB_PROCESS_REST_PATH, code);
+            String flowRunId = (String) jobDataMap.get(JobQuartzInfo.FLOW_RUN_ID);
+            flowRunId = StringUtils.defaultString(flowRunId, "");
+            String httpUri = routeUrl + String.format(JOB_PROCESS_REST_PATH, code, flowRunId);
             ResultInfo<Long> response =
                     restTemplate
                             .exchange(
