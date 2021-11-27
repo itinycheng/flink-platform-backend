@@ -65,4 +65,6 @@ public class JobRunInfo implements Serializable {
 
     /** stop time. */
     private LocalDateTime stopTime;
+
+    private LocalDateTime createTime;
 }

@@ -7,12 +7,11 @@ import java.net.InetAddress;
 /** constant. */
 public class Constant {
 
-    public static final String HOST_IP =
-            FunctionUtil.getOrDefault(() -> InetAddress.getLocalHost().getHostAddress(), "");
+    public static final String HOST_IP;
 
-    public static final String ROOT_DIR = System.getProperty("user.dir");
+    public static final String ROOT_DIR;
 
-    public static final String PATH_SEPARATOR = System.getProperty("path.separator");
+    public static final String PATH_SEPARATOR;
 
     public static final String COMMA = ",";
 
@@ -51,4 +50,10 @@ public class Constant {
     public static final String EQUAL = "=";
 
     public static final String SLASH = "/";
+
+    static {
+        PATH_SEPARATOR = System.getProperty("path.separator");
+        ROOT_DIR = System.getProperty("user.dir");
+        HOST_IP = FunctionUtil.getOrDefault(() -> InetAddress.getLocalHost().getHostAddress(), "");
+    }
 }

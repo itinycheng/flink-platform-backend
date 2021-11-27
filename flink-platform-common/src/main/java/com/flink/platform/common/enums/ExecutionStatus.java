@@ -5,13 +5,15 @@ import java.util.List;
 
 /** Execution status enums, used for Job and JobFlow. */
 public enum ExecutionStatus {
-    UNDEFINED(-1, TerminalState.NON_TERMINAL),
     SUBMITTED(0, TerminalState.NON_TERMINAL),
     RUNNING(1, TerminalState.NON_TERMINAL),
     SUCCEEDED(2, TerminalState.TERMINAL),
     FAILED(3, TerminalState.TERMINAL),
     KILLED(4, TerminalState.TERMINAL),
-    ABNORMAL(5, TerminalState.TERMINAL);
+    ABNORMAL(5, TerminalState.TERMINAL),
+
+    /** Only for job run. */
+    RETRY(6, TerminalState.NON_TERMINAL);
 
     private enum TerminalState {
         TERMINAL,

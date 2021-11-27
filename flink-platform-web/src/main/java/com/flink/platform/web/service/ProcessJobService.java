@@ -162,7 +162,7 @@ public class ProcessJobService {
             case COMMON_JAR:
                 return ExecutionStatus.SUCCEEDED;
             default:
-                return ExecutionStatus.UNDEFINED;
+                return ExecutionStatus.SUBMITTED;
         }
     }
 }

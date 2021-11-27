@@ -131,7 +131,7 @@ public class DAG<VId, V extends Vertex<VId>, E extends Edge<VId>> {
         try {
             Set<VId> pre = new HashSet<>();
             for (E edge : edges) {
-                if (vertex.equals(edge.getToVId())) {
+                if (vertex.getId().equals(edge.getToVId())) {
                     pre.add(edge.getFromVId());
                 }
             }
@@ -169,12 +169,12 @@ public class DAG<VId, V extends Vertex<VId>, E extends Edge<VId>> {
     }
 
     private boolean isLegalEdge(E edge) {
-        if (!vertices.contains(edge.getFromVId())) {
+        if (!vertices.contains(getVertex(edge.getFromVId()))) {
             log.error("Edge fromVertex[{}] not found", edge.getFromVId());
             return false;
         }
 
-        if (!vertices.contains(edge.getToVId())) {
+        if (!vertices.contains(getVertex(edge.getToVId()))) {
             log.error("Edge toVertex[{}] not found", edge.getToVId());
             return false;
         }
