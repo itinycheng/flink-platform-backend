@@ -1,23 +1,32 @@
 package com.flink.platform.common.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.flink.platform.common.enums.ExecutionStatus;
 import com.flink.platform.common.graph.Vertex;
 import com.flink.platform.common.util.Preconditions;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.ToString;
+
+import java.time.LocalDateTime;
+
+import static com.flink.platform.common.model.ExecutionCondition.AND;
 
 /** Job vertex. */
 @Getter
 @Setter
+@ToString
 public class JobVertex extends Vertex<Long> {
 
     private final Long jobId;
 
-    private Long jobRunId;
+    private ExecutionCondition precondition = AND;
 
-    private ExecutionStatus jobRunStatus;
+    @JsonIgnore private transient LocalDateTime submitTime;
 
-    private ExecutionCondition precondition;
+    @JsonIgnore private transient Long jobRunId;
+
+    @JsonIgnore private transient ExecutionStatus jobRunStatus;
 
     public JobVertex(Long id, Long jobId) {
         super(id);

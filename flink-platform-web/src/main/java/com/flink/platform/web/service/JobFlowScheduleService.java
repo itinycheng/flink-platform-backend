@@ -5,7 +5,9 @@ import com.flink.platform.common.enums.ExecutionStatus;
 import com.flink.platform.common.graph.DAG;
 import com.flink.platform.common.model.JobEdge;
 import com.flink.platform.common.model.JobVertex;
+import com.flink.platform.common.util.Preconditions;
 import com.flink.platform.dao.entity.JobFlowRun;
+import com.flink.platform.dao.entity.JobInfo;
 import com.flink.platform.dao.entity.JobRunInfo;
 import com.flink.platform.dao.service.JobFlowRunService;
 import com.flink.platform.dao.service.JobInfoService;
@@ -26,18 +28,16 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 import static com.flink.platform.common.enums.ExecutionStatus.RUNNING;
 import static com.flink.platform.common.enums.ExecutionStatus.SUBMITTED;
-import static com.flink.platform.common.enums.ExecutionStatus.SUCCEEDED;
 import static com.flink.platform.web.entity.JobQuartzInfo.FLOW_RUN_ID;
 import static java.util.stream.Collectors.toList;
 
@@ -46,9 +46,7 @@ import static java.util.stream.Collectors.toList;
 @Service
 public class JobFlowScheduleService {
 
-    public static final Map<String, Object> FLOW_LOCK_MAP = new ConcurrentHashMap<>();
-
-    public static final Map<String, FlowContainer> IN_FLIGHT_FLOWS =
+    private static final Map<String, FlowContainer> IN_FLIGHT_FLOWS =
             Collections.synchronizedMap(
                     new TreeMap<String, FlowContainer>(Comparator.reverseOrder()));
 
@@ -69,9 +67,8 @@ public class JobFlowScheduleService {
 
     @Autowired private JobFlowRunService jobFlowRunService;
 
-    @Scheduled(cron = "0 0/5 * * * ?")
+    @Scheduled(cron = "0 0/10 * * * ?")
     public void schedule() {
-        // job flow
         for (FlowContainer container : IN_FLIGHT_FLOWS.values()) {
             JobFlowRun jobFlowRun = container.getJobFlowRun();
             switch (container.getStatus()) {
@@ -87,7 +84,6 @@ public class JobFlowScheduleService {
                             jobFlowRun.getId(),
                             jobFlowRun.getStatus());
                     break;
-                case UNDEFINED:
                 default:
                     log.error(
                             "Job flow run :{} is in unexpected status {}",
@@ -98,144 +94,106 @@ public class JobFlowScheduleService {
         }
     }
 
-    @Transactional(rollbackFor = Exception.class)
-    public void processFlow(FlowContainer container) {
-
-        // step 0: if not started, process immediately.
-        if (container.getStatus() == SUBMITTED) {
-            processVertices(container.pendingVertexMap.values(), container);
-        }
-
-        // TODO step 0: update interval check.
-
-        // step 1: update status in pendingMap, and remove vertices in pendingMap whose status is
-        // terminated.
-        updateVertexStatusInPendingMap(container);
-
-        Map<Long, JobVertex> pendingVertexMap = container.getPendingVertexMap();
-        JobFlowRun jobFlowRun = container.getJobFlowRun();
-
-        // step 2: precondition check and pending the executable vertices.
-
-        // Get the edges whose status matched his formVertex's status.
+    public void registerToScheduler(JobFlowRun jobFlowRun) {
         DAG<Long, JobVertex, JobEdge> flow = jobFlowRun.getFlow();
-        List<JobEdge> statusMatchedEdgeList =
-                pendingVertexMap.values().stream()
-                        .flatMap(
-                                fromVertex ->
-                                        flow.getEdgesFromVertex(fromVertex).stream()
-                                                .map(edge -> edge.unwrap(JobEdge.class))
-                                                .filter(
-                                                        edge ->
-                                                                edge.getExpectStatus()
-                                                                        == fromVertex
-                                                                                .getJobRunStatus()))
-                        .collect(toList());
-
-        // Only execute edge with failed status, if there are any.
-        List<JobEdge> failedEdges =
-                statusMatchedEdgeList.stream()
-                        .filter(edge -> edge.getExpectStatus().isErrTerminalState())
-                        .collect(toList());
-        if (CollectionUtils.isNotEmpty(failedEdges)) {
-            statusMatchedEdgeList = failedEdges;
-            pendingVertexMap.clear();
+        if (flow == null || CollectionUtils.isEmpty(flow.getVertices())) {
+            log.warn(
+                    "No JobVertex found, no scheduling required, flow run id: {}",
+                    jobFlowRun.getId());
+            return;
         }
 
-        // Put the executable vertices into pendingMap.
-        statusMatchedEdgeList.stream()
-                .map(edge -> flow.getVertex(edge.getToVId()))
-                .filter(toVertex -> JobFlowDagHelper.isPreconditionSatisfied(toVertex, flow))
-                .filter(toVertex -> toVertex.getJobRunId() == null)
-                .forEach(jobVertex -> pendingVertexMap.put(jobVertex.getId(), jobVertex));
-
-        // Remove the fromVertices whose edge status is matched.
-        statusMatchedEdgeList.forEach(edge -> pendingVertexMap.remove(edge.getFromVId()));
-
-        // step 3: schedule vertex.
-        List<JobVertex> toBeScheduledVertices =
-                pendingVertexMap.values().stream()
-                        .filter(vertex -> vertex.getJobRunId() == null)
-                        .collect(toList());
-        processVertices(toBeScheduledVertices, container);
-
-        // step 4: if there are no unreached vertices, remove the container form scheduler.
-        List<JobVertex> unreachedVertex =
-                pendingVertexMap.values().stream()
-                        .flatMap(vertex -> flow.getNextVertices(vertex).stream())
-                        .collect(toList());
-        if (CollectionUtils.isEmpty(unreachedVertex)) {
-            // TODO change job flow run status in mysql.
-            container.setStatus(SUCCEEDED);
-            IN_FLIGHT_FLOWS.remove(container.getId());
-        }
+        String flowKey =
+                String.join(
+                        "-", jobFlowRun.getPriority().toString(), jobFlowRun.getId().toString());
+        FlowContainer container = new FlowContainer(flowKey, jobFlowRun);
+        container.setStatus(SUBMITTED);
+        container.setSubmitTime(LocalDateTime.now());
+        IN_FLIGHT_FLOWS.put(flowKey, container);
     }
 
-    private void updateVertexStatusInPendingMap(FlowContainer container) {
-        JobFlowRun jobFlowRun = container.getJobFlowRun();
-        Map<Long, JobVertex> pendingVertexMap = container.getPendingVertexMap();
-        List<Long> nonTerminalJobIdList =
-                pendingVertexMap.values().stream()
-                        .filter(
-                                jobVertex ->
-                                        jobVertex.getJobRunStatus() == null
-                                                || !jobVertex.getJobRunStatus().isTerminalState())
-                        .map(JobVertex::getJobId)
-                        .collect(toList());
-        List<JobRunInfo> jobRunInfoList =
-                jobRunInfoService.list(
-                        new QueryWrapper<JobRunInfo>()
-                                .lambda()
-                                .eq(JobRunInfo::getFlowRunId, jobFlowRun.getId())
-                                .in(JobRunInfo::getJobId, nonTerminalJobIdList));
+    @Transactional(rollbackFor = Exception.class)
+    public void processFlow(FlowContainer container) {
+        // TODO step 0: update interval check, handle begin vertices, use statusChanged.
+        // step 1: update status in flow.
+        updateJobVertexStatus(container);
 
-        // Update job vertex status.
-        for (JobRunInfo jobRunInfo : jobRunInfoList) {
-            JobVertex jobVertex = pendingVertexMap.get(jobRunInfo.getJobId());
-            jobVertex.setJobRunId(jobRunInfo.getId());
-            jobVertex.setJobRunStatus(ExecutionStatus.from(jobRunInfo.getStatus()));
+        // step 2: Get the executable vertices and schedule them.
+        JobFlowRun jobFlowRun = container.getJobFlowRun();
+        DAG<Long, JobVertex, JobEdge> flow = jobFlowRun.getFlow();
+        Set<JobVertex> executableVertices = JobFlowDagHelper.getExecutableVertices(flow);
+        if (CollectionUtils.isNotEmpty(executableVertices)) {
+            processVertices(executableVertices, container);
+        }
+
+        // step 3: update status in cache.
+        container.setStatus(RUNNING);
+        executableVertices.forEach(jobVertex -> jobVertex.setSubmitTime(LocalDateTime.now()));
+
+        // TODO Special handle logic for streaming job?
+        // step 4: if there are no executable vertices and all executed vertices in terminal state,
+        // remove the container form scheduler.
+        if (CollectionUtils.isEmpty(executableVertices)) {
+            if (flow.getVertices().stream()
+                    .filter(jobVertex -> jobVertex.getSubmitTime() != null)
+                    .allMatch(
+                            jobVertex ->
+                                    jobVertex.getJobRunStatus() != null
+                                            && jobVertex.getJobRunStatus().isTerminalState())) {
+                IN_FLIGHT_FLOWS.remove(container.getId());
+                JobFlowRun newJobFlowRun = new JobFlowRun();
+                newJobFlowRun.setStatus(JobFlowDagHelper.getDagState(flow));
+            }
         }
     }
 
     @Transactional(rollbackFor = Exception.class)
     public void processVertices(Collection<JobVertex> jobVertices, FlowContainer container) {
         JobFlowRun jobFlowRun = container.getJobFlowRun();
-        List<Long> toBeExecutedJobIds =
-                jobVertices.stream().map(JobVertex::getJobId).collect(toList());
+        jobVertices.forEach(
+                jobVertex -> {
+                    JobInfo jobInfo = jobInfoService.getById(jobVertex.getJobId());
+                    JobQuartzInfo jobQuartzInfo = new JobQuartzInfo(jobInfo);
+                    jobQuartzInfo.addData(FLOW_RUN_ID, jobFlowRun.getId().toString());
+                    quartzService.runOnce(jobQuartzInfo);
+                });
 
-        // schedule job.
-        jobInfoService
-                .listByIds(toBeExecutedJobIds)
-                .forEach(
-                        jobInfo -> {
-                            JobQuartzInfo jobQuartzInfo = new JobQuartzInfo(jobInfo);
-                            jobQuartzInfo.addData(FLOW_RUN_ID, jobFlowRun.getId().toString());
-                            quartzService.runOnce(jobQuartzInfo);
-                        });
-
-        // update JobFlowRun's status
-        JobFlowRun newJobFlowRun = new JobFlowRun();
-        newJobFlowRun.setId(jobFlowRun.getId());
-        newJobFlowRun.setStatus(RUNNING);
-        jobFlowRunService.updateById(newJobFlowRun);
-
-        // update container
-        container.setProcessTime(LocalDateTime.now());
-        container.setStatus(RUNNING);
+        if (container.getStatus() == SUBMITTED) {
+            // update JobFlowRun's status
+            JobFlowRun newJobFlowRun = new JobFlowRun();
+            newJobFlowRun.setId(jobFlowRun.getId());
+            newJobFlowRun.setStatus(RUNNING);
+            jobFlowRunService.updateById(newJobFlowRun);
+        }
     }
 
-    public void registerToScheduler(JobFlowRun jobFlowRun) {
-        // cache job flow run.
-        Map<Long, JobVertex> pendingVertexMap =
-                jobFlowRun.getFlow().getBeginVertices().stream()
-                        .collect(Collectors.toMap(JobVertex::getId, jobVertex -> jobVertex));
-        String flowKey =
-                String.join(
-                        "-", jobFlowRun.getPriority().toString(), jobFlowRun.getId().toString());
+    private void updateJobVertexStatus(FlowContainer container) {
+        JobFlowRun jobFlowRun = container.getJobFlowRun();
+        DAG<Long, JobVertex, JobEdge> flow = jobFlowRun.getFlow();
+        List<Long> nonTerminalJobIdList =
+                flow.getVertices().stream()
+                        .filter(
+                                jobVertex ->
+                                        jobVertex.getJobRunStatus() == null
+                                                || !jobVertex.getJobRunStatus().isTerminalState())
+                        .map(JobVertex::getJobId)
+                        .collect(toList());
+        if (CollectionUtils.isEmpty(nonTerminalJobIdList)) {
+            return;
+        }
 
-        FlowContainer container = new FlowContainer(flowKey, jobFlowRun, pendingVertexMap);
-        container.setStatus(SUBMITTED);
-        IN_FLIGHT_FLOWS.put(flowKey, container);
+        // Get the latest status and update the job vertices' status in cache.
+        List<JobRunInfo> jobRunInfoList =
+                jobRunInfoService.list(
+                        new QueryWrapper<JobRunInfo>()
+                                .lambda()
+                                .eq(JobRunInfo::getFlowRunId, jobFlowRun.getId())
+                                .in(JobRunInfo::getJobId, nonTerminalJobIdList));
+        for (JobRunInfo jobRunInfo : jobRunInfoList) {
+            JobVertex jobVertex = flow.getVertex(jobRunInfo.getJobId());
+            jobVertex.setJobRunId(jobRunInfo.getId());
+            jobVertex.setJobRunStatus(ExecutionStatus.from(jobRunInfo.getStatus()));
+        }
     }
 
     @Data
@@ -245,24 +203,22 @@ public class JobFlowScheduleService {
 
         final JobFlowRun jobFlowRun;
 
-        final Map<Long, JobVertex> pendingVertexMap;
-
         ExecutionStatus status;
 
-        LocalDateTime processTime;
+        LocalDateTime submitTime;
     }
 
     class JobFlowExecuteThread implements Runnable {
 
-        FlowContainer container;
+        final FlowContainer container;
 
         public JobFlowExecuteThread(FlowContainer container) {
-            this.container = container;
+            this.container = Preconditions.checkNotNull(container);
         }
 
         @Override
         public void run() {
-            synchronized (getProcessLock(container.getId())) {
+            synchronized (container) {
                 ExecutionStatus status = container.getStatus();
                 if (status == SUBMITTED || status == RUNNING) {
                     JobFlowScheduleService.this.processFlow(container);
@@ -270,15 +226,6 @@ public class JobFlowScheduleService {
                     log.warn("Unexpected status: {}", status);
                 }
             }
-        }
-
-        private Object getProcessLock(String flowKey) {
-            Object newLock = new Object();
-            Object lock = FLOW_LOCK_MAP.putIfAbsent(flowKey, newLock);
-            if (lock == null) {
-                lock = newLock;
-            }
-            return lock;
         }
     }
 }
