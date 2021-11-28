@@ -28,37 +28,6 @@
 			<artifactId>flink-platform-udf</artifactId>
 			<version>${project.version}</version>
 		</dependency>
-		<dependency>
-			<groupId>org.apache.flink</groupId>
-			<artifactId>flink-table-common</artifactId>
-			<scope>compile</scope>
-			<exclusions>
-				<exclusion>
-					<groupId>org.apache.flink</groupId>
-					<artifactId>flink-connector-files</artifactId>
-				</exclusion>
-				<exclusion>
-					<groupId>org.apache.flink</groupId>
-					<artifactId>flink-shaded-asm-7</artifactId>
-				</exclusion>
-				<exclusion>
-					<groupId>org.apache.flink</groupId>
-					<artifactId>flink-connector-files</artifactId>
-				</exclusion>
-				<exclusion>
-					<groupId>org.apache.flink</groupId>
-					<artifactId>flink-metrics-core</artifactId>
-				</exclusion>
-				<exclusion>
-					<groupId>org.apache.flink</groupId>
-					<artifactId>flink-shaded-guava</artifactId>
-				</exclusion>
-				<exclusion>
-					<groupId>org.apache.flink</groupId>
-					<artifactId>force-shading</artifactId>
-				</exclusion>
-			</exclusions>
-		</dependency>
 		<!-- spring start -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>

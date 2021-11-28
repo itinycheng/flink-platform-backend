@@ -169,6 +169,12 @@ This file is based on the checkstyle file of Apache Beam.
 			<property name="illegalPattern" value="true"/>
 			<property name="message" value="Use com.fasterxml.jackson instead of jettison."/>
 		</module>
+		<module name="Regexp">
+			<property name="format" value="org\.apache\.commons\.collections\."/>
+			<property name="illegalPattern" value="true"/>
+			<property name="message"
+					  value="Use commons-collections4 instead of commons-collections."/>
+		</module>
 
 		<!-- Enforce Java-style array declarations -->
 		<module name="ArrayTypeStyle"/>

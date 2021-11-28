@@ -17,6 +17,7 @@ import com.flink.platform.web.util.JobFlowDagHelper;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.concurrent.BasicThreadFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -31,7 +32,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -57,7 +57,10 @@ public class JobFlowScheduleService {
                     0,
                     TimeUnit.MILLISECONDS,
                     new LinkedBlockingQueue<>(),
-                    Executors.defaultThreadFactory());
+                    new BasicThreadFactory.Builder()
+                            .namingPattern("JobFlowExecutor-%d")
+                            .daemon(false)
+                            .build());
 
     @Autowired private QuartzService quartzService;
 
@@ -156,6 +159,8 @@ public class JobFlowScheduleService {
                     JobQuartzInfo jobQuartzInfo = new JobQuartzInfo(jobInfo);
                     jobQuartzInfo.addData(FLOW_RUN_ID, jobFlowRun.getId().toString());
                     quartzService.runOnce(jobQuartzInfo);
+
+                    // TODO create job run info here is more reasonable.
                 });
 
         if (container.getStatus() == SUBMITTED) {
