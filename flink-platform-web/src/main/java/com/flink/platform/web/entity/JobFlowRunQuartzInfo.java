@@ -6,6 +6,7 @@ import org.quartz.Job;
 import org.quartz.JobKey;
 import org.quartz.TriggerKey;
 
+import java.util.HashMap;
 import java.util.Map;
 
 /** Job flow run quartz info. */
@@ -26,7 +27,7 @@ public class JobFlowRunQuartzInfo implements IQuartzInfo {
 
     @Override
     public Map<String, Object> getData() {
-        return null;
+        return new HashMap<>();
     }
 
     @Override

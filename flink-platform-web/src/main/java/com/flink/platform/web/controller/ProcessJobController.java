@@ -7,7 +7,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -15,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
+import java.util.Map;
 
 import static com.flink.platform.common.enums.ResponseStatus.ERROR_PARAMETER;
 import static com.flink.platform.common.enums.ResponseStatus.SERVICE_ERROR;
@@ -29,13 +29,14 @@ public class ProcessJobController {
 
     @Autowired private ProcessJobStatusService processJobStatusService;
 
-    @GetMapping(value = "/process/{jobCode}/{flowRunId}")
-    public ResultInfo<Long> process(@PathVariable String jobCode, @PathVariable Long flowRunId) {
+    @PostMapping(value = "/process/{jobCode}")
+    public ResultInfo<Long> process(
+            @PathVariable String jobCode, @RequestBody Map<String, Object> dataMap) {
         try {
             if (StringUtils.isBlank(jobCode)) {
                 return ResultInfo.failure(ERROR_PARAMETER);
             }
-            Long jobRunId = processJobService.processJob(jobCode, flowRunId);
+            Long jobRunId = processJobService.processJob(jobCode, dataMap);
             return ResultInfo.success(jobRunId);
         } catch (Exception e) {
             log.error("Cannot exec job: {}", jobCode, e);

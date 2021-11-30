@@ -5,28 +5,30 @@ import com.flink.platform.common.enums.JobStatus;
 import com.flink.platform.dao.entity.JobInfo;
 import com.flink.platform.dao.service.JobInfoService;
 import com.flink.platform.web.common.SpringContext;
-import com.flink.platform.web.entity.JobQuartzInfo;
 import com.flink.platform.web.entity.response.ResultInfo;
 import com.flink.platform.web.util.HttpUtil;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
 import org.quartz.Job;
 import org.quartz.JobDataMap;
 import org.quartz.JobDetail;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobKey;
 import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import static org.springframework.http.MediaType.APPLICATION_JSON;
+
 /** submit job. */
 @Slf4j
 public class JobRunner implements Job {
 
-    private static final String JOB_PROCESS_REST_PATH = "/internal/process/%s/%s";
+    private static final String JOB_PROCESS_REST_PATH = "/internal/process/%s";
 
     private static final Map<String, Long> RUNNER_MAP = new ConcurrentHashMap<>();
 
@@ -60,7 +62,7 @@ public class JobRunner implements Job {
                                             JobStatus.SCHEDULED.getCode(),
                                             JobStatus.READY.getCode()));
             if (jobInfo == null) {
-                log.warn("The job is no longer exists or not in ready/scheduled status, {}", code);
+                log.warn("The job: {} is no longer exists or not in ready/scheduled status.", code);
                 return;
             }
 
@@ -69,15 +71,17 @@ public class JobRunner implements Job {
             routeUrl = HttpUtil.getUrlOrDefault(routeUrl);
 
             // Step 3: send http request.
-            String flowRunId = (String) jobDataMap.get(JobQuartzInfo.FLOW_RUN_ID);
-            flowRunId = StringUtils.defaultString(flowRunId, "");
-            String httpUri = routeUrl + String.format(JOB_PROCESS_REST_PATH, code, flowRunId);
+            Map<String, Object> wrappedMap = jobDataMap.getWrappedMap();
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(APPLICATION_JSON);
+
+            String httpUri = routeUrl + String.format(JOB_PROCESS_REST_PATH, code);
             ResultInfo<Long> response =
                     restTemplate
                             .exchange(
                                     httpUri,
-                                    HttpMethod.GET,
-                                    null,
+                                    HttpMethod.POST,
+                                    new HttpEntity<>(wrappedMap, headers),
                                     new ParameterizedTypeReference<ResultInfo<Long>>() {})
                             .getBody();
             log.info("The job: {} is processed, job run result: {}", code, response);

@@ -38,7 +38,7 @@ import java.util.concurrent.TimeUnit;
 
 import static com.flink.platform.common.enums.ExecutionStatus.RUNNING;
 import static com.flink.platform.common.enums.ExecutionStatus.SUBMITTED;
-import static com.flink.platform.web.entity.JobQuartzInfo.FLOW_RUN_ID;
+import static com.flink.platform.web.entity.JobQuartzInfo.JOB_RUN_ID;
 import static java.util.stream.Collectors.toList;
 
 /** schedule job flow. */
@@ -70,8 +70,8 @@ public class JobFlowScheduleService {
 
     @Autowired private JobFlowRunService jobFlowRunService;
 
-    @Scheduled(cron = "0 0/10 * * * ?")
-    public void schedule() {
+    @Scheduled(fixedDelay = 10_000)
+    public void scheduleJobFlow() {
         for (FlowContainer container : IN_FLIGHT_FLOWS.values()) {
             JobFlowRun jobFlowRun = container.getJobFlowRun();
             switch (container.getStatus()) {
@@ -133,7 +133,7 @@ public class JobFlowScheduleService {
         container.setStatus(RUNNING);
         executableVertices.forEach(jobVertex -> jobVertex.setSubmitTime(LocalDateTime.now()));
 
-        // TODO Special handle logic for streaming job?
+        // TODO Special handle logic for streaming job and update flow status?
         // step 4: if there are no executable vertices and all executed vertices in terminal state,
         // remove the container form scheduler.
         if (CollectionUtils.isEmpty(executableVertices)) {
@@ -156,11 +156,17 @@ public class JobFlowScheduleService {
         jobVertices.forEach(
                 jobVertex -> {
                     JobInfo jobInfo = jobInfoService.getById(jobVertex.getJobId());
-                    JobQuartzInfo jobQuartzInfo = new JobQuartzInfo(jobInfo);
-                    jobQuartzInfo.addData(FLOW_RUN_ID, jobFlowRun.getId().toString());
-                    quartzService.runOnce(jobQuartzInfo);
+                    JobRunInfo jobRunInfo = new JobRunInfo();
+                    jobRunInfo.setJobId(jobInfo.getId());
+                    jobRunInfo.setDeployMode(jobInfo.getDeployMode());
+                    jobRunInfo.setFlowRunId(jobFlowRun.getId());
+                    jobRunInfo.setStatus(SUBMITTED.getCode());
+                    jobRunInfo.setCreateTime(LocalDateTime.now());
+                    jobRunInfoService.save(jobRunInfo);
 
-                    // TODO create job run info here is more reasonable.
+                    JobQuartzInfo jobQuartzInfo = new JobQuartzInfo(jobInfo);
+                    jobQuartzInfo.addData(JOB_RUN_ID, jobRunInfo.getId());
+                    quartzService.runOnce(jobQuartzInfo);
                 });
 
         if (container.getStatus() == SUBMITTED) {

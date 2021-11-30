@@ -57,7 +57,6 @@ public class InitJobFlowScheduler {
                                         ExecutionStatus.from(jobRunInfo.getStatus()));
                             });
 
-            // TODO 重启有些已经调度但并未入库的没办法 生成process time
             jobFlowScheduleService.registerToScheduler(jobFlowRun);
         }
     }

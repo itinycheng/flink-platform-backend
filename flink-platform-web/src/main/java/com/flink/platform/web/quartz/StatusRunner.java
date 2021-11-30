@@ -55,7 +55,7 @@ public class StatusRunner implements Job {
                                 groupingBy(
                                         jobRunInfo ->
                                                 StringUtils.defaultString(
-                                                        jobRunInfo.getJobRouteUrl())));
+                                                        jobRunInfo.getRouteUrl())));
 
         for (Entry<String, List<JobRunInfo>> entry : groupedJobRunList.entrySet()) {
             String routeUrl = HttpUtil.getUrlOrDefault(entry.getKey());
