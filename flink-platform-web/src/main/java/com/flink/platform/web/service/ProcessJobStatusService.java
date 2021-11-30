@@ -46,7 +46,7 @@ public class ProcessJobStatusService {
                 continue;
             }
 
-            final DeployMode deployMode = jobRunInfo.getJobDeployMode();
+            final DeployMode deployMode = jobRunInfo.getDeployMode();
             StatusInfo statusInfo =
                     statusFetchers.stream()
                             .filter(fetcher -> fetcher.isSupported(deployMode))

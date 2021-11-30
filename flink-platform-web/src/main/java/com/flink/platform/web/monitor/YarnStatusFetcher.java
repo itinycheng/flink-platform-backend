@@ -31,12 +31,12 @@ public class YarnStatusFetcher implements StatusFetcher {
 
     public StatusInfo getStatus(JobRunInfo jobRunInfo) {
         JobCallback jobCallback = JsonUtil.toBean(jobRunInfo.getBackInfo(), JobCallback.class);
-        String appId = jobCallback.getAppId();
-        ApplicationReport applicationReport = null;
-        if (StringUtils.isNotBlank(appId)) {
-            applicationReport = yarnClientService.getApplicationReport(appId);
+        if (jobCallback == null || StringUtils.isEmpty(jobCallback.getAppId())) {
+            return null;
         }
 
+        ApplicationReport applicationReport =
+                yarnClientService.getApplicationReport(jobCallback.getAppId());
         return applicationReport != null ? new YarnStatusInfo(applicationReport) : null;
     }
 }

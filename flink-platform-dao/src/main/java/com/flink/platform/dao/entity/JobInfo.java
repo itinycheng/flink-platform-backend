@@ -77,7 +77,7 @@ public class JobInfo implements Serializable {
     private Integer status;
 
     /** cron expression for the job. */
-    private String cronExpr;
+    @Deprecated private String cronExpr;
 
     /**
      * route url. <br>
@@ -86,13 +86,13 @@ public class JobInfo implements Serializable {
     private String routeUrl;
 
     /** create user. */
-    private String createUser;
+    @Deprecated private String createUser;
 
     /** create time. */
     private LocalDateTime createTime;
 
     /** update user. */
-    private String updateUser;
+    @Deprecated private String updateUser;
 
     /** update time. */
     private LocalDateTime updateTime;

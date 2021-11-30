@@ -28,6 +28,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
+import static com.flink.platform.web.entity.JobQuartzInfo.JOB_RUN_ID;
 import static java.util.stream.Collectors.toMap;
 
 /** Process job service. */
@@ -55,11 +56,15 @@ public class ProcessJobService {
         this.jobCommandExecutors = jobCommandExecutors;
     }
 
-    public Long processJob(final String jobCode, final Long flowRunId) throws Exception {
+    public Long processJob(final String jobCode, final Map<String, Object> dataMap)
+            throws Exception {
         JobCommand jobCommand = null;
         JobInfo jobInfo = null;
 
         try {
+
+            Long jobRunId = (Long) dataMap.get(JOB_RUN_ID);
+
             // step 1: get job info
             jobInfo =
                     jobInfoService.getOne(
@@ -110,6 +115,7 @@ public class ProcessJobService {
                             .buildCommand(jobInfo);
 
             // step 4: submit job
+            String commandString = jobCommand.toCommandString();
             JobCallback callback =
                     jobCommandExecutors.stream()
                             .filter(executor -> executor.isSupported(jobType))
@@ -118,28 +124,20 @@ public class ProcessJobService {
                                     () ->
                                             new JobCommandGenException(
                                                     "No available job command executor"))
-                            .execCommand(jobCommand.toCommandString());
+                            .execCommand(commandString);
 
             // step 5: write msg back to db
             JobRunInfo jobRunInfo = new JobRunInfo();
-            jobRunInfo.setJobId(jobInfo.getId());
-            jobRunInfo.setJobType(jobInfo.getType());
-            jobRunInfo.setJobVersion(jobInfo.getVersion());
-            jobRunInfo.setJobDeployMode(jobInfo.getDeployMode());
-            jobRunInfo.setFlowRunId(flowRunId);
+            jobRunInfo.setId(jobRunId);
+            jobRunInfo.setCommand(commandString);
             jobRunInfo.setStatus(getInitExecutionStatus(jobType).getCode());
             jobRunInfo.setVariables(JsonUtil.toJsonString(sqlVarValueMap));
             jobRunInfo.setBackInfo(JsonUtil.toJsonString(callback));
-            jobRunInfo.setSubmitUser("quartz");
             jobRunInfo.setSubmitTime(LocalDateTime.now());
-            jobRunInfoService.saveOrUpdate(jobRunInfo);
+            jobRunInfoService.updateById(jobRunInfo);
 
             // step 6: print job command info
-            log.info(
-                    "Job code: {}, time: {}, command: {}",
-                    jobCode,
-                    System.currentTimeMillis(),
-                    jobCommand.toCommandString());
+            log.info("Job: {} submitted, time: {}", jobCode, System.currentTimeMillis());
 
             return jobRunInfo.getId();
         } finally {
