@@ -25,6 +25,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Objects;
 
+import static com.flink.platform.common.enums.JobFlowStatus.ONLINE;
 import static com.flink.platform.common.enums.ResponseStatus.ERROR_PARAMETER;
 import static com.flink.platform.common.enums.ResponseStatus.NOT_RUNNABLE_STATUS;
 import static com.flink.platform.common.enums.ResponseStatus.SERVICE_ERROR;
@@ -135,7 +136,7 @@ public class JobFlowController {
     public ResultInfo<Long> runOnce(@PathVariable Long flowId) {
         JobFlow jobFlow = jobFlowService.getById(flowId);
         JobFlowStatus status = jobFlow.getStatus();
-        if (status == null || !status.isRunnable()) {
+        if (status != ONLINE) {
             return failure(NOT_RUNNABLE_STATUS);
         }
 

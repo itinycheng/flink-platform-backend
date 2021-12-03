@@ -28,6 +28,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
+import static com.flink.platform.common.enums.ExecutionStatus.SUCCEEDED;
 import static com.flink.platform.web.entity.JobQuartzInfo.JOB_RUN_ID;
 import static java.util.stream.Collectors.toMap;
 
@@ -62,8 +63,10 @@ public class ProcessJobService {
         JobInfo jobInfo = null;
 
         try {
-
-            Long jobRunId = (Long) dataMap.get(JOB_RUN_ID);
+            Long jobRunId = null;
+            if (dataMap != null && dataMap.get(JOB_RUN_ID) != null) {
+                jobRunId = ((Number) dataMap.get(JOB_RUN_ID)).longValue();
+            }
 
             // step 1: get job info
             jobInfo =
@@ -131,7 +134,7 @@ public class ProcessJobService {
                 JobRunInfo jobRunInfo = new JobRunInfo();
                 jobRunInfo.setId(jobRunId);
                 jobRunInfo.setCommand(commandString);
-                jobRunInfo.setStatus(getInitExecutionStatus(jobType).getCode());
+                jobRunInfo.setStatus(getExecutionStatus(jobType, callback).getCode());
                 jobRunInfo.setVariables(JsonUtil.toJsonString(sqlVarValueMap));
                 jobRunInfo.setBackInfo(JsonUtil.toJsonString(callback));
                 jobRunInfo.setSubmitTime(LocalDateTime.now());
@@ -156,11 +159,15 @@ public class ProcessJobService {
         }
     }
 
-    private ExecutionStatus getInitExecutionStatus(JobType jobType) {
+    private ExecutionStatus getExecutionStatus(JobType jobType, JobCallback callback) {
+        if (callback.getStatus() != SUCCEEDED) {
+            return callback.getStatus();
+        }
+
         switch (jobType) {
             case CLICKHOUSE_SQL:
             case COMMON_JAR:
-                return ExecutionStatus.SUCCEEDED;
+                return SUCCEEDED;
             default:
                 return ExecutionStatus.SUBMITTED;
         }

@@ -12,6 +12,8 @@ import org.springframework.stereotype.Component;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.flink.platform.common.enums.ExecutionStatus.FAILED;
+import static com.flink.platform.common.enums.ExecutionStatus.SUCCEEDED;
 import static com.flink.platform.common.enums.JobType.CLICKHOUSE_SQL;
 
 /** Clickhouse command executor. */
@@ -44,9 +46,11 @@ public class ClickhouseCommandExecutor implements CommandExecutor {
                             }
                         });
 
+        boolean isSucceed = exceptionMessages.isEmpty();
         return new JobCallback(
                 null,
                 null,
-                exceptionMessages.isEmpty() ? "success" : JsonUtil.toJsonString(exceptionMessages));
+                isSucceed ? "success" : JsonUtil.toJsonString(exceptionMessages),
+                isSucceed ? SUCCEEDED : FAILED);
     }
 }

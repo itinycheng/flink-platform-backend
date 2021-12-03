@@ -35,6 +35,21 @@ public class QuartzService {
     @Resource(name = "quartzScheduler")
     Scheduler scheduler;
 
+    public void waitForStarted() {
+        try {
+            int retry = 10;
+            while (--retry > 0) {
+                if (scheduler.isStarted()) {
+                    return;
+                } else {
+                    Thread.sleep(10_000);
+                }
+            }
+        } catch (Exception e) {
+            throw new QuartzException("Waiting for quartz start failed", e);
+        }
+    }
+
     /** add trigger or throw Exception. */
     public synchronized boolean addJobToQuartz(IQuartzInfo quartzInfo) {
         try {

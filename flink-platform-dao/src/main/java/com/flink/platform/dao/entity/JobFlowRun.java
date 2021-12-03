@@ -6,9 +6,6 @@ import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.baomidou.mybatisplus.extension.handlers.JacksonTypeHandler;
 import com.flink.platform.common.enums.ExecutionStatus;
-import com.flink.platform.common.graph.DAG;
-import com.flink.platform.common.model.JobEdge;
-import com.flink.platform.common.model.JobVertex;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -33,7 +30,7 @@ public class JobFlowRun {
     private Long flowId;
 
     @TableField(typeHandler = JacksonTypeHandler.class)
-    private DAG<Long, JobVertex, JobEdge> flow;
+    private JobFlowDag flow;
 
     private String version;
 

@@ -20,7 +20,7 @@ import java.util.List;
 @Data
 @EqualsAndHashCode(callSuper = false)
 @NoArgsConstructor
-@TableName("t_job_info")
+@TableName(value = "t_job_info", autoResultMap = true)
 public class JobInfo implements Serializable {
 
     private static final long serialVersionUID = 1L;
@@ -66,7 +66,7 @@ public class JobInfo implements Serializable {
 
     /** catalogs. */
     @TableField(typeHandler = JacksonTypeHandler.class)
-    private List<Long> catalogs;
+    private LongArrayList catalogs;
 
     /** external jars. */
     @TableField(typeHandler = JacksonTypeHandler.class)

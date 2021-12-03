@@ -1,5 +1,7 @@
 package com.flink.platform.web.command;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.flink.platform.common.enums.ExecutionStatus;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -18,4 +20,6 @@ public class JobCallback {
 
     /** callback log. */
     private String message;
+
+    @JsonIgnore private ExecutionStatus status;
 }
