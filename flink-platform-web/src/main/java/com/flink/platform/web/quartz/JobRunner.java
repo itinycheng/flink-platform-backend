@@ -57,10 +57,8 @@ public class JobRunner implements Job {
                             new QueryWrapper<JobInfo>()
                                     .lambda()
                                     .eq(JobInfo::getCode, code)
-                                    .in(
-                                            JobInfo::getStatus,
-                                            JobStatus.SCHEDULED.getCode(),
-                                            JobStatus.READY.getCode()));
+                                    .eq(JobInfo::getStatus, JobStatus.ONLINE.getCode()));
+
             if (jobInfo == null) {
                 log.warn("The job: {} is no longer exists or not in ready/scheduled status.", code);
                 return;

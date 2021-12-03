@@ -23,7 +23,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.time.LocalDateTime;
 import java.util.Objects;
 
 import static com.flink.platform.common.enums.ResponseStatus.ERROR_PARAMETER;
@@ -50,10 +49,11 @@ public class JobFlowController {
             return failure(ERROR_PARAMETER, errorMsg);
         }
 
-        jobFlowRequest.setCode(UuidGenerator.generateShortUuid());
-        jobFlowRequest.setStatus(JobFlowStatus.OFFLINE);
-        jobFlowRequest.setCreateTime(LocalDateTime.now());
-        jobFlowService.save(jobFlowRequest.getJobFlow());
+        JobFlow jobFlow = jobFlowRequest.getJobFlow();
+        jobFlow.setId(null);
+        jobFlow.setCode(UuidGenerator.generateShortUuid());
+        jobFlow.setStatus(JobFlowStatus.OFFLINE);
+        jobFlowService.save(jobFlow);
         return ResultInfo.success(jobFlowRequest.getId());
     }
 
@@ -67,7 +67,7 @@ public class JobFlowController {
 
         jobFlowRequest.setCode(null);
         jobFlowRequest.setUserId(null);
-        jobFlowService.save(jobFlowRequest.getJobFlow());
+        jobFlowService.updateById(jobFlowRequest.getJobFlow());
         return ResultInfo.success(jobFlowRequest.getId());
     }
 
@@ -78,17 +78,18 @@ public class JobFlowController {
     }
 
     @GetMapping(value = "/list")
-    public ResultInfo<IPage<JobFlow>> get(
+    public ResultInfo<IPage<JobFlow>> list(
             @RequestParam(name = "page", required = false, defaultValue = "1") Integer page,
             @RequestParam(name = "size", required = false, defaultValue = "20") Integer size,
             @RequestParam(name = "name", required = false) String name) {
         Page<JobFlow> pager = new Page<>(page, size);
         IPage<JobFlow> iPage =
-                this.jobFlowService.page(
+                jobFlowService.page(
                         pager,
                         new QueryWrapper<JobFlow>()
                                 .lambda()
-                                .eq(Objects.nonNull(name), JobFlow::getName, name));
+                                .like(Objects.nonNull(name), JobFlow::getName, name));
+
         return ResultInfo.success(iPage);
     }
 

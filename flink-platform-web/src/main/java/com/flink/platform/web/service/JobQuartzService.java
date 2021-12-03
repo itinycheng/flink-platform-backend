@@ -10,8 +10,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
-
 /** Job quartz service. */
 @Service
 public class JobQuartzService {
@@ -22,7 +20,7 @@ public class JobQuartzService {
 
     @Transactional(rollbackFor = RuntimeException.class)
     public boolean stopJob(JobInfo jobInfo) {
-        jobInfo.setStatus(JobStatus.STOPPED.getCode()).setUpdateTime(LocalDateTime.now());
+        jobInfo.setStatus(JobStatus.OFFLINE.getCode());
         boolean update = jobInfoService.updateById(jobInfo);
         if (!update) {
             throw new DefinitionException(ResponseStatus.SERVICE_ERROR);
@@ -35,12 +33,10 @@ public class JobQuartzService {
 
     @Transactional(rollbackFor = RuntimeException.class)
     public boolean openJob(JobInfo jobInfo) {
-        jobInfo.setStatus(JobStatus.SCHEDULED.getCode()).setUpdateTime(LocalDateTime.now());
-        boolean update = jobInfoService.updateById(jobInfo);
-        if (!update) {
-            throw new DefinitionException(ResponseStatus.SERVICE_ERROR);
-        }
+        jobInfo.setStatus(JobStatus.ONLINE.getCode());
+        jobInfoService.updateById(jobInfo);
 
+        jobInfo = jobInfoService.getById(jobInfo.getId());
         JobQuartzInfo jobQuartzInfo = new JobQuartzInfo(jobInfo);
         quartzService.removeJob(jobQuartzInfo);
         return quartzService.addJobToQuartz(jobQuartzInfo);

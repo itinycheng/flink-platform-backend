@@ -32,7 +32,7 @@ public class JobQuartzController {
         JobInfo jobInfo = jobInfoService.getById(jobId);
 
         if (Objects.nonNull(jobInfo)) {
-            jobInfo.setStatus(JobStatus.READY.getCode());
+            jobInfo.setStatus(JobStatus.ONLINE.getCode());
             this.jobInfoService.updateById(jobInfo);
         }
 

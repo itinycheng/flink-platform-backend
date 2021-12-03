@@ -1,5 +1,6 @@
 package com.flink.platform.common.graph;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
@@ -18,14 +19,13 @@ import static java.util.stream.Collectors.toList;
 
 /** Directed acyclic graph. */
 @Slf4j
-@Getter
 public class DAG<VId, V extends Vertex<VId>, E extends Edge<VId>> {
 
     private final ReadWriteLock lock = new ReentrantReadWriteLock();
 
-    private final Set<V> vertices;
+    @Getter private final Set<V> vertices;
 
-    private final Set<E> edges;
+    @Getter private final Set<E> edges;
 
     public DAG() {
         vertices = new HashSet<>();
@@ -89,6 +89,7 @@ public class DAG<VId, V extends Vertex<VId>, E extends Edge<VId>> {
         }
     }
 
+    @JsonIgnore
     public Collection<V> getBeginVertices() {
         lock.readLock().lock();
 
@@ -107,6 +108,7 @@ public class DAG<VId, V extends Vertex<VId>, E extends Edge<VId>> {
         }
     }
 
+    @JsonIgnore
     public Collection<V> getEndVertices() {
         lock.readLock().lock();
 

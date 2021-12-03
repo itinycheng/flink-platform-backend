@@ -5,13 +5,20 @@ import com.flink.platform.common.util.JsonUtil;
 import com.flink.platform.dao.entity.JobRunInfo;
 import com.flink.platform.web.command.JobCallback;
 import com.flink.platform.web.external.YarnClientService;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.yarn.api.records.ApplicationReport;
+import org.apache.hadoop.yarn.exceptions.ApplicationNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
+import java.time.LocalDateTime;
+
+import static com.flink.platform.common.enums.ExecutionStatus.NOT_EXIST;
+
 /** status monitor. */
+@Slf4j
 @Order(1)
 @Component
 public class YarnStatusFetcher implements StatusFetcher {
@@ -35,8 +42,20 @@ public class YarnStatusFetcher implements StatusFetcher {
             return null;
         }
 
-        ApplicationReport applicationReport =
-                yarnClientService.getApplicationReport(jobCallback.getAppId());
-        return applicationReport != null ? new YarnStatusInfo(applicationReport) : null;
+        String applicationId = jobCallback.getAppId();
+        try {
+            ApplicationReport applicationReport =
+                    yarnClientService.getApplicationReport(jobCallback.getAppId());
+            return new YarnStatusInfo(applicationReport);
+        } catch (ApplicationNotFoundException e) {
+            log.warn("Application: {} not found.", applicationId, e);
+            return new CustomizeStatusInfo(NOT_EXIST, LocalDateTime.now(), LocalDateTime.now());
+        } catch (Exception e) {
+            log.error(
+                    "Use yarn client to get ApplicationReport failed, application: {}",
+                    applicationId,
+                    e);
+            return null;
+        }
     }
 }

@@ -1,17 +1,19 @@
 package com.flink.platform.common.graph;
 
 import com.flink.platform.common.util.Preconditions;
-import lombok.Getter;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.util.Objects;
 
 /** edge. */
-@Getter
+@Data
+@NoArgsConstructor
 public class Edge<VId> {
 
-    private final VId fromVId;
+    private VId fromVId;
 
-    private final VId toVId;
+    private VId toVId;
 
     public Edge(VId fromVId, VId toVId) {
         this.fromVId = Preconditions.checkNotNull(fromVId);

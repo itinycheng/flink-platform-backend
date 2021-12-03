@@ -4,21 +4,21 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.flink.platform.common.enums.ExecutionStatus;
 import com.flink.platform.common.graph.Vertex;
 import com.flink.platform.common.util.Preconditions;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
 import static com.flink.platform.common.model.ExecutionCondition.AND;
 
 /** Job vertex. */
-@Getter
-@Setter
-@ToString
+@Data
+@NoArgsConstructor
+@EqualsAndHashCode(callSuper = true)
 public class JobVertex extends Vertex<Long> {
 
-    private final Long jobId;
+    private Long jobId;
 
     private ExecutionCondition precondition = AND;
 

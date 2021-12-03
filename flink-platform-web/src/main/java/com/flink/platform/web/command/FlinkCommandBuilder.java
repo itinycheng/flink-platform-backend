@@ -8,6 +8,7 @@ import com.flink.platform.dao.entity.JobInfo;
 import com.flink.platform.web.config.FlinkConfig;
 import com.flink.platform.web.service.HdfsService;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.ListUtils;
 import org.apache.hadoop.fs.Path;
 import org.springframework.beans.factory.annotation.Value;
 
@@ -17,6 +18,7 @@ import java.net.URL;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -68,7 +70,8 @@ public abstract class FlinkCommandBuilder implements CommandBuilder {
         String appName = String.join("-", jobInfo.getExecMode().name(), jobInfo.getCode());
         configs.put(YARN_APPLICATION_NAME, appName);
         // add lib dirs and user classpaths
-        List<String> extJarList = JsonUtil.toList(jobInfo.getExtJars());
+        List<String> extJarList =
+                ListUtils.defaultIfNull(jobInfo.getExtJars(), Collections.emptyList());
         configs.put(YARN_PROVIDED_LIB_DIRS, getMergedLibDirs(extJarList));
         List<URL> classpaths = getOrCreateClasspaths(jobInfo.getCode(), extJarList);
         command.setClasspaths(classpaths);

@@ -4,9 +4,6 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.flink.platform.common.enums.JobStatus;
-import com.flink.platform.common.enums.ResponseStatus;
-import com.flink.platform.common.exception.DefinitionException;
-import com.flink.platform.common.util.UuidGenerator;
 import com.flink.platform.dao.entity.JobInfo;
 import com.flink.platform.dao.service.JobInfoService;
 import com.flink.platform.web.entity.request.JobInfoRequest;
@@ -24,115 +21,81 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Objects;
 
+import static com.flink.platform.common.enums.ResponseStatus.ERROR_PARAMETER;
+import static com.flink.platform.web.entity.response.ResultInfo.failure;
+
 /** manage job info. */
 @RestController
-@RequestMapping("/t-job-info")
+@RequestMapping("/jobInfo")
 public class JobInfoController {
 
     @Autowired private JobQuartzService jobQuartzService;
 
     @Autowired private JobInfoService jobInfoService;
 
-    @GetMapping
-    public ResultInfo<IPage<JobInfo>> get(
-            @RequestParam(name = "page", required = false, defaultValue = "1") Integer page,
-            @RequestParam(name = "size", required = false, defaultValue = "10") Integer size,
-            JobInfoRequest jobInfoRequest) {
+    @PostMapping(value = "/create")
+    public ResultInfo<Boolean> create(@RequestBody JobInfoRequest jobInfoRequest) {
+        String errorMsg = jobInfoRequest.validateOnCreate();
+        if (StringUtils.isNotBlank(errorMsg)) {
+            return failure(ERROR_PARAMETER, errorMsg);
+        }
 
+        JobInfo jobInfo = jobInfoRequest.getJobInfo();
+        jobInfo.setId(null);
+        jobInfo.setStatus(JobStatus.ONLINE.getCode());
+        jobInfoService.save(jobInfo);
+        return ResultInfo.success(true);
+    }
+
+    @PostMapping(value = "/update")
+    public ResultInfo<Boolean> update(@RequestBody JobInfoRequest jobInfoRequest) {
+        String errorMsg = jobInfoRequest.validateOnUpdate();
+        if (StringUtils.isNotBlank(errorMsg)) {
+            return failure(ERROR_PARAMETER, errorMsg);
+        }
+
+        JobInfo jobInfo = jobInfoRequest.getJobInfo();
+        jobInfo.setCode(null);
+        jobInfoService.updateById(jobInfo);
+        return ResultInfo.success(true);
+    }
+
+    @GetMapping(value = "/get/{jobId}")
+    public ResultInfo<JobInfo> get(@PathVariable Long jobId) {
+        JobInfo jobInfo = jobInfoService.getById(jobId);
+        return ResultInfo.success(jobInfo);
+    }
+
+    @GetMapping(value = "/list")
+    public ResultInfo<IPage<JobInfo>> list(
+            @RequestParam(name = "page", required = false, defaultValue = "1") Integer page,
+            @RequestParam(name = "size", required = false, defaultValue = "20") Integer size,
+            @RequestParam(name = "name", required = false) String name) {
         Page<JobInfo> pager = new Page<>(page, size);
         IPage<JobInfo> iPage =
-                this.jobInfoService.page(
+                jobInfoService.page(
                         pager,
                         new QueryWrapper<JobInfo>()
                                 .lambda()
-                                .eq(
-                                        Objects.nonNull(jobInfoRequest.getStatus()),
-                                        JobInfo::getStatus,
-                                        jobInfoRequest.getStatus()));
+                                .like(Objects.nonNull(name), JobInfo::getName, name));
 
         return ResultInfo.success(iPage);
     }
 
-    @GetMapping(value = "{id}")
-    public ResultInfo<JobInfo> getOne(@PathVariable String id) {
-        JobInfo jobInfo = this.jobInfoService.getById(id);
-        return ResultInfo.success(jobInfo);
-    }
-
-    @PostMapping(value = "open/{id}")
+    @Deprecated
+    @GetMapping(value = "open/{id}")
     public ResultInfo<Boolean> openOne(@PathVariable String id, String cronExpr) {
         JobInfo jobInfo = this.jobInfoService.getById(id);
-
-        boolean result;
-        if (Objects.nonNull(jobInfo)) {
-            jobInfo.setCronExpr(cronExpr);
-            result = this.jobQuartzService.openJob(jobInfo);
-        } else {
-            throw new DefinitionException(ResponseStatus.ERROR_PARAMETER);
-        }
-
+        jobInfo.setCronExpr(cronExpr);
+        boolean result = jobQuartzService.openJob(jobInfo);
         return ResultInfo.success(result);
     }
 
-    @PostMapping(value = "stop/{id}")
+    @Deprecated
+    @GetMapping(value = "stop/{id}")
     public ResultInfo<Boolean> stopOne(@PathVariable String id) {
         JobInfo jobInfo = this.jobInfoService.getById(id);
-
-        boolean result;
-        if (Objects.nonNull(jobInfo)) {
-            result = jobQuartzService.stopJob(jobInfo);
-        } else {
-            throw new DefinitionException(ResponseStatus.ERROR_PARAMETER);
-        }
-
+        boolean result = jobQuartzService.stopJob(jobInfo);
         return ResultInfo.success(result);
-    }
-
-    @PostMapping
-    public ResultInfo<Boolean> saveOrUpdate(@RequestBody JobInfoRequest jobInfoRequest) {
-        if (StringUtils.isNotBlank(jobInfoRequest.getName())) {
-            // save
-            if (Objects.isNull(jobInfoRequest.getId())) {
-                JobInfo one =
-                        this.jobInfoService.getOne(
-                                new QueryWrapper<JobInfo>()
-                                        .lambda()
-                                        .eq(JobInfo::getName, jobInfoRequest.getName()));
-                if (Objects.isNull(one)) {
-                    // TODO set time status
-                    this.buildJobInfo(jobInfoRequest);
-                    this.jobInfoService.save(jobInfoRequest);
-                    return ResultInfo.success(true);
-                } else {
-                    throw new DefinitionException(ResponseStatus.ERROR_PARAMETER);
-                }
-            } else {
-                // update
-                // TODO update column
-                this.jobInfoService.updateById(jobInfoRequest);
-                return ResultInfo.success(true);
-            }
-        } else {
-            throw new DefinitionException(ResponseStatus.ERROR_PARAMETER);
-        }
-    }
-
-    private void buildJobInfo(JobInfoRequest tJobInfoRequest) {
-        if (StringUtils.isBlank(tJobInfoRequest.getCode())) {
-            tJobInfoRequest.setCode(UuidGenerator.generateShortUuid());
-        }
-
-        if (Objects.isNull(tJobInfoRequest.getStatus())) {
-            tJobInfoRequest.setStatus(JobStatus.NEW.getCode());
-        }
-
-        if (StringUtils.isNotBlank(tJobInfoRequest.getSqlMain())) {
-            tJobInfoRequest.setSubject(tJobInfoRequest.getSqlMain());
-        }
-
-        tJobInfoRequest.setCatalogs(
-                Objects.nonNull(tJobInfoRequest.getCatalogIds())
-                        ? tJobInfoRequest.getCatalogIds().toString()
-                        : "");
     }
 }
