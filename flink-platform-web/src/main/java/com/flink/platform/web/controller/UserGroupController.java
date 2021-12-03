@@ -10,6 +10,7 @@ import com.flink.platform.common.util.JsonUtil;
 import com.flink.platform.common.util.UuidGenerator;
 import com.flink.platform.dao.entity.JobInfo;
 import com.flink.platform.dao.entity.JobRunInfo;
+import com.flink.platform.dao.entity.LongArrayList;
 import com.flink.platform.dao.service.JobInfoService;
 import com.flink.platform.dao.service.JobRunInfoService;
 import com.flink.platform.web.constants.UserGroupConst;
@@ -85,7 +86,9 @@ public class UserGroupController {
             jobInfo.setDeployMode(DeployMode.FLINK_YARN_PER);
             jobInfo.setExecMode(ExecutionMode.BATCH);
             jobInfo.setSqlPlan(JsonUtil.toJsonString(userGroupRequest.getSelect()));
-            jobInfo.setCatalogs(Collections.singletonList(1L));
+            LongArrayList longs = new LongArrayList();
+            longs.add(1L);
+            jobInfo.setCatalogs(longs);
             jobInfo.setStatus(3);
             if (userGroupRequest.getId() == null) {
                 jobInfo.setCode(UuidGenerator.generateShortUuid());

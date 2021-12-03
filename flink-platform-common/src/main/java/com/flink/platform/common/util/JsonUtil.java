@@ -55,6 +55,10 @@ public class JsonUtil {
     }
 
     public static Map<String, String> toStrMap(String json) {
+        if (json == null) {
+            return Collections.emptyMap();
+        }
+
         try {
             return MAPPER.readValue(json, new TypeReference<Map<String, String>>() {});
         } catch (Exception e) {
@@ -64,6 +68,10 @@ public class JsonUtil {
     }
 
     public static <T> T toBean(String res, Class<T> clazz) {
+        if (res == null) {
+            return null;
+        }
+
         try {
             return MAPPER.readValue(res, clazz);
         } catch (Exception e) {

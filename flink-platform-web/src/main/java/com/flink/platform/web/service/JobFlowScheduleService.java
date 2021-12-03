@@ -20,7 +20,7 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.concurrent.BasicThreadFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
-import org.springframework.stereotype.Service;
+import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
@@ -43,7 +43,7 @@ import static java.util.stream.Collectors.toList;
 
 /** schedule job flow. */
 @Slf4j
-@Service
+@Component
 public class JobFlowScheduleService {
 
     private static final Map<String, FlowContainer> IN_FLIGHT_FLOWS =

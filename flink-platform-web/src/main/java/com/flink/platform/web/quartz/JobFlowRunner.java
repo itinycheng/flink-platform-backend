@@ -22,6 +22,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import static com.flink.platform.common.enums.ExecutionStatus.SUBMITTED;
 import static com.flink.platform.common.enums.ExecutionStatus.getNonTerminals;
+import static com.flink.platform.common.enums.JobFlowStatus.ONLINE;
 import static com.flink.platform.common.enums.JobFlowStatus.SCHEDULING;
 
 /** submit job flow. */
@@ -52,7 +53,7 @@ public class JobFlowRunner implements Job {
                             new QueryWrapper<JobFlow>()
                                     .lambda()
                                     .eq(JobFlow::getCode, code)
-                                    .in(JobFlow::getStatus, SCHEDULING));
+                                    .in(JobFlow::getStatus, ONLINE, SCHEDULING));
             if (jobFlow == null) {
                 log.warn("The job flow: {} isn't exists or not in scheduling status", code);
                 return;

@@ -16,6 +16,7 @@ import org.springframework.stereotype.Component;
 import javax.annotation.PostConstruct;
 
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 import static com.flink.platform.common.enums.ExecutionStatus.getNonTerminals;
 
@@ -29,9 +30,19 @@ public class InitJobFlowScheduler {
 
     @Autowired private JobRunInfoService jobRunInfoService;
 
+    @Autowired private QuartzService quartzService;
+
     @Autowired
     @PostConstruct
     public void init() {
+        CompletableFuture.runAsync(
+                () -> {
+                    quartzService.waitForStarted();
+                    appendExistedJobFlowRunToScheduler();
+                });
+    }
+
+    public void appendExistedJobFlowRunToScheduler() {
         List<JobFlowRun> unfinishedFlowRunList =
                 jobFlowRunService.list(
                         new QueryWrapper<JobFlowRun>()
