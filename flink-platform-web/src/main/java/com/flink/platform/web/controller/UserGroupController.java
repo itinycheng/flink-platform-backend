@@ -85,7 +85,7 @@ public class UserGroupController {
             jobInfo.setDeployMode(DeployMode.FLINK_YARN_PER);
             jobInfo.setExecMode(ExecutionMode.BATCH);
             jobInfo.setSqlPlan(JsonUtil.toJsonString(userGroupRequest.getSelect()));
-            jobInfo.setCatalogs("[1]");
+            jobInfo.setCatalogs(Collections.singletonList(1L));
             jobInfo.setStatus(3);
             if (userGroupRequest.getId() == null) {
                 jobInfo.setCode(UuidGenerator.generateShortUuid());

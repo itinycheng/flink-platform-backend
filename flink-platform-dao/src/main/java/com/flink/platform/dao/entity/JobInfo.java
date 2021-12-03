@@ -1,27 +1,24 @@
 package com.flink.platform.dao.entity;
 
 import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
+import com.baomidou.mybatisplus.extension.handlers.JacksonTypeHandler;
 import com.flink.platform.common.enums.DeployMode;
 import com.flink.platform.common.enums.ExecutionMode;
 import com.flink.platform.common.enums.JobType;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
-import lombok.experimental.Accessors;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
+import java.util.List;
 
 /** job config info. */
 @Data
 @EqualsAndHashCode(callSuper = false)
-@Accessors(chain = true)
-@Builder
-@AllArgsConstructor
 @NoArgsConstructor
 @TableName("t_job_info")
 public class JobInfo implements Serializable {
@@ -32,7 +29,7 @@ public class JobInfo implements Serializable {
     private Long id;
 
     /** unique code. */
-    private String code;
+    @Deprecated private String code;
 
     /** job name. */
     private String name;
@@ -68,10 +65,12 @@ public class JobInfo implements Serializable {
     private String mainClass;
 
     /** catalogs. */
-    private String catalogs;
+    @TableField(typeHandler = JacksonTypeHandler.class)
+    private List<Long> catalogs;
 
     /** external jars. */
-    private String extJars;
+    @TableField(typeHandler = JacksonTypeHandler.class)
+    private List<String> extJars;
 
     /** -1: delete, 0: close, 1: open. */
     private Integer status;

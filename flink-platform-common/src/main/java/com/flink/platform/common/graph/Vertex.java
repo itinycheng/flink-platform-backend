@@ -1,22 +1,24 @@
 package com.flink.platform.common.graph;
 
 import com.flink.platform.common.util.Preconditions;
-import lombok.Getter;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.util.Objects;
 
 /** Base class for vertex. */
-@Getter
+@Data
+@NoArgsConstructor
 public class Vertex<ID> {
 
-    private final ID id;
+    private ID id;
 
     public Vertex(ID id) {
         this.id = Preconditions.checkNotNull(id);
     }
 
     @Override
-    public final boolean equals(Object o) {
+    public boolean equals(Object o) {
         if (this == o) {
             return true;
         }
@@ -28,7 +30,7 @@ public class Vertex<ID> {
     }
 
     @Override
-    public final int hashCode() {
+    public int hashCode() {
         return Objects.hash(id);
     }
 }

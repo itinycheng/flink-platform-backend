@@ -71,7 +71,7 @@ public class ProcessJobService {
                             new QueryWrapper<JobInfo>()
                                     .lambda()
                                     .eq(JobInfo::getCode, jobCode)
-                                    .ne(JobInfo::getStatus, JobStatus.DELETE.getCode()));
+                                    .ne(JobInfo::getStatus, JobStatus.OFFLINE.getCode()));
             if (jobInfo == null) {
                 throw new JobCommandGenException(
                         String.format(
@@ -127,19 +127,21 @@ public class ProcessJobService {
                             .execCommand(commandString);
 
             // step 5: write msg back to db
-            JobRunInfo jobRunInfo = new JobRunInfo();
-            jobRunInfo.setId(jobRunId);
-            jobRunInfo.setCommand(commandString);
-            jobRunInfo.setStatus(getInitExecutionStatus(jobType).getCode());
-            jobRunInfo.setVariables(JsonUtil.toJsonString(sqlVarValueMap));
-            jobRunInfo.setBackInfo(JsonUtil.toJsonString(callback));
-            jobRunInfo.setSubmitTime(LocalDateTime.now());
-            jobRunInfoService.updateById(jobRunInfo);
+            if (jobRunId != null) {
+                JobRunInfo jobRunInfo = new JobRunInfo();
+                jobRunInfo.setId(jobRunId);
+                jobRunInfo.setCommand(commandString);
+                jobRunInfo.setStatus(getInitExecutionStatus(jobType).getCode());
+                jobRunInfo.setVariables(JsonUtil.toJsonString(sqlVarValueMap));
+                jobRunInfo.setBackInfo(JsonUtil.toJsonString(callback));
+                jobRunInfo.setSubmitTime(LocalDateTime.now());
+                jobRunInfoService.updateById(jobRunInfo);
+            }
 
             // step 6: print job command info
             log.info("Job: {} submitted, time: {}", jobCode, System.currentTimeMillis());
 
-            return jobRunInfo.getId();
+            return jobRunId;
         } finally {
             if (jobInfo != null && jobInfo.getType() == JobType.FLINK_SQL && jobCommand != null) {
                 try {

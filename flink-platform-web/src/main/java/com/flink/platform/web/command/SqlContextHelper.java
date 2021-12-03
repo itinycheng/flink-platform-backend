@@ -10,6 +10,7 @@ import com.flink.platform.common.util.JsonUtil;
 import com.flink.platform.dao.entity.JobInfo;
 import com.flink.platform.dao.service.CatalogInfoService;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.ListUtils;
 import org.apache.commons.io.FileUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -55,7 +56,8 @@ public class SqlContextHelper {
         sqlContext.setId(jobInfo.getCode());
         sqlContext.setSqls(toSqls(jobInfo.getSubject()));
         sqlContext.setExecMode(jobInfo.getExecMode());
-        sqlContext.setExtJars(JsonUtil.toList(jobInfo.getExtJars()));
+        sqlContext.setExtJars(
+                ListUtils.defaultIfNull(jobInfo.getExtJars(), Collections.emptyList()));
         sqlContext.setConfigs(toConfigs(jobInfo.getConfig()));
         sqlContext.setCatalogs(toCatalogs(jobInfo.getCatalogs()));
         sqlContext.setFunctions(toFunctions(jobInfo.getConfig()));
@@ -67,9 +69,8 @@ public class SqlContextHelper {
         return Collections.emptyList();
     }
 
-    private List<Catalog> toCatalogs(String catalogs) {
-        return JsonUtil.toList(catalogs).stream()
-                .map(Long::parseLong)
+    private List<Catalog> toCatalogs(List<Long> catalogs) {
+        return ListUtils.defaultIfNull(catalogs, Collections.emptyList()).stream()
                 .map(id -> catalogInfoService.getById(id))
                 .map(
                         catalogInfo ->

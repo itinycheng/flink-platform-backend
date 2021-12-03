@@ -1,16 +1,15 @@
 package com.flink.platform.web.entity.request;
 
 import com.flink.platform.dao.entity.JobFlow;
-import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.experimental.Delegate;
 
 /** Job flow request info. */
-@Data
 @NoArgsConstructor
 public class JobFlowRequest {
 
-    @Delegate private JobFlow jobFlow;
+    @Getter @Delegate private final JobFlow jobFlow = new JobFlow();
 
     public String validateOnCreate() {
         String msg = verifyName();

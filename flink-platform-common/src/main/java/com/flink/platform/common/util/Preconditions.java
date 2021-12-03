@@ -12,6 +12,10 @@ public class Preconditions {
         return reference;
     }
 
+    public static <T, R> R checkNotNull(T reference, R errorMsg) {
+        return reference != null ? null : errorMsg;
+    }
+
     public static <T extends Throwable> void checkThrow(boolean condition, Supplier<T> supplier)
             throws T {
         if (condition) {

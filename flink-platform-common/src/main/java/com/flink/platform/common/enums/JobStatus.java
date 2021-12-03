@@ -2,11 +2,8 @@ package com.flink.platform.common.enums;
 
 /** job status. */
 public enum JobStatus {
-    NEW(1, "new"),
-    READY(2, "ready"),
-    SCHEDULED(3, "scheduled"),
-    STOPPED(4, "stopped"),
-    DELETE(-1, "delete");
+    ONLINE(1, "online"),
+    OFFLINE(-1, "offline");
 
     private int code;
     private String desc;

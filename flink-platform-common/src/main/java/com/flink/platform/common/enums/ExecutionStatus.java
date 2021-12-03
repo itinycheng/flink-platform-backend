@@ -13,7 +13,9 @@ public enum ExecutionStatus {
     ABNORMAL(5, TerminalState.TERMINAL),
 
     /** Only for job run. */
-    RETRY(6, TerminalState.NON_TERMINAL);
+    RETRY(6, TerminalState.NON_TERMINAL),
+
+    NOT_EXIST(7, TerminalState.TERMINAL);
 
     private enum TerminalState {
         TERMINAL,
