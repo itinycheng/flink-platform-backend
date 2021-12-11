@@ -5,22 +5,14 @@ import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.flink.platform.common.enums.DeployMode;
 import com.flink.platform.common.enums.ExecutionMode;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
-import lombok.experimental.Accessors;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
 
 /** Job modify info. */
 @Data
-@EqualsAndHashCode(callSuper = false)
-@Accessors(chain = true)
-@Builder
-@AllArgsConstructor
 @NoArgsConstructor
 @TableName("t_job_history")
 public class JobHistory implements Serializable {

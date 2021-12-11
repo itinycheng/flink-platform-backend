@@ -6,6 +6,8 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.flink.platform.common.enums.JobFlowStatus;
 import com.flink.platform.common.util.UuidGenerator;
 import com.flink.platform.dao.entity.JobFlow;
+import com.flink.platform.dao.entity.JobFlowRun;
+import com.flink.platform.dao.service.JobFlowRunService;
 import com.flink.platform.dao.service.JobFlowService;
 import com.flink.platform.web.config.annotation.ApiException;
 import com.flink.platform.web.entity.JobFlowQuartzInfo;
@@ -37,6 +39,8 @@ import static com.flink.platform.web.entity.response.ResultInfo.failure;
 public class JobFlowController {
 
     @Autowired private JobFlowService jobFlowService;
+
+    @Autowired private JobFlowRunService jobFlowRunService;
 
     @Autowired private JobFlowQuartzService jobFlowQuartzService;
 
@@ -94,14 +98,11 @@ public class JobFlowController {
         return ResultInfo.success(iPage);
     }
 
-    @PostMapping(value = "/schedule/start")
-    public ResultInfo<Boolean> start(@RequestBody JobFlowRequest jobFlowRequest) {
+    @PostMapping(value = "/schedule/start/{flowId}")
+    public ResultInfo<Boolean> start(@PathVariable Long flowId) {
+        JobFlowRequest jobFlowRequest = new JobFlowRequest();
+        jobFlowRequest.setId(flowId);
         String errorMsg = jobFlowRequest.verifyId();
-        if (StringUtils.isNotBlank(errorMsg)) {
-            return failure(ERROR_PARAMETER, errorMsg);
-        }
-
-        errorMsg = jobFlowRequest.verifyCronExpr();
         if (StringUtils.isNotBlank(errorMsg)) {
             return failure(ERROR_PARAMETER, errorMsg);
         }
@@ -112,12 +113,14 @@ public class JobFlowController {
             return failure(NOT_RUNNABLE_STATUS);
         }
 
-        boolean bool = jobFlowQuartzService.scheduleJob(jobFlowRequest, jobFlow);
+        boolean bool = jobFlowQuartzService.scheduleJob(jobFlow);
         return ResultInfo.success(bool);
     }
 
-    @PostMapping(value = "/schedule/stop")
-    public ResultInfo<Boolean> stop(@RequestBody JobFlowRequest jobFlowRequest) {
+    @GetMapping(value = "/schedule/stop/{flowId}")
+    public ResultInfo<Boolean> stop(@PathVariable Long flowId) {
+        JobFlowRequest jobFlowRequest = new JobFlowRequest();
+        jobFlowRequest.setId(flowId);
         String errorMsg = jobFlowRequest.verifyId();
         if (StringUtils.isNotBlank(errorMsg)) {
             return failure(ERROR_PARAMETER, errorMsg);
@@ -138,6 +141,12 @@ public class JobFlowController {
         JobFlowStatus status = jobFlow.getStatus();
         if (status != ONLINE) {
             return failure(NOT_RUNNABLE_STATUS);
+        }
+
+        // TODO better in sync lock.
+        JobFlowRun jobFlowRun = jobFlowRunService.getById(flowId);
+        if (jobFlowRun != null && !jobFlowRun.getStatus().isTerminalState()) {
+            return failure(SERVICE_ERROR);
         }
 
         JobFlowQuartzInfo jobFlowQuartzInfo = new JobFlowQuartzInfo(jobFlow);

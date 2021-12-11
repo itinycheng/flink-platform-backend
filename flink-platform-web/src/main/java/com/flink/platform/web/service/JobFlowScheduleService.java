@@ -17,6 +17,7 @@ import com.flink.platform.web.util.JobFlowDagHelper;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.collections4.ListUtils;
 import org.apache.commons.lang3.concurrent.BasicThreadFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -27,8 +28,10 @@ import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.ExecutorService;
@@ -39,6 +42,7 @@ import java.util.concurrent.TimeUnit;
 import static com.flink.platform.common.enums.ExecutionStatus.RUNNING;
 import static com.flink.platform.common.enums.ExecutionStatus.SUBMITTED;
 import static com.flink.platform.web.entity.JobQuartzInfo.JOB_RUN_ID;
+import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toList;
 
 /** schedule job flow. */
@@ -62,6 +66,9 @@ public class JobFlowScheduleService {
                             .daemon(false)
                             .build());
 
+    private static final List<Integer> TERMINAL_STATUS_LIST =
+            ExecutionStatus.getTerminals().stream().map(ExecutionStatus::getCode).collect(toList());
+
     @Autowired private QuartzService quartzService;
 
     @Autowired private JobInfoService jobInfoService;
@@ -72,12 +79,28 @@ public class JobFlowScheduleService {
 
     @Scheduled(fixedDelay = 10_000)
     public void scheduleJobFlow() {
+        // 1. Get the latest status and update the job vertices' status in cache.
+        Map<Long, List<JobRunInfo>> jobRunInFlightMap = getJobRunStatusInFlightMap();
+
+        // 2. process job vertices.
         for (FlowContainer container : IN_FLIGHT_FLOWS.values()) {
             JobFlowRun jobFlowRun = container.getJobFlowRun();
             switch (container.getStatus()) {
                 case SUBMITTED:
-                case RUNNING:
                     EXECUTOR.execute(new JobFlowExecuteThread(container));
+                    break;
+                case RUNNING:
+                    List<JobRunInfo> jobRunInfoList = jobRunInFlightMap.get(jobFlowRun.getId());
+                    if (CollectionUtils.isNotEmpty(jobRunInfoList)) {
+                        jobRunInfoList.forEach(
+                                jobRunInfo -> {
+                                    JobVertex vertex =
+                                            jobFlowRun.getFlow().getVertex(jobRunInfo.getJobId());
+                                    vertex.setJobRunStatus(
+                                            ExecutionStatus.from(jobRunInfo.getStatus()));
+                                });
+                        EXECUTOR.execute(new JobFlowExecuteThread(container));
+                    }
                     break;
                 case SUCCEEDED:
                 case KILLED:
@@ -115,23 +138,25 @@ public class JobFlowScheduleService {
         IN_FLIGHT_FLOWS.put(flowKey, container);
     }
 
-    @Transactional(rollbackFor = Exception.class)
     public void processFlow(FlowContainer container) {
-        // TODO step 0: update interval check, handle begin vertices, use statusChanged.
-        // step 1: update status in flow.
-        updateJobVertexStatus(container);
-
-        // step 2: Get the executable vertices and schedule them.
+        // step 1: Get the executable vertices and schedule them.
         JobFlowRun jobFlowRun = container.getJobFlowRun();
         DAG<Long, JobVertex, JobEdge> flow = jobFlowRun.getFlow();
         Set<JobVertex> executableVertices = JobFlowDagHelper.getExecutableVertices(flow);
         if (CollectionUtils.isNotEmpty(executableVertices)) {
-            processVertices(executableVertices, container);
+            Map<Long, JobRunInfo> processedJobRunMap =
+                    processVertices(executableVertices, container);
+            executableVertices.forEach(
+                    jobVertex -> {
+                        JobRunInfo jobRunInfo = processedJobRunMap.get(jobVertex.getJobId());
+                        jobVertex.setJobRunId(jobRunInfo.getId());
+                        jobVertex.setJobRunStatus(ExecutionStatus.from(jobRunInfo.getStatus()));
+                        jobVertex.setSubmitTime(jobRunInfo.getSubmitTime());
+                    });
         }
 
         // step 3: update status in cache.
         container.setStatus(RUNNING);
-        executableVertices.forEach(jobVertex -> jobVertex.setSubmitTime(LocalDateTime.now()));
 
         // TODO Special handle logic for streaming job and update flow status?
         // step 4: if there are no executable vertices and all executed vertices in terminal state,
@@ -151,23 +176,26 @@ public class JobFlowScheduleService {
     }
 
     @Transactional(rollbackFor = Exception.class)
-    public void processVertices(Collection<JobVertex> jobVertices, FlowContainer container) {
+    public Map<Long, JobRunInfo> processVertices(
+            Collection<JobVertex> jobVertices, FlowContainer container) {
+        Map<Long, JobRunInfo> jobRunInfoList = new HashMap<>(jobVertices.size());
         JobFlowRun jobFlowRun = container.getJobFlowRun();
-        jobVertices.forEach(
-                jobVertex -> {
-                    JobInfo jobInfo = jobInfoService.getById(jobVertex.getJobId());
-                    JobRunInfo jobRunInfo = new JobRunInfo();
-                    jobRunInfo.setJobId(jobInfo.getId());
-                    jobRunInfo.setDeployMode(jobInfo.getDeployMode());
-                    jobRunInfo.setFlowRunId(jobFlowRun.getId());
-                    jobRunInfo.setStatus(SUBMITTED.getCode());
-                    jobRunInfo.setCreateTime(LocalDateTime.now());
-                    jobRunInfoService.save(jobRunInfo);
+        for (JobVertex jobVertex : jobVertices) {
+            JobInfo jobInfo = jobInfoService.getById(jobVertex.getJobId());
+            JobRunInfo jobRunInfo = new JobRunInfo();
+            jobRunInfo.setJobId(jobInfo.getId());
+            jobRunInfo.setDeployMode(jobInfo.getDeployMode());
+            jobRunInfo.setFlowRunId(jobFlowRun.getId());
+            jobRunInfo.setStatus(SUBMITTED.getCode());
+            jobRunInfo.setSubmitTime(LocalDateTime.now());
+            jobRunInfoService.save(jobRunInfo);
 
-                    JobQuartzInfo jobQuartzInfo = new JobQuartzInfo(jobInfo);
-                    jobQuartzInfo.addData(JOB_RUN_ID, jobRunInfo.getId());
-                    quartzService.runOnce(jobQuartzInfo);
-                });
+            JobQuartzInfo jobQuartzInfo = new JobQuartzInfo(jobInfo);
+            jobQuartzInfo.addData(JOB_RUN_ID, jobRunInfo.getId());
+            quartzService.runOnce(jobQuartzInfo);
+
+            jobRunInfoList.put(jobRunInfo.getJobId(), jobRunInfo);
+        }
 
         if (container.getStatus() == SUBMITTED) {
             // update JobFlowRun's status
@@ -176,35 +204,36 @@ public class JobFlowScheduleService {
             newJobFlowRun.setStatus(RUNNING);
             jobFlowRunService.updateById(newJobFlowRun);
         }
+
+        return jobRunInfoList;
     }
 
-    private void updateJobVertexStatus(FlowContainer container) {
-        JobFlowRun jobFlowRun = container.getJobFlowRun();
-        DAG<Long, JobVertex, JobEdge> flow = jobFlowRun.getFlow();
-        List<Long> nonTerminalJobIdList =
-                flow.getVertices().stream()
+    private Map<Long, List<JobRunInfo>> getJobRunStatusInFlightMap() {
+        // TODO update interval check, handle begin vertices, use statusChanged.
+        List<Long> unterminatedJobRunIdList =
+                IN_FLIGHT_FLOWS.values().stream()
+                        .filter(container -> container.getStatus() != SUBMITTED)
+                        .flatMap(
+                                container ->
+                                        container.getJobFlowRun().getFlow().getVertices().stream())
                         .filter(
                                 jobVertex ->
-                                        jobVertex.getJobRunStatus() == null
-                                                || !jobVertex.getJobRunStatus().isTerminalState())
-                        .map(JobVertex::getJobId)
+                                        jobVertex.getJobRunStatus() != null
+                                                && !jobVertex.getJobRunStatus().isTerminalState())
+                        .map(JobVertex::getJobRunId)
+                        .filter(Objects::nonNull)
                         .collect(toList());
-        if (CollectionUtils.isEmpty(nonTerminalJobIdList)) {
-            return;
-        }
 
-        // Get the latest status and update the job vertices' status in cache.
-        List<JobRunInfo> jobRunInfoList =
-                jobRunInfoService.list(
-                        new QueryWrapper<JobRunInfo>()
-                                .lambda()
-                                .eq(JobRunInfo::getFlowRunId, jobFlowRun.getId())
-                                .in(JobRunInfo::getJobId, nonTerminalJobIdList));
-        for (JobRunInfo jobRunInfo : jobRunInfoList) {
-            JobVertex jobVertex = flow.getVertex(jobRunInfo.getJobId());
-            jobVertex.setJobRunId(jobRunInfo.getId());
-            jobVertex.setJobRunStatus(ExecutionStatus.from(jobRunInfo.getStatus()));
-        }
+        return ListUtils.partition(unterminatedJobRunIdList, 1000).stream()
+                .map(
+                        jobRunIdList ->
+                                jobRunInfoService.list(
+                                        new QueryWrapper<JobRunInfo>()
+                                                .lambda()
+                                                .in(JobRunInfo::getId, jobRunIdList)
+                                                .in(JobRunInfo::getStatus, TERMINAL_STATUS_LIST)))
+                .flatMap(Collection::stream)
+                .collect(groupingBy(JobRunInfo::getFlowRunId));
     }
 
     @Data

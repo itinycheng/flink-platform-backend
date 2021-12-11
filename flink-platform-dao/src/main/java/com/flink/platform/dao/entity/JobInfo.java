@@ -9,7 +9,6 @@ import com.flink.platform.common.enums.DeployMode;
 import com.flink.platform.common.enums.ExecutionMode;
 import com.flink.platform.common.enums.JobType;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
 import java.io.Serializable;
@@ -18,7 +17,6 @@ import java.util.List;
 
 /** job config info. */
 @Data
-@EqualsAndHashCode(callSuper = false)
 @NoArgsConstructor
 @TableName(value = "t_job_info", autoResultMap = true)
 public class JobInfo implements Serializable {

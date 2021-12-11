@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -28,6 +29,10 @@ public class JsonUtil {
     }
 
     public static List<String> toList(String json) {
+        if (StringUtils.isBlank(json)) {
+            return Collections.emptyList();
+        }
+
         try {
             return MAPPER.readValue(json, new TypeReference<List<String>>() {});
         } catch (Exception e) {
@@ -37,6 +42,10 @@ public class JsonUtil {
     }
 
     public static <T> List<T> toList(String json, JavaType javaType) {
+        if (StringUtils.isBlank(json)) {
+            return Collections.emptyList();
+        }
+
         try {
             return MAPPER.readValue(json, javaType);
         } catch (Exception e) {
@@ -46,6 +55,10 @@ public class JsonUtil {
     }
 
     public static Map<String, Object> toMap(String json) {
+        if (StringUtils.isBlank(json)) {
+            return Collections.emptyMap();
+        }
+
         try {
             return MAPPER.readValue(json, new TypeReference<Map<String, Object>>() {});
         } catch (Exception e) {
@@ -55,7 +68,7 @@ public class JsonUtil {
     }
 
     public static Map<String, String> toStrMap(String json) {
-        if (json == null) {
+        if (StringUtils.isBlank(json)) {
             return Collections.emptyMap();
         }
 
@@ -67,15 +80,15 @@ public class JsonUtil {
         }
     }
 
-    public static <T> T toBean(String res, Class<T> clazz) {
-        if (res == null) {
+    public static <T> T toBean(String json, Class<T> clazz) {
+        if (StringUtils.isBlank(json)) {
             return null;
         }
 
         try {
-            return MAPPER.readValue(res, clazz);
+            return MAPPER.readValue(json, clazz);
         } catch (Exception e) {
-            log.error("Failed to serial {} to {}.", res, clazz, e);
+            log.error("Failed to serial {} to {}.", json, clazz, e);
             return null;
         }
     }
@@ -86,6 +99,10 @@ public class JsonUtil {
     }
 
     public static String toJsonString(Object obj) {
+        if (obj == null) {
+            return null;
+        }
+
         try {
             return MAPPER.writeValueAsString(obj);
         } catch (Exception e) {

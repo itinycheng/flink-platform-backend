@@ -108,7 +108,7 @@
 
 	<build>
 		<resources>
-			<resource>                <!--需要替换的文件资源放最上面,否者无效-->
+			<resource>
 				<directory>src/main/profiles/${env}</directory>
 			</resource>
 			<resource>

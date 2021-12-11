@@ -4,7 +4,6 @@ import com.baomidou.dynamic.datasource.annotation.DS;
 import com.flink.platform.dao.entity.JobFlow;
 import com.flink.platform.dao.service.JobFlowService;
 import com.flink.platform.web.entity.JobFlowQuartzInfo;
-import com.flink.platform.web.entity.request.JobFlowRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,16 +21,13 @@ public class JobFlowQuartzService {
     @Autowired private QuartzService quartzService;
 
     @Transactional(rollbackFor = Exception.class)
-    public boolean scheduleJob(JobFlowRequest jobFlowRequest, JobFlow jobFlow) {
+    public boolean scheduleJob(JobFlow jobFlow) {
         JobFlowQuartzInfo jobFlowQuartzInfo = new JobFlowQuartzInfo(jobFlow);
         boolean bool = quartzService.addJobToQuartz(jobFlowQuartzInfo);
 
         JobFlow newJobFlow = new JobFlow();
         newJobFlow.setId(jobFlow.getId());
         newJobFlow.setStatus(SCHEDULING);
-        if (!jobFlowRequest.getCronExpr().equals(jobFlow.getCronExpr())) {
-            newJobFlow.setCronExpr(jobFlowRequest.getCronExpr());
-        }
         jobFlowService.updateById(newJobFlow);
 
         return bool;
