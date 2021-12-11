@@ -62,11 +62,9 @@ public class ProcessJobStatusService {
             }
 
             // update job status
-            JobRunInfo runInfo =
-                    JobRunInfo.builder()
-                            .id(jobRunInfo.getId())
-                            .status(statusInfo.getStatus().getCode())
-                            .build();
+            JobRunInfo runInfo = new JobRunInfo();
+            runInfo.setId(jobRunInfo.getId());
+            runInfo.setStatus(statusInfo.getStatus().getCode());
             jobRunInfoService.updateById(runInfo);
         }
     }

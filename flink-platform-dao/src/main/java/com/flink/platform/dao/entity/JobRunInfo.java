@@ -4,22 +4,14 @@ import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.flink.platform.common.enums.DeployMode;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
-import lombok.experimental.Accessors;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
 
 /** Job run info. */
 @Data
-@EqualsAndHashCode(callSuper = false)
-@Accessors(chain = true)
-@Builder
-@AllArgsConstructor
 @NoArgsConstructor
 @TableName("t_job_run_info")
 public class JobRunInfo implements Serializable {

@@ -6,9 +6,7 @@ import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.baomidou.mybatisplus.extension.handlers.JacksonTypeHandler;
 import com.flink.platform.common.enums.ExecutionStatus;
-import lombok.AllArgsConstructor;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
@@ -16,9 +14,7 @@ import java.util.List;
 
 /** job flow instance. */
 @Data
-@AllArgsConstructor
 @NoArgsConstructor
-@EqualsAndHashCode(callSuper = false)
 @TableName(value = "t_job_flow_run", autoResultMap = true)
 public class JobFlowRun {
 
