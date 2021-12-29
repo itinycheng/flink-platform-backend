@@ -6,12 +6,12 @@
                     pattern="[%d{yyyy-MM-dd HH:mm:ss} %highlight{%-5p}] --- [%t] --- %style{%c}{Magenta}:%style{%L}{Cyan} : %m%n"/>
         </console>
 
-        <File name="log" fileName="logs/flink-platform-web/console.log" append="false">
+        <File name="log" fileName="logs/console.log" append="false">
             <PatternLayout pattern="[%d{yyyy-MM-dd HH:mm:ss} %-5p] [%t] (%c:%L) - %m%n"/>
         </File>
 
-        <RollingFile name="RollingFileInfo" fileName="logs/flink-platform-web/info.log"
-                     filePattern="logs/flink-platform-web/$${date:yyyy-MM}/info-%d{yyyy-MM-dd}-%i.log.gz">
+        <RollingFile name="RollingFileInfo" fileName="logs/info.log"
+                     filePattern="logs/$${date:yyyy-MM}/info-%d{yyyy-MM-dd}-%i.log.gz">
             <ThresholdFilter level="info" onMatch="ACCEPT" onMismatch="DENY"/>
             <PatternLayout pattern="[%d{yyyy-MM-dd HH:mm:ss} %-5p] [%t] (%c:%L) - %m%n"/>
             <Policies>
@@ -20,8 +20,8 @@
             </Policies>
         </RollingFile>
 
-        <RollingFile name="RollingFileWarn" fileName="logs/flink-platform-web/warn.log"
-                     filePattern="logs/flink-platform-web/$${date:yyyy-MM}/warn-%d{yyyy-MM-dd}-%i.log.gz">
+        <RollingFile name="RollingFileWarn" fileName="logs/warn.log"
+                     filePattern="logs/$${date:yyyy-MM}/warn-%d{yyyy-MM-dd}-%i.log.gz">
             <ThresholdFilter level="warn" onMatch="ACCEPT" onMismatch="DENY"/>
             <PatternLayout pattern="[%d{yyyy-MM-dd HH:mm:ss} %-5p] [%t] (%c:%L) - %m%n"/>
             <Policies>
@@ -31,8 +31,8 @@
             <DefaultRolloverStrategy max="20"/>
         </RollingFile>
 
-        <RollingFile name="RollingFileError" fileName="logs/flink-platform-web/error.log"
-                     filePattern="logs/flink-platform-web/$${date:yyyy-MM}/error-%d{yyyy-MM-dd}-%i.log.gz">
+        <RollingFile name="RollingFileError" fileName="logs/error.log"
+                     filePattern="logs/$${date:yyyy-MM}/error-%d{yyyy-MM-dd}-%i.log.gz">
             <ThresholdFilter level="error" onMatch="ACCEPT" onMismatch="DENY"/>
             <PatternLayout pattern="[%d{yyyy-MM-dd HH:mm:ss} %-5p] [%t] (%c:%L) - %m%n"/>
             <Policies>
