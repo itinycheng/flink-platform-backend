@@ -93,7 +93,7 @@ public class JobInfoController {
 
     @Deprecated
     @GetMapping(value = "stop/{id}")
-    public ResultInfo<Boolean> stopOne(@PathVariable String id) {
+    public ResultInfo<Boolean> stop(@PathVariable String id) {
         JobInfo jobInfo = this.jobInfoService.getById(id);
         boolean result = jobQuartzService.stopJob(jobInfo);
         return ResultInfo.success(result);

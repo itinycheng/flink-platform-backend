@@ -5,6 +5,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.lang.reflect.Method;
@@ -18,22 +19,20 @@ public class EnumsController {
 
     private static final String CLASS_PATH_PREFIX = "com.flink.platform.common.enums";
 
-    @GetMapping
-    public ResultInfo<List<Map<String, Object>>> list(String enumsClass) {
+    @GetMapping(value = "/list")
+    public ResultInfo<List<Map<String, Object>>> list(
+            @RequestParam(name = "className", required = false) String className) {
         List<Map<String, Object>> enums = Lists.newArrayList();
-        String clazz = CLASS_PATH_PREFIX + "." + enumsClass;
+        String clazz = CLASS_PATH_PREFIX + "." + className;
         try {
             Class<?> clz = Class.forName(clazz);
-            Method values = clz.getMethod("values", null);
+            Method values = clz.getMethod("values");
             Object invoke = values.invoke(null);
             for (Object obj : (Object[]) invoke) {
-                Method getCode = obj.getClass().getMethod("getCode");
-                Object code = getCode.invoke(obj);
-                Method getDesc = obj.getClass().getMethod("getDesc");
-                Object desc = getDesc.invoke(obj);
+                Method getName = obj.getClass().getMethod("name");
+                Object code = getName.invoke(obj);
                 Map<String, Object> map = Maps.newHashMap();
-                map.put("code", code);
-                map.put("desc", desc);
+                map.put("name", code);
                 enums.add(map);
             }
         } catch (Exception e) {
