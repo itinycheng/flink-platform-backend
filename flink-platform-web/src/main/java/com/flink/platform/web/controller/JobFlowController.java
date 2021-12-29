@@ -77,7 +77,7 @@ public class JobFlowController {
     }
 
     @GetMapping(value = "/get/{flowId}")
-    public ResultInfo<JobFlow> getOne(@PathVariable Long flowId) {
+    public ResultInfo<JobFlow> get(@PathVariable Long flowId) {
         JobFlow jobFlow = jobFlowService.getById(flowId);
         return ResultInfo.success(jobFlow);
     }

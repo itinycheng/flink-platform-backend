@@ -14,14 +14,14 @@ public class ResultInfo<T> {
 
     private String desc;
 
-    private T result;
+    private T data;
 
     public static <T> ResultInfo<T> success(T result) {
         ResponseStatus status = ResponseStatus.SUCCESS;
         ResultInfo<T> resultInfo = new ResultInfo<>();
         resultInfo.setCode(status.getCode());
         resultInfo.setDesc(status.getDesc());
-        resultInfo.setResult(result);
+        resultInfo.setData(result);
         return resultInfo;
     }
 

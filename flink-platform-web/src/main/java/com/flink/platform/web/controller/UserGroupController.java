@@ -78,7 +78,7 @@ public class UserGroupController {
     public ResultInfo<Long> createOrUpdate(@RequestBody UserGroupRequest userGroupRequest) {
         try {
             ResultInfo<String> sqlInfo = insertSelect(userGroupRequest.getSelect());
-            String sql = sqlInfo.getResult();
+            String sql = sqlInfo.getData();
             JobInfo jobInfo = new JobInfo();
             BeanUtils.copyProperties(userGroupRequest, jobInfo);
             jobInfo.setSubject(sql);
