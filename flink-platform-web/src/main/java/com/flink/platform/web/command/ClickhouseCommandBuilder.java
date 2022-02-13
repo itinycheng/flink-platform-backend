@@ -32,9 +32,9 @@ public class ClickhouseCommandBuilder implements CommandBuilder {
     public JobCommand buildCommand(JobInfo jobInfo) {
         List<String> sqlList = new ArrayList<>();
         for (Sql sql : sqlContextHelper.toSqls(jobInfo.getSubject())) {
-            if (SqlType.OPTIMIZE != sql.getType()) {
+            if (SqlType.SELECT == sql.getType()) {
                 throw new JobCommandGenException(
-                        "Clickhouse command builder only support optimize statement.");
+                        "Clickhouse command builder doesn't support select statement.");
             }
             sqlList.add(sql.getOperands()[0]);
         }

@@ -3,7 +3,7 @@ package com.flink.platform.common.enums;
 /** response status. */
 public enum ResponseStatus {
     /** response status. */
-    SUCCESS(200, "success"),
+    SUCCESS(0, "success"),
     EXCESSIVE_FREQUENCY(201, "Excessive frequency"),
     ERROR_PARAMETER(301, "illegal input parameter"),
     UNAUTHORIZED(401, "Unauthorized"),
