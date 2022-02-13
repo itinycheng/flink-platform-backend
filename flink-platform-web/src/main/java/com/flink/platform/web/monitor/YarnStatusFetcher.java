@@ -10,6 +10,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.yarn.api.records.ApplicationReport;
 import org.apache.hadoop.yarn.exceptions.ApplicationNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
@@ -23,8 +24,9 @@ import static com.flink.platform.common.enums.ExecutionStatus.NOT_EXIST;
 @Component
 public class YarnStatusFetcher implements StatusFetcher {
 
-    @Autowired private YarnClientService yarnClientService;
+    @Lazy @Autowired private YarnClientService yarnClientService;
 
+    @Override
     public boolean isSupported(DeployMode deployMode) {
         switch (deployMode) {
             case FLINK_YARN_PER:
@@ -36,6 +38,7 @@ public class YarnStatusFetcher implements StatusFetcher {
         }
     }
 
+    @Override
     public StatusInfo getStatus(JobRunInfo jobRunInfo) {
         JobCallback jobCallback = JsonUtil.toBean(jobRunInfo.getBackInfo(), JobCallback.class);
         if (jobCallback == null || StringUtils.isEmpty(jobCallback.getAppId())) {
