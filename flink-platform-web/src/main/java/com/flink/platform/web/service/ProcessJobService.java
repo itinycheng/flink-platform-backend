@@ -17,6 +17,7 @@ import com.flink.platform.web.command.JobCallback;
 import com.flink.platform.web.command.JobCommand;
 import com.flink.platform.web.enums.SqlVar;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -82,24 +83,28 @@ public class ProcessJobService {
             }
 
             // step 2: replace variables in the sql statement
-            // parse all variables in subject
             JobInfo finalJobInfo = jobInfo;
-            Map<SqlVar, String> sqlVarValueMap =
+            Map<String, Object> variableMap =
                     Arrays.stream(SqlVar.values())
+                            .filter(sqlVar -> sqlVar.type == SqlVar.VarType.VARIABLE)
                             .filter(sqlVar -> finalJobInfo.getSubject().contains(sqlVar.variable))
                             .map(
                                     sqlVar ->
                                             Pair.of(
-                                                    sqlVar,
-                                                    sqlVar.valueProvider
-                                                            .apply(finalJobInfo)
-                                                            .toString()))
+                                                    sqlVar.variable,
+                                                    sqlVar.valueProvider.apply(finalJobInfo)))
                             .collect(toMap(Pair::getLeft, Pair::getRight));
+            MapUtils.emptyIfNull(finalJobInfo.getVariables())
+                    .forEach(
+                            (name, value) -> {
+                                SqlVar sqlVar = SqlVar.matchPrefix(name);
+                                variableMap.put(name, sqlVar.valueProvider.apply(value));
+                            });
             // replace variable with actual value
-            for (Map.Entry<SqlVar, String> entry : sqlVarValueMap.entrySet()) {
+            for (Map.Entry<String, Object> entry : variableMap.entrySet()) {
                 String originSubject = jobInfo.getSubject();
                 String distSubject =
-                        originSubject.replace(entry.getKey().variable, entry.getValue());
+                        originSubject.replace(entry.getKey(), entry.getValue().toString());
                 jobInfo.setSubject(distSubject);
             }
 
@@ -135,7 +140,7 @@ public class ProcessJobService {
                 jobRunInfo.setId(jobRunId);
                 jobRunInfo.setCommand(commandString);
                 jobRunInfo.setStatus(getExecutionStatus(jobType, callback).getCode());
-                jobRunInfo.setVariables(JsonUtil.toJsonString(sqlVarValueMap));
+                jobRunInfo.setVariables(JsonUtil.toJsonString(variableMap));
                 jobRunInfo.setBackInfo(JsonUtil.toJsonString(callback));
                 jobRunInfo.setSubmitTime(LocalDateTime.now());
                 jobRunInfoService.updateById(jobRunInfo);
