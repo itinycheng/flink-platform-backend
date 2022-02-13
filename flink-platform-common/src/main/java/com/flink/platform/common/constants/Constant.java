@@ -51,6 +51,8 @@ public class Constant {
 
     public static final String SLASH = "/";
 
+    public static final String SESSION_USER = "session.user";
+
     static {
         PATH_SEPARATOR = System.getProperty("path.separator");
         ROOT_DIR = System.getProperty("user.dir");
