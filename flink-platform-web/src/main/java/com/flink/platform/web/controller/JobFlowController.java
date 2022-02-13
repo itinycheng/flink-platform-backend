@@ -3,10 +3,12 @@ package com.flink.platform.web.controller;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.flink.platform.common.constants.Constant;
 import com.flink.platform.common.enums.JobFlowStatus;
 import com.flink.platform.common.util.UuidGenerator;
 import com.flink.platform.dao.entity.JobFlow;
 import com.flink.platform.dao.entity.JobFlowRun;
+import com.flink.platform.dao.entity.User;
 import com.flink.platform.dao.service.JobFlowRunService;
 import com.flink.platform.dao.service.JobFlowService;
 import com.flink.platform.web.config.annotation.ApiException;
@@ -20,6 +22,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestAttribute;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -48,7 +51,9 @@ public class JobFlowController {
 
     @ApiException
     @PostMapping(value = "/create")
-    public ResultInfo<Long> create(@RequestBody JobFlowRequest jobFlowRequest) {
+    public ResultInfo<Long> create(
+            @RequestAttribute(value = Constant.SESSION_USER) User loginUser,
+            @RequestBody JobFlowRequest jobFlowRequest) {
         String errorMsg = jobFlowRequest.validateOnCreate();
         if (StringUtils.isNotBlank(errorMsg)) {
             return failure(ERROR_PARAMETER, errorMsg);
@@ -57,6 +62,7 @@ public class JobFlowController {
         JobFlow jobFlow = jobFlowRequest.getJobFlow();
         jobFlow.setId(null);
         jobFlow.setCode(UuidGenerator.generateShortUuid());
+        jobFlow.setUserId(loginUser.getId());
         jobFlow.setStatus(JobFlowStatus.OFFLINE);
         jobFlowService.save(jobFlow);
         return ResultInfo.success(jobFlowRequest.getId());

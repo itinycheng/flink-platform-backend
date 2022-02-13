@@ -12,23 +12,7 @@ public class JobFlowRequest {
     @Getter @Delegate private final JobFlow jobFlow = new JobFlow();
 
     public String validateOnCreate() {
-        String msg = verifyName();
-        if (msg != null) {
-            return msg;
-        }
-
-        msg = verifyUserId();
-        if (msg != null) {
-            return msg;
-        }
-
-        msg = verifyCreateTime();
-        if (msg != null) {
-            return msg;
-        }
-
-        msg = verifyUpdateTime();
-        return msg;
+        return verifyName();
     }
 
     public String validateOnUpdate() {
@@ -37,12 +21,12 @@ public class JobFlowRequest {
             return msg;
         }
 
-        msg = verifyCreateTime();
+        msg = verifyName();
         if (msg != null) {
             return msg;
         }
 
-        msg = verifyUpdateTime();
+        msg = verifyCode();
         return msg;
     }
 
@@ -62,34 +46,10 @@ public class JobFlowRequest {
         return errorMsg;
     }
 
-    public String verifyUserId() {
+    public String verifyCode() {
         String errorMsg = null;
-        if (getUserId() == null) {
-            errorMsg = "The create user of job flow isn't null";
-        }
-        return errorMsg;
-    }
-
-    public String verifyCronExpr() {
-        String errorMsg = null;
-        if (getCronExpr() == null) {
-            errorMsg = "The cronExpr of job flow isn't null";
-        }
-        return errorMsg;
-    }
-
-    private String verifyCreateTime() {
-        String errorMsg = null;
-        if (getCreateTime() != null) {
-            errorMsg = "The create time of job flow must be null";
-        }
-        return errorMsg;
-    }
-
-    private String verifyUpdateTime() {
-        String errorMsg = null;
-        if (getUpdateTime() != null) {
-            errorMsg = "The update time of job flow must be null";
+        if (getCode() == null) {
+            errorMsg = "The code of job flow isn't null";
         }
         return errorMsg;
     }

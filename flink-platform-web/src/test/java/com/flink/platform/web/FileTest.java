@@ -8,12 +8,14 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.UUID;
 
 /** read/write file test. */
 public class FileTest {
 
     @Test
     public void test1() {
+        System.out.println(UUID.randomUUID().toString());
         File file = new File("application.yml");
         System.out.println(file.getAbsolutePath());
     }
