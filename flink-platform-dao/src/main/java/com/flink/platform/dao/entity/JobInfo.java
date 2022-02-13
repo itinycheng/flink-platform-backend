@@ -15,6 +15,7 @@ import lombok.NoArgsConstructor;
 import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 /** job config info. */
 @Data
@@ -50,6 +51,10 @@ public class JobInfo implements Serializable {
 
     /** execution mode. */
     private ExecutionMode execMode;
+
+    /** variables for `subject`. */
+    @TableField(typeHandler = JacksonTypeHandler.class)
+    private Map<String, String> variables;
 
     /** sql or jar path. */
     private String subject;
