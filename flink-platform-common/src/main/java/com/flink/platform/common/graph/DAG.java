@@ -209,8 +209,8 @@ public class DAG<VId, V extends Vertex<VId>, E extends Edge<VId>> {
         return true;
     }
 
-    // TODO
-    public boolean hasCycle() {
-        return false;
+    @JsonIgnore
+    public boolean isValid() {
+        return this.getEdges().stream().allMatch(this::isLegalEdge);
     }
 }

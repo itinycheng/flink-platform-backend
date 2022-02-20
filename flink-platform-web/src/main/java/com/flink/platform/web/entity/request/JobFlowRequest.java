@@ -20,14 +20,7 @@ public class JobFlowRequest {
         if (msg != null) {
             return msg;
         }
-
-        msg = verifyName();
-        if (msg != null) {
-            return msg;
-        }
-
-        msg = verifyCode();
-        return msg;
+        return verifyFlow();
     }
 
     public String verifyId() {
@@ -46,10 +39,14 @@ public class JobFlowRequest {
         return errorMsg;
     }
 
-    public String verifyCode() {
+    public String verifyFlow() {
+        if (getFlow() == null) {
+            return null;
+        }
+
         String errorMsg = null;
-        if (getCode() == null) {
-            errorMsg = "The code of job flow isn't null";
+        if (!getFlow().isValid()) {
+            errorMsg = "The flow graph is invalid";
         }
         return errorMsg;
     }

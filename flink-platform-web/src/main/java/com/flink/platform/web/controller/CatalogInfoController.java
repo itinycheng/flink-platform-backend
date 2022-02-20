@@ -12,12 +12,12 @@ import java.util.List;
 
 /** Catalog info controller. */
 @RestController
-@RequestMapping("/catalogInfo")
+@RequestMapping("/catalog")
 public class CatalogInfoController {
 
     @Autowired private CatalogInfoService catalogInfoService;
 
-    @GetMapping
+    @GetMapping(value = "/list")
     public ResultInfo<List<CatalogInfo>> list() {
         List<CatalogInfo> list = catalogInfoService.list();
         return ResultInfo.success(list);

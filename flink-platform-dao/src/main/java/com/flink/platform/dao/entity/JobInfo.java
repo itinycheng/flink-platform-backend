@@ -9,8 +9,10 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import com.flink.platform.common.enums.DeployMode;
 import com.flink.platform.common.enums.ExecutionMode;
 import com.flink.platform.common.enums.JobType;
+import lombok.AccessLevel;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
@@ -89,16 +91,22 @@ public class JobInfo implements Serializable {
     private String routeUrl;
 
     /** create user. */
-    @Deprecated private String createUser;
+    @Setter(AccessLevel.NONE)
+    @Deprecated
+    private String createUser;
 
     /** create time. */
+    @Setter(AccessLevel.NONE)
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
     private LocalDateTime createTime;
 
     /** update user. */
-    @Deprecated private String updateUser;
+    @Setter(AccessLevel.NONE)
+    @Deprecated
+    private String updateUser;
 
     /** update time. */
+    @Setter(AccessLevel.NONE)
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
     private LocalDateTime updateTime;
 }
