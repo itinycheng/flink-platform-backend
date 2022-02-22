@@ -43,6 +43,9 @@ public class CatalogInfo implements Serializable {
     /** config properties. */
     private String configs;
 
+    /** catalog create sql. */
+    private String createSql;
+
     /** create user. */
     private String createUser;
 

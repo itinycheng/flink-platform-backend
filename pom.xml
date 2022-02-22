@@ -47,7 +47,6 @@
 		<scala.binary.version>2.11</scala.binary.version>
 		<mybatis-plus.version>3.4.2</mybatis-plus.version>
 		<dynamic-datasource.version>3.3.2</dynamic-datasource.version>
-		<iceberg.version>0.12.1</iceberg.version>
 		<janino.version>3.1.6</janino.version>
 		<maven-checkstyle-plugin.version>2.17</maven-checkstyle-plugin.version>
 		<spotless-maven-plugin.version>2.4.2</spotless-maven-plugin.version>
@@ -192,19 +191,6 @@
 						<artifactId>hive-orc</artifactId>
 					</exclusion>
 				</exclusions>
-			</dependency>
-			<!-- iceberg -->
-			<dependency>
-				<groupId>org.apache.iceberg</groupId>
-				<artifactId>iceberg-flink</artifactId>
-				<version>${iceberg.version}</version>
-				<scope>${flink.scope}</scope>
-			</dependency>
-			<dependency>
-				<groupId>org.apache.hadoop</groupId>
-				<artifactId>hadoop-common</artifactId>
-				<version>${hadoop.version}</version>
-				<scope>${flink.scope}</scope>
 			</dependency>
 			<!-- java compiler -->
 			<dependency>

@@ -79,7 +79,8 @@ public class SqlContextHelper {
                                         catalogInfo.getType(),
                                         catalogInfo.getDefaultDatabase(),
                                         catalogInfo.getConfigPath(),
-                                        JsonUtil.toStrMap(catalogInfo.getConfigs())))
+                                        JsonUtil.toStrMap(catalogInfo.getConfigs()),
+                                        catalogInfo.getCreateSql()))
                 .collect(toList());
     }
 

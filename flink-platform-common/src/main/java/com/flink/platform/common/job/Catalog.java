@@ -17,9 +17,11 @@ public class Catalog {
 
     private CatalogType type;
 
-    private String defaultDatabase;
+    @Deprecated private String defaultDatabase;
 
-    private String configPath;
+    @Deprecated private String configPath;
 
-    private Map<String, String> configs;
+    @Deprecated private Map<String, String> configs;
+
+    private String createSql;
 }
