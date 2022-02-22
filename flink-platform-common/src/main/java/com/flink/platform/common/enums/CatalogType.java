@@ -2,6 +2,8 @@ package com.flink.platform.common.enums;
 
 /** catalog type. */
 public enum CatalogType {
+
+    /** catalog types. */
     MEMORY,
 
     HIVE,
@@ -12,5 +14,7 @@ public enum CatalogType {
 
     POSTGRES,
 
-    CLICKHOUSE
+    CLICKHOUSE,
+
+    ICEBERG
 }
