@@ -7,8 +7,8 @@ import java.util.List;
 public enum ExecutionStatus {
     SUBMITTED(0, TerminalState.NON_TERMINAL),
     RUNNING(1, TerminalState.NON_TERMINAL),
-    SUCCEEDED(2, TerminalState.TERMINAL),
-    FAILED(3, TerminalState.TERMINAL),
+    SUCCESS(2, TerminalState.TERMINAL),
+    FAILURE(3, TerminalState.TERMINAL),
     KILLED(4, TerminalState.TERMINAL),
     ABNORMAL(5, TerminalState.TERMINAL),
 
@@ -60,7 +60,7 @@ public enum ExecutionStatus {
     }
 
     public boolean isErrTerminalState() {
-        return this == FAILED || this == KILLED || this == ABNORMAL;
+        return this == FAILURE || this == KILLED || this == ABNORMAL;
     }
 
     public static ExecutionStatus from(Integer code) {

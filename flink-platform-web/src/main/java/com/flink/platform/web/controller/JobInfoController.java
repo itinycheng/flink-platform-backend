@@ -71,6 +71,12 @@ public class JobInfoController {
         return ResultInfo.success(jobInfo);
     }
 
+    @GetMapping(value = "/delete/{jobId}")
+    public ResultInfo<Boolean> delete(@PathVariable Long jobId) {
+        boolean bool = jobInfoService.removeById(jobId);
+        return ResultInfo.success(bool);
+    }
+
     @GetMapping(value = "/page")
     public ResultInfo<IPage<JobInfo>> page(
             @RequestParam(name = "page", required = false, defaultValue = "1") Integer page,

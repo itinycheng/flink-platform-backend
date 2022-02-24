@@ -10,8 +10,8 @@ import org.junit.Test;
 import java.time.LocalDateTime;
 import java.util.Set;
 
-import static com.flink.platform.common.enums.ExecutionStatus.FAILED;
-import static com.flink.platform.common.enums.ExecutionStatus.SUCCEEDED;
+import static com.flink.platform.common.enums.ExecutionStatus.FAILURE;
+import static com.flink.platform.common.enums.ExecutionStatus.SUCCESS;
 import static com.flink.platform.common.model.ExecutionCondition.OR;
 
 /** job flow dag helper test. */
@@ -35,16 +35,16 @@ public class JobFlowDagHelperTest {
         dag.addVertex(jobVertex4);
         dag.addVertex(jobVertex5);
         dag.addVertex(jobVertex6);
-        JobEdge jobEdge1 = new JobEdge(1L, 3L, SUCCEEDED);
-        JobEdge jobEdge2 = new JobEdge(2L, 3L, SUCCEEDED);
-        JobEdge jobEdge3 = new JobEdge(2L, 4L, SUCCEEDED);
-        JobEdge jobEdge4 = new JobEdge(3L, 5L, SUCCEEDED);
-        JobEdge jobEdge5 = new JobEdge(4L, 5L, SUCCEEDED);
-        JobEdge jobEdge6 = new JobEdge(1L, 6L, FAILED);
-        JobEdge jobEdge7 = new JobEdge(2L, 6L, FAILED);
-        JobEdge jobEdge8 = new JobEdge(3L, 6L, FAILED);
-        JobEdge jobEdge9 = new JobEdge(4L, 6L, FAILED);
-        JobEdge jobEdge10 = new JobEdge(5L, 6L, FAILED);
+        JobEdge jobEdge1 = new JobEdge(1L, 3L, SUCCESS);
+        JobEdge jobEdge2 = new JobEdge(2L, 3L, SUCCESS);
+        JobEdge jobEdge3 = new JobEdge(2L, 4L, SUCCESS);
+        JobEdge jobEdge4 = new JobEdge(3L, 5L, SUCCESS);
+        JobEdge jobEdge5 = new JobEdge(4L, 5L, SUCCESS);
+        JobEdge jobEdge6 = new JobEdge(1L, 6L, FAILURE);
+        JobEdge jobEdge7 = new JobEdge(2L, 6L, FAILURE);
+        JobEdge jobEdge8 = new JobEdge(3L, 6L, FAILURE);
+        JobEdge jobEdge9 = new JobEdge(4L, 6L, FAILURE);
+        JobEdge jobEdge10 = new JobEdge(5L, 6L, FAILURE);
         dag.addEdge(jobEdge1);
         dag.addEdge(jobEdge2);
         dag.addEdge(jobEdge3);
@@ -82,7 +82,7 @@ public class JobFlowDagHelperTest {
     public void test4() {
         JobVertex vertex = dag.getVertex(2L);
         vertex.setSubmitTime(LocalDateTime.now());
-        vertex.setJobRunStatus(SUCCEEDED);
+        vertex.setJobRunStatus(SUCCESS);
 
         vertex = dag.getVertex(1L);
         vertex.setSubmitTime(LocalDateTime.now());
@@ -94,11 +94,11 @@ public class JobFlowDagHelperTest {
     public void test5() {
         JobVertex vertex = dag.getVertex(2L);
         vertex.setSubmitTime(LocalDateTime.now());
-        vertex.setJobRunStatus(SUCCEEDED);
+        vertex.setJobRunStatus(SUCCESS);
 
         vertex = dag.getVertex(1L);
         vertex.setSubmitTime(LocalDateTime.now());
-        vertex.setJobRunStatus(SUCCEEDED);
+        vertex.setJobRunStatus(SUCCESS);
         Set<JobVertex> executableVertices = JobFlowDagHelper.getExecutableVertices(dag);
         System.out.println(executableVertices);
     }
@@ -107,11 +107,11 @@ public class JobFlowDagHelperTest {
     public void test6() {
         JobVertex vertex = dag.getVertex(2L);
         vertex.setSubmitTime(LocalDateTime.now());
-        vertex.setJobRunStatus(SUCCEEDED);
+        vertex.setJobRunStatus(SUCCESS);
 
         vertex = dag.getVertex(1L);
         vertex.setSubmitTime(LocalDateTime.now());
-        vertex.setJobRunStatus(SUCCEEDED);
+        vertex.setJobRunStatus(SUCCESS);
 
         vertex = dag.getVertex(3L);
         vertex.setSubmitTime(LocalDateTime.now());
@@ -124,15 +124,15 @@ public class JobFlowDagHelperTest {
     public void test7() {
         JobVertex vertex = dag.getVertex(2L);
         vertex.setSubmitTime(LocalDateTime.now());
-        vertex.setJobRunStatus(SUCCEEDED);
+        vertex.setJobRunStatus(SUCCESS);
 
         vertex = dag.getVertex(1L);
         vertex.setSubmitTime(LocalDateTime.now());
-        vertex.setJobRunStatus(SUCCEEDED);
+        vertex.setJobRunStatus(SUCCESS);
 
         vertex = dag.getVertex(3L);
         vertex.setSubmitTime(LocalDateTime.now());
-        vertex.setJobRunStatus(SUCCEEDED);
+        vertex.setJobRunStatus(SUCCESS);
 
         Set<JobVertex> executableVertices = JobFlowDagHelper.getExecutableVertices(dag);
         System.out.println(executableVertices);
@@ -142,19 +142,19 @@ public class JobFlowDagHelperTest {
     public void test8() {
         JobVertex vertex = dag.getVertex(2L);
         vertex.setSubmitTime(LocalDateTime.now());
-        vertex.setJobRunStatus(SUCCEEDED);
+        vertex.setJobRunStatus(SUCCESS);
 
         vertex = dag.getVertex(1L);
         vertex.setSubmitTime(LocalDateTime.now());
-        vertex.setJobRunStatus(SUCCEEDED);
+        vertex.setJobRunStatus(SUCCESS);
 
         vertex = dag.getVertex(3L);
         vertex.setSubmitTime(LocalDateTime.now());
-        vertex.setJobRunStatus(SUCCEEDED);
+        vertex.setJobRunStatus(SUCCESS);
 
         vertex = dag.getVertex(4L);
         vertex.setSubmitTime(LocalDateTime.now());
-        vertex.setJobRunStatus(SUCCEEDED);
+        vertex.setJobRunStatus(SUCCESS);
 
         Set<JobVertex> executableVertices = JobFlowDagHelper.getExecutableVertices(dag);
         System.out.println(executableVertices);
@@ -164,23 +164,23 @@ public class JobFlowDagHelperTest {
     public void test9() {
         JobVertex vertex = dag.getVertex(2L);
         vertex.setSubmitTime(LocalDateTime.now());
-        vertex.setJobRunStatus(SUCCEEDED);
+        vertex.setJobRunStatus(SUCCESS);
 
         vertex = dag.getVertex(1L);
         vertex.setSubmitTime(LocalDateTime.now());
-        vertex.setJobRunStatus(SUCCEEDED);
+        vertex.setJobRunStatus(SUCCESS);
 
         vertex = dag.getVertex(3L);
         vertex.setSubmitTime(LocalDateTime.now());
-        vertex.setJobRunStatus(SUCCEEDED);
+        vertex.setJobRunStatus(SUCCESS);
 
         vertex = dag.getVertex(4L);
         vertex.setSubmitTime(LocalDateTime.now());
-        vertex.setJobRunStatus(SUCCEEDED);
+        vertex.setJobRunStatus(SUCCESS);
 
         vertex = dag.getVertex(5L);
         vertex.setSubmitTime(LocalDateTime.now());
-        vertex.setJobRunStatus(SUCCEEDED);
+        vertex.setJobRunStatus(SUCCESS);
 
         Set<JobVertex> executableVertices = JobFlowDagHelper.getExecutableVertices(dag);
         System.out.println(executableVertices);
@@ -191,7 +191,7 @@ public class JobFlowDagHelperTest {
     public void test10() {
         JobVertex vertex = dag.getVertex(2L);
         vertex.setSubmitTime(LocalDateTime.now());
-        vertex.setJobRunStatus(FAILED);
+        vertex.setJobRunStatus(FAILURE);
 
         Set<JobVertex> executableVertices = JobFlowDagHelper.getExecutableVertices(dag);
         System.out.println(executableVertices);
@@ -201,11 +201,11 @@ public class JobFlowDagHelperTest {
     public void test11() {
         JobVertex vertex = dag.getVertex(2L);
         vertex.setSubmitTime(LocalDateTime.now());
-        vertex.setJobRunStatus(FAILED);
+        vertex.setJobRunStatus(FAILURE);
 
         vertex = dag.getVertex(1L);
         vertex.setSubmitTime(LocalDateTime.now());
-        vertex.setJobRunStatus(FAILED);
+        vertex.setJobRunStatus(FAILURE);
 
         Set<JobVertex> executableVertices = JobFlowDagHelper.getExecutableVertices(dag);
         System.out.println(executableVertices);
@@ -215,11 +215,11 @@ public class JobFlowDagHelperTest {
     public void test12() {
         JobVertex vertex = dag.getVertex(2L);
         vertex.setSubmitTime(LocalDateTime.now());
-        vertex.setJobRunStatus(FAILED);
+        vertex.setJobRunStatus(FAILURE);
 
         vertex = dag.getVertex(1L);
         vertex.setSubmitTime(LocalDateTime.now());
-        vertex.setJobRunStatus(SUCCEEDED);
+        vertex.setJobRunStatus(SUCCESS);
 
         Set<JobVertex> executableVertices = JobFlowDagHelper.getExecutableVertices(dag);
         System.out.println(executableVertices);
@@ -229,15 +229,15 @@ public class JobFlowDagHelperTest {
     public void test13() {
         JobVertex vertex = dag.getVertex(2L);
         vertex.setSubmitTime(LocalDateTime.now());
-        vertex.setJobRunStatus(FAILED);
+        vertex.setJobRunStatus(FAILURE);
 
         vertex = dag.getVertex(1L);
         vertex.setSubmitTime(LocalDateTime.now());
-        vertex.setJobRunStatus(FAILED);
+        vertex.setJobRunStatus(FAILURE);
 
         vertex = dag.getVertex(6L);
         vertex.setSubmitTime(LocalDateTime.now());
-        vertex.setJobRunStatus(SUCCEEDED);
+        vertex.setJobRunStatus(SUCCESS);
 
         Set<JobVertex> executableVertices = JobFlowDagHelper.getExecutableVertices(dag);
         System.out.println(executableVertices);

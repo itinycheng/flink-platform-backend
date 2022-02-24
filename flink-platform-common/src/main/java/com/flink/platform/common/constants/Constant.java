@@ -53,6 +53,14 @@ public class Constant {
 
     public static final String SESSION_USER = "session.user";
 
+    public static final String FLINK = "FLINK";
+
+    public static final String JAVA = "JAVA";
+
+    public static final String SQL = "SQL";
+
+    public static final String SHELL = "SHELL";
+
     static {
         PATH_SEPARATOR = System.getProperty("path.separator");
         ROOT_DIR = System.getProperty("user.dir");

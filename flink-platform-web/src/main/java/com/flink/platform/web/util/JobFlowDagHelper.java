@@ -12,11 +12,11 @@ import java.util.HashSet;
 import java.util.Set;
 
 import static com.flink.platform.common.enums.ExecutionStatus.ABNORMAL;
-import static com.flink.platform.common.enums.ExecutionStatus.FAILED;
+import static com.flink.platform.common.enums.ExecutionStatus.FAILURE;
 import static com.flink.platform.common.enums.ExecutionStatus.KILLED;
 import static com.flink.platform.common.enums.ExecutionStatus.RUNNING;
 import static com.flink.platform.common.enums.ExecutionStatus.SUBMITTED;
-import static com.flink.platform.common.enums.ExecutionStatus.SUCCEEDED;
+import static com.flink.platform.common.enums.ExecutionStatus.SUCCESS;
 import static com.flink.platform.common.model.ExecutionCondition.AND;
 import static com.flink.platform.common.model.ExecutionCondition.OR;
 import static java.util.stream.Collectors.toSet;
@@ -31,14 +31,14 @@ public class JobFlowDagHelper {
                         .map(JobVertex::getJobRunStatus)
                         .collect(toSet());
         ExecutionStatus status;
-        if (vertexStatusList.contains(FAILED)) {
-            status = FAILED;
+        if (vertexStatusList.contains(FAILURE)) {
+            status = FAILURE;
         } else if (vertexStatusList.contains(ABNORMAL)) {
             status = ABNORMAL;
         } else if (vertexStatusList.contains(KILLED)) {
             status = KILLED;
-        } else if (vertexStatusList.contains(SUCCEEDED)) {
-            status = SUCCEEDED;
+        } else if (vertexStatusList.contains(SUCCESS)) {
+            status = SUCCESS;
         } else if (vertexStatusList.contains(RUNNING)) {
             status = RUNNING;
         } else {

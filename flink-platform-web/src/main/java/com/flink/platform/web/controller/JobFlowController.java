@@ -1,5 +1,6 @@
 package com.flink.platform.web.controller;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -34,6 +35,7 @@ import static com.flink.platform.common.enums.JobFlowStatus.ONLINE;
 import static com.flink.platform.common.enums.ResponseStatus.ERROR_PARAMETER;
 import static com.flink.platform.common.enums.ResponseStatus.NOT_RUNNABLE_STATUS;
 import static com.flink.platform.common.enums.ResponseStatus.SERVICE_ERROR;
+import static com.flink.platform.common.enums.ResponseStatus.USER_HAVE_NO_PERMISSION;
 import static com.flink.platform.web.entity.response.ResultInfo.failure;
 
 /** crud job flow. */
@@ -83,24 +85,49 @@ public class JobFlowController {
     }
 
     @GetMapping(value = "/get/{flowId}")
-    public ResultInfo<JobFlow> get(@PathVariable Long flowId) {
+    public ResultInfo<JobFlow> get(@PathVariable long flowId) {
         JobFlow jobFlow = jobFlowService.getById(flowId);
         return ResultInfo.success(jobFlow);
     }
 
+    @GetMapping(value = "/delete/{flowId}")
+    public ResultInfo<Boolean> delete(
+            @RequestAttribute(value = Constant.SESSION_USER) User loginUser,
+            @PathVariable long flowId) {
+        JobFlow jobFlow = jobFlowService.getById(flowId);
+        if (jobFlow == null) {
+            return ResultInfo.failure(ERROR_PARAMETER);
+        }
+
+        if (!loginUser.getId().equals(jobFlow.getUserId())) {
+            return ResultInfo.failure(USER_HAVE_NO_PERMISSION);
+        }
+
+        boolean bool = jobFlowService.deleteAllById(flowId);
+        return ResultInfo.success(bool);
+    }
+
     @GetMapping(value = "/list")
     public ResultInfo<IPage<JobFlow>> list(
+            @RequestAttribute(value = Constant.SESSION_USER) User loginUser,
             @RequestParam(name = "page", required = false, defaultValue = "1") Integer page,
             @RequestParam(name = "size", required = false, defaultValue = "20") Integer size,
-            @RequestParam(name = "name", required = false) String name) {
+            @RequestParam(name = "name", required = false) String name,
+            @RequestParam(name = "status", required = false) JobFlowStatus status,
+            @RequestParam(name = "sort", required = false) String sort) {
         Page<JobFlow> pager = new Page<>(page, size);
-        IPage<JobFlow> iPage =
-                jobFlowService.page(
-                        pager,
-                        new QueryWrapper<JobFlow>()
-                                .lambda()
-                                .like(Objects.nonNull(name), JobFlow::getName, name));
 
+        LambdaQueryWrapper<JobFlow> queryWrapper =
+                new QueryWrapper<JobFlow>()
+                        .lambda()
+                        .eq(JobFlow::getUserId, loginUser.getId())
+                        .eq(Objects.nonNull(status), JobFlow::getStatus, status)
+                        .like(Objects.nonNull(name), JobFlow::getName, name);
+        if ("-id".equals(sort)) {
+            queryWrapper.orderByDesc(JobFlow::getId);
+        }
+
+        IPage<JobFlow> iPage = jobFlowService.page(pager, queryWrapper);
         return ResultInfo.success(iPage);
     }
 

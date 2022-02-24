@@ -10,7 +10,7 @@ import org.junit.Test;
 
 import java.util.Collections;
 
-import static com.flink.platform.common.enums.ExecutionStatus.SUCCEEDED;
+import static com.flink.platform.common.enums.ExecutionStatus.SUCCESS;
 import static com.flink.platform.common.enums.JobFlowStatus.OFFLINE;
 
 /** job flow manager test. */
@@ -23,7 +23,7 @@ public class JobFlowTest {
         JobVertex jobVertex2 = new JobVertex(20L, 20L);
         dag.addVertex(jobVertex1);
         dag.addVertex(jobVertex2);
-        JobEdge jobEdge = new JobEdge(19L, 20L, SUCCEEDED);
+        JobEdge jobEdge = new JobEdge(19L, 20L, SUCCESS);
         dag.addEdge(jobEdge);
 
         JobFlowRequest jobFlowRequest = new JobFlowRequest();

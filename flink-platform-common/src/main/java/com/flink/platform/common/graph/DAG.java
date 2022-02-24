@@ -94,13 +94,12 @@ public class DAG<VId, V extends Vertex<VId>, E extends Edge<VId>> {
         lock.readLock().lock();
 
         try {
-            Set<VId> startVertices = new HashSet<>();
             Set<VId> endVertices = new HashSet<>();
             for (E edge : edges) {
-                startVertices.add(edge.getFromVId());
                 endVertices.add(edge.getToVId());
             }
-            return CollectionUtils.subtract(startVertices, endVertices).stream()
+            List<VId> allVertices = this.vertices.stream().map(Vertex::getId).collect(toList());
+            return CollectionUtils.subtract(allVertices, endVertices).stream()
                     .map(this::getVertex)
                     .collect(toList());
         } finally {

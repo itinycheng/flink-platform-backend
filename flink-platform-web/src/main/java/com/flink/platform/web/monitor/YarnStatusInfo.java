@@ -28,11 +28,11 @@ public class YarnStatusInfo implements StatusInfo {
             case UNDEFINED:
                 return getNonFinalStatus();
             case FAILED:
-                return ExecutionStatus.FAILED;
+                return ExecutionStatus.FAILURE;
             case KILLED:
                 return ExecutionStatus.KILLED;
             case SUCCEEDED:
-                return ExecutionStatus.SUCCEEDED;
+                return ExecutionStatus.SUCCESS;
             case ENDED:
                 return ExecutionStatus.ABNORMAL;
             default:

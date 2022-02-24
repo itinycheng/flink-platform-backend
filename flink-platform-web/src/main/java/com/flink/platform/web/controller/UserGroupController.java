@@ -47,8 +47,7 @@ import static com.flink.platform.web.constants.UserGroupConst.UUID;
 public class UserGroupController {
 
     private static final List<ExecutionStatus> FINAL_STATUS =
-            Arrays.asList(
-                    ExecutionStatus.SUCCEEDED, ExecutionStatus.FAILED, ExecutionStatus.KILLED);
+            Arrays.asList(ExecutionStatus.SUCCESS, ExecutionStatus.FAILURE, ExecutionStatus.KILLED);
 
     @Resource private UserGroupSqlGenService sqlGenService;
 
