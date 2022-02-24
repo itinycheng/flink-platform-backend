@@ -102,9 +102,9 @@ public class JobFlowScheduleService {
                         EXECUTOR.execute(new JobFlowExecuteThread(container));
                     }
                     break;
-                case SUCCEEDED:
+                case SUCCESS:
                 case KILLED:
-                case FAILED:
+                case FAILURE:
                     log.warn(
                             "Job flow run: {} is already in terminal status: {}",
                             jobFlowRun.getId(),
@@ -129,13 +129,30 @@ public class JobFlowScheduleService {
             return;
         }
 
-        String flowKey =
-                String.join(
-                        "-", jobFlowRun.getPriority().toString(), jobFlowRun.getId().toString());
+        String flowKey = genInFlightFlowKey(jobFlowRun);
+        if (IN_FLIGHT_FLOWS.containsKey(flowKey)) {
+            log.warn("The JobFlowRun already registered, jobFlowRun: {} ", jobFlowRun);
+            return;
+        }
+
         FlowContainer container = new FlowContainer(flowKey, jobFlowRun);
         container.setStatus(SUBMITTED);
         container.setSubmitTime(LocalDateTime.now());
         IN_FLIGHT_FLOWS.put(flowKey, container);
+    }
+
+    public void terminateFlow(Long flowRunId, ExecutionStatus status) {
+        if (flowRunId == null) {
+            return;
+        }
+
+        JobFlowRun jobFlowRun = jobFlowRunService.getById(flowRunId);
+        String flowKey = genInFlightFlowKey(jobFlowRun);
+        IN_FLIGHT_FLOWS.remove(flowKey);
+        JobFlowRun newJobFlowRun = new JobFlowRun();
+        newJobFlowRun.setId(jobFlowRun.getId());
+        newJobFlowRun.setStatus(status);
+        jobFlowRunService.updateById(newJobFlowRun);
     }
 
     public void processFlow(FlowContainer container) {
@@ -168,9 +185,8 @@ public class JobFlowScheduleService {
                             jobVertex ->
                                     jobVertex.getJobRunStatus() != null
                                             && jobVertex.getJobRunStatus().isTerminalState())) {
-                IN_FLIGHT_FLOWS.remove(container.getId());
-                JobFlowRun newJobFlowRun = new JobFlowRun();
-                newJobFlowRun.setStatus(JobFlowDagHelper.getDagState(flow));
+                ExecutionStatus status = JobFlowDagHelper.getDagState(flow);
+                terminateFlow(jobFlowRun.getId(), status);
             }
         }
     }
@@ -234,6 +250,11 @@ public class JobFlowScheduleService {
                                                 .in(JobRunInfo::getStatus, TERMINAL_STATUS_LIST)))
                 .flatMap(Collection::stream)
                 .collect(groupingBy(JobRunInfo::getFlowRunId));
+    }
+
+    private String genInFlightFlowKey(JobFlowRun jobFlowRun) {
+        return String.join(
+                "-", String.valueOf(jobFlowRun.getPriority()), String.valueOf(jobFlowRun.getId()));
     }
 
     @Data

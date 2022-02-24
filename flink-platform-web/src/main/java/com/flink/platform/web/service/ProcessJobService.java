@@ -29,7 +29,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
-import static com.flink.platform.common.enums.ExecutionStatus.SUCCEEDED;
+import static com.flink.platform.common.enums.ExecutionStatus.FAILURE;
+import static com.flink.platform.common.enums.ExecutionStatus.SUCCESS;
 import static com.flink.platform.web.entity.JobQuartzInfo.JOB_RUN_ID;
 import static java.util.stream.Collectors.toMap;
 
@@ -42,6 +43,8 @@ public class ProcessJobService {
 
     private final JobRunInfoService jobRunInfoService;
 
+    private final JobFlowScheduleService jobFlowScheduleService;
+
     private final List<CommandBuilder> jobCommandBuilders;
 
     private final List<CommandExecutor> jobCommandExecutors;
@@ -50,10 +53,12 @@ public class ProcessJobService {
     public ProcessJobService(
             JobInfoService jobInfoService,
             JobRunInfoService jobRunInfoService,
+            JobFlowScheduleService jobFlowScheduleService,
             List<CommandBuilder> jobCommandBuilders,
             List<CommandExecutor> jobCommandExecutors) {
         this.jobInfoService = jobInfoService;
         this.jobRunInfoService = jobRunInfoService;
+        this.jobFlowScheduleService = jobFlowScheduleService;
         this.jobCommandBuilders = jobCommandBuilders;
         this.jobCommandExecutors = jobCommandExecutors;
     }
@@ -62,9 +67,9 @@ public class ProcessJobService {
             throws Exception {
         JobCommand jobCommand = null;
         JobInfo jobInfo = null;
+        Long jobRunId = null;
 
         try {
-            Long jobRunId = null;
             if (dataMap != null && dataMap.get(JOB_RUN_ID) != null) {
                 jobRunId = ((Number) dataMap.get(JOB_RUN_ID)).longValue();
             }
@@ -148,8 +153,9 @@ public class ProcessJobService {
 
             // step 6: print job command info
             log.info("Job: {} submitted, time: {}", jobCode, System.currentTimeMillis());
-
-            return jobRunId;
+        } catch (Exception exception) {
+            handleFailure(jobRunId);
+            throw exception;
         } finally {
             if (jobInfo != null && jobInfo.getType() == JobType.FLINK_SQL && jobCommand != null) {
                 try {
@@ -162,17 +168,35 @@ public class ProcessJobService {
                 }
             }
         }
+
+        return jobRunId;
+    }
+
+    public void handleFailure(Long jobRunId) {
+        if (jobRunId == null) {
+            return;
+        }
+
+        JobRunInfo jobRunInfo = new JobRunInfo();
+        jobRunInfo.setId(jobRunId);
+        jobRunInfo.setStatus(FAILURE.getCode());
+        jobRunInfoService.updateById(jobRunInfo);
+
+        jobRunInfo = jobRunInfoService.getById(jobRunId);
+        if (jobRunInfo.getFlowRunId() != null) {
+            jobFlowScheduleService.terminateFlow(jobRunInfo.getFlowRunId(), FAILURE);
+        }
     }
 
     private ExecutionStatus getExecutionStatus(JobType jobType, JobCallback callback) {
-        if (callback.getStatus() != SUCCEEDED) {
+        if (callback.getStatus() != SUCCESS) {
             return callback.getStatus();
         }
 
         switch (jobType) {
             case CLICKHOUSE_SQL:
             case COMMON_JAR:
-                return SUCCEEDED;
+                return SUCCESS;
             default:
                 return ExecutionStatus.SUBMITTED;
         }

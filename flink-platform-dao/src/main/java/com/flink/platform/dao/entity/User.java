@@ -11,24 +11,23 @@ import java.time.LocalDateTime;
 /** Login user. */
 @Data
 @NoArgsConstructor
-@TableName(value = "t_job_info")
+@TableName(value = "t_user")
 public class User {
 
     @TableId(value = "id", type = IdType.AUTO)
-    private long id;
+    private Long id;
 
-    private String userName;
+    private String username;
 
     private String password;
 
+    private String type;
+
     private String email;
 
-    private String phone;
-
-    /** user specified queue. */
-    private String queue;
-
-    private LocalDateTime createTime;
+    private String status;
 
     private LocalDateTime updateTime;
+
+    private LocalDateTime createTime;
 }

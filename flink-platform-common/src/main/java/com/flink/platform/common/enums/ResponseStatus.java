@@ -10,6 +10,8 @@ public enum ResponseStatus {
     SERVICE_ERROR(500, "service error"),
     SERVICE_TIMEOUT(501, "service timeout"),
     USER_NOT_FOUNT(502, "user not found"),
+    USER_HAVE_NO_PERMISSION(502, "user not found"),
+    USER_NAME_PASSWD_ERROR(10013, "Username or password error"),
     NOT_RUNNABLE_STATUS(503, "not runnable status");
 
     private final int code;

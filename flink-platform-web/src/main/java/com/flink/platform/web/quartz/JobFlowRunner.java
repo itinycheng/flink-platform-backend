@@ -46,7 +46,6 @@ public class JobFlowRunner implements Job {
         String code = key.getName();
 
         synchronized (getProcessLock(code)) {
-
             // Get job flow info.
             JobFlow jobFlow =
                     jobFlowService.getOne(
@@ -78,6 +77,7 @@ public class JobFlowRunner implements Job {
                         "The job flow:{} is in non-terminal status, run id: {}",
                         jobFlow.getId(),
                         jobFlowRun.getId());
+                return;
             }
 
             // Create job flow run instance.
