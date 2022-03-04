@@ -31,7 +31,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Objects;
 
-import static com.flink.platform.common.enums.JobFlowStatus.ONLINE;
 import static com.flink.platform.common.enums.ResponseStatus.ERROR_PARAMETER;
 import static com.flink.platform.common.enums.ResponseStatus.NOT_RUNNABLE_STATUS;
 import static com.flink.platform.common.enums.ResponseStatus.SERVICE_ERROR;
@@ -66,6 +65,7 @@ public class JobFlowController {
         jobFlow.setCode(UuidGenerator.generateShortUuid());
         jobFlow.setUserId(loginUser.getId());
         jobFlow.setStatus(JobFlowStatus.OFFLINE);
+        jobFlow.setVersion("1");
         jobFlowService.save(jobFlow);
         return ResultInfo.success(jobFlowRequest.getId());
     }
@@ -81,6 +81,17 @@ public class JobFlowController {
         jobFlowRequest.setCode(null);
         jobFlowRequest.setUserId(null);
         jobFlowService.updateById(jobFlowRequest.getJobFlow());
+        return ResultInfo.success(jobFlowRequest.getId());
+    }
+
+    @PostMapping(value = "/updateFlow")
+    public ResultInfo<Long> updateFlow(@RequestBody JobFlowRequest jobFlowRequest) {
+        String errorMsg = jobFlowRequest.validateOnUpdate();
+        if (StringUtils.isNotBlank(errorMsg)) {
+            return failure(ERROR_PARAMETER, errorMsg);
+        }
+
+        jobFlowService.updateFlowById(jobFlowRequest.getJobFlow());
         return ResultInfo.success(jobFlowRequest.getId());
     }
 
@@ -131,8 +142,8 @@ public class JobFlowController {
         return ResultInfo.success(iPage);
     }
 
-    @PostMapping(value = "/schedule/start/{flowId}")
-    public ResultInfo<Boolean> start(@PathVariable Long flowId) {
+    @GetMapping(value = "/schedule/start/{flowId}")
+    public ResultInfo<Long> start(@PathVariable Long flowId) {
         JobFlowRequest jobFlowRequest = new JobFlowRequest();
         jobFlowRequest.setId(flowId);
         String errorMsg = jobFlowRequest.verifyId();
@@ -146,12 +157,12 @@ public class JobFlowController {
             return failure(NOT_RUNNABLE_STATUS);
         }
 
-        boolean bool = jobFlowQuartzService.scheduleJob(jobFlow);
-        return ResultInfo.success(bool);
+        jobFlowQuartzService.scheduleJob(jobFlow);
+        return ResultInfo.success(flowId);
     }
 
     @GetMapping(value = "/schedule/stop/{flowId}")
-    public ResultInfo<Boolean> stop(@PathVariable Long flowId) {
+    public ResultInfo<Long> stop(@PathVariable Long flowId) {
         JobFlowRequest jobFlowRequest = new JobFlowRequest();
         jobFlowRequest.setId(flowId);
         String errorMsg = jobFlowRequest.verifyId();
@@ -164,15 +175,15 @@ public class JobFlowController {
             return failure(SERVICE_ERROR, "Job flow not found");
         }
 
-        boolean bool = jobFlowQuartzService.stopJob(jobFlow);
-        return ResultInfo.success(bool);
+        jobFlowQuartzService.stopJob(jobFlow);
+        return ResultInfo.success(flowId);
     }
 
     @GetMapping(value = "/schedule/runOnce/{flowId}")
     public ResultInfo<Long> runOnce(@PathVariable Long flowId) {
         JobFlow jobFlow = jobFlowService.getById(flowId);
         JobFlowStatus status = jobFlow.getStatus();
-        if (status != ONLINE) {
+        if (status == null || !status.isRunnable()) {
             return failure(NOT_RUNNABLE_STATUS);
         }
 
