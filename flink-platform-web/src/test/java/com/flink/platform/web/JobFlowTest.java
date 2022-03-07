@@ -33,7 +33,6 @@ public class JobFlowTest {
         jobFlowRequest.setDescription("description");
         jobFlowRequest.setCronExpr("0 0/10 * * * ?");
         jobFlowRequest.setFlow(dag);
-        jobFlowRequest.setVersion("1.0");
         jobFlowRequest.setPriority(8);
         jobFlowRequest.setReceivers(Collections.singletonList("tiny.wcl@gmail.com"));
         jobFlowRequest.setStatus(OFFLINE);

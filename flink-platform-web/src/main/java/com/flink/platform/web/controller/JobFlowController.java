@@ -65,7 +65,6 @@ public class JobFlowController {
         jobFlow.setCode(UuidGenerator.generateShortUuid());
         jobFlow.setUserId(loginUser.getId());
         jobFlow.setStatus(JobFlowStatus.OFFLINE);
-        jobFlow.setVersion("1");
         jobFlowService.save(jobFlow);
         return ResultInfo.success(jobFlowRequest.getId());
     }

@@ -43,9 +43,6 @@ public class JobFlow {
     @TableField(typeHandler = JacksonTypeHandler.class)
     private JobFlowDag flow;
 
-    /** version, use for DAG backward compatible? */
-    private String version;
-
     private Integer priority;
 
     /** email receivers. */
