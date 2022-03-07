@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.baomidou.mybatisplus.extension.handlers.JacksonTypeHandler;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.flink.platform.common.enums.ExecutionStatus;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -25,10 +26,10 @@ public class JobFlowRun {
 
     private Long flowId;
 
+    private Long userId;
+
     @TableField(typeHandler = JacksonTypeHandler.class)
     private JobFlowDag flow;
-
-    private String version;
 
     private String host;
 
@@ -43,5 +44,6 @@ public class JobFlowRun {
 
     private LocalDateTime endTime;
 
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime createTime;
 }
