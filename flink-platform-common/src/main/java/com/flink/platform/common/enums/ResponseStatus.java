@@ -12,7 +12,8 @@ public enum ResponseStatus {
     USER_NOT_FOUNT(502, "user not found"),
     USER_HAVE_NO_PERMISSION(502, "user not found"),
     USER_NAME_PASSWD_ERROR(10013, "Username or password error"),
-    NOT_RUNNABLE_STATUS(503, "not runnable status");
+    NOT_RUNNABLE_STATUS(10014, "not runnable status"),
+    NO_CRONTAB_SET(10015, "no crontab set");
 
     private final int code;
     private final String desc;

@@ -5,7 +5,6 @@ import com.flink.platform.web.service.ProcessJobService;
 import com.flink.platform.web.service.ProcessJobStatusService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -17,7 +16,6 @@ import java.util.List;
 import java.util.Map;
 
 import static com.flink.platform.common.enums.ResponseStatus.ERROR_PARAMETER;
-import static com.flink.platform.common.enums.ResponseStatus.SERVICE_ERROR;
 
 /** Process a job. */
 @Slf4j
@@ -29,19 +27,11 @@ public class ProcessJobController {
 
     @Autowired private ProcessJobStatusService processJobStatusService;
 
-    @PostMapping(value = "/process/{jobCode}")
+    @PostMapping(value = "/process/{jobId}")
     public ResultInfo<Long> process(
-            @PathVariable String jobCode, @RequestBody Map<String, Object> dataMap) {
-        try {
-            if (StringUtils.isBlank(jobCode)) {
-                return ResultInfo.failure(ERROR_PARAMETER);
-            }
-            Long jobRunId = processJobService.processJob(jobCode, dataMap);
-            return ResultInfo.success(jobRunId);
-        } catch (Exception e) {
-            log.error("Cannot exec job: {}", jobCode, e);
-            return ResultInfo.failure(SERVICE_ERROR);
-        }
+            @PathVariable Long jobId, @RequestBody Map<String, Object> dataMap) throws Exception {
+        Long jobRunId = processJobService.processJob(jobId, dataMap);
+        return ResultInfo.success(jobRunId);
     }
 
     @PostMapping(value = "/updateStatus")

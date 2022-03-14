@@ -3,17 +3,20 @@ package com.flink.platform.dao.service;
 import com.baomidou.dynamic.datasource.annotation.DS;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.flink.platform.common.model.JobVertex;
 import com.flink.platform.dao.entity.JobFlow;
 import com.flink.platform.dao.entity.JobFlowDag;
+import com.flink.platform.dao.entity.JobFlowRun;
 import com.flink.platform.dao.entity.JobInfo;
+import com.flink.platform.dao.entity.JobRunInfo;
 import com.flink.platform.dao.mapper.JobFlowMapper;
-import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Objects;
+import java.util.List;
+
+import static java.util.stream.Collectors.toList;
 
 /** job config info. */
 @Service
@@ -22,15 +25,24 @@ public class JobFlowService extends ServiceImpl<JobFlowMapper, JobFlow> {
 
     @Autowired private JobInfoService jobInfoService;
 
+    @Autowired private JobFlowRunService jobFlowRunService;
+
+    @Autowired private JobRunInfoService jobRunInfoService;
+
     @Transactional(rollbackFor = Exception.class)
     public boolean deleteAllById(long flowId) {
-        JobFlow jobFlow = getById(flowId);
-        if (jobFlow.getFlow() != null) {
-            jobFlow.getFlow().getVertices().stream()
-                    .map(JobVertex::getJobId)
-                    .filter(Objects::nonNull)
-                    .forEach(jobId -> jobInfoService.removeById(jobId));
+        List<JobInfo> jobInfoList =
+                jobInfoService.list(
+                        new QueryWrapper<JobInfo>().lambda().eq(JobInfo::getFlowId, flowId));
+        if (CollectionUtils.isNotEmpty(jobInfoList)) {
+            List<Long> jobIds = jobInfoList.stream().map(JobInfo::getId).collect(toList());
+            jobRunInfoService.remove(
+                    new QueryWrapper<JobRunInfo>().lambda().in(JobRunInfo::getJobId, jobIds));
+            jobInfoService.remove(
+                    new QueryWrapper<JobInfo>().lambda().eq(JobInfo::getFlowId, flowId));
         }
+        jobFlowRunService.remove(
+                new QueryWrapper<JobFlowRun>().lambda().eq(JobFlowRun::getFlowId, flowId));
         removeById(flowId);
         return true;
     }
@@ -48,16 +60,6 @@ public class JobFlowService extends ServiceImpl<JobFlowMapper, JobFlow> {
         } else {
             newJobFlow.setFlow(new JobFlowDag());
         }
-
-        Object[] jobIds =
-                newJobFlow.getFlow().getVertices().stream()
-                        .map(JobVertex::getJobId)
-                        .toArray(Object[]::new);
-        jobInfoService.remove(
-                new QueryWrapper<JobInfo>()
-                        .lambda()
-                        .eq(JobInfo::getFlowId, newJobFlow.getId())
-                        .notIn(ArrayUtils.isNotEmpty(jobIds), JobInfo::getId, jobIds));
         updateById(newJobFlow);
     }
 }

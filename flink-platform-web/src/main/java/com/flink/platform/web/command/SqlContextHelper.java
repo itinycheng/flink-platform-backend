@@ -58,14 +58,14 @@ public class SqlContextHelper {
         sqlContext.setExecMode(jobInfo.getExecMode());
         sqlContext.setExtJars(
                 ListUtils.defaultIfNull(jobInfo.getExtJars(), Collections.emptyList()));
-        sqlContext.setConfigs(toConfigs(jobInfo.getConfig()));
+        sqlContext.setConfigs(toConfigs(jobInfo.getConfigs()));
         sqlContext.setCatalogs(toCatalogs(jobInfo.getCatalogs()));
-        sqlContext.setFunctions(toFunctions(jobInfo.getConfig()));
+        sqlContext.setFunctions(toFunctions());
         return sqlContext;
     }
 
     /** no use. */
-    private List<Function> toFunctions(String jobConfig) {
+    private List<Function> toFunctions() {
         return Collections.emptyList();
     }
 
@@ -84,8 +84,8 @@ public class SqlContextHelper {
                 .collect(toList());
     }
 
-    private Map<String, String> toConfigs(String jobConfig) {
-        return JsonUtil.toStrMap(jobConfig);
+    private Map<String, String> toConfigs(Map<String, String> configs) {
+        return configs != null ? configs : Collections.emptyMap();
     }
 
     public List<Sql> toSqls(String subject) {

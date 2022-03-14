@@ -33,6 +33,7 @@ import java.util.Objects;
 
 import static com.flink.platform.common.enums.ResponseStatus.ERROR_PARAMETER;
 import static com.flink.platform.common.enums.ResponseStatus.NOT_RUNNABLE_STATUS;
+import static com.flink.platform.common.enums.ResponseStatus.NO_CRONTAB_SET;
 import static com.flink.platform.common.enums.ResponseStatus.SERVICE_ERROR;
 import static com.flink.platform.common.enums.ResponseStatus.USER_HAVE_NO_PERMISSION;
 import static com.flink.platform.web.entity.response.ResultInfo.failure;
@@ -154,6 +155,9 @@ public class JobFlowController {
         JobFlowStatus status = jobFlow.getStatus();
         if (status == null || !status.isRunnable()) {
             return failure(NOT_RUNNABLE_STATUS);
+        }
+        if (StringUtils.isEmpty(jobFlow.getCronExpr())) {
+            return failure(NO_CRONTAB_SET);
         }
 
         jobFlowQuartzService.scheduleJob(jobFlow);

@@ -66,8 +66,8 @@ public class JobFlowScheduleService {
                             .daemon(false)
                             .build());
 
-    private static final List<Integer> TERMINAL_STATUS_LIST =
-            ExecutionStatus.getTerminals().stream().map(ExecutionStatus::getCode).collect(toList());
+    private static final List<ExecutionStatus> TERMINAL_STATUS_LIST =
+            ExecutionStatus.getTerminals();
 
     @Autowired private QuartzService quartzService;
 
@@ -96,8 +96,7 @@ public class JobFlowScheduleService {
                                 jobRunInfo -> {
                                     JobVertex vertex =
                                             jobFlowRun.getFlow().getVertex(jobRunInfo.getJobId());
-                                    vertex.setJobRunStatus(
-                                            ExecutionStatus.from(jobRunInfo.getStatus()));
+                                    vertex.setJobRunStatus(jobRunInfo.getStatus());
                                 });
                         EXECUTOR.execute(new JobFlowExecuteThread(container));
                     }
@@ -167,7 +166,7 @@ public class JobFlowScheduleService {
                     jobVertex -> {
                         JobRunInfo jobRunInfo = processedJobRunMap.get(jobVertex.getJobId());
                         jobVertex.setJobRunId(jobRunInfo.getId());
-                        jobVertex.setJobRunStatus(ExecutionStatus.from(jobRunInfo.getStatus()));
+                        jobVertex.setJobRunStatus(jobRunInfo.getStatus());
                         jobVertex.setSubmitTime(jobRunInfo.getSubmitTime());
                     });
         }
@@ -199,10 +198,11 @@ public class JobFlowScheduleService {
         for (JobVertex jobVertex : jobVertices) {
             JobInfo jobInfo = jobInfoService.getById(jobVertex.getJobId());
             JobRunInfo jobRunInfo = new JobRunInfo();
+            jobRunInfo.setName(jobInfo.getName() + "-" + System.currentTimeMillis());
             jobRunInfo.setJobId(jobInfo.getId());
             jobRunInfo.setDeployMode(jobInfo.getDeployMode());
             jobRunInfo.setFlowRunId(jobFlowRun.getId());
-            jobRunInfo.setStatus(SUBMITTED.getCode());
+            jobRunInfo.setStatus(SUBMITTED);
             jobRunInfo.setSubmitTime(LocalDateTime.now());
             jobRunInfoService.save(jobRunInfo);
 
