@@ -6,7 +6,6 @@ import lombok.Data;
 import org.quartz.Job;
 import org.quartz.JobKey;
 import org.quartz.TriggerKey;
-import org.quartz.utils.Key;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -41,17 +40,16 @@ public class JobQuartzInfo implements IQuartzInfo {
     }
 
     private String getName() {
-        return jobInfo.getCode();
+        return jobInfo.getId().toString();
     }
 
     private String getGroup() {
-        // "JOB_INFO";
-        return Key.DEFAULT_GROUP;
+        return "JOB_INFO";
     }
 
     @Override
     public String getCron() {
-        return jobInfo.getCronExpr();
+        throw new RuntimeException("Unsupported crontab");
     }
 
     @Override

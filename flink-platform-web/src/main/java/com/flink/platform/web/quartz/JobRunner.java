@@ -30,7 +30,7 @@ public class JobRunner implements Job {
 
     private static final String JOB_PROCESS_REST_PATH = "/internal/process/%s";
 
-    private static final Map<String, Long> RUNNER_MAP = new ConcurrentHashMap<>();
+    private static final Map<Long, Long> RUNNER_MAP = new ConcurrentHashMap<>();
 
     private final JobInfoService jobInfoService = SpringContext.getBean(JobInfoService.class);
 
@@ -41,13 +41,13 @@ public class JobRunner implements Job {
         JobDetail detail = context.getJobDetail();
         JobDataMap jobDataMap = detail.getJobDataMap();
         JobKey key = detail.getKey();
-        String code = key.getName();
+        Long jobId = Long.parseLong(key.getName());
 
         try {
-            // TODO Avoid preforming the same job multiple times at the same time.
-            Long previous = RUNNER_MAP.putIfAbsent(code, System.currentTimeMillis());
+            // Avoid preforming the same job multiple times at the same time.
+            Long previous = RUNNER_MAP.putIfAbsent(jobId, System.currentTimeMillis());
             if (previous != null && previous > 0) {
-                log.warn("The job: {} is already running, start time: {}", code, previous);
+                log.warn("The job: {} is already running, start time: {}", jobId, previous);
                 return;
             }
 
@@ -56,11 +56,11 @@ public class JobRunner implements Job {
                     jobInfoService.getOne(
                             new QueryWrapper<JobInfo>()
                                     .lambda()
-                                    .eq(JobInfo::getCode, code)
-                                    .eq(JobInfo::getStatus, JobStatus.ONLINE.getCode()));
+                                    .eq(JobInfo::getId, jobId)
+                                    .eq(JobInfo::getStatus, JobStatus.ONLINE));
 
             if (jobInfo == null) {
-                log.warn("The job: {} is no longer exists or not in ready/scheduled status.", code);
+                log.warn("The job:{} is no longer exists or not in ready/scheduled status.", jobId);
                 return;
             }
 
@@ -73,7 +73,7 @@ public class JobRunner implements Job {
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(APPLICATION_JSON);
 
-            String httpUri = routeUrl + String.format(JOB_PROCESS_REST_PATH, code);
+            String httpUri = routeUrl + String.format(JOB_PROCESS_REST_PATH, jobId);
             ResultInfo<Long> response =
                     restTemplate
                             .exchange(
@@ -82,12 +82,12 @@ public class JobRunner implements Job {
                                     new HttpEntity<>(wrappedMap, headers),
                                     new ParameterizedTypeReference<ResultInfo<Long>>() {})
                             .getBody();
-            log.info("The job: {} is processed, job run result: {}", code, response);
+            log.info("The job: {} is processed, job run result: {}", jobId, response);
 
         } catch (Exception e) {
-            log.error("Cannot exec job: {}", code, e);
+            log.error("Cannot exec job: {}", jobId, e);
         } finally {
-            RUNNER_MAP.remove(code);
+            RUNNER_MAP.remove(jobId);
         }
     }
 }

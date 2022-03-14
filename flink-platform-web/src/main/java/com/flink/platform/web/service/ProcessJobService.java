@@ -63,8 +63,7 @@ public class ProcessJobService {
         this.jobCommandExecutors = jobCommandExecutors;
     }
 
-    public Long processJob(final String jobCode, final Map<String, Object> dataMap)
-            throws Exception {
+    public Long processJob(final Long jobId, final Map<String, Object> dataMap) throws Exception {
         JobCommand jobCommand = null;
         JobInfo jobInfo = null;
         Long jobRunId = null;
@@ -79,12 +78,12 @@ public class ProcessJobService {
                     jobInfoService.getOne(
                             new QueryWrapper<JobInfo>()
                                     .lambda()
-                                    .eq(JobInfo::getCode, jobCode)
-                                    .ne(JobInfo::getStatus, JobStatus.OFFLINE.getCode()));
+                                    .eq(JobInfo::getId, jobId)
+                                    .eq(JobInfo::getStatus, JobStatus.ONLINE));
             if (jobInfo == null) {
                 throw new JobCommandGenException(
                         String.format(
-                                "The job: %s is no longer exists or in delete status.", jobCode));
+                                "The job: %s is no longer exists or in delete status.", jobId));
             }
 
             // step 2: replace variables in the sql statement
@@ -143,8 +142,8 @@ public class ProcessJobService {
             if (jobRunId != null) {
                 JobRunInfo jobRunInfo = new JobRunInfo();
                 jobRunInfo.setId(jobRunId);
-                jobRunInfo.setCommand(commandString);
-                jobRunInfo.setStatus(getExecutionStatus(jobType, callback).getCode());
+                jobRunInfo.setSubject(jobInfo.getSubject());
+                jobRunInfo.setStatus(getExecutionStatus(jobType, callback));
                 jobRunInfo.setVariables(JsonUtil.toJsonString(variableMap));
                 jobRunInfo.setBackInfo(JsonUtil.toJsonString(callback));
                 jobRunInfo.setSubmitTime(LocalDateTime.now());
@@ -152,7 +151,7 @@ public class ProcessJobService {
             }
 
             // step 6: print job command info
-            log.info("Job: {} submitted, time: {}", jobCode, System.currentTimeMillis());
+            log.info("Job: {} submitted, time: {}", jobId, System.currentTimeMillis());
         } catch (Exception exception) {
             handleFailure(jobRunId);
             throw exception;
@@ -179,7 +178,7 @@ public class ProcessJobService {
 
         JobRunInfo jobRunInfo = new JobRunInfo();
         jobRunInfo.setId(jobRunId);
-        jobRunInfo.setStatus(FAILURE.getCode());
+        jobRunInfo.setStatus(FAILURE);
         jobRunInfoService.updateById(jobRunInfo);
 
         jobRunInfo = jobRunInfoService.getById(jobRunId);

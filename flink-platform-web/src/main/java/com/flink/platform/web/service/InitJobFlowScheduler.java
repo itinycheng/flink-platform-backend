@@ -2,7 +2,6 @@ package com.flink.platform.web.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.flink.platform.common.constants.Constant;
-import com.flink.platform.common.enums.ExecutionStatus;
 import com.flink.platform.common.graph.DAG;
 import com.flink.platform.common.model.JobEdge;
 import com.flink.platform.common.model.JobVertex;
@@ -64,8 +63,7 @@ public class InitJobFlowScheduler {
                                 JobVertex vertex = flow.getVertex(jobRunInfo.getJobId());
                                 vertex.setSubmitTime(jobRunInfo.getCreateTime());
                                 vertex.setJobRunId(jobRunInfo.getId());
-                                vertex.setJobRunStatus(
-                                        ExecutionStatus.from(jobRunInfo.getStatus()));
+                                vertex.setJobRunStatus(jobRunInfo.getStatus());
                             });
 
             jobFlowScheduleService.registerToScheduler(jobFlowRun);

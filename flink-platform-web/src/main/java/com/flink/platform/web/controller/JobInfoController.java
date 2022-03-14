@@ -4,12 +4,10 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.flink.platform.common.enums.JobStatus;
-import com.flink.platform.common.util.UuidGenerator;
 import com.flink.platform.dao.entity.JobInfo;
 import com.flink.platform.dao.service.JobInfoService;
 import com.flink.platform.web.entity.request.JobInfoRequest;
 import com.flink.platform.web.entity.response.ResultInfo;
-import com.flink.platform.web.service.JobQuartzService;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,8 +31,6 @@ import static com.flink.platform.web.entity.response.ResultInfo.failure;
 @RequestMapping("/jobInfo")
 public class JobInfoController {
 
-    @Autowired private JobQuartzService jobQuartzService;
-
     @Autowired private JobInfoService jobInfoService;
 
     @PostMapping(value = "/create")
@@ -46,8 +42,7 @@ public class JobInfoController {
 
         JobInfo jobInfo = jobInfoRequest.getJobInfo();
         jobInfo.setId(null);
-        jobInfo.setCode(UuidGenerator.generateShortUuid());
-        jobInfo.setStatus(JobStatus.ONLINE.getCode());
+        jobInfo.setStatus(JobStatus.ONLINE);
         jobInfoService.save(jobInfo);
         return ResultInfo.success(jobInfo);
     }
@@ -60,7 +55,6 @@ public class JobInfoController {
         }
 
         JobInfo jobInfo = jobInfoRequest.getJobInfo();
-        jobInfo.setCode(null);
         jobInfoService.updateById(jobInfo);
         return ResultInfo.success(jobInfo);
     }
@@ -101,22 +95,5 @@ public class JobInfoController {
 
         List<JobInfo> jobs = jobInfoService.listByIds(ids);
         return ResultInfo.success(jobs);
-    }
-
-    @Deprecated
-    @GetMapping(value = "open/{id}")
-    public ResultInfo<Boolean> openOne(@PathVariable String id, String cronExpr) {
-        JobInfo jobInfo = this.jobInfoService.getById(id);
-        jobInfo.setCronExpr(cronExpr);
-        boolean result = jobQuartzService.openJob(jobInfo);
-        return ResultInfo.success(result);
-    }
-
-    @Deprecated
-    @GetMapping(value = "stop/{id}")
-    public ResultInfo<Boolean> stop(@PathVariable String id) {
-        JobInfo jobInfo = this.jobInfoService.getById(id);
-        boolean result = jobQuartzService.stopJob(jobInfo);
-        return ResultInfo.success(result);
     }
 }

@@ -8,6 +8,7 @@ import com.baomidou.mybatisplus.extension.handlers.JacksonTypeHandler;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.flink.platform.common.enums.DeployMode;
 import com.flink.platform.common.enums.ExecutionMode;
+import com.flink.platform.common.enums.JobStatus;
 import com.flink.platform.common.enums.JobType;
 import lombok.AccessLevel;
 import lombok.Data;
@@ -22,16 +23,13 @@ import java.util.Map;
 /** job config info. */
 @Data
 @NoArgsConstructor
-@TableName(value = "t_job_info", autoResultMap = true)
+@TableName(value = "t_job", autoResultMap = true)
 public class JobInfo implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
     @TableId(value = "id", type = IdType.AUTO)
     private Long id;
-
-    /** unique code. */
-    @Deprecated private String code;
 
     /** job name. */
     private String name;
@@ -48,8 +46,9 @@ public class JobInfo implements Serializable {
     /** version. */
     private String version;
 
-    /** config for run job. */
-    private String config;
+    /** configs for run job. */
+    @TableField(typeHandler = JacksonTypeHandler.class)
+    private Map<String, String> configs;
 
     /** deploy mode. */
     private DeployMode deployMode;
@@ -64,15 +63,6 @@ public class JobInfo implements Serializable {
     /** sql or jar path. */
     private String subject;
 
-    /** use json to explain sql logic in subject column. */
-    private String sqlPlan;
-
-    /** main args. */
-    private String mainArgs;
-
-    /** main class. */
-    private String mainClass;
-
     /** catalogs. */
     @TableField(typeHandler = JacksonTypeHandler.class)
     private LongArrayList catalogs;
@@ -81,11 +71,11 @@ public class JobInfo implements Serializable {
     @TableField(typeHandler = JacksonTypeHandler.class)
     private List<String> extJars;
 
-    /** -1: delete, 0: close, 1: open. */
-    private Integer status;
+    /** main args. */
+    private String mainArgs;
 
-    /** cron expression for the job. */
-    @Deprecated private String cronExpr;
+    /** main class. */
+    private String mainClass;
 
     /**
      * route url. <br>
@@ -93,23 +83,20 @@ public class JobInfo implements Serializable {
      */
     private String routeUrl;
 
-    /** create user. */
-    @Setter(AccessLevel.NONE)
-    @Deprecated
-    private String createUser;
+    /** -1: delete, 0: close, 1: open. */
+    private JobStatus status;
 
     /** create time. */
     @Setter(AccessLevel.NONE)
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
     private LocalDateTime createTime;
 
-    /** update user. */
-    @Setter(AccessLevel.NONE)
-    @Deprecated
-    private String updateUser;
-
     /** update time. */
     @Setter(AccessLevel.NONE)
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
     private LocalDateTime updateTime;
+
+    public String getCode() {
+        return "job_" + id;
+    }
 }

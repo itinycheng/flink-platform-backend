@@ -3,7 +3,6 @@ package com.flink.platform.web.command;
 import com.flink.platform.common.enums.DeployMode;
 import com.flink.platform.common.enums.JobType;
 import com.flink.platform.common.exception.JobCommandGenException;
-import com.flink.platform.common.util.JsonUtil;
 import com.flink.platform.dao.entity.JobInfo;
 import com.flink.platform.web.config.FlinkConfig;
 import com.flink.platform.web.service.HdfsService;
@@ -65,7 +64,9 @@ public abstract class FlinkCommandBuilder implements CommandBuilder {
         command.setPrefix(flinkConfig.getCommandPath() + execMode);
         // add configurations
         Map<String, Object> configs = command.getConfigs();
-        configs.putAll(JsonUtil.toMap(jobInfo.getConfig()));
+        if (jobInfo.getConfigs() != null) {
+            configs.putAll(jobInfo.getConfigs());
+        }
         // add yarn application name
         String appName = String.join("-", jobInfo.getExecMode().name(), jobInfo.getCode());
         configs.put(YARN_APPLICATION_NAME, appName);

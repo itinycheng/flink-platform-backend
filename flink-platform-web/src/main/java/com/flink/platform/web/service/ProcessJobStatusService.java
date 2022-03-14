@@ -64,7 +64,7 @@ public class ProcessJobStatusService {
             // update job status
             JobRunInfo runInfo = new JobRunInfo();
             runInfo.setId(jobRunInfo.getId());
-            runInfo.setStatus(statusInfo.getStatus().getCode());
+            runInfo.setStatus(statusInfo.getStatus());
             jobRunInfoService.updateById(runInfo);
         }
     }

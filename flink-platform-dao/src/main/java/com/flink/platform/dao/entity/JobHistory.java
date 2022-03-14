@@ -43,9 +43,6 @@ public class JobHistory implements Serializable {
     /** execution mode. */
     private ExecutionMode execMode;
 
-    /** cron expression. */
-    private String cronExpr;
-
     /** sql or jar path. */
     private String subject;
 

@@ -31,6 +31,9 @@ public class StatusRunner implements Job {
 
     private static final String REST_UPDATE_STATUS = "/internal/updateStatus";
 
+    private static final List<ExecutionStatus> NON_TERMINAL_STATUS_LIST =
+            ExecutionStatus.getNonTerminals();
+
     private final JobRunInfoService jobRunInfoService =
             SpringContext.getBean(JobRunInfoService.class);
 
@@ -38,16 +41,11 @@ public class StatusRunner implements Job {
 
     @Override
     public void execute(JobExecutionContext context) {
-        List<Integer> nonTerminals =
-                ExecutionStatus.getNonTerminals().stream()
-                        .map(ExecutionStatus::getCode)
-                        .collect(toList());
-
         List<JobRunInfo> jobRunList =
                 jobRunInfoService.list(
                         new QueryWrapper<JobRunInfo>()
                                 .lambda()
-                                .in(JobRunInfo::getStatus, nonTerminals));
+                                .in(JobRunInfo::getStatus, NON_TERMINAL_STATUS_LIST));
 
         Map<String, List<JobRunInfo>> groupedJobRunList =
                 jobRunList.stream()
