@@ -45,6 +45,7 @@ public class ExecuteSqls {
             case CREATE_CATALOG:
             case CREATE_DATABASE:
             case CREATE_TABLE:
+            case CREATE_VIEW:
             case CREATE_FUNCTION:
             case DROP_DATABASE:
             case DROP_TABLE:
