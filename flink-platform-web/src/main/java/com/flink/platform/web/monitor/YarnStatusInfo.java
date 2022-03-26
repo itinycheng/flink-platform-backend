@@ -7,6 +7,8 @@ import org.apache.hadoop.yarn.api.records.ApplicationReport;
 import org.apache.hadoop.yarn.api.records.FinalApplicationStatus;
 import org.apache.hadoop.yarn.api.records.YarnApplicationState;
 
+import javax.annotation.Nonnull;
+
 import java.time.Instant;
 import java.time.LocalDateTime;
 
@@ -21,6 +23,7 @@ public class YarnStatusInfo implements StatusInfo {
         this.applicationReport = Preconditions.checkNotNull(applicationReport);
     }
 
+    @Nonnull
     @Override
     public ExecutionStatus getStatus() {
         FinalApplicationStatus finalStatus = applicationReport.getFinalApplicationStatus();

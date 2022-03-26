@@ -8,7 +8,6 @@ import org.quartz.Scheduler;
 import org.quartz.Trigger;
 import org.quartz.TriggerBuilder;
 import org.quartz.TriggerKey;
-import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
@@ -20,7 +19,7 @@ import static org.quartz.JobBuilder.newJob;
 
 /** Status runner starter. */
 @Slf4j
-@Component
+// @Component
 public class StatusRunnerStarter {
 
     private static final String KEY_NAME = "STATUS_RUNNER";

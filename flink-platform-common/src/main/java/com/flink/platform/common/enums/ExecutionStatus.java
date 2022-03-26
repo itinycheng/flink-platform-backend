@@ -12,9 +12,8 @@ public enum ExecutionStatus {
     KILLED(4, TerminalState.TERMINAL),
     ABNORMAL(5, TerminalState.TERMINAL),
 
-    /** Only for job run. */
-    RETRY(6, TerminalState.NON_TERMINAL),
-
+    /** Internal status for job run only. */
+    ERROR(6, TerminalState.TERMINAL),
     NOT_EXIST(7, TerminalState.TERMINAL);
 
     private enum TerminalState {

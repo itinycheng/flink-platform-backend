@@ -42,7 +42,7 @@ public class YarnStatusFetcher implements StatusFetcher {
     public StatusInfo getStatus(JobRunInfo jobRunInfo) {
         JobCallback jobCallback = JsonUtil.toBean(jobRunInfo.getBackInfo(), JobCallback.class);
         if (jobCallback == null || StringUtils.isEmpty(jobCallback.getAppId())) {
-            return null;
+            return new CustomizeStatusInfo(NOT_EXIST, LocalDateTime.now(), LocalDateTime.now());
         }
 
         String applicationId = jobCallback.getAppId();
@@ -58,7 +58,7 @@ public class YarnStatusFetcher implements StatusFetcher {
                     "Use yarn client to get ApplicationReport failed, application: {}",
                     applicationId,
                     e);
-            return null;
+            throw new RuntimeException(e);
         }
     }
 }
