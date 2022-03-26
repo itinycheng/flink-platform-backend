@@ -29,9 +29,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
-import static com.flink.platform.common.enums.ExecutionStatus.FAILURE;
 import static com.flink.platform.common.enums.ExecutionStatus.SUCCESS;
-import static com.flink.platform.web.entity.JobQuartzInfo.JOB_RUN_ID;
 import static java.util.stream.Collectors.toMap;
 
 /** Process job service. */
@@ -43,8 +41,6 @@ public class ProcessJobService {
 
     private final JobRunInfoService jobRunInfoService;
 
-    private final JobFlowScheduleService jobFlowScheduleService;
-
     private final List<CommandBuilder> jobCommandBuilders;
 
     private final List<CommandExecutor> jobCommandExecutors;
@@ -53,26 +49,19 @@ public class ProcessJobService {
     public ProcessJobService(
             JobInfoService jobInfoService,
             JobRunInfoService jobRunInfoService,
-            JobFlowScheduleService jobFlowScheduleService,
             List<CommandBuilder> jobCommandBuilders,
             List<CommandExecutor> jobCommandExecutors) {
         this.jobInfoService = jobInfoService;
         this.jobRunInfoService = jobRunInfoService;
-        this.jobFlowScheduleService = jobFlowScheduleService;
         this.jobCommandBuilders = jobCommandBuilders;
         this.jobCommandExecutors = jobCommandExecutors;
     }
 
-    public Long processJob(final Long jobId, final Map<String, Object> dataMap) throws Exception {
+    public JobRunInfo processJob(final long jobId, final long flowRunId) throws Exception {
         JobCommand jobCommand = null;
         JobInfo jobInfo = null;
-        Long jobRunId = null;
 
         try {
-            if (dataMap != null && dataMap.get(JOB_RUN_ID) != null) {
-                jobRunId = ((Number) dataMap.get(JOB_RUN_ID)).longValue();
-            }
-
             // step 1: get job info
             jobInfo =
                     jobInfoService.getOne(
@@ -127,6 +116,7 @@ public class ProcessJobService {
                             .buildCommand(jobInfo);
 
             // step 4: submit job
+            LocalDateTime submitTime = LocalDateTime.now();
             String commandString = jobCommand.toCommandString();
             JobCallback callback =
                     jobCommandExecutors.stream()
@@ -138,23 +128,24 @@ public class ProcessJobService {
                                                     "No available job command executor"))
                             .execCommand(commandString);
 
-            // step 5: write msg back to db
-            if (jobRunId != null) {
-                JobRunInfo jobRunInfo = new JobRunInfo();
-                jobRunInfo.setId(jobRunId);
-                jobRunInfo.setSubject(jobInfo.getSubject());
-                jobRunInfo.setStatus(getExecutionStatus(jobType, callback));
-                jobRunInfo.setVariables(JsonUtil.toJsonString(variableMap));
-                jobRunInfo.setBackInfo(JsonUtil.toJsonString(callback));
-                jobRunInfo.setSubmitTime(LocalDateTime.now());
-                jobRunInfoService.updateById(jobRunInfo);
-            }
+            // step 5: write job run info to db
+            JobRunInfo jobRunInfo = new JobRunInfo();
+            jobRunInfo.setName(jobInfo.getName() + "-" + System.currentTimeMillis());
+            jobRunInfo.setJobId(jobInfo.getId());
+            jobRunInfo.setFlowRunId(flowRunId);
+            jobRunInfo.setDeployMode(jobInfo.getDeployMode());
+            jobRunInfo.setExecMode(jobInfo.getExecMode());
+            jobRunInfo.setSubject(jobInfo.getSubject());
+            jobRunInfo.setStatus(getExecutionStatus(jobType, callback));
+            jobRunInfo.setVariables(JsonUtil.toJsonString(variableMap));
+            jobRunInfo.setBackInfo(JsonUtil.toJsonString(callback));
+            jobRunInfo.setSubmitTime(submitTime);
+            jobRunInfoService.save(jobRunInfo);
 
             // step 6: print job command info
             log.info("Job: {} submitted, time: {}", jobId, System.currentTimeMillis());
-        } catch (Exception exception) {
-            handleFailure(jobRunId);
-            throw exception;
+
+            return jobRunInfo;
         } finally {
             if (jobInfo != null && jobInfo.getType() == JobType.FLINK_SQL && jobCommand != null) {
                 try {
@@ -166,24 +157,6 @@ public class ProcessJobService {
                     log.warn("Delete sql context file failed", e);
                 }
             }
-        }
-
-        return jobRunId;
-    }
-
-    public void handleFailure(Long jobRunId) {
-        if (jobRunId == null) {
-            return;
-        }
-
-        JobRunInfo jobRunInfo = new JobRunInfo();
-        jobRunInfo.setId(jobRunId);
-        jobRunInfo.setStatus(FAILURE);
-        jobRunInfoService.updateById(jobRunInfo);
-
-        jobRunInfo = jobRunInfoService.getById(jobRunId);
-        if (jobRunInfo.getFlowRunId() != null) {
-            jobFlowScheduleService.terminateFlow(jobRunInfo.getFlowRunId(), FAILURE);
         }
     }
 

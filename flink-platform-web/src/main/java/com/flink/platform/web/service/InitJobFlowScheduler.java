@@ -61,7 +61,6 @@ public class InitJobFlowScheduler {
                     .forEach(
                             jobRunInfo -> {
                                 JobVertex vertex = flow.getVertex(jobRunInfo.getJobId());
-                                vertex.setSubmitTime(jobRunInfo.getCreateTime());
                                 vertex.setJobRunId(jobRunInfo.getId());
                                 vertex.setJobRunStatus(jobRunInfo.getStatus());
                             });

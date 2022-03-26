@@ -97,3 +97,9 @@ hadoop:
     dfs.namenode.rpc-address.nameservice1.namenode127: 0.0.0.0:8020
     dfs.namenode.servicerpc-address.nameservice1.namenode39: 0.0.0.0:8022
     dfs.namenode.servicerpc-address.nameservice1.namenode127: 0.0.0.0:8022
+
+worker:
+  flowExecThreads: 100
+  perFlowExecThreads: 5
+  errorRetries: 3
+  streamingJobToSuccessMills: 300000

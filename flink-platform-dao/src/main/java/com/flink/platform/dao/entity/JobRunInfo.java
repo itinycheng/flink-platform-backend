@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.flink.platform.common.enums.DeployMode;
+import com.flink.platform.common.enums.ExecutionMode;
 import com.flink.platform.common.enums.ExecutionStatus;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -29,6 +30,8 @@ public class JobRunInfo implements Serializable {
     private Long flowRunId;
 
     private DeployMode deployMode;
+
+    private ExecutionMode execMode;
 
     private String routeUrl;
 

@@ -8,8 +8,6 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDateTime;
-
 import static com.flink.platform.common.model.ExecutionCondition.AND;
 
 /** Job vertex. */
@@ -22,11 +20,9 @@ public class JobVertex extends Vertex<Long> {
 
     private ExecutionCondition precondition = AND;
 
-    @JsonIgnore private transient LocalDateTime submitTime;
+    @JsonIgnore private transient volatile Long jobRunId;
 
-    @JsonIgnore private transient Long jobRunId;
-
-    @JsonIgnore private transient ExecutionStatus jobRunStatus;
+    @JsonIgnore private transient volatile ExecutionStatus jobRunStatus;
 
     public JobVertex(Long id, Long jobId) {
         super(id);

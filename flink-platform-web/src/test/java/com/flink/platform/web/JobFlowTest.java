@@ -6,9 +6,11 @@ import com.flink.platform.common.util.JsonUtil;
 import com.flink.platform.common.util.UuidGenerator;
 import com.flink.platform.dao.entity.JobFlowDag;
 import com.flink.platform.web.entity.request.JobFlowRequest;
+import org.apache.commons.lang3.ObjectUtils;
 import org.junit.Test;
 
 import java.util.Collections;
+import java.util.concurrent.PriorityBlockingQueue;
 
 import static com.flink.platform.common.enums.ExecutionStatus.SUCCESS;
 import static com.flink.platform.common.enums.JobFlowStatus.OFFLINE;
@@ -39,5 +41,19 @@ public class JobFlowTest {
 
         String json = JsonUtil.toJsonString(jobFlowRequest.getJobFlow());
         System.out.println(json);
+    }
+
+    @Test
+    public void test2() {
+        PriorityBlockingQueue<Integer> queue =
+                new PriorityBlockingQueue<>(5, (o1, o2) -> ObjectUtils.compare(o2, o1));
+        queue.offer(3);
+        queue.offer(2);
+        queue.offer(1);
+        queue.offer(4);
+        queue.offer(5);
+        for (int i = 0; i < 5; i++) {
+            System.out.println(queue.poll());
+        }
     }
 }

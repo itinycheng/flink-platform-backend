@@ -19,7 +19,7 @@ public class HttpUtil {
 
     public static final String HTTP_X_REAL_IP = "X-Real-IP";
 
-    private static final String LOCALHOST_URL = "http://127.0.0.1";
+    public static final String LOCALHOST_URL = "http://127.0.0.1";
 
     public static String getUrlOrDefault(String routeUrl) {
         if (StringUtils.isBlank(routeUrl)) {

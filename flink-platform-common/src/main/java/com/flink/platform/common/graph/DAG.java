@@ -146,9 +146,13 @@ public class DAG<VId, V extends Vertex<VId>, E extends Edge<VId>> {
         lock.readLock().lock();
 
         try {
+            if (vertex == null) {
+                return getBeginVertices();
+            }
+
             Set<VId> next = new HashSet<>();
             for (E edge : edges) {
-                if (vertex.equals(edge.getFromVId())) {
+                if (vertex.getId().equals(edge.getFromVId())) {
                     next.add(edge.getToVId());
                 }
             }

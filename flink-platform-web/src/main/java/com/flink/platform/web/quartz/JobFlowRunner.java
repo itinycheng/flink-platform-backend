@@ -89,7 +89,6 @@ public class JobFlowRunner implements Job {
                             jobFlow.getName(),
                             jobFlow.getCode(),
                             String.valueOf(System.currentTimeMillis())));
-            jobFlowRun.setFlowId(jobFlow.getId());
             jobFlowRun.setFlow(jobFlow.getFlow());
             jobFlowRun.setUserId(jobFlow.getUserId());
             jobFlowRun.setHost(Constant.HOST_IP);

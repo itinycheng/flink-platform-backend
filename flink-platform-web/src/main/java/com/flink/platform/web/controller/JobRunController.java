@@ -3,7 +3,9 @@ package com.flink.platform.web.controller;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.flink.platform.dao.entity.JobInfo;
 import com.flink.platform.dao.entity.JobRunInfo;
+import com.flink.platform.dao.service.JobInfoService;
 import com.flink.platform.dao.service.JobRunInfoService;
 import com.flink.platform.web.entity.request.JobRunRequest;
 import com.flink.platform.web.entity.response.ResultInfo;
@@ -17,8 +19,11 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+
+import static java.util.stream.Collectors.toList;
 
 /** Job run info controller. */
 @RestController
@@ -26,6 +31,8 @@ import java.util.List;
 public class JobRunController {
 
     @Autowired private JobRunInfoService jobRunInfoService;
+
+    @Autowired private JobInfoService jobInfoService;
 
     @GetMapping("{jobId}")
     public ResultInfo<IPage<JobRunInfo>> get(
@@ -51,8 +58,8 @@ public class JobRunController {
         return ResultInfo.success(jobRunInfo);
     }
 
-    @PostMapping(value = "/getByJobIds")
-    public ResultInfo<List<JobRunInfo>> list(@RequestBody JobRunRequest jobRunRequest) {
+    @PostMapping(value = "/getJobOrRunByJobIds")
+    public ResultInfo<Collection<Object>> list(@RequestBody JobRunRequest jobRunRequest) {
         if (CollectionUtils.isEmpty(jobRunRequest.getJobIds())
                 || jobRunRequest.getFlowRunId() == null) {
             return ResultInfo.success(Collections.emptyList());
@@ -64,6 +71,23 @@ public class JobRunController {
                                 .lambda()
                                 .eq(JobRunInfo::getFlowRunId, jobRunRequest.getFlowRunId())
                                 .in(JobRunInfo::getJobId, jobRunRequest.getJobIds()));
-        return ResultInfo.success(jobRunList);
+
+        List<Long> existedJobs =
+                CollectionUtils.emptyIfNull(jobRunList).stream()
+                        .map(JobRunInfo::getJobId)
+                        .collect(toList());
+
+        Collection<Long> unRunJobIds =
+                CollectionUtils.subtract(jobRunRequest.getJobIds(), existedJobs);
+
+        List<JobInfo> jobList = null;
+        if (CollectionUtils.isNotEmpty(unRunJobIds)) {
+            jobList = jobInfoService.listByIds(unRunJobIds);
+        }
+        Collection<Object> jobAndJobRunList =
+                CollectionUtils.union(
+                        CollectionUtils.emptyIfNull(jobRunList),
+                        CollectionUtils.emptyIfNull(jobList));
+        return ResultInfo.success(jobAndJobRunList);
     }
 }

@@ -9,11 +9,14 @@ import org.apache.commons.collections4.CollectionUtils;
 
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Set;
 
 import static com.flink.platform.common.enums.ExecutionStatus.ABNORMAL;
+import static com.flink.platform.common.enums.ExecutionStatus.ERROR;
 import static com.flink.platform.common.enums.ExecutionStatus.FAILURE;
 import static com.flink.platform.common.enums.ExecutionStatus.KILLED;
+import static com.flink.platform.common.enums.ExecutionStatus.NOT_EXIST;
 import static com.flink.platform.common.enums.ExecutionStatus.RUNNING;
 import static com.flink.platform.common.enums.ExecutionStatus.SUBMITTED;
 import static com.flink.platform.common.enums.ExecutionStatus.SUCCESS;
@@ -24,14 +27,19 @@ import static java.util.stream.Collectors.toSet;
 /** Dag helper for job flow. */
 public class JobFlowDagHelper {
 
+    // TODO : dag can not have executable vertices
     public static ExecutionStatus getDagState(DAG<Long, JobVertex, JobEdge> dag) {
         Set<ExecutionStatus> vertexStatusList =
                 dag.getVertices().stream()
-                        .filter(jobVertex -> jobVertex.getSubmitTime() != null)
                         .map(JobVertex::getJobRunStatus)
+                        .filter(Objects::nonNull)
                         .collect(toSet());
         ExecutionStatus status;
-        if (vertexStatusList.contains(FAILURE)) {
+        if (vertexStatusList.contains(ERROR)) {
+            status = ERROR;
+        } else if (vertexStatusList.contains(NOT_EXIST)) {
+            status = NOT_EXIST;
+        } else if (vertexStatusList.contains(FAILURE)) {
             status = FAILURE;
         } else if (vertexStatusList.contains(ABNORMAL)) {
             status = ABNORMAL;
@@ -78,7 +86,7 @@ public class JobFlowDagHelper {
         Collection<JobVertex> beginVertices = dag.getBeginVertices();
         Set<JobVertex> executableSet =
                 beginVertices.stream()
-                        .filter(jobVertex -> jobVertex.getSubmitTime() == null)
+                        .filter(jobVertex -> jobVertex.getJobRunStatus() == null)
                         .collect(toSet());
 
         // TODO Handle the situation where any vertex has a failed state.
@@ -126,7 +134,7 @@ public class JobFlowDagHelper {
         Set<JobVertex> executedVertices = new HashSet<>();
         Set<JobVertex> unExecutedVertices = new HashSet<>();
         for (JobVertex executableToVertex : executableToVertices) {
-            if (executableToVertex.getSubmitTime() != null) {
+            if (executableToVertex.getJobRunStatus() != null) {
                 executedVertices.add(executableToVertex);
             } else {
                 unExecutedVertices.add(executableToVertex);
