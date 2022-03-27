@@ -5,6 +5,7 @@ import com.flink.platform.common.graph.DAG;
 import com.flink.platform.common.model.ExecutionCondition;
 import com.flink.platform.common.model.JobEdge;
 import com.flink.platform.common.model.JobVertex;
+import com.flink.platform.dao.entity.JobFlowDag;
 import org.apache.commons.collections4.CollectionUtils;
 
 import java.util.Collection;
@@ -45,15 +46,31 @@ public class JobFlowDagHelper {
             status = ABNORMAL;
         } else if (vertexStatusList.contains(KILLED)) {
             status = KILLED;
-        } else if (vertexStatusList.contains(SUCCESS)) {
-            status = SUCCESS;
         } else if (vertexStatusList.contains(RUNNING)) {
             status = RUNNING;
+        } else if (vertexStatusList.contains(SUCCESS)) {
+            status = SUCCESS;
         } else {
             status = SUBMITTED;
         }
 
         return status;
+    }
+
+    public static boolean hasUnExecutedVertices(JobFlowDag dag) {
+        Set<JobVertex> vertices = dag.getVertices();
+        if (vertices.stream()
+                .map(JobVertex::getJobRunStatus)
+                .anyMatch(ExecutionStatus::isStopFlowState)) {
+            return true;
+        }
+
+        Collection<JobVertex> beginVertices = dag.getBeginVertices();
+        if (beginVertices.stream().anyMatch(jobVertex -> jobVertex.getJobRunStatus() == null)) {
+            return true;
+        }
+
+        return CollectionUtils.isNotEmpty(getNextExecutableVertices(beginVertices, dag));
     }
 
     public static boolean isPreconditionSatisfied(
@@ -89,7 +106,6 @@ public class JobFlowDagHelper {
                         .filter(jobVertex -> jobVertex.getJobRunStatus() == null)
                         .collect(toSet());
 
-        // TODO Handle the situation where any vertex has a failed state.
         if (CollectionUtils.isNotEmpty(executableSet)) {
             return executableSet;
         }
@@ -113,15 +129,6 @@ public class JobFlowDagHelper {
                                                                         == fromVertex
                                                                                 .getJobRunStatus()))
                         .collect(toSet());
-
-        // Only execute edge with failed status, if there are any.
-        Set<JobEdge> failedEdges =
-                statusMatchedEdgeSet.stream()
-                        .filter(edge -> edge.getExpectStatus().isErrTerminalState())
-                        .collect(toSet());
-        if (CollectionUtils.isNotEmpty(failedEdges)) {
-            statusMatchedEdgeSet = failedEdges;
-        }
 
         // Get the executable vertices.
         Set<JobVertex> executableToVertices =

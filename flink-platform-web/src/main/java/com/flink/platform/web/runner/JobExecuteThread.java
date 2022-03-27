@@ -40,7 +40,7 @@ public class JobExecuteThread implements Callable<JobResponse> {
 
     private static final String REST_GET_STATUS = "/internal/getStatus";
 
-    private static final int MIN_SLEEP_TIME_MILLIS = 1000;
+    private static final int MIN_SLEEP_TIME_MILLIS = 2000;
 
     private static final int MAX_SLEEP_TIME_MILLIS = 60_000;
 
@@ -161,7 +161,7 @@ public class JobExecuteThread implements Callable<JobResponse> {
                     return processJobService.processJob(jobId, flowRunId);
                 }
             } catch (Exception e) {
-                log.error("Process job: {} failed.", jobId);
+                log.error("Process job: {} failed.", jobId, e);
                 sleep(retryTimes);
             }
         }
@@ -196,8 +196,16 @@ public class JobExecuteThread implements Callable<JobResponse> {
                             updateAndGetStreamJobStatus(statusInfo, jobRunInfo.getCreateTime());
                 }
 
-                if (statusInfo != null && statusInfo.getStatus().isTerminalState()) {
-                    return statusInfo;
+                if (statusInfo != null) {
+                    log.info(
+                            "Job runId: {}, name: {} Status: {}",
+                            jobRunInfo.getJobId(),
+                            jobRunInfo.getName(),
+                            statusInfo.getStatus());
+
+                    if (statusInfo.getStatus().isTerminalState()) {
+                        return statusInfo;
+                    }
                 }
 
             } catch (Exception e) {

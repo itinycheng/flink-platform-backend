@@ -1,39 +1,25 @@
 package com.flink.platform.web.monitor;
 
 import com.flink.platform.common.enums.DeployMode;
-import com.flink.platform.common.enums.ExecutionStatus;
 import com.flink.platform.dao.entity.JobRunInfo;
+import com.flink.platform.dao.service.JobRunInfoService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.Nonnull;
-
-import java.time.LocalDateTime;
-
 /** status monitor. */
+@Order()
 @Component
 public class DefaultStatusFetcher implements StatusFetcher {
 
+    @Autowired private JobRunInfoService jobRunInfoService;
+
     public boolean isSupported(DeployMode deployMode) {
-        return false;
+        return true;
     }
 
     public StatusInfo getStatus(JobRunInfo jobRunInfo) {
-        return new StatusInfo() {
-            @Nonnull
-            @Override
-            public ExecutionStatus getStatus() {
-                return ExecutionStatus.SUBMITTED;
-            }
-
-            @Override
-            public LocalDateTime getStartTime() {
-                return null;
-            }
-
-            @Override
-            public LocalDateTime getEndTime() {
-                return null;
-            }
-        };
+        JobRunInfo current = jobRunInfoService.getById(jobRunInfo.getId());
+        return new CustomizeStatusInfo(current.getStatus(), null, null);
     }
 }

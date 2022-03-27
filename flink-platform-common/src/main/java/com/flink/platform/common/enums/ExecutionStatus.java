@@ -38,6 +38,10 @@ public enum ExecutionStatus {
         return code;
     }
 
+    public static boolean isStopFlowState(ExecutionStatus status) {
+        return status == ERROR || status == NOT_EXIST;
+    }
+
     public static List<ExecutionStatus> getTerminals() {
         List<ExecutionStatus> statusList = new ArrayList<>(values().length);
         for (ExecutionStatus value : values()) {
@@ -56,10 +60,6 @@ public enum ExecutionStatus {
             }
         }
         return statusList;
-    }
-
-    public boolean isErrTerminalState() {
-        return this == FAILURE || this == KILLED || this == ABNORMAL;
     }
 
     public static ExecutionStatus from(Integer code) {
