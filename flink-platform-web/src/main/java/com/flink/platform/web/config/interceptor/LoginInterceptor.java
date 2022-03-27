@@ -23,7 +23,6 @@ public class LoginInterceptor implements HandlerInterceptor {
 
     @Autowired private SessionService sessionService;
 
-    /** TODO Intercept the execution of a handler. Called after HandlerMapping determined. */
     @Override
     public boolean preHandle(
             HttpServletRequest request,

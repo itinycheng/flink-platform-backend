@@ -8,6 +8,7 @@ import com.flink.platform.common.constants.Constant;
 import com.flink.platform.common.enums.JobFlowStatus;
 import com.flink.platform.common.util.UuidGenerator;
 import com.flink.platform.dao.entity.JobFlow;
+import com.flink.platform.dao.entity.JobFlowDag;
 import com.flink.platform.dao.entity.JobFlowRun;
 import com.flink.platform.dao.entity.User;
 import com.flink.platform.dao.service.JobFlowRunService;
@@ -35,6 +36,7 @@ import static com.flink.platform.common.enums.ResponseStatus.ERROR_PARAMETER;
 import static com.flink.platform.common.enums.ResponseStatus.NOT_RUNNABLE_STATUS;
 import static com.flink.platform.common.enums.ResponseStatus.NO_CRONTAB_SET;
 import static com.flink.platform.common.enums.ResponseStatus.SERVICE_ERROR;
+import static com.flink.platform.common.enums.ResponseStatus.UNABLE_SCHEDULE_STREAMING_JOB;
 import static com.flink.platform.common.enums.ResponseStatus.USER_HAVE_NO_PERMISSION;
 import static com.flink.platform.web.entity.response.ResultInfo.failure;
 
@@ -158,6 +160,11 @@ public class JobFlowController {
         }
         if (StringUtils.isEmpty(jobFlow.getCronExpr())) {
             return failure(NO_CRONTAB_SET);
+        }
+
+        JobFlowDag flow = jobFlow.getFlow();
+        if (flow == null || jobFlowService.containsStreamingJob(flow)) {
+            return failure(UNABLE_SCHEDULE_STREAMING_JOB);
         }
 
         jobFlowQuartzService.scheduleJob(jobFlow);

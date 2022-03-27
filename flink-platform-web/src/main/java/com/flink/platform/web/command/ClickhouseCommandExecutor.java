@@ -38,8 +38,8 @@ public class ClickhouseCommandExecutor implements CommandExecutor {
                 .forEach(
                         sql -> {
                             try {
-                                log.info("exec clickhouse sql: {}", sql);
                                 clickhouseJdbcTemplate.execute(sql);
+                                log.info("exec clickhouse sql: {}", sql);
                             } catch (Exception e) {
                                 exceptionMessages.add(e.getMessage());
                                 log.error("Execute clickhouse sql: {} failed.", sql, e);

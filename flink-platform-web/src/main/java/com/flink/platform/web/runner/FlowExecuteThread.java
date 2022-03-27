@@ -18,9 +18,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.function.Supplier;
 
-import static com.flink.platform.common.enums.ExecutionStatus.ERROR;
-import static com.flink.platform.common.enums.ExecutionStatus.NOT_EXIST;
-
 /** Process flow in a separate thread. */
 @Slf4j
 public class FlowExecuteThread implements Runnable {
@@ -53,13 +50,18 @@ public class FlowExecuteThread implements Runnable {
         JobFlowDag flow = jobFlowRun.getFlow();
         flow.getBeginVertices().forEach(jobVertex -> execVertex(jobVertex, flow));
 
+        while (JobFlowDagHelper.hasUnExecutedVertices(flow)) {
+            ThreadUtil.sleep(5000);
+        }
+
         // Wait for all jobs complete.
         CompletableFuture.allOf(runningJobs.toArray(new CompletableFuture[0]))
-                .thenAccept(unused -> updateJobFlow(flow));
+                .thenAccept(unused -> completeJobFlow(flow))
+                .thenAccept(unused -> jobExecService.shutdownNow());
     }
 
     // Update status of jobFlow.
-    private void updateJobFlow(JobFlowDag flow) {
+    private void completeJobFlow(JobFlowDag flow) {
         ExecutionStatus finalStatus = JobFlowDagHelper.getDagState(flow);
         if (finalStatus != null && finalStatus.isTerminalState()) {
             JobFlowRun newJobFlowRun = new JobFlowRun();
@@ -87,7 +89,7 @@ public class FlowExecuteThread implements Runnable {
         jobVertex.setJobRunStatus(jobResponse.getStatus());
 
         ExecutionStatus finalStatus = jobResponse.getStatus();
-        if (finalStatus == ERROR || finalStatus == NOT_EXIST) {
+        if (ExecutionStatus.isStopFlowState(finalStatus)) {
             killFlow();
             return;
         }
@@ -99,7 +101,6 @@ public class FlowExecuteThread implements Runnable {
         }
     }
 
-    /** TODO: interrupt thread is a better choose, but not support by CompleteFuture. */
     private void killFlow() {
         isRunning = false;
         runningJobs.forEach(future -> future.complete(null));
