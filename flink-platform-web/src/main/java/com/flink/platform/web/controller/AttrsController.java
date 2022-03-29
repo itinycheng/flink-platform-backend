@@ -3,9 +3,12 @@ package com.flink.platform.web.controller;
 import com.flink.platform.common.enums.DeployMode;
 import com.flink.platform.common.enums.ExecutionStatus;
 import com.flink.platform.common.enums.JobType;
+import com.flink.platform.common.model.ExecutionCondition;
 import com.flink.platform.dao.entity.JobInfo;
 import com.flink.platform.dao.service.JobInfoService;
+import com.flink.platform.web.config.FlinkConfig;
 import com.flink.platform.web.entity.response.ResultInfo;
+import com.flink.platform.web.util.HttpUtil;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,12 +18,15 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import static com.flink.platform.common.constants.Constant.FLINK;
+import static com.flink.platform.common.constants.Constant.FULL_VERSION;
 import static com.flink.platform.common.enums.DeployMode.FLINK_YARN_PER;
 import static com.flink.platform.common.enums.DeployMode.FLINK_YARN_RUN_APPLICATION;
 import static com.flink.platform.common.enums.DeployMode.FLINK_YARN_SESSION;
@@ -29,6 +35,8 @@ import static com.flink.platform.common.enums.ExecutionMode.STREAMING;
 import static com.flink.platform.common.enums.ExecutionStatus.FAILURE;
 import static com.flink.platform.common.enums.ExecutionStatus.RUNNING;
 import static com.flink.platform.common.enums.ExecutionStatus.SUCCESS;
+import static com.flink.platform.common.model.ExecutionCondition.AND;
+import static java.util.stream.Collectors.toList;
 
 /** Attrs controller. */
 @RestController
@@ -38,6 +46,39 @@ public class AttrsController {
     private static final String CLASS_PATH_PREFIX = "com.flink.platform.common.enums";
 
     @Autowired private JobInfoService jobInfoService;
+
+    @Autowired private List<FlinkConfig> flinkConfigs;
+
+    /** TODO: Add OR condition. */
+    @GetMapping(value = "/preconditions")
+    public ResultInfo<List<ExecutionCondition>> precondition() {
+        List<ExecutionCondition> conditions = new ArrayList<>();
+        conditions.add(AND);
+        return ResultInfo.success(conditions);
+    }
+
+    @GetMapping(value = "/versions")
+    public ResultInfo<List<String>> versions(String type) {
+        List<String> versions = new ArrayList<>();
+        if (FLINK.equals(type)) {
+            versions.addAll(
+                    flinkConfigs.stream()
+                            .map(FlinkConfig::getVersion)
+                            .filter(Objects::nonNull)
+                            .collect(toList()));
+        } else {
+            versions.add(FULL_VERSION);
+        }
+
+        return ResultInfo.success(versions);
+    }
+
+    @GetMapping(value = "/routeUrls")
+    public ResultInfo<List<String>> routeUrls() {
+        List<String> routingUrls = new ArrayList<>();
+        routingUrls.add(HttpUtil.LOCALHOST_URL);
+        return ResultInfo.success(routingUrls);
+    }
 
     @GetMapping(value = "/deployModes")
     public ResultInfo<List<DeployMode>> deployModes(String type) {

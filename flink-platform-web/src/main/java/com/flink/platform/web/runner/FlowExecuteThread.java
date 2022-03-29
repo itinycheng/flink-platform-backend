@@ -18,6 +18,8 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.function.Supplier;
 
+import static com.flink.platform.common.enums.ExecutionStatus.RUNNING;
+
 /** Process flow in a separate thread. */
 @Slf4j
 public class FlowExecuteThread implements Runnable {
@@ -47,9 +49,17 @@ public class FlowExecuteThread implements Runnable {
 
     @Override
     public void run() {
+        // Update status of jobFlowRun.
+        JobFlowRun newJobFlowRun = new JobFlowRun();
+        newJobFlowRun.setId(jobFlowRun.getId());
+        newJobFlowRun.setStatus(RUNNING);
+        jobFlowRunService.updateById(newJobFlowRun);
+
+        // Process job flow.
         JobFlowDag flow = jobFlowRun.getFlow();
         flow.getBeginVertices().forEach(jobVertex -> execVertex(jobVertex, flow));
 
+        // Wait until all vertices are executed.
         while (JobFlowDagHelper.hasUnExecutedVertices(flow)) {
             ThreadUtil.sleep(5000);
         }
@@ -60,7 +70,7 @@ public class FlowExecuteThread implements Runnable {
                 .thenAccept(unused -> jobExecService.shutdownNow());
     }
 
-    // Update status of jobFlow.
+    /** Update status of jobFlow. */
     private void completeJobFlow(JobFlowDag flow) {
         ExecutionStatus finalStatus = JobFlowDagHelper.getDagState(flow);
         if (finalStatus != null && finalStatus.isTerminalState()) {
