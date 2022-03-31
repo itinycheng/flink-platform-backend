@@ -12,7 +12,7 @@ import java.util.regex.Pattern;
 @NoArgsConstructor
 public class JobInfoRequest {
 
-    private static final String JOB_NAME_REGEX = "^[a-zA-Z][a-zA-Z0-9._-]{5,31}$";
+    private static final String JOB_NAME_REGEX = "^[a-zA-Z][a-zA-Z0-9._-]{5,64}$";
 
     private static final Pattern JOB_NAME_PATTERN = Pattern.compile(JOB_NAME_REGEX);
 

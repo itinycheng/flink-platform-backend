@@ -11,7 +11,6 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
-import java.util.List;
 
 /** job flow instance. */
 @Data
@@ -36,7 +35,7 @@ public class JobFlowRun {
     private Integer priority;
 
     @TableField(typeHandler = JacksonTypeHandler.class)
-    private List<String> receivers;
+    private LongArrayList alerts;
 
     private ExecutionStatus status;
 

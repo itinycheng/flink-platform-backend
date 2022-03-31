@@ -1,10 +1,9 @@
 package com.flink.platform.web.controller;
 
 import com.flink.platform.common.enums.DeployMode;
+import com.flink.platform.common.enums.ExecutionCondition;
 import com.flink.platform.common.enums.ExecutionStatus;
 import com.flink.platform.common.enums.JobType;
-import com.flink.platform.common.model.ExecutionCondition;
-import com.flink.platform.dao.entity.JobInfo;
 import com.flink.platform.dao.service.JobInfoService;
 import com.flink.platform.web.config.FlinkConfig;
 import com.flink.platform.web.entity.response.ResultInfo;
@@ -31,11 +30,10 @@ import static com.flink.platform.common.enums.DeployMode.FLINK_YARN_PER;
 import static com.flink.platform.common.enums.DeployMode.FLINK_YARN_RUN_APPLICATION;
 import static com.flink.platform.common.enums.DeployMode.FLINK_YARN_SESSION;
 import static com.flink.platform.common.enums.DeployMode.RUN_LOCAL;
-import static com.flink.platform.common.enums.ExecutionMode.STREAMING;
+import static com.flink.platform.common.enums.ExecutionCondition.AND;
+import static com.flink.platform.common.enums.ExecutionCondition.OR;
 import static com.flink.platform.common.enums.ExecutionStatus.FAILURE;
-import static com.flink.platform.common.enums.ExecutionStatus.RUNNING;
 import static com.flink.platform.common.enums.ExecutionStatus.SUCCESS;
-import static com.flink.platform.common.model.ExecutionCondition.AND;
 import static java.util.stream.Collectors.toList;
 
 /** Attrs controller. */
@@ -49,11 +47,11 @@ public class AttrsController {
 
     @Autowired private List<FlinkConfig> flinkConfigs;
 
-    /** TODO: Add OR condition. */
     @GetMapping(value = "/preconditions")
     public ResultInfo<List<ExecutionCondition>> precondition() {
         List<ExecutionCondition> conditions = new ArrayList<>();
         conditions.add(AND);
+        conditions.add(OR);
         return ResultInfo.success(conditions);
     }
 
@@ -98,18 +96,8 @@ public class AttrsController {
 
     @GetMapping(value = "/edgeStates")
     public ResultInfo<List<ExecutionStatus>> edgeStates(Long jobId) {
-        if (jobId == null) {
-            return ResultInfo.success(Arrays.asList(SUCCESS, FAILURE));
-        }
-
-        JobInfo jobInfo = jobInfoService.getById(jobId);
-        List<ExecutionStatus> result;
-        if (STREAMING.equals(jobInfo.getExecMode())) {
-            result = Arrays.asList(SUCCESS, FAILURE, RUNNING);
-        } else {
-            result = Arrays.asList(SUCCESS, FAILURE);
-        }
-        return ResultInfo.success(result);
+        // Add RUNNING status for STREAMING job ?
+        return ResultInfo.success(Arrays.asList(SUCCESS, FAILURE));
     }
 
     @GetMapping(value = "/list")

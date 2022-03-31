@@ -1,4 +1,4 @@
-package com.flink.platform.common.model;
+package com.flink.platform.common.enums;
 
 /** Job vertex execution condition. */
 public enum ExecutionCondition {

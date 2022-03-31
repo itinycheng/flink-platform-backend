@@ -129,6 +129,7 @@ public class ProcessJobService {
                             .execCommand(commandString);
 
             // step 5: write job run info to db
+            ExecutionStatus executionStatus = getExecutionStatus(jobType, callback);
             JobRunInfo jobRunInfo = new JobRunInfo();
             jobRunInfo.setName(jobInfo.getName() + "-" + System.currentTimeMillis());
             jobRunInfo.setJobId(jobInfo.getId());
@@ -136,10 +137,13 @@ public class ProcessJobService {
             jobRunInfo.setDeployMode(jobInfo.getDeployMode());
             jobRunInfo.setExecMode(jobInfo.getExecMode());
             jobRunInfo.setSubject(jobInfo.getSubject());
-            jobRunInfo.setStatus(getExecutionStatus(jobType, callback));
+            jobRunInfo.setStatus(executionStatus);
             jobRunInfo.setVariables(JsonUtil.toJsonString(variableMap));
             jobRunInfo.setBackInfo(JsonUtil.toJsonString(callback));
             jobRunInfo.setSubmitTime(submitTime);
+            if (executionStatus.isTerminalState()) {
+                jobRunInfo.setStopTime(LocalDateTime.now());
+            }
             jobRunInfoService.save(jobRunInfo);
 
             // step 6: print job command info
