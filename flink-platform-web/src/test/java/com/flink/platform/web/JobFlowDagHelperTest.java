@@ -9,9 +9,9 @@ import org.junit.Test;
 
 import java.util.Set;
 
+import static com.flink.platform.common.enums.ExecutionCondition.OR;
 import static com.flink.platform.common.enums.ExecutionStatus.FAILURE;
 import static com.flink.platform.common.enums.ExecutionStatus.SUCCESS;
-import static com.flink.platform.common.model.ExecutionCondition.OR;
 
 /** job flow dag helper test. */
 public class JobFlowDagHelperTest {

@@ -1,18 +1,22 @@
 package com.flink.platform.web.util;
 
+import com.flink.platform.common.enums.ExecutionCondition;
 import com.flink.platform.common.enums.ExecutionStatus;
 import com.flink.platform.common.graph.DAG;
-import com.flink.platform.common.model.ExecutionCondition;
 import com.flink.platform.common.model.JobEdge;
 import com.flink.platform.common.model.JobVertex;
 import com.flink.platform.dao.entity.JobFlowDag;
 import org.apache.commons.collections4.CollectionUtils;
+
+import javax.annotation.Nonnull;
 
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
 
+import static com.flink.platform.common.enums.ExecutionCondition.AND;
+import static com.flink.platform.common.enums.ExecutionCondition.OR;
 import static com.flink.platform.common.enums.ExecutionStatus.ABNORMAL;
 import static com.flink.platform.common.enums.ExecutionStatus.ERROR;
 import static com.flink.platform.common.enums.ExecutionStatus.FAILURE;
@@ -21,14 +25,13 @@ import static com.flink.platform.common.enums.ExecutionStatus.NOT_EXIST;
 import static com.flink.platform.common.enums.ExecutionStatus.RUNNING;
 import static com.flink.platform.common.enums.ExecutionStatus.SUBMITTED;
 import static com.flink.platform.common.enums.ExecutionStatus.SUCCESS;
-import static com.flink.platform.common.model.ExecutionCondition.AND;
-import static com.flink.platform.common.model.ExecutionCondition.OR;
 import static java.util.stream.Collectors.toSet;
 
 /** Dag helper for job flow. */
 public class JobFlowDagHelper {
 
     // TODO : dag can not have executable vertices
+    @Nonnull
     public static ExecutionStatus getDagState(DAG<Long, JobVertex, JobEdge> dag) {
         Set<ExecutionStatus> vertexStatusList =
                 dag.getVertices().stream()
@@ -62,7 +65,7 @@ public class JobFlowDagHelper {
         if (vertices.stream()
                 .map(JobVertex::getJobRunStatus)
                 .anyMatch(ExecutionStatus::isStopFlowState)) {
-            return true;
+            return false;
         }
 
         Collection<JobVertex> beginVertices = dag.getBeginVertices();

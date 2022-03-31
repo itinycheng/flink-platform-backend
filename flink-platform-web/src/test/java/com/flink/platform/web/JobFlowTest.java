@@ -5,11 +5,11 @@ import com.flink.platform.common.model.JobVertex;
 import com.flink.platform.common.util.JsonUtil;
 import com.flink.platform.common.util.UuidGenerator;
 import com.flink.platform.dao.entity.JobFlowDag;
+import com.flink.platform.dao.entity.LongArrayList;
 import com.flink.platform.web.entity.request.JobFlowRequest;
 import org.apache.commons.lang3.ObjectUtils;
 import org.junit.Test;
 
-import java.util.Collections;
 import java.util.concurrent.PriorityBlockingQueue;
 
 import static com.flink.platform.common.enums.ExecutionStatus.SUCCESS;
@@ -36,7 +36,7 @@ public class JobFlowTest {
         jobFlowRequest.setCronExpr("0 0/10 * * * ?");
         jobFlowRequest.setFlow(dag);
         jobFlowRequest.setPriority(8);
-        jobFlowRequest.setReceivers(Collections.singletonList("tiny.wcl@gmail.com"));
+        jobFlowRequest.setAlerts(new LongArrayList());
         jobFlowRequest.setStatus(OFFLINE);
 
         String json = JsonUtil.toJsonString(jobFlowRequest.getJobFlow());

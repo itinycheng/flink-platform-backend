@@ -7,14 +7,15 @@ import com.flink.platform.dao.entity.JobFlowRun;
 import com.flink.platform.dao.service.JobFlowRunService;
 import com.flink.platform.web.common.SpringContext;
 import com.flink.platform.web.config.WorkerConfig;
+import com.flink.platform.web.service.AlertSendingService;
 import com.flink.platform.web.util.JobFlowDagHelper;
 import com.flink.platform.web.util.ThreadUtil;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.CollectionUtils;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.function.Supplier;
 
@@ -30,11 +31,13 @@ public class FlowExecuteThread implements Runnable {
 
     private final ExecutorService jobExecService;
 
-    private final List<CompletableFuture<Void>> runningJobs =
-            Collections.synchronizedList(new ArrayList<>());
+    private final Map<Long, CompletableFuture<Void>> runningJobs = new ConcurrentHashMap<>();
 
     private final JobFlowRunService jobFlowRunService =
             SpringContext.getBean(JobFlowRunService.class);
+
+    private final AlertSendingService alertSendingService =
+            SpringContext.getBean(AlertSendingService.class);
 
     private volatile boolean isRunning = true;
 
@@ -65,29 +68,46 @@ public class FlowExecuteThread implements Runnable {
         }
 
         // Wait for all jobs complete.
-        CompletableFuture.allOf(runningJobs.toArray(new CompletableFuture[0]))
-                .thenAccept(unused -> completeJobFlow(flow))
+        CompletableFuture.allOf(runningJobs.values().toArray(new CompletableFuture[0]))
+                .thenAccept(unused -> completeAndNotify(flow))
                 .thenAccept(unused -> jobExecService.shutdownNow());
     }
 
-    /** Update status of jobFlow. */
-    private void completeJobFlow(JobFlowDag flow) {
+    /** Update status of jobFlow and send notification. */
+    private void completeAndNotify(JobFlowDag flow) {
         ExecutionStatus finalStatus = JobFlowDagHelper.getDagState(flow);
-        if (finalStatus != null && finalStatus.isTerminalState()) {
+        if (finalStatus.isTerminalState()) {
+            jobFlowRun.setStatus(finalStatus);
             JobFlowRun newJobFlowRun = new JobFlowRun();
             newJobFlowRun.setId(jobFlowRun.getId());
             newJobFlowRun.setStatus(finalStatus);
             jobFlowRunService.updateById(newJobFlowRun);
+
+            // send notification.
+            sendNotification();
         }
     }
 
-    private void execVertex(JobVertex jobVertex, JobFlowDag flow) {
+    public void sendNotification() {
+        if (CollectionUtils.isNotEmpty(jobFlowRun.getAlerts())) {
+            jobFlowRun
+                    .getAlerts()
+                    .forEach(alertId -> alertSendingService.sendAlert(alertId, jobFlowRun));
+        }
+    }
+
+    private synchronized void execVertex(JobVertex jobVertex, JobFlowDag flow) {
+        if (runningJobs.containsKey(jobVertex.getId())) {
+            log.warn("JobVertex: {} already executed", jobVertex.getId());
+            return;
+        }
+
         Supplier<JobResponse> runnable =
                 () -> new JobExecuteThread(jobFlowRun.getId(), jobVertex, workerConfig).call();
         CompletableFuture<Void> jobVertexFuture =
                 CompletableFuture.supplyAsync(runnable, jobExecService)
                         .thenAccept(response -> handleResponse(response, jobVertex, flow));
-        runningJobs.add(jobVertexFuture);
+        runningJobs.put(jobVertex.getId(), jobVertexFuture);
     }
 
     private void handleResponse(JobResponse jobResponse, JobVertex jobVertex, JobFlowDag flow) {
@@ -113,6 +133,6 @@ public class FlowExecuteThread implements Runnable {
 
     private void killFlow() {
         isRunning = false;
-        runningJobs.forEach(future -> future.complete(null));
+        runningJobs.values().forEach(future -> future.complete(null));
     }
 }

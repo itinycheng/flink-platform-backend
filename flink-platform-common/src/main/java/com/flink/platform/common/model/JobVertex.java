@@ -1,14 +1,13 @@
 package com.flink.platform.common.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.flink.platform.common.enums.ExecutionCondition;
 import com.flink.platform.common.enums.ExecutionStatus;
 import com.flink.platform.common.graph.Vertex;
 import com.flink.platform.common.util.Preconditions;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
-
-import static com.flink.platform.common.model.ExecutionCondition.AND;
 
 /** Job vertex. */
 @Data
@@ -18,7 +17,7 @@ public class JobVertex extends Vertex<Long> {
 
     private Long jobId;
 
-    private ExecutionCondition precondition = AND;
+    private ExecutionCondition precondition;
 
     @JsonIgnore private transient volatile Long jobRunId;
 

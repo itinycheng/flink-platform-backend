@@ -93,7 +93,7 @@ public class JobFlowRunner implements Job {
             jobFlowRun.setUserId(jobFlow.getUserId());
             jobFlowRun.setHost(Constant.HOST_IP);
             jobFlowRun.setPriority(jobFlow.getPriority());
-            jobFlowRun.setReceivers(jobFlow.getReceivers());
+            jobFlowRun.setAlerts(jobFlow.getAlerts());
             jobFlowRun.setStatus(SUBMITTED);
             jobFlowRunService.save(jobFlowRun);
 
