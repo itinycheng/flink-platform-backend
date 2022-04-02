@@ -104,7 +104,7 @@ public class JobFlowController {
     }
 
     @GetMapping(value = "/delete/{flowId}")
-    public ResultInfo<Boolean> delete(
+    public ResultInfo<Long> delete(
             @RequestAttribute(value = Constant.SESSION_USER) User loginUser,
             @PathVariable long flowId) {
         JobFlow jobFlow = jobFlowService.getById(flowId);
@@ -116,8 +116,8 @@ public class JobFlowController {
             return ResultInfo.failure(USER_HAVE_NO_PERMISSION);
         }
 
-        boolean bool = jobFlowService.deleteAllById(flowId);
-        return ResultInfo.success(bool);
+        jobFlowService.deleteAllById(flowId);
+        return ResultInfo.success(flowId);
     }
 
     @GetMapping(value = "/list")

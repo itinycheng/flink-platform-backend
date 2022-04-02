@@ -134,11 +134,14 @@ public class ProcessJobService {
             jobRunInfo.setName(jobInfo.getName() + "-" + System.currentTimeMillis());
             jobRunInfo.setJobId(jobInfo.getId());
             jobRunInfo.setFlowRunId(flowRunId);
+            jobRunInfo.setType(jobInfo.getType());
+            jobRunInfo.setVersion(jobInfo.getVersion());
             jobRunInfo.setDeployMode(jobInfo.getDeployMode());
             jobRunInfo.setExecMode(jobInfo.getExecMode());
+            jobRunInfo.setConfig(jobInfo.getConfig());
             jobRunInfo.setSubject(jobInfo.getSubject());
             jobRunInfo.setStatus(executionStatus);
-            jobRunInfo.setVariables(JsonUtil.toJsonString(variableMap));
+            jobRunInfo.setVariables(variableMap);
             jobRunInfo.setBackInfo(JsonUtil.toJsonString(callback));
             jobRunInfo.setSubmitTime(submitTime);
             if (executionStatus.isTerminalState()) {

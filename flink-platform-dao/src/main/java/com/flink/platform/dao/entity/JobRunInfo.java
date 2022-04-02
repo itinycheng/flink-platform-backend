@@ -1,16 +1,21 @@
 package com.flink.platform.dao.entity;
 
 import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
+import com.baomidou.mybatisplus.extension.handlers.JacksonTypeHandler;
 import com.flink.platform.common.enums.DeployMode;
 import com.flink.platform.common.enums.ExecutionMode;
 import com.flink.platform.common.enums.ExecutionStatus;
+import com.flink.platform.common.enums.JobType;
+import com.flink.platform.dao.entity.task.BaseJob;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
+import java.util.Map;
 
 /** Job run info. */
 @Data
@@ -29,18 +34,25 @@ public class JobRunInfo implements Serializable {
 
     private Long flowRunId;
 
+    private JobType type;
+
+    private String version;
+
     private DeployMode deployMode;
 
     private ExecutionMode execMode;
 
-    private String routeUrl;
+    @TableField(typeHandler = JacksonTypeHandler.class)
+    private BaseJob config;
+
+    @TableField(typeHandler = JacksonTypeHandler.class)
+    private Map<String, Object> variables;
 
     private String subject;
 
-    private ExecutionStatus status;
+    private String routeUrl;
 
-    /** sql variables type `Map[String, String]`. */
-    private String variables;
+    private ExecutionStatus status;
 
     /** store json data of JobStatistics. */
     private String backInfo;

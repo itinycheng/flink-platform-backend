@@ -6,10 +6,12 @@ import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.baomidou.mybatisplus.extension.handlers.JacksonTypeHandler;
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.flink.platform.common.enums.DeployMode;
 import com.flink.platform.common.enums.ExecutionMode;
 import com.flink.platform.common.enums.JobStatus;
 import com.flink.platform.common.enums.JobType;
+import com.flink.platform.dao.entity.task.BaseJob;
 import lombok.AccessLevel;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -17,7 +19,6 @@ import lombok.Setter;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
-import java.util.List;
 import java.util.Map;
 
 /** job config info. */
@@ -46,36 +47,22 @@ public class JobInfo implements Serializable {
     /** version. */
     private String version;
 
-    /** configs for run job. */
-    @TableField(typeHandler = JacksonTypeHandler.class)
-    private Map<String, String> configs;
-
     /** deploy mode. */
     private DeployMode deployMode;
 
     /** execution mode. */
     private ExecutionMode execMode;
 
+    /** configuration. */
+    @TableField(typeHandler = JacksonTypeHandler.class)
+    private BaseJob config;
+
     /** variables for `subject`. */
     @TableField(typeHandler = JacksonTypeHandler.class)
     private Map<String, String> variables;
 
-    /** sql or jar path. */
+    /** main content to process. */
     private String subject;
-
-    /** catalogs. */
-    @TableField(typeHandler = JacksonTypeHandler.class)
-    private LongArrayList catalogs;
-
-    /** external jars. */
-    @TableField(typeHandler = JacksonTypeHandler.class)
-    private List<String> extJars;
-
-    /** main args. */
-    private String mainArgs;
-
-    /** main class. */
-    private String mainClass;
 
     /**
      * route url. <br>
@@ -96,7 +83,10 @@ public class JobInfo implements Serializable {
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
     private LocalDateTime updateTime;
 
+    /** json ignore method. */
+    @JsonIgnore
     public String getCode() {
-        return "job_" + id;
+        String newName = name.substring(0, 16);
+        return "job_" + id + "_" + newName;
     }
 }
