@@ -8,6 +8,7 @@ import com.flink.platform.common.job.Sql;
 import com.flink.platform.common.job.SqlContext;
 import com.flink.platform.common.util.JsonUtil;
 import com.flink.platform.dao.entity.JobInfo;
+import com.flink.platform.dao.entity.task.FlinkJob;
 import com.flink.platform.dao.service.CatalogInfoService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.ListUtils;
@@ -52,14 +53,15 @@ public class SqlContextHelper {
     }
 
     public SqlContext convertFrom(JobInfo jobInfo) {
+        FlinkJob flinkJob = jobInfo.getConfig().unwrap(FlinkJob.class);
         SqlContext sqlContext = new SqlContext();
         sqlContext.setId(jobInfo.getCode());
         sqlContext.setSqls(toSqls(jobInfo.getSubject()));
         sqlContext.setExecMode(jobInfo.getExecMode());
         sqlContext.setExtJars(
-                ListUtils.defaultIfNull(jobInfo.getExtJars(), Collections.emptyList()));
-        sqlContext.setConfigs(toConfigs(jobInfo.getConfigs()));
-        sqlContext.setCatalogs(toCatalogs(jobInfo.getCatalogs()));
+                ListUtils.defaultIfNull(flinkJob.getExtJars(), Collections.emptyList()));
+        sqlContext.setConfigs(toConfigs(flinkJob.getConfigs()));
+        sqlContext.setCatalogs(toCatalogs(flinkJob.getCatalogs()));
         sqlContext.setFunctions(toFunctions());
         return sqlContext;
     }

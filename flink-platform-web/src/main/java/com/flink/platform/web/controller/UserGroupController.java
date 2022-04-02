@@ -6,7 +6,6 @@ import com.flink.platform.common.enums.JobStatus;
 import com.flink.platform.common.enums.JobType;
 import com.flink.platform.common.enums.ResponseStatus;
 import com.flink.platform.dao.entity.JobInfo;
-import com.flink.platform.dao.entity.LongArrayList;
 import com.flink.platform.dao.service.JobInfoService;
 import com.flink.platform.dao.service.JobRunInfoService;
 import com.flink.platform.web.constants.UserGroupConst;
@@ -72,9 +71,6 @@ public class UserGroupController {
             jobInfo.setType(JobType.FLINK_SQL);
             jobInfo.setDeployMode(DeployMode.FLINK_YARN_PER);
             jobInfo.setExecMode(ExecutionMode.BATCH);
-            LongArrayList longs = new LongArrayList();
-            longs.add(1L);
-            jobInfo.setCatalogs(longs);
             jobInfo.setStatus(JobStatus.ONLINE);
             boolean bool = jobInfoService.saveOrUpdate(jobInfo);
             if (bool && userGroupRequest.getId() == null) {

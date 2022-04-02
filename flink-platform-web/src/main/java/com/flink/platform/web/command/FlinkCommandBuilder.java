@@ -4,6 +4,7 @@ import com.flink.platform.common.enums.DeployMode;
 import com.flink.platform.common.enums.JobType;
 import com.flink.platform.common.exception.JobCommandGenException;
 import com.flink.platform.dao.entity.JobInfo;
+import com.flink.platform.dao.entity.task.FlinkJob;
 import com.flink.platform.web.config.FlinkConfig;
 import com.flink.platform.web.service.HdfsService;
 import lombok.extern.slf4j.Slf4j;
@@ -58,29 +59,30 @@ public abstract class FlinkCommandBuilder implements CommandBuilder {
 
     @Override
     public JobCommand buildCommand(JobInfo jobInfo) throws Exception {
+        FlinkJob flinkJob = jobInfo.getConfig().unwrap(FlinkJob.class);
         FlinkCommand command = new FlinkCommand();
         DeployMode deployMode = jobInfo.getDeployMode();
         String execMode = String.format(EXEC_MODE, deployMode.mode, deployMode.target);
         command.setPrefix(flinkConfig.getCommandPath() + execMode);
         // add configurations
         Map<String, Object> configs = command.getConfigs();
-        if (jobInfo.getConfigs() != null) {
-            configs.putAll(jobInfo.getConfigs());
+        if (flinkJob.getConfigs() != null) {
+            configs.putAll(flinkJob.getConfigs());
         }
         // add yarn application name
         String appName = String.join("-", jobInfo.getExecMode().name(), jobInfo.getCode());
         configs.put(YARN_APPLICATION_NAME, appName);
         // add lib dirs and user classpaths
         List<String> extJarList =
-                ListUtils.defaultIfNull(jobInfo.getExtJars(), Collections.emptyList());
+                ListUtils.defaultIfNull(flinkJob.getExtJars(), Collections.emptyList());
         configs.put(YARN_PROVIDED_LIB_DIRS, getMergedLibDirs(extJarList));
         List<URL> classpaths = getOrCreateClasspaths(jobInfo.getCode(), extJarList);
         command.setClasspaths(classpaths);
         switch (jobInfo.getType()) {
             case FLINK_JAR:
                 command.setMainJar(jobInfo.getSubject());
-                command.setMainArgs(jobInfo.getMainArgs());
-                command.setMainClass(jobInfo.getMainClass());
+                command.setMainArgs(flinkJob.getMainArgs());
+                command.setMainClass(flinkJob.getMainClass());
                 break;
             case FLINK_SQL:
                 String localJarPath = getLocalPathOfSqlJarFile();
