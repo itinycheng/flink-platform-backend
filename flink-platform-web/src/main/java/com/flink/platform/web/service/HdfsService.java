@@ -40,6 +40,25 @@ public class HdfsService {
         }
     }
 
+    public boolean delete(String fileName, boolean recursive) throws IOException {
+        Path dstPath = new Path(fileName);
+        return fileSystem.delete(dstPath, recursive);
+    }
+
+    public boolean copyFromLocal(
+            String srcFile, String dstFile, boolean deleteSrc, boolean overwrite)
+            throws IOException {
+        Path srcPath = new Path(srcFile);
+        Path dstPath = new Path(dstFile);
+
+        fileSystem.copyFromLocalFile(deleteSrc, overwrite, srcPath, dstPath);
+        return true;
+    }
+
+    public boolean mkDirs(String path) throws IOException {
+        return fileSystem.mkdirs(new Path(path));
+    }
+
     public List<Path> listVisibleFiles(String dir) throws IOException {
         return Arrays.stream(
                         fileSystem.listStatus(
@@ -52,13 +71,8 @@ public class HdfsService {
         return Pair.of(path.getName(), fileSystem.open(path));
     }
 
-    public boolean exists(String dir) {
-        try {
-            return fileSystem.exists(new Path(dir));
-        } catch (Exception e) {
-            log.error("exception found", e);
-            return false;
-        }
+    public boolean exists(String dir) throws IOException {
+        return fileSystem.exists(new Path(dir));
     }
 
     public int lineNumber(Path file) {

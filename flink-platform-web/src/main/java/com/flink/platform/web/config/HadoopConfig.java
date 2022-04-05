@@ -25,6 +25,8 @@ public class HadoopConfig {
 
     private String localDirName;
 
+    private String hdfsFilePath;
+
     private Map<String, String> properties;
 
     @Bean("hdfsFileSystem")
@@ -43,7 +45,7 @@ public class HadoopConfig {
     }
 
     @Bean("localDataDir")
-    public Path createDataDir() {
+    public String createDataDir() {
         String rootDir = System.getProperty("user.dir");
         String dataDir = rootDir + SLASH + localDirName;
         Path path = Paths.get(dataDir);
@@ -57,6 +59,21 @@ public class HadoopConfig {
         } else {
             log.info("data dir: {} already exists", dataDir);
         }
-        return path;
+        return path.toString();
+    }
+
+    @Bean("projectHdfsPath")
+    public String createHdfsFilePath(FileSystem hdfsFileSystem) throws Exception {
+        org.apache.hadoop.fs.Path path = new org.apache.hadoop.fs.Path(hdfsFilePath);
+        if (!hdfsFileSystem.exists(path)) {
+            if (hdfsFileSystem.mkdirs(path)) {
+                log.info("hdfs file dir: {} created successfully.", hdfsFilePath);
+            } else {
+                throw new RuntimeException("create hdfs file dir failed.");
+            }
+        } else {
+            log.info("hdfs file dir: {} already exists", hdfsFilePath);
+        }
+        return path.toString();
     }
 }

@@ -58,8 +58,7 @@ public class SqlContextHelper {
         sqlContext.setId(jobInfo.getCode());
         sqlContext.setSqls(toSqls(jobInfo.getSubject()));
         sqlContext.setExecMode(jobInfo.getExecMode());
-        sqlContext.setExtJars(
-                ListUtils.defaultIfNull(flinkJob.getExtJars(), Collections.emptyList()));
+        sqlContext.setExtJars(flinkJob.getExtJarPaths());
         sqlContext.setConfigs(toConfigs(flinkJob.getConfigs()));
         sqlContext.setCatalogs(toCatalogs(flinkJob.getCatalogs()));
         sqlContext.setFunctions(toFunctions());
