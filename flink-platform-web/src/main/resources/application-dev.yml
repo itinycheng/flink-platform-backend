@@ -83,8 +83,8 @@ flink:
 
 hadoop:
   username: admin
-  yarn-web-path: http://0.0.0.0:8088
-  local-dir-name: data_dir
+  hdfsFilePath: hdfs:///flink-platform/
+  localDirName: data_dir
   properties:
     fs.hdfs.impl: org.apache.hadoop.hdfs.DistributedFileSystem
     fs.defaultFS: hdfs://nameservice1

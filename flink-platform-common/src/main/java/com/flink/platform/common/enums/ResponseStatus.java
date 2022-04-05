@@ -14,7 +14,8 @@ public enum ResponseStatus {
     USER_NAME_PASSWD_ERROR(10013, "Username or password error"),
     NOT_RUNNABLE_STATUS(10014, "not runnable status"),
     NO_CRONTAB_SET(10015, "no crontab set"),
-    UNABLE_SCHEDULE_STREAMING_JOB(10016, "unable to schedule streaming job");
+    UNABLE_SCHEDULE_STREAMING_JOB(10016, "unable to schedule streaming job"),
+    FILE_NOT_FOUND(10017, "file not found");
 
     private final int code;
     private final String desc;

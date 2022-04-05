@@ -5,6 +5,7 @@ import com.flink.platform.common.enums.JobType;
 import com.flink.platform.common.exception.JobCommandGenException;
 import com.flink.platform.dao.entity.JobInfo;
 import com.flink.platform.dao.entity.task.FlinkJob;
+import com.flink.platform.dao.service.ResourceService;
 import com.flink.platform.web.config.FlinkConfig;
 import com.flink.platform.web.service.HdfsService;
 import lombok.extern.slf4j.Slf4j;
@@ -46,6 +47,8 @@ public abstract class FlinkCommandBuilder implements CommandBuilder {
 
     @Resource private HdfsService hdfsService;
 
+    @Resource private ResourceService resourceService;
+
     private final FlinkConfig flinkConfig;
 
     public FlinkCommandBuilder(FlinkConfig flinkConfig) {
@@ -60,6 +63,7 @@ public abstract class FlinkCommandBuilder implements CommandBuilder {
     @Override
     public JobCommand buildCommand(JobInfo jobInfo) throws Exception {
         FlinkJob flinkJob = jobInfo.getConfig().unwrap(FlinkJob.class);
+        initResources(flinkJob);
         FlinkCommand command = new FlinkCommand();
         DeployMode deployMode = jobInfo.getDeployMode();
         String execMode = String.format(EXEC_MODE, deployMode.mode, deployMode.target);
@@ -73,10 +77,8 @@ public abstract class FlinkCommandBuilder implements CommandBuilder {
         String appName = String.join("-", jobInfo.getExecMode().name(), jobInfo.getCode());
         configs.put(YARN_APPLICATION_NAME, appName);
         // add lib dirs and user classpaths
-        List<String> extJarList =
-                ListUtils.defaultIfNull(flinkJob.getExtJars(), Collections.emptyList());
-        configs.put(YARN_PROVIDED_LIB_DIRS, getMergedLibDirs(extJarList));
-        List<URL> classpaths = getOrCreateClasspaths(jobInfo.getCode(), extJarList);
+        configs.put(YARN_PROVIDED_LIB_DIRS, getMergedLibDirs(flinkJob.getExtJarPaths()));
+        List<URL> classpaths = getOrCreateClasspaths(jobInfo.getCode(), flinkJob.getExtJarPaths());
         command.setClasspaths(classpaths);
         switch (jobInfo.getType()) {
             case FLINK_JAR:
@@ -134,5 +136,14 @@ public abstract class FlinkCommandBuilder implements CommandBuilder {
             throw new JobCommandGenException(
                     String.format("Copy %s from hdfs to local disk failed", hdfsFile), e);
         }
+    }
+
+    private void initResources(FlinkJob flinkJob) {
+        List<String> jarPaths =
+                ListUtils.defaultIfNull(flinkJob.getExtJars(), Collections.emptyList()).stream()
+                        .map(resourceId -> resourceService.getById(resourceId))
+                        .map(com.flink.platform.dao.entity.Resource::getFullName)
+                        .collect(Collectors.toList());
+        flinkJob.setExtJarPaths(jarPaths);
     }
 }
