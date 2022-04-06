@@ -138,6 +138,7 @@ public class ProcessJobService {
             jobRunInfo.setVersion(jobInfo.getVersion());
             jobRunInfo.setDeployMode(jobInfo.getDeployMode());
             jobRunInfo.setExecMode(jobInfo.getExecMode());
+            jobRunInfo.setRouteUrl(jobInfo.getRouteUrl());
             jobRunInfo.setConfig(jobInfo.getConfig());
             jobRunInfo.setSubject(jobInfo.getSubject());
             jobRunInfo.setStatus(executionStatus);
