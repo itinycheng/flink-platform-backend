@@ -15,8 +15,10 @@ import java.time.LocalDateTime;
 @TableName("t_user_session")
 public class Session {
 
-    @TableId(value = "id", type = IdType.INPUT)
-    private String id;
+    @TableId(value = "id", type = IdType.AUTO)
+    private Long id;
+
+    private String token;
 
     private long userId;
 
