@@ -58,7 +58,7 @@ public class LoginController {
 
         if (session == null) {
             session = new Session();
-            session.setId(UUID.randomUUID().toString().replace("-", ""));
+            session.setToken(UUID.randomUUID().toString().replace("-", ""));
             session.setUserId(loginUser.getId());
             session.setIp(clientIp);
             session.setLastLoginTime(LocalDateTime.now());
@@ -66,7 +66,7 @@ public class LoginController {
         }
 
         Map<String, String> result = new HashMap<>(1);
-        result.put("token", session.getId());
+        result.put("token", session.getToken());
         return ResultInfo.success(result);
     }
 
@@ -76,7 +76,8 @@ public class LoginController {
             return failure(USER_NOT_FOUNT);
         }
 
-        sessionService.removeById(userRequest.getToken());
+        sessionService.remove(
+                new QueryWrapper<Session>().lambda().eq(Session::getToken, userRequest.getToken()));
         return ResultInfo.success(userRequest.getToken());
     }
 }

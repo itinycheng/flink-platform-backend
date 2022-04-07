@@ -1,5 +1,6 @@
 package com.flink.platform.web.config.interceptor;
 
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.flink.platform.common.constants.Constant;
 import com.flink.platform.dao.entity.Session;
 import com.flink.platform.dao.entity.User;
@@ -35,8 +36,9 @@ public class LoginInterceptor implements HandlerInterceptor {
             return false;
         }
 
-        User user;
-        Session session = sessionService.getById(token);
+        Session session =
+                sessionService.getOne(
+                        new QueryWrapper<Session>().lambda().eq(Session::getToken, token));
         if (session == null) {
             response.setStatus(HttpStatus.SC_UNAUTHORIZED);
             log.info("session: {} does not exist.", token);
@@ -44,7 +46,7 @@ public class LoginInterceptor implements HandlerInterceptor {
         }
 
         long userId = session.getUserId();
-        user = userService.getById(userId);
+        User user = userService.getById(userId);
         if ("LOCK".equals(user.getStatus())) {
             response.setStatus(HttpStatus.SC_UNAUTHORIZED);
             log.info("User: {} locked.", user);

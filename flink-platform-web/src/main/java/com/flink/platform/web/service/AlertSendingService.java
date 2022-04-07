@@ -47,7 +47,8 @@ public class AlertSendingService {
             String content =
                     alert.getContent()
                             .replace("${id}", jobFlowRun.getId().toString())
-                            .replace("${name}", jobFlowRun.getName());
+                            .replace("${name}", jobFlowRun.getName())
+                            .replace("${status}", jobFlowRun.getStatus().name());
             Map<String, Object> data = JsonUtil.toMap(content);
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
