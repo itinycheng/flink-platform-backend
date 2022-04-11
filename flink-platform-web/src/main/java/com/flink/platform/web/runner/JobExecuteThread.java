@@ -183,7 +183,9 @@ public class JobExecuteThread implements Callable<JobResponse> {
                     HttpEntity<JobRunInfo> requestEntity = new HttpEntity<>(jobRunInfo, headers);
                     statusInfo =
                             restTemplate.postForObject(
-                                    routeUrl + REST_GET_STATUS, requestEntity, StatusInfo.class);
+                                    routeUrl + REST_GET_STATUS,
+                                    requestEntity,
+                                    CustomizeStatusInfo.class);
                 } else {
                     statusInfo = processJobStatusService.getStatus(jobRunInfo);
                 }
@@ -209,6 +211,7 @@ public class JobExecuteThread implements Callable<JobResponse> {
                 }
 
             } catch (Exception e) {
+                log.error("Fetch job status failed", e);
                 if (++errorTimes > errorRetries) {
                     return new CustomizeStatusInfo(ERROR, LocalDateTime.now(), LocalDateTime.now());
                 }

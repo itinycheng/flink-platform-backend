@@ -2,6 +2,7 @@ package com.flink.platform.web.controller;
 
 import com.flink.platform.common.exception.UncaughtException;
 import com.flink.platform.dao.entity.JobRunInfo;
+import com.flink.platform.web.monitor.CustomizeStatusInfo;
 import com.flink.platform.web.monitor.StatusInfo;
 import com.flink.platform.web.service.ProcessJobService;
 import com.flink.platform.web.service.ProcessJobStatusService;
@@ -34,9 +35,17 @@ public class ProcessJobController {
     }
 
     @PostMapping(value = "/getStatus")
-    public StatusInfo getStatus(@RequestBody JobRunInfo jobRunInfo) {
+    public CustomizeStatusInfo getStatus(@RequestBody JobRunInfo jobRunInfo) {
         try {
-            return processJobStatusService.getStatus(jobRunInfo);
+            StatusInfo statusInfo = processJobStatusService.getStatus(jobRunInfo);
+            if (!(statusInfo instanceof CustomizeStatusInfo)) {
+                statusInfo =
+                        new CustomizeStatusInfo(
+                                statusInfo.getStatus(),
+                                statusInfo.getStartTime(),
+                                statusInfo.getEndTime());
+            }
+            return (CustomizeStatusInfo) statusInfo;
         } catch (Exception e) {
             throw new UncaughtException("Get job status failed.", e);
         }
