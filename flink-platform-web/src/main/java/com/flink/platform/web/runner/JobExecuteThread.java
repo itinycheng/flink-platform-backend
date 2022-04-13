@@ -15,6 +15,7 @@ import com.flink.platform.web.monitor.CustomizeStatusInfo;
 import com.flink.platform.web.monitor.StatusInfo;
 import com.flink.platform.web.service.ProcessJobService;
 import com.flink.platform.web.service.ProcessJobStatusService;
+import com.flink.platform.web.service.WorkerApplyService;
 import com.flink.platform.web.util.HttpUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpEntity;
@@ -62,6 +63,8 @@ public class JobExecuteThread implements Callable<JobResponse> {
 
     private final ProcessJobStatusService processJobStatusService;
 
+    private final WorkerApplyService workerApplyService;
+
     public JobExecuteThread(long flowRunId, JobVertex jobVertex, WorkerConfig workerConfig) {
         this.flowRunId = flowRunId;
         this.jobVertex = jobVertex;
@@ -72,6 +75,7 @@ public class JobExecuteThread implements Callable<JobResponse> {
         this.jobRunInfoService = SpringContext.getBean(JobRunInfoService.class);
         this.restTemplate = SpringContext.getBean(RestTemplate.class);
         this.processJobService = SpringContext.getBean(ProcessJobService.class);
+        this.workerApplyService = SpringContext.getBean(WorkerApplyService.class);
     }
 
     @Override
@@ -94,8 +98,7 @@ public class JobExecuteThread implements Callable<JobResponse> {
             }
 
             // Step 2: build route url, set localhost as default url if not specified.
-            String routeUrl = jobInfo.getRouteUrl();
-            routeUrl = HttpUtil.getUrlOrDefault(routeUrl);
+            String routeUrl = workerApplyService.chooseWorker(jobInfo.getRouteUrl());
 
             // Step 3: process job and get jobRun.
             JobRunInfo jobRunInfo;
@@ -246,7 +249,7 @@ public class JobExecuteThread implements Callable<JobResponse> {
     }
 
     private boolean isRemoteUrl(String routeUrl) {
-        return !routeUrl.contains(HttpUtil.LOCALHOST_URL);
+        return !routeUrl.contains(HttpUtil.LOCALHOST_IP);
     }
 
     private void sleep(int retryTimes) {

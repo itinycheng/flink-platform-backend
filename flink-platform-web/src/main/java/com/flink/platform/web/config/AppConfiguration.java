@@ -29,6 +29,11 @@ public class AppConfiguration implements WebMvcConfigurer {
     public void addInterceptors(InterceptorRegistry registry) {
         registry.addInterceptor(loginInterceptor())
                 .addPathPatterns(
-                        "/jobFlow/**", "/jobFlowRun/**", "/alert/**", "/resource/**", "/user/**");
+                        "/jobFlow/**",
+                        "/jobFlowRun/**",
+                        "/alert/**",
+                        "/resource/**",
+                        "/user/**",
+                        "/worker/**");
     }
 }
