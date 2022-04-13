@@ -19,13 +19,16 @@ public class HttpUtil {
 
     public static final String HTTP_X_REAL_IP = "X-Real-IP";
 
-    public static final String LOCALHOST_URL = "http://127.0.0.1";
+    public static final String HTTP_PROTOCOL = "http://";
 
-    public static String getUrlOrDefault(String routeUrl) {
-        if (StringUtils.isBlank(routeUrl)) {
-            routeUrl = String.join(COLON, LOCALHOST_URL, SpringContext.getServerPort());
-        }
-        return routeUrl.endsWith("/") ? routeUrl.substring(0, routeUrl.lastIndexOf("/")) : routeUrl;
+    public static final String LOCALHOST_IP = "127.0.0.1";
+
+    public static String getDefaultUrl() {
+        return buildHttpUrl(LOCALHOST_IP, SpringContext.getServerPort());
+    }
+
+    public static String buildHttpUrl(String ip, String port) {
+        return String.join(COLON, HTTP_PROTOCOL + ip, port);
     }
 
     public static String getClientIpAddress(HttpServletRequest request) {

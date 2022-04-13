@@ -6,7 +6,7 @@ import com.flink.platform.dao.entity.JobInfo;
 import com.flink.platform.dao.service.JobInfoService;
 import com.flink.platform.web.common.SpringContext;
 import com.flink.platform.web.entity.response.ResultInfo;
-import com.flink.platform.web.util.HttpUtil;
+import com.flink.platform.web.service.WorkerApplyService;
 import lombok.extern.slf4j.Slf4j;
 import org.quartz.Job;
 import org.quartz.JobDataMap;
@@ -33,6 +33,9 @@ public class JobRunner implements Job {
     private static final Map<Long, Long> RUNNER_MAP = new ConcurrentHashMap<>();
 
     private final JobInfoService jobInfoService = SpringContext.getBean(JobInfoService.class);
+
+    private final WorkerApplyService workerApplyService =
+            SpringContext.getBean(WorkerApplyService.class);
 
     private final RestTemplate restTemplate = SpringContext.getBean(RestTemplate.class);
 
@@ -65,8 +68,7 @@ public class JobRunner implements Job {
             }
 
             // Step 2: build cluster url, set localhost as default url if not specified.
-            String routeUrl = jobInfo.getRouteUrl();
-            routeUrl = HttpUtil.getUrlOrDefault(routeUrl);
+            String routeUrl = workerApplyService.chooseWorker(jobInfo.getRouteUrl());
 
             // Step 3: send http request.
             Map<String, Object> wrappedMap = jobDataMap.getWrappedMap();

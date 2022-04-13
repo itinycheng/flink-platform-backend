@@ -1,15 +1,18 @@
 package com.flink.platform.web.controller;
 
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.flink.platform.common.enums.DeployMode;
 import com.flink.platform.common.enums.ExecutionCondition;
 import com.flink.platform.common.enums.ExecutionStatus;
 import com.flink.platform.common.enums.JobType;
+import com.flink.platform.dao.entity.Worker;
 import com.flink.platform.dao.service.JobInfoService;
+import com.flink.platform.dao.service.WorkerService;
 import com.flink.platform.web.config.FlinkConfig;
 import com.flink.platform.web.entity.response.ResultInfo;
-import com.flink.platform.web.util.HttpUtil;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -34,6 +37,7 @@ import static com.flink.platform.common.enums.ExecutionCondition.AND;
 import static com.flink.platform.common.enums.ExecutionCondition.OR;
 import static com.flink.platform.common.enums.ExecutionStatus.FAILURE;
 import static com.flink.platform.common.enums.ExecutionStatus.SUCCESS;
+import static com.flink.platform.common.enums.WorkerStatus.ACTIVE;
 import static java.util.stream.Collectors.toList;
 
 /** Attrs controller. */
@@ -44,6 +48,8 @@ public class AttrsController {
     private static final String CLASS_PATH_PREFIX = "com.flink.platform.common.enums";
 
     @Autowired private JobInfoService jobInfoService;
+
+    @Autowired private WorkerService workerService;
 
     @Autowired private List<FlinkConfig> flinkConfigs;
 
@@ -72,9 +78,18 @@ public class AttrsController {
     }
 
     @GetMapping(value = "/routeUrls")
-    public ResultInfo<List<String>> routeUrls() {
-        List<String> routingUrls = new ArrayList<>();
-        routingUrls.add(HttpUtil.LOCALHOST_URL);
+    public ResultInfo<List<Worker>> routeUrls() {
+        List<Worker> routingUrls = new ArrayList<>();
+        Worker worker = new Worker();
+        worker.setId(0L);
+        worker.setName("unlimited");
+        routingUrls.add(worker);
+        List<Worker> list =
+                workerService.list(
+                        new QueryWrapper<Worker>().lambda().eq(Worker::getStatus, ACTIVE));
+        if (CollectionUtils.isNotEmpty(list)) {
+            routingUrls.addAll(list);
+        }
         return ResultInfo.success(routingUrls);
     }
 

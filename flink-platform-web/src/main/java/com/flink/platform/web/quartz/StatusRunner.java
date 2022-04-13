@@ -6,7 +6,7 @@ import com.flink.platform.dao.entity.JobRunInfo;
 import com.flink.platform.dao.service.JobRunInfoService;
 import com.flink.platform.web.common.SpringContext;
 import com.flink.platform.web.entity.response.ResultInfo;
-import com.flink.platform.web.util.HttpUtil;
+import com.flink.platform.web.service.WorkerApplyService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.quartz.Job;
@@ -37,6 +37,9 @@ public class StatusRunner implements Job {
     private final JobRunInfoService jobRunInfoService =
             SpringContext.getBean(JobRunInfoService.class);
 
+    private final WorkerApplyService workerApplyService =
+            SpringContext.getBean(WorkerApplyService.class);
+
     private final RestTemplate restTemplate = SpringContext.getBean(RestTemplate.class);
 
     @Override
@@ -53,10 +56,11 @@ public class StatusRunner implements Job {
                                 groupingBy(
                                         jobRunInfo ->
                                                 StringUtils.defaultString(
-                                                        jobRunInfo.getRouteUrl())));
+                                                        workerApplyService.chooseWorker(
+                                                                jobRunInfo.getRouteUrl()))));
 
         for (Entry<String, List<JobRunInfo>> entry : groupedJobRunList.entrySet()) {
-            String routeUrl = HttpUtil.getUrlOrDefault(entry.getKey());
+            String routeUrl = entry.getKey();
             List<Long> ids = entry.getValue().stream().map(JobRunInfo::getId).collect(toList());
 
             HttpHeaders headers = new HttpHeaders();

@@ -66,9 +66,10 @@ public class JobInfo implements Serializable {
 
     /**
      * route url. <br>
-     * example: http://127.0.0.1
+     * refer to: t_worker
      */
-    private String routeUrl;
+    @TableField(typeHandler = JacksonTypeHandler.class)
+    private LongArrayList routeUrl;
 
     /** -1: delete, 0: close, 1: open. */
     private JobStatus status;
