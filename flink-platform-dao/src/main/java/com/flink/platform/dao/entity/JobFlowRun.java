@@ -13,6 +13,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 /** job flow instance. */
 @Data
@@ -37,12 +38,14 @@ public class JobFlowRun {
     private Integer priority;
 
     @TableField(typeHandler = JacksonTypeHandler.class)
-    private LongArrayList alerts;
+    private List<AlertConfig> alerts;
 
     private ExecutionStatus status;
 
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
     private LocalDateTime startTime;
 
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
     private LocalDateTime endTime;
 
     @Setter(AccessLevel.NONE)
