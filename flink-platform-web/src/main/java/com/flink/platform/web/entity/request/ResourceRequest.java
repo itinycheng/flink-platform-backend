@@ -14,7 +14,7 @@ import static com.flink.platform.common.enums.ResourceType.DIR;
 @NoArgsConstructor
 public class ResourceRequest {
 
-    private static final String NAME_REGEX = "^[a-zA-Z0-9._-]{5,32}$";
+    private static final String NAME_REGEX = "^[a-zA-Z0-9._-]{5,64}$";
 
     private static final Pattern NAME_PATTERN = Pattern.compile(NAME_REGEX);
 
