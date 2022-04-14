@@ -21,7 +21,10 @@ import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.Map;
 
-/** job config info. */
+/**
+ * job config info. <br>
+ * TODO: replace field routeUrl with workerGroup.
+ */
 @Data
 @NoArgsConstructor
 @TableName(value = "t_job", autoResultMap = true)

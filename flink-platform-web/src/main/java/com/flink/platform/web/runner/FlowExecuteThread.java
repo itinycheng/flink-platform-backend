@@ -13,6 +13,7 @@ import com.flink.platform.web.util.ThreadUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 
+import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
@@ -80,6 +81,7 @@ public class FlowExecuteThread implements Runnable {
             jobFlowRun.setStatus(finalStatus);
             JobFlowRun newJobFlowRun = new JobFlowRun();
             newJobFlowRun.setId(jobFlowRun.getId());
+            newJobFlowRun.setEndTime(LocalDateTime.now());
             newJobFlowRun.setStatus(finalStatus);
             jobFlowRunService.updateById(newJobFlowRun);
 

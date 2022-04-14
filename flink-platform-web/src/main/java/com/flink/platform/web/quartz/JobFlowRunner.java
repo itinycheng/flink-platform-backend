@@ -17,6 +17,7 @@ import org.quartz.JobDetail;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobKey;
 
+import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -94,6 +95,7 @@ public class JobFlowRunner implements Job {
             jobFlowRun.setHost(Constant.HOST_IP);
             jobFlowRun.setPriority(jobFlow.getPriority());
             jobFlowRun.setAlerts(jobFlow.getAlerts());
+            jobFlowRun.setStartTime(LocalDateTime.now());
             jobFlowRun.setStatus(SUBMITTED);
             jobFlowRunService.save(jobFlowRun);
 
