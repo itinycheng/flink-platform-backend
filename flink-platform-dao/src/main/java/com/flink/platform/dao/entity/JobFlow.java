@@ -12,7 +12,6 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
-import java.util.List;
 
 /** job flow. */
 @Data
@@ -47,7 +46,7 @@ public class JobFlow {
 
     /** alert strategy. */
     @TableField(typeHandler = JacksonTypeHandler.class)
-    private List<AlertConfig> alerts;
+    private AlertConfigList alerts;
 
     /** status. */
     private JobFlowStatus status;

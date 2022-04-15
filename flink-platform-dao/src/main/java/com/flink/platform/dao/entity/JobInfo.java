@@ -90,7 +90,6 @@ public class JobInfo implements Serializable {
     /** json ignore method. */
     @JsonIgnore
     public String getCode() {
-        String newName = name.substring(0, 16);
-        return "job_" + id + "_" + newName;
+        return "job_" + id;
     }
 }
