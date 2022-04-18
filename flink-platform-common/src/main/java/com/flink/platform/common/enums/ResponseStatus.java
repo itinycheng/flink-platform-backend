@@ -15,7 +15,8 @@ public enum ResponseStatus {
     NOT_RUNNABLE_STATUS(10014, "not runnable status"),
     NO_CRONTAB_SET(10015, "no crontab set"),
     UNABLE_SCHEDULE_STREAMING_JOB(10016, "unable to schedule streaming job"),
-    FILE_NOT_FOUND(10017, "file not found");
+    FILE_NOT_FOUND(10017, "file not found"),
+    EXIST_UNFINISHED_PROCESS(10018, "There is an unfinished job or flow");
 
     private final int code;
     private final String desc;

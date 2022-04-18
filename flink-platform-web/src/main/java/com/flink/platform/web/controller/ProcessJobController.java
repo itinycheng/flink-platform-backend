@@ -28,8 +28,9 @@ public class ProcessJobController {
 
     @Autowired private ProcessJobStatusService processJobStatusService;
 
-    @GetMapping(value = "/process/{jobId}/{flowRunId}")
-    public JobRunInfo process(@PathVariable Long jobId, @PathVariable Long flowRunId) {
+    @GetMapping(value = {"/process/{jobId}", "/process/{jobId}/{flowRunId}"})
+    public JobRunInfo process(
+            @PathVariable Long jobId, @PathVariable(required = false) Long flowRunId) {
         try {
             return processJobService.processJob(jobId, flowRunId);
         } catch (Exception e) {

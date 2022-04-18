@@ -16,7 +16,7 @@ import com.flink.platform.web.monitor.StatusInfo;
 import com.flink.platform.web.service.ProcessJobService;
 import com.flink.platform.web.service.ProcessJobStatusService;
 import com.flink.platform.web.service.WorkerApplyService;
-import com.flink.platform.web.util.HttpUtil;
+import com.flink.platform.web.util.ThreadUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -32,6 +32,7 @@ import static com.flink.platform.common.enums.ExecutionStatus.FAILURE;
 import static com.flink.platform.common.enums.ExecutionStatus.NOT_EXIST;
 import static com.flink.platform.common.enums.ExecutionStatus.RUNNING;
 import static com.flink.platform.common.enums.ExecutionStatus.SUCCESS;
+import static com.flink.platform.web.util.HttpUtil.isRemoteUrl;
 
 /** Execute job in a separate thread. */
 @Slf4j
@@ -248,14 +249,8 @@ public class JobExecuteThread implements Callable<JobResponse> {
         return statusInfo;
     }
 
-    private boolean isRemoteUrl(String routeUrl) {
-        return !routeUrl.contains(HttpUtil.LOCALHOST_IP);
-    }
-
     private void sleep(int retryTimes) {
-        try {
-            Thread.sleep(Math.min(retryTimes * MIN_SLEEP_TIME_MILLIS, MAX_SLEEP_TIME_MILLIS));
-        } catch (Exception ignored) {
-        }
+        int mills = Math.min(retryTimes * MIN_SLEEP_TIME_MILLIS, MAX_SLEEP_TIME_MILLIS);
+        ThreadUtil.sleep(mills);
     }
 }

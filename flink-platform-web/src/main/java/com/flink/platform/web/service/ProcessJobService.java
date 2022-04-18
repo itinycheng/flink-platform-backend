@@ -57,7 +57,7 @@ public class ProcessJobService {
         this.jobCommandExecutors = jobCommandExecutors;
     }
 
-    public JobRunInfo processJob(final long jobId, final long flowRunId) throws Exception {
+    public JobRunInfo processJob(final long jobId, final Long flowRunId) throws Exception {
         JobCommand jobCommand = null;
         JobInfo jobInfo = null;
 

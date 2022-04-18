@@ -2,6 +2,7 @@ package com.flink.platform.web.service;
 
 import com.flink.platform.common.util.DateUtil;
 import com.flink.platform.web.common.QuartzException;
+import com.flink.platform.web.config.AppRunner;
 import com.flink.platform.web.entity.IQuartzInfo;
 import lombok.extern.slf4j.Slf4j;
 import org.quartz.CronExpression;
@@ -148,7 +149,7 @@ public class QuartzService {
     }
 
     private void checkQuartzSchedulerStarted() throws SchedulerException {
-        if (!scheduler.isStarted()) {
+        if (!scheduler.isStarted() || AppRunner.isStopped()) {
             throw new QuartzException("quartz scheduler is not started");
         }
     }
