@@ -36,7 +36,7 @@ import static com.flink.platform.common.enums.ResponseStatus.ERROR_PARAMETER;
 import static com.flink.platform.web.entity.response.ResultInfo.failure;
 import static com.flink.platform.web.entity.response.ResultInfo.success;
 
-/** Alert controller. */
+/** Resource controller. */
 @RestController
 @RequestMapping("/resource")
 public class ResourceController {
@@ -168,11 +168,6 @@ public class ResourceController {
         }
 
         hdfsService.delete(resourceRequest.getFullName(), false);
-        resourceService.remove(
-                new QueryWrapper<Resource>()
-                        .lambda()
-                        .eq(Resource::getUserId, loginUser.getId())
-                        .eq(Resource::getFullName, resourceRequest.getFullName()));
         return success(true);
     }
 }
