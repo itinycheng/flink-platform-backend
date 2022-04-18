@@ -31,6 +31,10 @@ public class HttpUtil {
         return String.join(COLON, HTTP_PROTOCOL + ip, port);
     }
 
+    public static boolean isRemoteUrl(String routeUrl) {
+        return !routeUrl.contains(HttpUtil.LOCALHOST_IP);
+    }
+
     public static String getClientIpAddress(HttpServletRequest request) {
         String clientIp = request.getHeader(HTTP_X_FORWARDED_FOR);
         if (StringUtils.isNotEmpty(clientIp) && !clientIp.equalsIgnoreCase(HTTP_HEADER_UNKNOWN)) {
