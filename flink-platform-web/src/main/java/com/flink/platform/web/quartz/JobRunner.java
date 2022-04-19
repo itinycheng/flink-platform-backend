@@ -65,7 +65,7 @@ public class JobRunner implements Job {
                 jobRunInfo = processJobService.processJob(jobId, null);
             }
 
-            log.info("The job: {} is processed, job run result: {}", jobId, jobRunInfo);
+            log.info("The job: {} is processed, job run id: {}", jobId, jobRunInfo.getId());
         } catch (Exception e) {
             log.error("Cannot exec job: {}", jobId, e);
         }

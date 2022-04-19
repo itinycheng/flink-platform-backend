@@ -87,6 +87,7 @@ public abstract class FlinkCommandBuilder implements CommandBuilder {
                 command.setMainJar(localPathOfMainJar);
                 command.setMainArgs(flinkJob.getMainArgs());
                 command.setMainClass(flinkJob.getMainClass());
+                command.setOptionArgs(flinkJob.getOptionArgs());
                 break;
             case FLINK_SQL:
                 String localJarPath = getLocalPathOfSqlJarFile();
