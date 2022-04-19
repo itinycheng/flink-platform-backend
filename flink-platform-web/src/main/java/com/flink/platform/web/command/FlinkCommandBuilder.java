@@ -82,7 +82,9 @@ public abstract class FlinkCommandBuilder implements CommandBuilder {
         command.setClasspaths(classpaths);
         switch (jobInfo.getType()) {
             case FLINK_JAR:
-                command.setMainJar(jobInfo.getSubject());
+                String localPathOfMainJar =
+                        getLocalPathOfMainJar(jobInfo.getCode(), jobInfo.getSubject());
+                command.setMainJar(localPathOfMainJar);
                 command.setMainArgs(flinkJob.getMainArgs());
                 command.setMainClass(flinkJob.getMainClass());
                 break;
@@ -97,6 +99,17 @@ public abstract class FlinkCommandBuilder implements CommandBuilder {
                 throw new JobCommandGenException("unsupported job type");
         }
         return command;
+    }
+
+    private String getLocalPathOfMainJar(String jobCode, String jarPath) {
+        if (!jarPath.toLowerCase().startsWith("hdfs")) {
+            return jarPath;
+        }
+
+        String jarName = new Path(jarPath).getName();
+        String localJarPath = String.join(SLASH, ROOT_DIR, jobJarDir, jobCode, jarName);
+        copyToLocalIfChanged(jarPath, localJarPath);
+        return localJarPath;
     }
 
     private Object getMergedLibDirs(List<String> extJarList) {

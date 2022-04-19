@@ -2,6 +2,7 @@ package com.flink.platform.web.command;
 
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
 
 import java.net.URL;
 import java.util.LinkedHashMap;
@@ -35,7 +36,7 @@ public class FlinkCommand implements JobCommand {
                 classpath -> command.append(String.format("-C %s" + LINE_SEPARATOR, classpath)));
         command.append(String.format("-c %s" + LINE_SEPARATOR, mainClass))
                 .append(String.format("%s" + LINE_SEPARATOR, mainJar))
-                .append(String.format(" %s ", mainArgs));
+                .append(String.format(" %s ", StringUtils.defaultString(mainArgs, "")));
         return command.toString();
     }
 }
