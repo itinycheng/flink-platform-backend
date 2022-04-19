@@ -14,6 +14,9 @@ import java.util.Map;
 @EqualsAndHashCode(callSuper = true)
 public class FlinkJob extends BaseJob {
 
+    /** option arguments. such as: -ynm jobName */
+    private String optionArgs;
+
     /** configs for run job. */
     private Map<String, String> configs;
 
