@@ -74,8 +74,7 @@ public abstract class FlinkCommandBuilder implements CommandBuilder {
             configs.putAll(flinkJob.getConfigs());
         }
         // add yarn application name
-        String appName = String.join("-", jobInfo.getExecMode().name(), jobInfo.getCode());
-        configs.put(YARN_APPLICATION_NAME, appName);
+        configs.put(YARN_APPLICATION_NAME, createAppName(jobInfo));
         // add lib dirs and user classpaths
         configs.put(YARN_PROVIDED_LIB_DIRS, getMergedLibDirs(flinkJob.getExtJarPaths()));
         List<URL> classpaths = getOrCreateClasspaths(jobInfo.getCode(), flinkJob.getExtJarPaths());
@@ -100,6 +99,11 @@ public abstract class FlinkCommandBuilder implements CommandBuilder {
                 throw new JobCommandGenException("unsupported job type");
         }
         return command;
+    }
+
+    private String createAppName(JobInfo jobInfo) {
+        String jobName = jobInfo.getName().replaceAll("\\s+", "");
+        return String.join("-", jobInfo.getExecMode().name(), jobInfo.getCode(), jobName);
     }
 
     private String getLocalPathOfMainJar(String jobCode, String jarPath) {
