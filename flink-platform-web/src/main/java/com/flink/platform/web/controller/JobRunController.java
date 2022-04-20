@@ -1,6 +1,9 @@
 package com.flink.platform.web.controller;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.flink.platform.common.enums.ExecutionStatus;
 import com.flink.platform.dao.entity.JobInfo;
 import com.flink.platform.dao.entity.JobRunInfo;
 import com.flink.platform.dao.service.JobInfoService;
@@ -14,11 +17,13 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
 import static java.util.stream.Collectors.toList;
 
@@ -35,6 +40,28 @@ public class JobRunController {
     public ResultInfo<JobRunInfo> get(@PathVariable Long runId) {
         JobRunInfo jobRunInfo = jobRunInfoService.getById(runId);
         return ResultInfo.success(jobRunInfo);
+    }
+
+    @GetMapping(value = "/page")
+    public ResultInfo<IPage<JobRunInfo>> page(
+            @RequestParam(name = "page", required = false, defaultValue = "1") Integer page,
+            @RequestParam(name = "size", required = false, defaultValue = "20") Integer size,
+            @RequestParam(name = "flowRunId", required = false) Long flowRunId,
+            @RequestParam(name = "jobId", required = false) Long jobId,
+            @RequestParam(name = "status", required = false) ExecutionStatus status,
+            @RequestParam(name = "name", required = false) String name) {
+        Page<JobRunInfo> pager = new Page<>(page, size);
+        IPage<JobRunInfo> iPage =
+                jobRunInfoService.page(
+                        pager,
+                        new QueryWrapper<JobRunInfo>()
+                                .lambda()
+                                .eq(Objects.nonNull(flowRunId), JobRunInfo::getFlowRunId, flowRunId)
+                                .eq(Objects.nonNull(jobId), JobRunInfo::getJobId, jobId)
+                                .eq(Objects.nonNull(status), JobRunInfo::getStatus, status)
+                                .like(Objects.nonNull(name), JobRunInfo::getName, name));
+
+        return ResultInfo.success(iPage);
     }
 
     @PostMapping(value = "/getJobOrRunByJobIds")
