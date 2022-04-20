@@ -1,5 +1,6 @@
 package com.flink.platform.web.controller;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -49,18 +50,22 @@ public class JobRunController {
             @RequestParam(name = "flowRunId", required = false) Long flowRunId,
             @RequestParam(name = "jobId", required = false) Long jobId,
             @RequestParam(name = "status", required = false) ExecutionStatus status,
-            @RequestParam(name = "name", required = false) String name) {
-        Page<JobRunInfo> pager = new Page<>(page, size);
-        IPage<JobRunInfo> iPage =
-                jobRunInfoService.page(
-                        pager,
-                        new QueryWrapper<JobRunInfo>()
-                                .lambda()
-                                .eq(Objects.nonNull(flowRunId), JobRunInfo::getFlowRunId, flowRunId)
-                                .eq(Objects.nonNull(jobId), JobRunInfo::getJobId, jobId)
-                                .eq(Objects.nonNull(status), JobRunInfo::getStatus, status)
-                                .like(Objects.nonNull(name), JobRunInfo::getName, name));
+            @RequestParam(name = "name", required = false) String name,
+            @RequestParam(name = "sort", required = false) String sort) {
+        LambdaQueryWrapper<JobRunInfo> queryWrapper =
+                new QueryWrapper<JobRunInfo>()
+                        .lambda()
+                        .eq(Objects.nonNull(flowRunId), JobRunInfo::getFlowRunId, flowRunId)
+                        .eq(Objects.nonNull(jobId), JobRunInfo::getJobId, jobId)
+                        .eq(Objects.nonNull(status), JobRunInfo::getStatus, status)
+                        .like(Objects.nonNull(name), JobRunInfo::getName, name);
 
+        if ("-id".equals(sort)) {
+            queryWrapper.orderByDesc(JobRunInfo::getId);
+        }
+
+        Page<JobRunInfo> pager = new Page<>(page, size);
+        IPage<JobRunInfo> iPage = jobRunInfoService.page(pager, queryWrapper);
         return ResultInfo.success(iPage);
     }
 
