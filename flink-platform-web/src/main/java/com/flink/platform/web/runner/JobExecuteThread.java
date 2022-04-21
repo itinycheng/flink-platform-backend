@@ -26,6 +26,7 @@ import org.springframework.web.client.RestTemplate;
 import java.time.LocalDateTime;
 import java.util.concurrent.Callable;
 
+import static com.flink.platform.common.constants.Constant.SLASH;
 import static com.flink.platform.common.enums.ExecutionMode.STREAMING;
 import static com.flink.platform.common.enums.ExecutionStatus.ERROR;
 import static com.flink.platform.common.enums.ExecutionStatus.FAILURE;
@@ -38,7 +39,7 @@ import static com.flink.platform.web.util.HttpUtil.isRemoteUrl;
 @Slf4j
 public class JobExecuteThread implements Callable<JobResponse> {
 
-    private static final String REST_JOB_PROCESS = "/internal/process/%s/%s";
+    private static final String REST_JOB_PROCESS = "/internal/process/%s";
 
     private static final String REST_GET_STATUS = "/internal/getStatus";
 
@@ -46,7 +47,7 @@ public class JobExecuteThread implements Callable<JobResponse> {
 
     private static final int MAX_SLEEP_TIME_MILLIS = 60_000;
 
-    private final long flowRunId;
+    private final Long flowRunId;
 
     private final JobVertex jobVertex;
 
@@ -66,7 +67,7 @@ public class JobExecuteThread implements Callable<JobResponse> {
 
     private final WorkerApplyService workerApplyService;
 
-    public JobExecuteThread(long flowRunId, JobVertex jobVertex, WorkerConfig workerConfig) {
+    public JobExecuteThread(Long flowRunId, JobVertex jobVertex, WorkerConfig workerConfig) {
         this.flowRunId = flowRunId;
         this.jobVertex = jobVertex;
         this.errorRetries = workerConfig.getErrorRetries();
@@ -159,7 +160,10 @@ public class JobExecuteThread implements Callable<JobResponse> {
         while (++retryTimes <= errorRetries) {
             try {
                 if (isRemoteUrl(routeUrl)) {
-                    String httpUri = routeUrl + String.format(REST_JOB_PROCESS, jobId, flowRunId);
+                    String httpUri = routeUrl + String.format(REST_JOB_PROCESS, jobId);
+                    if (flowRunId != null) {
+                        httpUri = String.join(SLASH, httpUri, flowRunId.toString());
+                    }
                     return restTemplate.getForObject(httpUri, JobRunInfo.class);
                 } else {
                     return processJobService.processJob(jobId, flowRunId);
