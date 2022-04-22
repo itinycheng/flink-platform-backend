@@ -84,6 +84,7 @@ public class JobExecuteThread implements Callable<JobResponse> {
     public JobResponse call() {
         Long jobId = jobVertex.getJobId();
         Long jobRunId = jobVertex.getJobRunId();
+        JobRunInfo jobRunInfo = null;
 
         try {
             // Step 1: get job info
@@ -103,7 +104,6 @@ public class JobExecuteThread implements Callable<JobResponse> {
             String routeUrl = workerApplyService.chooseWorker(jobInfo.getRouteUrl());
 
             // Step 3: process job and get jobRun.
-            JobRunInfo jobRunInfo;
             if (jobRunId != null) {
                 jobRunInfo = jobRunInfoService.getById(jobRunId);
                 log.info("Job:{} already submitted, runId = {}.", jobId, jobRunId);
@@ -122,35 +122,17 @@ public class JobExecuteThread implements Callable<JobResponse> {
             // Step 5: Wait for job complete and get final status.
             ExecutionStatus status = jobRunInfo.getStatus();
             if (status == null || !status.isTerminalState()) {
-                StatusInfo statusInfo = waitForComplete(routeUrl, jobRunInfo);
+                StatusInfo statusInfo = updateStatusAndWaitForComplete(routeUrl, jobRunInfo);
                 if (statusInfo != null) {
                     status = statusInfo.getStatus();
-                    updateJobRunInfo(jobRunId, statusInfo.getStatus(), statusInfo.getEndTime());
                 }
             }
 
             return new JobResponse(jobId, jobRunId, status);
         } catch (Exception e) {
             log.error("Submit job and wait for complete failed.", e);
-            updateJobRunInfo(jobRunId, ERROR, LocalDateTime.now());
+            updateJobRunInfo(jobRunInfo, new CustomizeStatusInfo(ERROR, null, LocalDateTime.now()));
             return new JobResponse(jobId, jobRunId, ERROR);
-        }
-    }
-
-    private void updateJobRunInfo(Long runId, ExecutionStatus status, LocalDateTime endTime) {
-        try {
-            if (runId == null) {
-                return;
-            }
-            if (endTime == null) {
-                endTime = LocalDateTime.now();
-            }
-            JobRunInfo jobRunInfo = new JobRunInfo();
-            jobRunInfo.setId(runId);
-            jobRunInfo.setStatus(status);
-            jobRunInfo.setStopTime(endTime);
-            jobRunInfoService.updateById(jobRunInfo);
-        } catch (Exception ignored) {
         }
     }
 
@@ -177,7 +159,7 @@ public class JobExecuteThread implements Callable<JobResponse> {
         throw new IllegalStateException("Times to submit job exceeded limit: " + errorRetries);
     }
 
-    public StatusInfo waitForComplete(String routeUrl, JobRunInfo jobRunInfo) {
+    public StatusInfo updateStatusAndWaitForComplete(String routeUrl, JobRunInfo jobRunInfo) {
         int retryTimes = 0;
         int errorTimes = 0;
         boolean isRemote = isRemoteUrl(routeUrl);
@@ -202,8 +184,7 @@ public class JobExecuteThread implements Callable<JobResponse> {
                     if (jobRunInfo.getCreateTime() == null) {
                         jobRunInfo.setCreateTime(LocalDateTime.now());
                     }
-                    statusInfo =
-                            updateAndGetStreamJobStatus(statusInfo, jobRunInfo.getCreateTime());
+                    statusInfo = updateStreamJobStatus(statusInfo, jobRunInfo.getCreateTime());
                 }
 
                 if (statusInfo != null) {
@@ -212,7 +193,7 @@ public class JobExecuteThread implements Callable<JobResponse> {
                             jobRunInfo.getJobId(),
                             jobRunInfo.getName(),
                             statusInfo.getStatus());
-
+                    updateJobRunInfo(jobRunInfo, statusInfo);
                     if (statusInfo.getStatus().isTerminalState()) {
                         return statusInfo;
                     }
@@ -231,7 +212,7 @@ public class JobExecuteThread implements Callable<JobResponse> {
         return null;
     }
 
-    private StatusInfo updateAndGetStreamJobStatus(StatusInfo statusInfo, LocalDateTime startTime) {
+    private StatusInfo updateStreamJobStatus(StatusInfo statusInfo, LocalDateTime startTime) {
         if (statusInfo == null) {
             return null;
         }
@@ -251,6 +232,33 @@ public class JobExecuteThread implements Callable<JobResponse> {
         }
 
         return statusInfo;
+    }
+
+    private void updateJobRunInfo(JobRunInfo jobRunInfo, StatusInfo statusInfo) {
+        try {
+            if (jobRunInfo == null || jobRunInfo.getId() == null) {
+                return;
+            }
+
+            if (jobRunInfo.getStatus() == statusInfo.getStatus()) {
+                return;
+            }
+
+            JobRunInfo newJobRun = new JobRunInfo();
+            newJobRun.setId(jobRunInfo.getId());
+            newJobRun.setStatus(statusInfo.getStatus());
+            if (statusInfo.getStatus().isTerminalState()) {
+                LocalDateTime endTime = statusInfo.getEndTime();
+                if (endTime == null) {
+                    endTime = LocalDateTime.now();
+                }
+                newJobRun.setStopTime(endTime);
+            }
+            jobRunInfoService.updateById(newJobRun);
+            jobRunInfo.setStatus(statusInfo.getStatus());
+        } catch (Exception e) {
+            log.error("Update job run status failed", e);
+        }
     }
 
     private void sleep(int retryTimes) {
