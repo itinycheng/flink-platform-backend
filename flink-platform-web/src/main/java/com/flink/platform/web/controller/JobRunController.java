@@ -13,6 +13,7 @@ import com.flink.platform.web.entity.request.JobRunRequest;
 import com.flink.platform.web.entity.response.ResultInfo;
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -21,11 +22,12 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
 
+import static java.util.Objects.nonNull;
 import static java.util.stream.Collectors.toList;
 
 /** Job run info controller. */
@@ -51,15 +53,25 @@ public class JobRunController {
             @RequestParam(name = "jobId", required = false) Long jobId,
             @RequestParam(name = "status", required = false) ExecutionStatus status,
             @RequestParam(name = "name", required = false) String name,
+            @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+                    @RequestParam(name = "startTime", required = false)
+                    LocalDateTime startTime,
+            @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+                    @RequestParam(name = "endTime", required = false)
+                    LocalDateTime endTime,
             @RequestParam(name = "sort", required = false) String sort) {
         LambdaQueryWrapper<JobRunInfo> queryWrapper =
                 new QueryWrapper<JobRunInfo>()
                         .lambda()
-                        .eq(Objects.nonNull(flowRunId), JobRunInfo::getFlowRunId, flowRunId)
-                        .eq(Objects.nonNull(jobId), JobRunInfo::getJobId, jobId)
-                        .eq(Objects.nonNull(status), JobRunInfo::getStatus, status)
-                        .like(Objects.nonNull(name), JobRunInfo::getName, name);
-
+                        .eq(nonNull(flowRunId), JobRunInfo::getFlowRunId, flowRunId)
+                        .eq(nonNull(jobId), JobRunInfo::getJobId, jobId)
+                        .eq(nonNull(status), JobRunInfo::getStatus, status)
+                        .like(nonNull(name), JobRunInfo::getName, name)
+                        .between(
+                                nonNull(startTime) && nonNull(endTime),
+                                JobRunInfo::getCreateTime,
+                                startTime,
+                                endTime);
         if ("-id".equals(sort)) {
             queryWrapper.orderByDesc(JobRunInfo::getId);
         }

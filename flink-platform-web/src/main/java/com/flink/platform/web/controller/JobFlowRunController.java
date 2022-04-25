@@ -11,6 +11,7 @@ import com.flink.platform.dao.entity.User;
 import com.flink.platform.dao.service.JobFlowRunService;
 import com.flink.platform.web.entity.response.ResultInfo;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestAttribute;
@@ -18,7 +19,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.Objects;
+import java.time.LocalDateTime;
+
+import static java.util.Objects.nonNull;
 
 /** crud job flow. */
 @RestController
@@ -33,13 +36,19 @@ public class JobFlowRunController {
         return ResultInfo.success(jobFlowRun);
     }
 
-    @GetMapping(value = "/list")
-    public ResultInfo<IPage<JobFlowRun>> list(
+    @GetMapping(value = "/page")
+    public ResultInfo<IPage<JobFlowRun>> page(
             @RequestAttribute(value = Constant.SESSION_USER) User loginUser,
             @RequestParam(name = "page", required = false, defaultValue = "1") Integer page,
             @RequestParam(name = "size", required = false, defaultValue = "20") Integer size,
             @RequestParam(name = "name", required = false) String name,
             @RequestParam(name = "status", required = false) ExecutionStatus status,
+            @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+                    @RequestParam(name = "startTime", required = false)
+                    LocalDateTime startTime,
+            @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+                    @RequestParam(name = "endTime", required = false)
+                    LocalDateTime endTime,
             @RequestParam(name = "sort", required = false) String sort) {
         Page<JobFlowRun> pager = new Page<>(page, size);
 
@@ -47,8 +56,13 @@ public class JobFlowRunController {
                 new QueryWrapper<JobFlowRun>()
                         .lambda()
                         .eq(JobFlowRun::getUserId, loginUser.getId())
-                        .eq(Objects.nonNull(status), JobFlowRun::getStatus, status)
-                        .like(Objects.nonNull(name), JobFlowRun::getName, name);
+                        .eq(nonNull(status), JobFlowRun::getStatus, status)
+                        .like(nonNull(name), JobFlowRun::getName, name)
+                        .between(
+                                nonNull(startTime) && nonNull(endTime),
+                                JobFlowRun::getCreateTime,
+                                startTime,
+                                endTime);
         if ("-id".equals(sort)) {
             queryWrapper.orderByDesc(JobFlowRun::getId);
         }
