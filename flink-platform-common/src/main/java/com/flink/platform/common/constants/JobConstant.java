@@ -39,8 +39,13 @@ public class JobConstant {
 
     public static final String TMP_FILE_SUFFIX = "tmp";
 
+    public static final int READ_MAX_ROWS = 1000;
+
     public static final int SQL_PATTERN_CONFIGS =
             Pattern.CASE_INSENSITIVE | Pattern.MULTILINE | Pattern.DOTALL;
 
     public static final Pattern SQL_PATTERN = Pattern.compile("\\S+.*?;\\s*$", SQL_PATTERN_CONFIGS);
+
+    public static final Pattern LIMIT_PATTERN =
+            Pattern.compile("LIMIT\\s+(?<num>\\d+)$", SQL_PATTERN_CONFIGS);
 }
