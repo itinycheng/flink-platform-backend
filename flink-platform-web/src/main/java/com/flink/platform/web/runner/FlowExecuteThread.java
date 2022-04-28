@@ -2,9 +2,9 @@ package com.flink.platform.web.runner;
 
 import com.flink.platform.common.enums.ExecutionStatus;
 import com.flink.platform.common.model.JobVertex;
-import com.flink.platform.dao.entity.AlertConfig;
 import com.flink.platform.dao.entity.JobFlowDag;
 import com.flink.platform.dao.entity.JobFlowRun;
+import com.flink.platform.dao.entity.alert.AlertConfig;
 import com.flink.platform.dao.service.JobFlowRunService;
 import com.flink.platform.web.common.SpringContext;
 import com.flink.platform.web.config.WorkerConfig;

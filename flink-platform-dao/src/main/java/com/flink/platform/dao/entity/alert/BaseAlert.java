@@ -1,4 +1,4 @@
-package com.flink.platform.dao.entity;
+package com.flink.platform.dao.entity.alert;
 
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
@@ -14,10 +14,10 @@ import static com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 @NoArgsConstructor
 @JsonTypeInfo(use = Id.NAME, include = As.EXISTING_PROPERTY, property = "type", visible = true)
 @JsonSubTypes({
-    @JsonSubTypes.Type(value = AlertInfo.EmailAlert.class, name = "EMAIL"),
-    @JsonSubTypes.Type(value = AlertInfo.FeiShuAlert.class, name = "FEI_SHU"),
-    @JsonSubTypes.Type(value = AlertInfo.DingDingAlert.class, name = "DING_DING"),
-    @JsonSubTypes.Type(value = AlertInfo.SmsAlert.class, name = "SMS")
+    @JsonSubTypes.Type(value = EmailAlert.class, name = "EMAIL"),
+    @JsonSubTypes.Type(value = FeiShuAlert.class, name = "FEI_SHU"),
+    @JsonSubTypes.Type(value = DingDingAlert.class, name = "DING_DING"),
+    @JsonSubTypes.Type(value = SmsAlert.class, name = "SMS")
 })
 public class BaseAlert {
 

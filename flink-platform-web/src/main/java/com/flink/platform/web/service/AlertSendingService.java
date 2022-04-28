@@ -2,8 +2,8 @@ package com.flink.platform.web.service;
 
 import com.flink.platform.common.util.JsonUtil;
 import com.flink.platform.dao.entity.AlertInfo;
-import com.flink.platform.dao.entity.AlertInfo.FeiShuAlert;
 import com.flink.platform.dao.entity.JobFlowRun;
+import com.flink.platform.dao.entity.alert.FeiShuAlert;
 import com.flink.platform.dao.service.AlertService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
