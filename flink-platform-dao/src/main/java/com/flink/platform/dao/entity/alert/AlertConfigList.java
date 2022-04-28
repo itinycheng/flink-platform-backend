@@ -1,4 +1,4 @@
-package com.flink.platform.dao.entity;
+package com.flink.platform.dao.entity.alert;
 
 import java.util.ArrayList;
 

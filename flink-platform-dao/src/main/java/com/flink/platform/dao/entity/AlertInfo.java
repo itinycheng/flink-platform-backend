@@ -7,6 +7,7 @@ import com.baomidou.mybatisplus.annotation.TableName;
 import com.baomidou.mybatisplus.extension.handlers.JacksonTypeHandler;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.flink.platform.common.enums.AlertType;
+import com.flink.platform.dao.entity.alert.BaseAlert;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -50,33 +51,4 @@ public class AlertInfo implements Serializable {
     @Setter(AccessLevel.NONE)
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
     private LocalDateTime createTime;
-
-    /** Ding ding alert. */
-    @Data
-    @NoArgsConstructor
-    @EqualsAndHashCode(callSuper = true)
-    public static class DingDingAlert extends BaseAlert {}
-
-    /** Fei shu alert. */
-    @Data
-    @NoArgsConstructor
-    @EqualsAndHashCode(callSuper = true)
-    public static class FeiShuAlert extends BaseAlert {
-
-        private String webhook;
-
-        private String content;
-    }
-
-    /** Email alert. */
-    @Data
-    @NoArgsConstructor
-    @EqualsAndHashCode(callSuper = true)
-    public static class EmailAlert extends BaseAlert {}
-
-    /** Sms alert. */
-    @Data
-    @NoArgsConstructor
-    @EqualsAndHashCode(callSuper = true)
-    public static class SmsAlert extends BaseAlert {}
 }

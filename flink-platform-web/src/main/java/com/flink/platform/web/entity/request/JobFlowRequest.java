@@ -1,7 +1,7 @@
 package com.flink.platform.web.entity.request;
 
-import com.flink.platform.dao.entity.AlertConfig;
 import com.flink.platform.dao.entity.JobFlow;
+import com.flink.platform.dao.entity.alert.AlertConfig;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.experimental.Delegate;
