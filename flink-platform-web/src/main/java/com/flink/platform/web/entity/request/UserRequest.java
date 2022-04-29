@@ -46,6 +46,6 @@ public class UserRequest {
     }
 
     public String emailNotNull() {
-        return Preconditions.checkNotNull(getEmail(), "The type cannot be null");
+        return Preconditions.checkNotNull(getEmail(), "The email cannot be null");
     }
 }
