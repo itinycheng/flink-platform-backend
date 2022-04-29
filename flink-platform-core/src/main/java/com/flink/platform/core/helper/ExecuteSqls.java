@@ -9,13 +9,11 @@ import com.flink.platform.common.job.Sql;
 
 import java.util.List;
 import java.util.Set;
-import java.util.regex.Matcher;
 import java.util.stream.Stream;
 
-import static com.flink.platform.common.constants.JobConstant.LIMIT_PATTERN;
-import static com.flink.platform.common.constants.JobConstant.READ_MAX_ROWS;
 import static com.flink.platform.common.enums.SqlType.INSERT_INTO;
 import static com.flink.platform.common.enums.SqlType.INSERT_OVERWRITE;
+import static com.flink.platform.common.util.SqlUtil.limitRowNum;
 import static java.util.stream.Collectors.toSet;
 
 /** Exec sql list in order. */
@@ -72,20 +70,5 @@ public class ExecuteSqls {
             default:
                 throw new FlinkJobGenException(String.format("Unknown sql type, sql: %s", sql));
         }
-    }
-
-    private static String limitRowNum(final String sqlQuery) {
-        String sql = sqlQuery.trim();
-        Matcher matcher = LIMIT_PATTERN.matcher(sql);
-        if (matcher.find()) {
-            String rows = matcher.group("num");
-            int currentRows = Integer.parseInt(rows);
-            if (currentRows > READ_MAX_ROWS) {
-                sql = sql.substring(0, sql.length() - rows.length()) + READ_MAX_ROWS;
-            }
-        } else {
-            sql = sql + " LIMIT " + READ_MAX_ROWS;
-        }
-        return sql;
     }
 }

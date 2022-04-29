@@ -16,7 +16,8 @@ public enum ResponseStatus {
     NO_CRONTAB_SET(10015, "no crontab set"),
     UNABLE_SCHEDULE_STREAMING_JOB(10016, "unable to schedule streaming job"),
     FILE_NOT_FOUND(10017, "file not found"),
-    EXIST_UNFINISHED_PROCESS(10018, "There is an unfinished job or flow");
+    EXIST_UNFINISHED_PROCESS(10018, "There is an unfinished job or flow"),
+    DATASOURCE_NOT_FOUND(10019, "Datasource not found");
 
     private final int code;
     private final String desc;
