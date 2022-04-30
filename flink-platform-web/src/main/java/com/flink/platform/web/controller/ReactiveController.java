@@ -6,7 +6,7 @@ import com.flink.platform.dao.entity.User;
 import com.flink.platform.dao.service.DatasourceService;
 import com.flink.platform.web.entity.request.ReactiveRequest;
 import com.flink.platform.web.entity.response.ResultInfo;
-import com.flink.platform.web.entity.vo.TableDataVo;
+import com.flink.platform.web.entity.vo.ReactiveDataVo;
 import com.flink.platform.web.service.ReactiveService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -19,6 +19,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.List;
 
 import static com.flink.platform.common.enums.ResponseStatus.DATASOURCE_NOT_FOUND;
@@ -37,8 +39,8 @@ public class ReactiveController {
     @Autowired private ReactiveService reactiveService;
 
     @PostMapping(value = "/sync")
-    public ResultInfo<TableDataVo> sync(@RequestBody ReactiveRequest reactiveRequest) {
-        TableDataVo tableDataVo;
+    public ResultInfo<ReactiveDataVo> sync(@RequestBody ReactiveRequest reactiveRequest) {
+        ReactiveDataVo reactiveDataVo;
         try {
             String errorMsg = reactiveRequest.validate();
             if (StringUtils.isNotBlank(errorMsg)) {
@@ -50,12 +52,14 @@ public class ReactiveController {
                 return failure(DATASOURCE_NOT_FOUND);
             }
 
-            tableDataVo = reactiveService.executeAndGet(reactiveRequest, datasource);
+            reactiveDataVo = reactiveService.executeAndGet(reactiveRequest, datasource);
         } catch (Exception e) {
-            e.printStackTrace();
-            tableDataVo = new TableDataVo(new String[] {"exception"}, null);
+            StringWriter writer = new StringWriter();
+            e.printStackTrace(new PrintWriter(writer, true));
+            reactiveDataVo =
+                    new ReactiveDataVo(new String[] {"exception"}, null, writer.toString());
         }
-        return success(tableDataVo);
+        return success(reactiveDataVo);
     }
 
     @GetMapping(value = "/data/{uuid}")

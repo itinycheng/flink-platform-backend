@@ -8,9 +8,11 @@ import java.util.List;
 /** table data. */
 @Data
 @AllArgsConstructor
-public class TableDataVo {
+public class ReactiveDataVo {
 
     private String[] meta;
 
     private List<Object[]> data;
+
+    private String exception;
 }
