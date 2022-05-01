@@ -13,8 +13,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
 
 import static com.flink.platform.common.constants.Constant.LINE_SEPARATOR;
-import static com.flink.platform.web.util.CommandUtil.CmdLogType.ERR;
-import static com.flink.platform.web.util.CommandUtil.CmdLogType.STD;
+import static com.flink.platform.web.util.CommandUtil.CmdOutType.ERR;
+import static com.flink.platform.web.util.CommandUtil.CmdOutType.STD;
 
 /** Command util. */
 @Slf4j
@@ -46,7 +46,7 @@ public class CommandUtil {
     }
 
     public static void exec(
-            String command, String[] envProps, BiConsumer<CmdLogType, String> logConsumer)
+            String command, String[] envProps, BiConsumer<CmdOutType, String> logConsumer)
             throws IOException, InterruptedException {
         log.info("Exec command: {}, env properties: {}", command, envProps);
         Process process = Runtime.getRuntime().exec(command, envProps);
@@ -82,14 +82,14 @@ public class CommandUtil {
 
         private final InputStream inputStream;
 
-        private final CmdLogType inputType;
+        private final CmdOutType inputType;
 
-        private final BiConsumer<CmdLogType, String> consumer;
+        private final BiConsumer<CmdOutType, String> consumer;
 
         public CollectLogThread(
                 InputStream inputStream,
-                CmdLogType inputType,
-                BiConsumer<CmdLogType, String> consumer) {
+                CmdOutType inputType,
+                BiConsumer<CmdOutType, String> consumer) {
             super("collect-stream-log-" + COUNTER.incrementAndGet());
             this.inputStream = inputStream;
             this.inputType = inputType;
@@ -109,7 +109,8 @@ public class CommandUtil {
         }
     }
 
-    enum CmdLogType {
+    /** command output type. */
+    public enum CmdOutType {
         STD,
         ERR
     }

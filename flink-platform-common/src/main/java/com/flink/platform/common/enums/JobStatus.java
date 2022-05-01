@@ -1,31 +1,18 @@
 package com.flink.platform.common.enums;
 
+import lombok.Getter;
+
 /** job status. */
+@Getter
 public enum JobStatus {
     ONLINE(1, "online"),
     OFFLINE(-1, "offline");
 
-    private int code;
-    private String desc;
+    private final int code;
+    private final String desc;
 
     JobStatus(int code, String desc) {
         this.code = code;
-        this.desc = desc;
-    }
-
-    public int getCode() {
-        return code;
-    }
-
-    public void setCode(int code) {
-        this.code = code;
-    }
-
-    public String getDesc() {
-        return desc;
-    }
-
-    public void setDesc(String desc) {
         this.desc = desc;
     }
 }

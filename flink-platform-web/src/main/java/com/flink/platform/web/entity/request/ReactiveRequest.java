@@ -1,32 +1,37 @@
 package com.flink.platform.web.entity.request;
 
 import com.flink.platform.common.util.Preconditions;
+import com.flink.platform.dao.entity.JobInfo;
+import com.flink.platform.dao.entity.task.SqlJob;
 import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.experimental.Delegate;
 
 /** user request. */
 @Data
 @NoArgsConstructor
 public class ReactiveRequest {
 
-    private Long datasourceId;
+    @Getter @Delegate private final JobInfo jobInfo = new JobInfo();
 
-    private String content;
+    private String[] envProps;
 
-    public String validate() {
-        String msg = contentNotNull();
+    public String validateSql() {
+        String msg = subjectNotNull();
         if (msg != null) {
             return msg;
         }
 
-        return idNotNull();
+        return dsIdNotNull();
     }
 
-    public String idNotNull() {
-        return Preconditions.checkNotNull(datasourceId, "The datasource id cannot be null");
+    public String dsIdNotNull() {
+        Long dsId = jobInfo.getConfig().unwrap(SqlJob.class).getDsId();
+        return Preconditions.checkNotNull(dsId, "The datasource id cannot be null");
     }
 
-    public String contentNotNull() {
-        return Preconditions.checkNotNull(content, "The content cannot be null");
+    public String subjectNotNull() {
+        return Preconditions.checkNotNull(getSubject(), "The subject cannot be null");
     }
 }

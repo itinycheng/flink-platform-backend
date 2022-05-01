@@ -103,3 +103,4 @@ worker:
   perFlowExecThreads: 5
   errorRetries: 3
   streamingJobToSuccessMills: 300000
+  reactiveExecThreads: 10
