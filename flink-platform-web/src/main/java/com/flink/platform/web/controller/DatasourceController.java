@@ -96,11 +96,13 @@ public class DatasourceController {
 
     @GetMapping(value = "/list")
     public ResultInfo<List<Datasource>> list(
-            @RequestAttribute(value = Constant.SESSION_USER) User loginUser) {
+            @RequestAttribute(value = Constant.SESSION_USER) User loginUser,
+            @RequestParam(name = "type", required = false) DbType type) {
         List<Datasource> list =
                 datasourceService.list(
                         new QueryWrapper<Datasource>()
                                 .lambda()
+                                .eq(Objects.nonNull(type), Datasource::getType, type)
                                 .eq(Datasource::getUserId, loginUser.getId()));
         return ResultInfo.success(list);
     }

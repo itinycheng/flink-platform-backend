@@ -8,4 +8,7 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
-public class SqlJob extends BaseJob {}
+public class SqlJob extends BaseJob {
+    /** datasource id. */
+    private Long dsId;
+}

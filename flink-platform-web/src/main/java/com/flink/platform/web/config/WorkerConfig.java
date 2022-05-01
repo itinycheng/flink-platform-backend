@@ -19,4 +19,6 @@ public class WorkerConfig {
     private int errorRetries;
 
     private int streamingJobToSuccessMills;
+
+    private int reactiveExecThreads;
 }
