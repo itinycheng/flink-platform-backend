@@ -1,6 +1,9 @@
 package com.flink.platform.common.enums;
 
+import lombok.Getter;
+
 /** response status. */
+@Getter
 public enum ResponseStatus {
     /** response status. */
     SUCCESS(0, "success"),
@@ -25,13 +28,5 @@ public enum ResponseStatus {
     ResponseStatus(int code, String desc) {
         this.code = code;
         this.desc = desc;
-    }
-
-    public int getCode() {
-        return code;
-    }
-
-    public String getDesc() {
-        return desc;
     }
 }

@@ -26,6 +26,20 @@ public class ReactiveRequest {
         return dsIdNotNull();
     }
 
+    public String validateFlink() {
+        String msg = subjectNotNull();
+        if (msg != null) {
+            return msg;
+        }
+
+        msg = deployModeNotNull();
+        if (msg != null) {
+            return msg;
+        }
+
+        return execModeNotNull();
+    }
+
     public String dsIdNotNull() {
         Long dsId = jobInfo.getConfig().unwrap(SqlJob.class).getDsId();
         return Preconditions.checkNotNull(dsId, "The datasource id cannot be null");
@@ -33,5 +47,13 @@ public class ReactiveRequest {
 
     public String subjectNotNull() {
         return Preconditions.checkNotNull(getSubject(), "The subject cannot be null");
+    }
+
+    public String deployModeNotNull() {
+        return Preconditions.checkNotNull(getDeployMode(), "The subject cannot be null");
+    }
+
+    public String execModeNotNull() {
+        return Preconditions.checkNotNull(getExecMode(), "The subject cannot be null");
     }
 }

@@ -8,8 +8,8 @@ import com.flink.platform.dao.entity.JobInfo;
 import com.flink.platform.dao.entity.ds.DatasourceParam;
 import com.flink.platform.web.command.CommandBuilder;
 import com.flink.platform.web.config.WorkerConfig;
-import com.flink.platform.web.entity.request.ReactiveRequest;
 import com.flink.platform.web.entity.vo.ReactiveDataVo;
+import com.flink.platform.web.entity.vo.ReactiveExecVo;
 import com.flink.platform.web.util.CommandUtil;
 import com.flink.platform.web.util.ThreadUtil;
 import lombok.extern.slf4j.Slf4j;
@@ -28,7 +28,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import java.util.UUID;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CompletableFuture;
@@ -37,7 +36,6 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
 
-import static com.flink.platform.common.enums.DeployMode.FLINK_YARN_PER;
 import static com.flink.platform.common.enums.SqlType.SELECT;
 import static com.flink.platform.common.util.SqlUtil.limitRowNum;
 
@@ -61,21 +59,8 @@ public class ReactiveService {
         this.commandBuilders = commandBuilders;
     }
 
-    public String execCmd(ReactiveRequest reactiveRequest) throws Exception {
-        String execId = UUID.randomUUID().toString();
-
-        JobInfo jobInfo = reactiveRequest.getJobInfo();
-        jobInfo.setId(0L);
-        jobInfo.setName("reactive-" + execId);
-        switch (reactiveRequest.getType()) {
-            case FLINK_SQL:
-                jobInfo.setDeployMode(FLINK_YARN_PER);
-                break;
-            case SHELL:
-            default:
-                throw new RuntimeException("unsupported job type:" + reactiveRequest.getType());
-        }
-
+    public ReactiveExecVo execFlink(String execId, JobInfo jobInfo, String[] envProps)
+            throws Exception {
         String command =
                 commandBuilders.stream()
                         .filter(
@@ -91,22 +76,26 @@ public class ReactiveService {
                         .toCommandString();
 
         CompletableFuture.runAsync(
-                () -> {
-                    try {
-                        CommandUtil.exec(
-                                command, reactiveRequest.getEnvProps(), collectCmdResult(execId));
-                        Thread.sleep(5000);
-                    } catch (Exception e) {
-                        StringWriter writer = new StringWriter();
-                        e.printStackTrace(new PrintWriter(writer, true));
-                        cmdOutputBufferMap.get(execId).add(writer.toString());
-                    } finally {
-                        cmdOutputBufferMap.remove(execId);
-                    }
-                },
-                executor);
+                        () -> {
+                            try {
+                                CommandUtil.exec(command, envProps, collectCmdResult(execId));
+                            } catch (Exception e) {
+                                StringWriter writer = new StringWriter();
+                                e.printStackTrace(new PrintWriter(writer, true));
+                                cmdOutputBufferMap.get(execId).add(writer.toString());
+                            }
+                        },
+                        executor)
+                .whenComplete(
+                        (unused, throwable) -> {
+                            try {
+                                ThreadUtil.sleep(5000);
+                            } finally {
+                                cmdOutputBufferMap.remove(execId);
+                            }
+                        });
 
-        return execId;
+        return new ReactiveExecVo(execId);
     }
 
     public ReactiveDataVo execSql(JobInfo jobInfo, Datasource datasource) throws Exception {
@@ -148,11 +137,19 @@ public class ReactiveService {
         }
     }
 
-    public List<String> getByExecId(String execId) {
+    public boolean bufferExists(String execId) {
+        return cmdOutputBufferMap.containsKey(execId);
+    }
+
+    public List<String> getDataByExecId(String execId) {
         BlockingQueue<String> printLogQueue = cmdOutputBufferMap.get(execId);
-        List<String> cmdLogs = new ArrayList<>();
-        printLogQueue.drainTo(cmdLogs);
-        return cmdLogs;
+        if (printLogQueue != null) {
+            List<String> cmdLogs = new ArrayList<>();
+            printLogQueue.drainTo(cmdLogs);
+            return cmdLogs;
+        } else {
+            return null;
+        }
     }
 
     private BiConsumer<CommandUtil.CmdOutType, String> collectCmdResult(String execId) {

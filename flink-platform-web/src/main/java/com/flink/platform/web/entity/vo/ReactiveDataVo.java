@@ -1,18 +1,23 @@
 package com.flink.platform.web.entity.vo;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
+import lombok.Getter;
 
 import java.util.List;
 
 /** table data. */
-@Data
-@AllArgsConstructor
-public class ReactiveDataVo {
+@Getter
+public class ReactiveDataVo extends ReactiveVo {
 
-    private String[] meta;
+    private final String[] meta;
 
-    private List<Object[]> data;
+    private final List<Object[]> data;
 
-    private String exception;
+    private final String exception;
+
+    public ReactiveDataVo(String[] meta, List<Object[]> data, String exception) {
+        super(true);
+        this.meta = meta;
+        this.data = data;
+        this.exception = exception;
+    }
 }
