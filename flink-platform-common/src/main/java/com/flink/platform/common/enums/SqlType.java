@@ -116,7 +116,16 @@ public enum SqlType {
                                         .limit(matchedNum)
                                         .map(matcher::group)
                                         .toArray(String[]::new))
-                        .map((operands) -> new Sql(type, operands))
+                        .map(
+                                (operands) -> {
+                                    if (SqlType.SELECT.equals(type)) {
+                                        operands =
+                                                Arrays.stream(operands)
+                                                        .map(SqlUtil::limitRowNum)
+                                                        .toArray(String[]::new);
+                                    }
+                                    return new Sql(type, operands);
+                                })
                         .orElseThrow(
                                 () ->
                                         new FlinkJobGenException(

@@ -91,4 +91,11 @@ public class SqlTypeTest {
         map.put(2, "2");
         map.forEach((k, v) -> System.out.println(k + ", " + v));
     }
+
+    @Test
+    public void test8() {
+        System.out.println(SqlType.parse("select  \n * from table limit 10"));
+        System.out.println(SqlType.parse("select  \n * from table limit \n   10000"));
+        System.out.println(SqlType.parse("select  \n * from table limit 2,  10000"));
+    }
 }
