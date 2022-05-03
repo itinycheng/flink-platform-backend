@@ -33,7 +33,6 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
 
 import static com.flink.platform.common.enums.SqlType.SELECT;
@@ -141,7 +140,7 @@ public class ReactiveService {
         return cmdOutputBufferMap.containsKey(execId);
     }
 
-    public List<String> getDataByExecId(String execId) {
+    public List<String> getBufferByExecId(String execId) {
         BlockingQueue<String> printLogQueue = cmdOutputBufferMap.get(execId);
         if (printLogQueue != null) {
             List<String> cmdLogs = new ArrayList<>();
@@ -153,14 +152,14 @@ public class ReactiveService {
     }
 
     private BiConsumer<CommandUtil.CmdOutType, String> collectCmdResult(String execId) {
-        BlockingQueue<String> cmdLogQueue = new ArrayBlockingQueue<>(1000);
+        BlockingQueue<String> cmdLogQueue = new ArrayBlockingQueue<>(50_000);
         cmdOutputBufferMap.put(execId, cmdLogQueue);
         return (cmdOutType, line) -> {
             try {
                 switch (cmdOutType) {
                     case STD:
                     case ERR:
-                        cmdLogQueue.offer(line, 5, TimeUnit.SECONDS);
+                        cmdLogQueue.offer(line);
                         break;
                     default:
                         break;
