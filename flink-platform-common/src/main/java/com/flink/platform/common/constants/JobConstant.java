@@ -47,5 +47,5 @@ public class JobConstant {
     public static final Pattern SQL_PATTERN = Pattern.compile("\\S+.*?;\\s*$", SQL_PATTERN_CONFIGS);
 
     public static final Pattern LIMIT_PATTERN =
-            Pattern.compile("LIMIT\\s+(?<num>\\d+)$", SQL_PATTERN_CONFIGS);
+            Pattern.compile("LIMIT\\s+(?<num1>\\d+)(,\\s*(?<num2>\\d+))?$", SQL_PATTERN_CONFIGS);
 }

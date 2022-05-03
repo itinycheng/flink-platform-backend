@@ -36,10 +36,18 @@ public class SqlUtil {
         String sql = sqlQuery.trim();
         Matcher matcher = LIMIT_PATTERN.matcher(sql);
         if (matcher.find()) {
-            String rows = matcher.group("num");
-            int currentRows = Integer.parseInt(rows);
-            if (currentRows > READ_MAX_ROWS) {
-                sql = sql.substring(0, sql.length() - rows.length()) + READ_MAX_ROWS;
+            String strNum1 = matcher.group("num1");
+            String strNum2 = matcher.group("num2");
+            int rows, length;
+            if (StringUtils.isNotBlank(strNum2)) {
+                rows = Integer.parseInt(strNum2);
+                length = strNum2.length();
+            } else {
+                rows = Integer.parseInt(strNum1);
+                length = strNum1.length();
+            }
+            if (rows > READ_MAX_ROWS) {
+                sql = sql.substring(0, sql.length() - length) + READ_MAX_ROWS;
             }
         } else {
             sql = sql + " LIMIT " + READ_MAX_ROWS;
