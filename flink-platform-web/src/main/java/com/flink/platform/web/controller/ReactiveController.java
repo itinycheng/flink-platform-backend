@@ -61,8 +61,8 @@ public class ReactiveController {
     }
 
     @GetMapping(value = "/execLog/{execId}")
-    public ResultInfo<Map<String, Object>> execLog(@PathVariable String execId) throws Exception {
-        List<String> dataList = reactiveService.getDataByExecId(execId);
+    public ResultInfo<Map<String, Object>> execLog(@PathVariable String execId) {
+        List<String> dataList = reactiveService.getBufferByExecId(execId);
         String concat = "";
         if (CollectionUtils.isNotEmpty(dataList)) {
             concat = String.join(LINE_SEPARATOR, dataList);
