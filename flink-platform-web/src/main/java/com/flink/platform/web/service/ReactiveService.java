@@ -1,8 +1,9 @@
 package com.flink.platform.web.service;
 
 import com.flink.platform.common.enums.DbType;
-import com.flink.platform.common.enums.SqlType;
 import com.flink.platform.common.exception.JobCommandGenException;
+import com.flink.platform.common.job.Sql;
+import com.flink.platform.common.util.SqlUtil;
 import com.flink.platform.dao.entity.Datasource;
 import com.flink.platform.dao.entity.JobInfo;
 import com.flink.platform.dao.entity.ds.DatasourceParam;
@@ -34,9 +35,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.function.BiConsumer;
-
-import static com.flink.platform.common.enums.SqlType.SELECT;
-import static com.flink.platform.common.util.SqlUtil.limitRowNum;
 
 /** Manage datasource service. */
 @Slf4j
@@ -98,16 +96,17 @@ public class ReactiveService {
     }
 
     public ReactiveDataVo execSql(JobInfo jobInfo, Datasource datasource) throws Exception {
-        String sqlContent = jobInfo.getSubject();
-        if (isQuery(sqlContent)) {
-            sqlContent = limitRowNum(sqlContent);
+        List<Sql> sqls = SqlUtil.convertToSqls(jobInfo.getSubject());
+        if (sqls.size() != 1) {
+            throw new RuntimeException("Only one sql can be executed at a time");
         }
 
+        String statement = sqls.get(0).toSqlString();
         try (Connection connection = getConnection(datasource.getType(), datasource.getParams());
                 Statement stmt = connection.createStatement()) {
             String[] columnNames;
             List<Object[]> dataList = new ArrayList<>();
-            if (stmt.execute(sqlContent)) {
+            if (stmt.execute(statement)) {
                 ResultSet resultSet = stmt.getResultSet();
                 ResultSetMetaData metaData = resultSet.getMetaData();
 
@@ -206,9 +205,5 @@ public class ReactiveService {
             default:
                 throw new RuntimeException("unsupported database type:" + dbType);
         }
-    }
-
-    public boolean isQuery(String sql) {
-        return SqlType.parse(sql).getType() == SELECT;
     }
 }
