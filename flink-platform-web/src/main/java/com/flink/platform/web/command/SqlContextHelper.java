@@ -1,12 +1,12 @@
 package com.flink.platform.web.command;
 
-import com.flink.platform.common.enums.SqlType;
 import com.flink.platform.common.exception.JobCommandGenException;
 import com.flink.platform.common.job.Catalog;
 import com.flink.platform.common.job.Function;
 import com.flink.platform.common.job.Sql;
 import com.flink.platform.common.job.SqlContext;
 import com.flink.platform.common.util.JsonUtil;
+import com.flink.platform.common.util.SqlUtil;
 import com.flink.platform.dao.entity.JobInfo;
 import com.flink.platform.dao.entity.task.FlinkJob;
 import com.flink.platform.dao.service.CatalogInfoService;
@@ -20,7 +20,6 @@ import javax.annotation.Resource;
 
 import java.io.File;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -28,7 +27,6 @@ import java.util.regex.Matcher;
 
 import static com.flink.platform.common.constants.Constant.DOT;
 import static com.flink.platform.common.constants.Constant.ROOT_DIR;
-import static com.flink.platform.common.constants.Constant.SEMICOLON;
 import static com.flink.platform.common.constants.Constant.SLASH;
 import static com.flink.platform.common.constants.JobConstant.JSON_FILE_SUFFIX;
 import static com.flink.platform.common.constants.JobConstant.SQL_PATTERN;
@@ -90,16 +88,7 @@ public class SqlContextHelper {
     }
 
     public List<Sql> toSqls(String subject) {
-        subject = subject.trim();
-        if (!subject.endsWith(SEMICOLON)) {
-            subject = subject + SEMICOLON;
-        }
-        List<Sql> sqlList = new ArrayList<>();
-        Matcher matcher = SQL_PATTERN.matcher(subject);
-        while (matcher.find()) {
-            String statement = matcher.group();
-            sqlList.add(SqlType.parse(statement));
-        }
+        List<Sql> sqlList = SqlUtil.convertToSqls(subject);
         if (sqlList.size() == 0) {
             throw new JobCommandGenException(
                     String.format("no sql found or parsing failed, subject: %s", subject));
