@@ -2,6 +2,7 @@ package com.flink.platform.web.entity.request;
 
 import com.flink.platform.common.util.Preconditions;
 import com.flink.platform.dao.entity.JobInfo;
+import com.flink.platform.dao.entity.LongArrayList;
 import com.flink.platform.dao.entity.task.SqlJob;
 import lombok.Data;
 import lombok.Getter;
@@ -23,6 +24,11 @@ public class ReactiveRequest {
             return msg;
         }
 
+        msg = routeUrlSizeEqOne();
+        if (msg != null) {
+            return msg;
+        }
+
         return dsIdNotNull();
     }
 
@@ -32,12 +38,22 @@ public class ReactiveRequest {
             return msg;
         }
 
+        msg = routeUrlSizeEqOne();
+        if (msg != null) {
+            return msg;
+        }
+
         msg = deployModeNotNull();
         if (msg != null) {
             return msg;
         }
 
-        return execModeNotNull();
+        msg = execModeNotNull();
+        if (msg != null) {
+            return msg;
+        }
+
+        return versionNotNull();
     }
 
     public String dsIdNotNull() {
@@ -55,5 +71,18 @@ public class ReactiveRequest {
 
     public String execModeNotNull() {
         return Preconditions.checkNotNull(getExecMode(), "The subject cannot be null");
+    }
+
+    public String versionNotNull() {
+        return Preconditions.checkNotNull(getVersion(), "The version cannot be null");
+    }
+
+    public String routeUrlSizeEqOne() {
+        LongArrayList routeUrl = getRouteUrl();
+        if (routeUrl == null || routeUrl.size() == 1) {
+            return null;
+        } else {
+            return "The number of Worker must be 1";
+        }
     }
 }

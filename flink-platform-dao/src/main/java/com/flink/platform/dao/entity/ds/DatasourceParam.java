@@ -19,9 +19,4 @@ public class DatasourceParam {
     private String password;
 
     private Map<String, String> properties;
-
-    public static void main(String[] args) {
-        DatasourceParam datasourceParam = new DatasourceParam();
-        datasourceParam.setDriver("");
-    }
 }

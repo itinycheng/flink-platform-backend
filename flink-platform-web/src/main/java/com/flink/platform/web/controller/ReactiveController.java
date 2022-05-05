@@ -11,6 +11,8 @@ import com.flink.platform.web.entity.response.ResultInfo;
 import com.flink.platform.web.entity.vo.ReactiveDataVo;
 import com.flink.platform.web.entity.vo.ReactiveExecVo;
 import com.flink.platform.web.service.ReactiveService;
+import com.flink.platform.web.service.WorkerApplyService;
+import com.flink.platform.web.util.HttpUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -20,11 +22,14 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.client.RestTemplate;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -32,13 +37,15 @@ import java.util.UUID;
 
 import static com.flink.platform.common.constants.Constant.LINE_SEPARATOR;
 import static com.flink.platform.common.constants.Constant.SQL;
-import static com.flink.platform.common.enums.DeployMode.FLINK_YARN_PER;
 import static com.flink.platform.common.enums.ResponseStatus.DATASOURCE_NOT_FOUND;
 import static com.flink.platform.common.enums.ResponseStatus.ERROR_PARAMETER;
 import static com.flink.platform.web.entity.response.ResultInfo.failure;
 import static com.flink.platform.web.entity.response.ResultInfo.success;
 
-/** Reactive programing. */
+/**
+ * Reactive programing.<br>
+ * TODO: Better use the rpc protocol instead.
+ */
 @Slf4j
 @RestController
 @RequestMapping("/reactive")
@@ -47,6 +54,10 @@ public class ReactiveController {
     @Autowired private ReactiveService reactiveService;
 
     @Autowired private DatasourceService datasourceService;
+
+    @Autowired private WorkerApplyService workerApplyService;
+
+    @Autowired private RestTemplate restTemplate;
 
     @GetMapping(value = "/jobToDbTypes")
     public ResultInfo<Map<JobType, DbType>> jobToDbTypes() {
@@ -61,7 +72,15 @@ public class ReactiveController {
     }
 
     @GetMapping(value = "/execLog/{execId}")
-    public ResultInfo<Map<String, Object>> execLog(@PathVariable String execId) {
+    public ResultInfo<?> execLog(
+            @PathVariable String execId,
+            @RequestParam(name = "worker", required = false) Long worker) {
+        String routeUrl = workerApplyService.chooseWorker(Collections.singletonList(worker));
+        if (HttpUtil.isRemoteUrl(routeUrl)) {
+            return restTemplate.getForObject(
+                    routeUrl + "/reactive/execLog/" + execId, ResultInfo.class);
+        }
+
         List<String> dataList = reactiveService.getBufferByExecId(execId);
         String concat = "";
         if (CollectionUtils.isNotEmpty(dataList)) {
@@ -77,6 +96,12 @@ public class ReactiveController {
     @PostMapping(value = "/execJob")
     public ResultInfo<?> execJob(@RequestBody ReactiveRequest reactiveRequest) {
         try {
+            String routeUrl = workerApplyService.chooseWorker(reactiveRequest.getRouteUrl());
+            if (HttpUtil.isRemoteUrl(routeUrl)) {
+                return restTemplate.postForObject(
+                        routeUrl + "/reactive/execJob", reactiveRequest, ResultInfo.class);
+            }
+
             if (SQL.equals(reactiveRequest.getType().getClassification())) {
                 return execSql(reactiveRequest);
             }
@@ -109,7 +134,6 @@ public class ReactiveController {
         String execId = UUID.randomUUID().toString().replace("-", "");
         reactiveRequest.setId(0L);
         reactiveRequest.setName("reactive-" + execId);
-        reactiveRequest.setDeployMode(FLINK_YARN_PER);
 
         ReactiveExecVo reactiveExecVo =
                 reactiveService.execFlink(

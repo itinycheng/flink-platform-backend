@@ -17,12 +17,12 @@ public class WorkerApplyService {
 
     @Autowired private WorkerService workerService;
 
-    public String chooseWorker(List<Long> workerId) {
-        if (CollectionUtils.isEmpty(workerId)) {
+    public String chooseWorker(List<Long> workerIds) {
+        if (CollectionUtils.isEmpty(workerIds)) {
             return HttpUtil.getDefaultUrl();
         }
 
-        List<Worker> workers = workerService.listByIds(workerId);
+        List<Worker> workers = workerService.listByIds(workerIds);
 
         if (CollectionUtils.isEmpty(workers)) {
             return HttpUtil.getDefaultUrl();
