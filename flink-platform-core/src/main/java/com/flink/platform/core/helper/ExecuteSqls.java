@@ -13,7 +13,6 @@ import java.util.stream.Stream;
 
 import static com.flink.platform.common.enums.SqlType.INSERT_INTO;
 import static com.flink.platform.common.enums.SqlType.INSERT_OVERWRITE;
-import static com.flink.platform.common.util.SqlUtil.limitRowNum;
 import static java.util.stream.Collectors.toSet;
 
 /** Exec sql list in order. */
@@ -41,9 +40,6 @@ public class ExecuteSqls {
                 statementSet.addInsertSql(sql.getOperands()[0]);
                 break;
             case SELECT:
-                String limitSql = limitRowNum(sql.getOperands()[0]);
-                tEnv.executeSql(limitSql).print();
-                break;
             case USE:
             case USE_CATALOG:
             case CREATE_CATALOG:
