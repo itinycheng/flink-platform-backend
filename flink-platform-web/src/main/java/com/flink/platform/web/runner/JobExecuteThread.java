@@ -24,6 +24,7 @@ import org.springframework.http.MediaType;
 import org.springframework.web.client.RestTemplate;
 
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.concurrent.Callable;
 
 import static com.flink.platform.common.constants.Constant.SLASH;
@@ -221,7 +222,8 @@ public class JobExecuteThread implements Callable<JobResponse> {
             return statusInfo;
         }
 
-        if (LocalDateTime.now().isAfter(startTime.plusMinutes(streamingJobToSuccessMills))) {
+        if (LocalDateTime.now()
+                .isAfter(startTime.plus(streamingJobToSuccessMills, ChronoUnit.MILLIS))) {
             if (statusInfo.getStatus() == RUNNING) {
                 return new CustomizeStatusInfo(
                         SUCCESS, statusInfo.getStartTime(), statusInfo.getEndTime());
