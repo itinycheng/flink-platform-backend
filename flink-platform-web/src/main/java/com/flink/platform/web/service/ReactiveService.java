@@ -107,24 +107,24 @@ public class ReactiveService {
             String[] columnNames;
             List<Object[]> dataList = new ArrayList<>();
             if (stmt.execute(statement)) {
-                ResultSet resultSet = stmt.getResultSet();
-                ResultSetMetaData metaData = resultSet.getMetaData();
-
-                // metadata.
-                int num = metaData.getColumnCount();
-                columnNames = new String[num];
-                for (int i = 1; i <= num; i++) {
-                    columnNames[i - 1] = metaData.getColumnName(i);
-                }
-
-                // data list.
-                DbType dbType = datasource.getType();
-                while (resultSet.next()) {
-                    Object[] item = new Object[num];
+                try (ResultSet resultSet = stmt.getResultSet()) {
+                    ResultSetMetaData metaData = resultSet.getMetaData();
+                    // metadata.
+                    int num = metaData.getColumnCount();
+                    columnNames = new String[num];
                     for (int i = 1; i <= num; i++) {
-                        item[i - 1] = toJavaObject(dbType, resultSet.getObject(i));
+                        columnNames[i - 1] = metaData.getColumnName(i);
                     }
-                    dataList.add(item);
+
+                    // data list.
+                    DbType dbType = datasource.getType();
+                    while (resultSet.next()) {
+                        Object[] item = new Object[num];
+                        for (int i = 1; i <= num; i++) {
+                            item[i - 1] = toJavaObject(dbType, resultSet.getObject(i));
+                        }
+                        dataList.add(item);
+                    }
                 }
             } else {
                 columnNames = new String[] {"success"};
