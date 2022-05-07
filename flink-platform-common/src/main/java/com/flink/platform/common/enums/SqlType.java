@@ -69,9 +69,29 @@ public enum SqlType {
 
     SHOW_TABLES("SHOW\\s+TABLES", (operands) -> Optional.of(new String[] {"SHOW TABLES"})),
 
+    SHOW_COLUMNS("SHOW\\s+COLUMNS.*", (operands) -> Optional.of(new String[] {operands[0]})),
+
+    SHOW_VIEWS("SHOW\\s+VIEWS.*", (operands) -> Optional.of(new String[] {operands[0]})),
+
     SHOW_FUNCTIONS("SHOW\\s+FUNCTIONS", (operands) -> Optional.of(new String[] {"SHOW FUNCTIONS"})),
 
     SHOW_MODULES("SHOW\\s+MODULES", (operands) -> Optional.of(new String[] {"SHOW MODULES"})),
+
+    SHOW_JARS("SHOW\\s+JARS", (operands) -> Optional.of(new String[] {"SHOW JARS"})),
+
+    SHOW_CURRENT_CATALOG(
+            "SHOW\\s+CURRENT\\s+CATALOG",
+            (operands) -> Optional.of(new String[] {"SHOW CURRENT CATALOG"})),
+
+    SHOW_CURRENT_DATABASE(
+            "SHOW\\s+CURRENT\\s+DATABASE",
+            (operands) -> Optional.of(new String[] {"SHOW CURRENT DATABASE"})),
+
+    SHOW_CREATE_TABLE(
+            "SHOW\\s+CREATE\\s+TABLE.*", (operands) -> Optional.of(new String[] {operands[0]})),
+
+    SHOW_CREATE_VIEW(
+            "SHOW\\s+CREATE\\s+VIEW.*", (operands) -> Optional.of(new String[] {operands[0]})),
 
     DESCRIBE("DESCRIBE.*", (operands) -> Optional.of(new String[] {operands[0]})),
 
