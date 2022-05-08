@@ -111,7 +111,9 @@ public enum SqlType {
                 }
             }),
 
-    OPTIMIZE("OPTIMIZE\\s+TABLE.*", (operands) -> Optional.of(new String[] {operands[0]}));
+    OPTIMIZE("OPTIMIZE\\s+TABLE.*", (operands) -> Optional.of(new String[] {operands[0]})),
+
+    OTHER(".*", (operands) -> Optional.of(new String[] {operands[0]}));
 
     public final Pattern pattern;
 

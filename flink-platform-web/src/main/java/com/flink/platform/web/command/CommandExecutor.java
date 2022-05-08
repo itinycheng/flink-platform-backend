@@ -1,17 +1,15 @@
 package com.flink.platform.web.command;
 
-import com.flink.platform.common.enums.JobType;
-
 /** parse result. */
 public interface CommandExecutor {
 
     /**
      * whether support.
      *
-     * @param jobType job type
+     * @param jobCommand job command
      * @return whether support
      */
-    boolean isSupported(JobType jobType);
+    boolean isSupported(JobCommand jobCommand);
 
     /**
      * execute command.
@@ -20,5 +18,5 @@ public interface CommandExecutor {
      * @return execute result
      * @throws Exception execute exception
      */
-    JobCallback execCommand(String command) throws Exception;
+    JobCallback execCommand(JobCommand command) throws Exception;
 }

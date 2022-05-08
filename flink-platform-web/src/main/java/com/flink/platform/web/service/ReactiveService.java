@@ -6,7 +6,6 @@ import com.flink.platform.common.job.Sql;
 import com.flink.platform.common.util.SqlUtil;
 import com.flink.platform.dao.entity.Datasource;
 import com.flink.platform.dao.entity.JobInfo;
-import com.flink.platform.dao.entity.ds.DatasourceParam;
 import com.flink.platform.web.command.CommandBuilder;
 import com.flink.platform.web.config.WorkerConfig;
 import com.flink.platform.web.entity.vo.ReactiveDataVo;
@@ -21,20 +20,20 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.sql.Array;
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.function.BiConsumer;
+
+import static com.flink.platform.web.util.DataSourceUtil.createConnection;
 
 /** Manage datasource service. */
 @Slf4j
@@ -102,7 +101,8 @@ public class ReactiveService {
         }
 
         String statement = sqls.get(0).toSqlString();
-        try (Connection connection = getConnection(datasource.getType(), datasource.getParams());
+        try (Connection connection =
+                        createConnection(datasource.getType(), datasource.getParams());
                 Statement stmt = connection.createStatement()) {
             String[] columnNames;
             List<Object[]> dataList = new ArrayList<>();
@@ -167,22 +167,6 @@ public class ReactiveService {
                 log.error("Consumer command log failed", e);
             }
         };
-    }
-
-    private Connection getConnection(DbType dbType, DatasourceParam params) throws Exception {
-        Class.forName(params.getDriver());
-        Properties properties = new Properties();
-        switch (dbType) {
-            case CLICKHOUSE:
-                properties.setProperty("user", params.getUsername());
-                properties.setProperty("password", params.getPassword());
-                break;
-            case MYSQL:
-            default:
-                throw new RuntimeException("unsupported db type: " + dbType);
-        }
-        properties.putAll(params.getProperties());
-        return DriverManager.getConnection(params.getUrl(), properties);
     }
 
     private Object toJavaObject(DbType dbType, Object dbObject) throws Exception {

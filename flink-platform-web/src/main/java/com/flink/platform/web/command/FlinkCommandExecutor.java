@@ -31,15 +31,15 @@ public class FlinkCommandExecutor implements CommandExecutor {
     private String hadoopUser;
 
     @Override
-    public boolean isSupported(JobType jobType) {
-        return SUPPORTED_JOB_TYPES.contains(jobType);
+    public boolean isSupported(JobCommand jobCommand) {
+        return jobCommand instanceof FlinkCommand;
     }
 
     @Override
-    public JobCallback execCommand(String command) throws Exception {
+    public JobCallback execCommand(JobCommand command) throws Exception {
         CommandCallback callback =
                 CommandUtil.exec(
-                        command,
+                        command.toCommandString(),
                         new String[] {String.format("%s=%s", HADOOP_USER_NAME, hadoopUser)});
 
         String appId = extractApplicationId(callback.getStdMessage());
