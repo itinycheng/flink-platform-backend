@@ -117,16 +117,16 @@ public class ProcessJobService {
 
             // step 4: submit job
             LocalDateTime submitTime = LocalDateTime.now();
-            String commandString = jobCommand.toCommandString();
+            final JobCommand command = jobCommand;
             JobCallback callback =
                     jobCommandExecutors.stream()
-                            .filter(executor -> executor.isSupported(jobType))
+                            .filter(executor -> executor.isSupported(command))
                             .findFirst()
                             .orElseThrow(
                                     () ->
                                             new JobCommandGenException(
                                                     "No available job command executor"))
-                            .execCommand(commandString);
+                            .execCommand(command);
 
             // step 5: write job run info to db
             ExecutionStatus executionStatus = getExecutionStatus(jobType, callback);

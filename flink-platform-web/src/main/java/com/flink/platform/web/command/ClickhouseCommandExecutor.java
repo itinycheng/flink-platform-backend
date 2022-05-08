@@ -1,7 +1,6 @@
 package com.flink.platform.web.command;
 
 import com.baomidou.dynamic.datasource.annotation.DS;
-import com.flink.platform.common.enums.JobType;
 import com.flink.platform.common.util.JsonUtil;
 import com.flink.platform.dao.service.JobRunInfoService;
 import lombok.extern.slf4j.Slf4j;
@@ -14,7 +13,6 @@ import java.util.List;
 
 import static com.flink.platform.common.enums.ExecutionStatus.FAILURE;
 import static com.flink.platform.common.enums.ExecutionStatus.SUCCESS;
-import static com.flink.platform.common.enums.JobType.CLICKHOUSE_SQL;
 
 /** Clickhouse command executor. */
 @Slf4j
@@ -27,14 +25,16 @@ public class ClickhouseCommandExecutor implements CommandExecutor {
     @Autowired private JobRunInfoService jobRunInfoService;
 
     @Override
-    public boolean isSupported(JobType jobType) {
-        return jobType == CLICKHOUSE_SQL;
+    public boolean isSupported(JobCommand jobCommand) {
+        return jobCommand instanceof ClickhouseCommand;
     }
 
     @Override
-    public JobCallback execCommand(String command) {
+    public JobCallback execCommand(JobCommand command) {
         List<String> exceptionMessages = new ArrayList<>();
-        JsonUtil.toList(command)
+        ClickhouseCommand jobCommand = (ClickhouseCommand) command;
+        jobCommand
+                .getSqls()
                 .forEach(
                         sql -> {
                             try {
