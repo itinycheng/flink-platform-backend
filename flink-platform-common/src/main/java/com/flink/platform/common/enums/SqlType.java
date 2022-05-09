@@ -65,9 +65,9 @@ public enum SqlType {
 
     SHOW_CATALOGS("SHOW\\s+CATALOGS", (operands) -> Optional.of(new String[] {"SHOW CATALOGS"})),
 
-    SHOW_DATABASES("SHOW\\s+DATABASES", (operands) -> Optional.of(new String[] {"SHOW DATABASES"})),
+    SHOW_DATABASES("SHOW\\s+DATABASES.*", (operands) -> Optional.of(new String[] {operands[0]})),
 
-    SHOW_TABLES("SHOW\\s+TABLES", (operands) -> Optional.of(new String[] {"SHOW TABLES"})),
+    SHOW_TABLES("SHOW\\s+TABLES.*", (operands) -> Optional.of(new String[] {operands[0]})),
 
     SHOW_COLUMNS("SHOW\\s+COLUMNS.*", (operands) -> Optional.of(new String[] {operands[0]})),
 
