@@ -1,6 +1,5 @@
 package com.flink.platform.web.command;
 
-import com.flink.platform.common.enums.JobType;
 import com.flink.platform.web.util.CommandCallback;
 import com.flink.platform.web.util.CommandUtil;
 import lombok.extern.slf4j.Slf4j;
@@ -8,8 +7,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-import java.util.Arrays;
-import java.util.List;
 import java.util.regex.Matcher;
 
 import static com.flink.platform.common.constants.Constant.LINE_SEPARATOR;
@@ -23,9 +20,6 @@ import static com.flink.platform.common.enums.ExecutionStatus.SUCCESS;
 @Slf4j
 @Component("flinkCommandExecutor")
 public class FlinkCommandExecutor implements CommandExecutor {
-
-    private static final List<JobType> SUPPORTED_JOB_TYPES =
-            Arrays.asList(JobType.FLINK_JAR, JobType.FLINK_SQL);
 
     @Value("${hadoop.username}")
     private String hadoopUser;

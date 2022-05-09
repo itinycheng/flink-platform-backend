@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.flink.platform.common.constants.Constant;
 import com.flink.platform.common.enums.DbType;
+import com.flink.platform.common.enums.JobType;
 import com.flink.platform.dao.entity.Datasource;
 import com.flink.platform.dao.entity.User;
 import com.flink.platform.dao.service.DatasourceService;
@@ -97,12 +98,17 @@ public class DatasourceController {
     @GetMapping(value = "/list")
     public ResultInfo<List<Datasource>> list(
             @RequestAttribute(value = Constant.SESSION_USER) User loginUser,
-            @RequestParam(name = "type", required = false) DbType type) {
+            @RequestParam(name = "dbType", required = false) DbType dbType,
+            @RequestParam(name = "jobType", required = false) JobType jobtype) {
+        if (jobtype != null) {
+            dbType = jobtype.getDbType();
+        }
+
         List<Datasource> list =
                 datasourceService.list(
                         new QueryWrapper<Datasource>()
                                 .lambda()
-                                .eq(Objects.nonNull(type), Datasource::getType, type)
+                                .eq(Objects.nonNull(dbType), Datasource::getType, dbType)
                                 .eq(Datasource::getUserId, loginUser.getId()));
         return ResultInfo.success(list);
     }
