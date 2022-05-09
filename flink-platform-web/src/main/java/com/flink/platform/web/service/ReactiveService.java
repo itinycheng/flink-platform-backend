@@ -33,7 +33,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.function.BiConsumer;
 
-import static com.flink.platform.web.util.DataSourceUtil.createConnection;
+import static com.flink.platform.web.util.JdbcUtil.createConnection;
 
 /** Manage datasource service. */
 @Slf4j
