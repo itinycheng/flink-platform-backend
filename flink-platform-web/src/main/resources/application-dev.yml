@@ -34,11 +34,6 @@ spring:
           username: root
           password: 123456
           driver-class-name: org.apache.hive.jdbc.HiveDriver
-        clickhouse:
-          url: jdbc:clickhouse://0.0.0.0:8123,0.0.0.0:8123,0.0.0.0:8123
-          username: commonuser
-          password: Jv1lxZHS
-          driver-class-name: com.alibaba.druid.support.clickhouse.BalancedClickhouseDriver
   quartz:
     job-store-type: jdbc
     overwrite-existing-jobs: true
