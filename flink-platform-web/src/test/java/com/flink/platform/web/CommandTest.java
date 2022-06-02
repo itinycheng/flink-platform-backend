@@ -2,8 +2,12 @@ package com.flink.platform.web;
 
 import com.flink.platform.web.command.FlinkCommandExecutor;
 import com.flink.platform.web.enums.SqlVar;
+import com.flink.platform.web.util.CommandCallback;
+import com.flink.platform.web.util.CommandUtil;
 import org.junit.Assert;
 import org.junit.Test;
+
+import java.io.IOException;
 
 /** Command test. */
 public class CommandTest {
@@ -30,5 +34,11 @@ public class CommandTest {
     public void testLongToString() {
         System.out.println(SqlVar.CURRENT_TIMESTAMP.valueProvider.apply(null).toString());
         System.out.println(SqlVar.CURRENT_TIME_MINUS.valueProvider.apply(null).toString());
+    }
+
+    @Test
+    public void testTimeout() throws IOException, InterruptedException {
+        CommandCallback exec = CommandUtil.exec("tree -r /", null, 5000);
+        System.out.println(exec);
     }
 }

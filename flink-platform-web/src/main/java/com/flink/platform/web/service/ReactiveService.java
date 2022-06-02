@@ -40,6 +40,8 @@ import static com.flink.platform.web.util.JdbcUtil.createConnection;
 @Service
 public class ReactiveService {
 
+    private final WorkerConfig workerConfig;
+
     private final ThreadPoolExecutor executor;
 
     private final Map<String, BlockingQueue<String>> cmdOutputBufferMap;
@@ -48,6 +50,7 @@ public class ReactiveService {
 
     @Autowired
     public ReactiveService(WorkerConfig workerConfig, List<CommandBuilder> commandBuilders) {
+        this.workerConfig = workerConfig;
         this.executor =
                 ThreadUtil.newDaemonFixedThreadExecutor(
                         "Reactive-job", workerConfig.getReactiveExecThreads());
@@ -74,7 +77,11 @@ public class ReactiveService {
         CompletableFuture.runAsync(
                         () -> {
                             try {
-                                CommandUtil.exec(command, envProps, collectCmdResult(execId));
+                                CommandUtil.exec(
+                                        command,
+                                        envProps,
+                                        workerConfig.getFlinkSubmitTimeoutMills(),
+                                        collectCmdResult(execId));
                             } catch (Exception e) {
                                 StringWriter writer = new StringWriter();
                                 e.printStackTrace(new PrintWriter(writer, true));

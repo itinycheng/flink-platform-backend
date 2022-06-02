@@ -1,9 +1,11 @@
 package com.flink.platform.web.command;
 
+import com.flink.platform.web.config.WorkerConfig;
 import com.flink.platform.web.util.CommandCallback;
 import com.flink.platform.web.util.CommandUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -24,6 +26,8 @@ public class FlinkCommandExecutor implements CommandExecutor {
     @Value("${hadoop.username}")
     private String hadoopUser;
 
+    @Autowired private WorkerConfig workerConfig;
+
     @Override
     public boolean isSupported(JobCommand jobCommand) {
         return jobCommand instanceof FlinkCommand;
@@ -34,7 +38,8 @@ public class FlinkCommandExecutor implements CommandExecutor {
         CommandCallback callback =
                 CommandUtil.exec(
                         command.toCommandString(),
-                        new String[] {String.format("%s=%s", HADOOP_USER_NAME, hadoopUser)});
+                        new String[] {String.format("%s=%s", HADOOP_USER_NAME, hadoopUser)},
+                        workerConfig.getFlinkSubmitTimeoutMills());
 
         String appId = extractApplicationId(callback.getStdMessage());
         String jobId = extractJobId(callback.getStdMessage());
