@@ -8,6 +8,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
@@ -15,38 +16,46 @@ import java.util.function.BiConsumer;
 import static com.flink.platform.common.constants.Constant.LINE_SEPARATOR;
 import static com.flink.platform.web.util.CommandUtil.CmdOutType.ERR;
 import static com.flink.platform.web.util.CommandUtil.CmdOutType.STD;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 /** Command util. */
 @Slf4j
 public class CommandUtil {
 
-    public static CommandCallback exec(String command, String[] envProps)
+    public static CommandCallback exec(String command, String[] envProps, long timeoutMills)
             throws IOException, InterruptedException {
-        List<String> stdList = new ArrayList<>();
-        List<String> errList = new ArrayList<>();
+        List<String> stdList = Collections.synchronizedList(new ArrayList<>());
+        List<String> errList = Collections.synchronizedList(new ArrayList<>());
 
-        exec(
-                command,
-                envProps,
-                (inputType, value) -> {
-                    switch (inputType) {
-                        case STD:
-                            stdList.add(value);
-                            break;
-                        case ERR:
-                            errList.add(value);
-                            break;
-                        default:
-                            log.error("unknown command log type: {}", inputType);
-                    }
-                });
+        boolean success =
+                exec(
+                        command,
+                        envProps,
+                        timeoutMills,
+                        (inputType, value) -> {
+                            switch (inputType) {
+                                case STD:
+                                    stdList.add(value);
+                                    break;
+                                case ERR:
+                                    errList.add(value);
+                                    break;
+                                default:
+                                    log.error("unknown command log type: {}", inputType);
+                            }
+                        });
 
         return new CommandCallback(
-                String.join(LINE_SEPARATOR, stdList), String.join(LINE_SEPARATOR, errList));
+                success,
+                String.join(LINE_SEPARATOR, stdList),
+                String.join(LINE_SEPARATOR, errList));
     }
 
-    public static void exec(
-            String command, String[] envProps, BiConsumer<CmdOutType, String> logConsumer)
+    public static boolean exec(
+            String command,
+            String[] envProps,
+            long timeoutMills,
+            BiConsumer<CmdOutType, String> logConsumer)
             throws IOException, InterruptedException {
         log.info("Exec command: {}, env properties: {}", command, envProps);
         Process process = Runtime.getRuntime().exec(command, envProps);
@@ -63,7 +72,12 @@ public class CommandUtil {
                 log.error("Start log collection thread failed", e);
             }
 
-            process.waitFor();
+            boolean status;
+            try {
+                status = process.waitFor(timeoutMills, MILLISECONDS);
+            } finally {
+                process.destroy();
+            }
 
             try {
                 stdThread.join();
@@ -71,8 +85,8 @@ public class CommandUtil {
             } catch (Exception e) {
                 log.error("join log collection thread failed", e);
             }
-        } finally {
-            process.destroy();
+
+            return status;
         }
     }
 

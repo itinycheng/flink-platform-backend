@@ -99,3 +99,4 @@ worker:
   errorRetries: 3
   streamingJobToSuccessMills: 300000
   reactiveExecThreads: 10
+  flinkSubmitTimeoutMills: 300000
