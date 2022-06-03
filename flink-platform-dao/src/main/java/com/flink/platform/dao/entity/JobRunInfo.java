@@ -35,6 +35,8 @@ public class JobRunInfo implements Serializable {
 
     private Long flowRunId;
 
+    private Long userId;
+
     private JobType type;
 
     private String version;

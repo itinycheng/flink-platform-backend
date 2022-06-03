@@ -134,6 +134,7 @@ public class ProcessJobService {
             jobRunInfo.setName(jobInfo.getName() + "-" + System.currentTimeMillis());
             jobRunInfo.setJobId(jobInfo.getId());
             jobRunInfo.setFlowRunId(flowRunId);
+            jobRunInfo.setUserId(jobInfo.getUserId());
             jobRunInfo.setType(jobInfo.getType());
             jobRunInfo.setVersion(jobInfo.getVersion());
             jobRunInfo.setDeployMode(jobInfo.getDeployMode());
