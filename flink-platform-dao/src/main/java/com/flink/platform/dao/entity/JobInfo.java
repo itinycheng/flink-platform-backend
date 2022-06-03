@@ -41,6 +41,9 @@ public class JobInfo implements Serializable {
     /** job flow id. */
     private Long flowId;
 
+    /** user id. */
+    private Long userId;
+
     /** job desc. */
     private String description;
 

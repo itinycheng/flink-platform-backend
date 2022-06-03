@@ -140,7 +140,7 @@ public class JobExecuteThread implements Callable<JobResponse> {
     /** Send request to process remote job. */
     private JobRunInfo processRemoteJob(String routeUrl, long jobId) {
         int retryTimes = 0;
-        while (++retryTimes <= errorRetries) {
+        while (retryTimes++ <= errorRetries) {
             try {
                 if (isRemoteUrl(routeUrl)) {
                     String httpUri = routeUrl + String.format(REST_JOB_PROCESS, jobId);
@@ -162,7 +162,6 @@ public class JobExecuteThread implements Callable<JobResponse> {
 
     public StatusInfo updateStatusAndWaitForComplete(String routeUrl, JobRunInfo jobRunInfo) {
         int retryTimes = 0;
-        int errorTimes = 0;
         boolean isRemote = isRemoteUrl(routeUrl);
 
         while (AppRunner.isRunning()) {
@@ -202,12 +201,12 @@ public class JobExecuteThread implements Callable<JobResponse> {
 
             } catch (Exception e) {
                 log.error("Fetch job status failed", e);
-                if (++errorTimes > errorRetries) {
+                if (retryTimes++ > errorRetries) {
                     return new CustomizeStatusInfo(ERROR, LocalDateTime.now(), LocalDateTime.now());
                 }
             }
 
-            sleep(++retryTimes);
+            sleep(retryTimes);
         }
 
         return null;

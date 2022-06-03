@@ -4,9 +4,11 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.flink.platform.common.constants.Constant;
 import com.flink.platform.common.enums.ExecutionStatus;
 import com.flink.platform.dao.entity.JobInfo;
 import com.flink.platform.dao.entity.JobRunInfo;
+import com.flink.platform.dao.entity.User;
 import com.flink.platform.dao.service.JobInfoService;
 import com.flink.platform.dao.service.JobRunInfoService;
 import com.flink.platform.web.entity.request.JobRunRequest;
@@ -17,6 +19,7 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestAttribute;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -47,6 +50,7 @@ public class JobRunController {
 
     @GetMapping(value = "/page")
     public ResultInfo<IPage<JobRunInfo>> page(
+            @RequestAttribute(value = Constant.SESSION_USER) User loginUser,
             @RequestParam(name = "page", required = false, defaultValue = "1") Integer page,
             @RequestParam(name = "size", required = false, defaultValue = "20") Integer size,
             @RequestParam(name = "flowRunId", required = false) Long flowRunId,
@@ -63,6 +67,7 @@ public class JobRunController {
         LambdaQueryWrapper<JobRunInfo> queryWrapper =
                 new QueryWrapper<JobRunInfo>()
                         .lambda()
+                        .eq(JobRunInfo::getUserId, loginUser.getId())
                         .eq(nonNull(flowRunId), JobRunInfo::getFlowRunId, flowRunId)
                         .eq(nonNull(jobId), JobRunInfo::getJobId, jobId)
                         .eq(nonNull(status), JobRunInfo::getStatus, status)

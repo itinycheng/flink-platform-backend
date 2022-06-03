@@ -250,8 +250,9 @@ DROP TABLE IF EXISTS `t_job`;
 CREATE TABLE `t_job` (
   `id` bigint(11) unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
   `name` varchar(64) NOT NULL COMMENT 'job name',
-  `flow_id` bigint(11) DEFAULT NULL COMMENT 'job flow id',
   `description` varchar(255) DEFAULT NULL COMMENT 'job desc',
+  `flow_id` bigint(11) DEFAULT NULL COMMENT 'job flow id',
+  `user_id` bigint(11) NOT NULL COMMENT 'user id',
   `type` varchar(32) NOT NULL COMMENT 'job type',
   `version` varchar(32) DEFAULT NULL COMMENT 'job version',
   `deploy_mode` varchar(64) NOT NULL COMMENT 'deploy mode',
@@ -316,6 +317,7 @@ CREATE TABLE `t_job_run` (
   `name` varchar(128) DEFAULT NULL COMMENT 'instance name',
   `job_id` bigint(11) NOT NULL COMMENT 'job id',
   `flow_run_id` bigint(11) DEFAULT NULL COMMENT 'flow run id',
+  `user_id` bigint(11) NOT NULL COMMENT 'user id',
   `type` varchar(32) DEFAULT NULL COMMENT 'type',
   `version` varchar(32) DEFAULT NULL COMMENT 'version',
   `deploy_mode` varchar(64) DEFAULT NULL COMMENT 'deploy mode',

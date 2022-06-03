@@ -3,9 +3,11 @@ package com.flink.platform.web.controller;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.flink.platform.common.constants.Constant;
 import com.flink.platform.common.enums.ExecutionStatus;
 import com.flink.platform.dao.entity.JobInfo;
 import com.flink.platform.dao.entity.JobRunInfo;
+import com.flink.platform.dao.entity.User;
 import com.flink.platform.dao.service.JobInfoService;
 import com.flink.platform.dao.service.JobRunInfoService;
 import com.flink.platform.web.entity.JobQuartzInfo;
@@ -18,6 +20,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestAttribute;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -47,7 +50,9 @@ public class JobInfoController {
     @Autowired private QuartzService quartzService;
 
     @PostMapping(value = "/create")
-    public ResultInfo<JobInfo> create(@RequestBody JobInfoRequest jobInfoRequest) {
+    public ResultInfo<JobInfo> create(
+            @RequestAttribute(value = Constant.SESSION_USER) User loginUser,
+            @RequestBody JobInfoRequest jobInfoRequest) {
         String errorMsg = jobInfoRequest.validateOnCreate();
         if (StringUtils.isNotBlank(errorMsg)) {
             return failure(ERROR_PARAMETER, errorMsg);
@@ -56,6 +61,7 @@ public class JobInfoController {
         JobInfo jobInfo = jobInfoRequest.getJobInfo();
         jobInfo.setId(null);
         jobInfo.setStatus(ONLINE);
+        jobInfo.setUserId(loginUser.getId());
         jobInfoService.save(jobInfo);
         return ResultInfo.success(jobInfo);
     }
