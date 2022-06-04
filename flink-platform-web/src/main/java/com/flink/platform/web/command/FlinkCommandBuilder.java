@@ -61,7 +61,7 @@ public abstract class FlinkCommandBuilder implements CommandBuilder {
     }
 
     @Override
-    public JobCommand buildCommand(JobInfo jobInfo) throws Exception {
+    public JobCommand buildCommand(Long flowRunId, JobInfo jobInfo) throws Exception {
         FlinkJob flinkJob = jobInfo.getConfig().unwrap(FlinkJob.class);
         initResources(flinkJob);
         FlinkCommand command = new FlinkCommand();

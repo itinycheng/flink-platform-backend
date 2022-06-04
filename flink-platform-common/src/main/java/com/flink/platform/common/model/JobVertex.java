@@ -9,6 +9,8 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
+import static com.flink.platform.common.enums.ExecutionCondition.AND;
+
 /** Job vertex. */
 @Data
 @NoArgsConstructor
@@ -17,7 +19,7 @@ public class JobVertex extends Vertex<Long> {
 
     private Long jobId;
 
-    private ExecutionCondition precondition;
+    private ExecutionCondition precondition = AND;
 
     @JsonIgnore private transient volatile Long jobRunId;
 

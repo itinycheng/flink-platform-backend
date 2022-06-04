@@ -21,7 +21,7 @@ public class CommonJarCommandBuilder implements CommandBuilder {
     }
 
     @Override
-    public JobCommand buildCommand(JobInfo jobInfo) {
+    public JobCommand buildCommand(Long flowRunId, JobInfo jobInfo) {
         throw new JobCommandGenException("unsupported job type");
     }
 }

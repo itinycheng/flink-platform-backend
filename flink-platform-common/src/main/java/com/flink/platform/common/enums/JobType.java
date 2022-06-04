@@ -19,7 +19,8 @@ public enum JobType {
     FLINK_JAR(FLINK, null),
     COMMON_JAR(JAVA, null),
     CLICKHOUSE_SQL(SQL, CLICKHOUSE),
-    SHELL(Constant.SHELL, null);
+    SHELL(Constant.SHELL, null),
+    CONDITION(Constant.CONDITION, null);
 
     private final String classification;
 

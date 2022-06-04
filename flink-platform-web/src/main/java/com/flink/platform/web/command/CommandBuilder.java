@@ -17,9 +17,10 @@ public interface CommandBuilder {
     /**
      * build a command from JobInfo.
      *
+     * @param flowRunId flow run id
      * @param jobInfo job info
      * @return shell command
      * @throws Exception IO exception
      */
-    JobCommand buildCommand(JobInfo jobInfo) throws Exception;
+    JobCommand buildCommand(Long flowRunId, JobInfo jobInfo) throws Exception;
 }
