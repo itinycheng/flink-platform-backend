@@ -61,6 +61,8 @@ public class Constant {
 
     public static final String SHELL = "SHELL";
 
+    public static final String CONDITION = "CONDITION";
+
     public static final String FULL_VERSION = "FULL_VERSION";
 
     static {

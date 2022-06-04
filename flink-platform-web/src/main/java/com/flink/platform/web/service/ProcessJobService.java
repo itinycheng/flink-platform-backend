@@ -113,7 +113,7 @@ public class ProcessJobService {
                                     () ->
                                             new JobCommandGenException(
                                                     "No available job command builder"))
-                            .buildCommand(jobInfo);
+                            .buildCommand(flowRunId, jobInfo);
 
             // step 4: submit job
             LocalDateTime submitTime = LocalDateTime.now();

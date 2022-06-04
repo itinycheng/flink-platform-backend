@@ -27,7 +27,7 @@ public class SqlCommandBuilder implements CommandBuilder {
     }
 
     @Override
-    public JobCommand buildCommand(JobInfo jobInfo) {
+    public JobCommand buildCommand(Long flowRunId, JobInfo jobInfo) {
         SqlJob sqlJob = jobInfo.getConfig().unwrap(SqlJob.class);
         if (sqlJob == null) {
             throw new JobCommandGenException("Invalid job config.");

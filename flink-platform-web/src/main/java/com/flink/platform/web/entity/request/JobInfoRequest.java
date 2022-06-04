@@ -8,6 +8,8 @@ import lombok.experimental.Delegate;
 
 import java.util.regex.Pattern;
 
+import static com.flink.platform.common.enums.JobType.CONDITION;
+
 /** Job request info. */
 @NoArgsConstructor
 public class JobInfoRequest {
@@ -87,6 +89,9 @@ public class JobInfoRequest {
     }
 
     public String verifySubject() {
+        if (getType() == CONDITION && getSubject() == null) {
+            setSubject("");
+        }
         return Preconditions.checkNotNull(getSubject(), "The job subject cannot be null");
     }
 

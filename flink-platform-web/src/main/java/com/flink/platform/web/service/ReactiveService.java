@@ -71,7 +71,7 @@ public class ReactiveService {
                                 () ->
                                         new JobCommandGenException(
                                                 "No available job command builder"))
-                        .buildCommand(jobInfo)
+                        .buildCommand(null, jobInfo)
                         .toCommandString();
 
         CompletableFuture.runAsync(
