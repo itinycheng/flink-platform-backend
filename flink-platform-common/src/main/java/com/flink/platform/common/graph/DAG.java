@@ -163,9 +163,12 @@ public class DAG<VId, V extends Vertex<VId>, E extends Edge<VId>> {
     }
 
     public E getEdge(V fromVertex, V toVertex) {
+        return getEdge(fromVertex.getId(), toVertex.getId());
+    }
+
+    public E getEdge(VId fromVertexId, VId toVertexId) {
         for (E edge : edges) {
-            if (edge.getFromVId().equals(fromVertex.getId())
-                    && edge.getToVId().equals(toVertex.getId())) {
+            if (edge.getFromVId().equals(fromVertexId) && edge.getToVId().equals(toVertexId)) {
                 return edge;
             }
         }

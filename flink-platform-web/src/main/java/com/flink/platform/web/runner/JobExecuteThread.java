@@ -162,6 +162,7 @@ public class JobExecuteThread implements Callable<JobResponse> {
 
     public StatusInfo updateStatusAndWaitForComplete(String routeUrl, JobRunInfo jobRunInfo) {
         int retryTimes = 0;
+        int errorTimes = 0;
         boolean isRemote = isRemoteUrl(routeUrl);
 
         while (AppRunner.isRunning()) {
@@ -201,12 +202,12 @@ public class JobExecuteThread implements Callable<JobResponse> {
 
             } catch (Exception e) {
                 log.error("Fetch job status failed", e);
-                if (retryTimes++ > errorRetries) {
+                if (errorTimes++ > errorRetries) {
                     return new CustomizeStatusInfo(ERROR, LocalDateTime.now(), LocalDateTime.now());
                 }
             }
 
-            sleep(retryTimes);
+            sleep(++retryTimes);
         }
 
         return null;
