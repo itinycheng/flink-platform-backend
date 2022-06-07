@@ -88,6 +88,12 @@ public class JobExecuteThread implements Callable<JobResponse> {
         JobRunInfo jobRunInfo = null;
 
         try {
+            // terminated job don't need to be processed
+            ExecutionStatus jobRunStatus = jobVertex.getJobRunStatus();
+            if (jobRunStatus != null && jobRunStatus.isTerminalState()) {
+                return new JobResponse(jobId, jobRunId, jobRunStatus);
+            }
+
             // Step 1: get job info
             JobInfo jobInfo =
                     jobInfoService.getOne(
