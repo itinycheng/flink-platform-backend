@@ -12,6 +12,10 @@ public class ToLocalDateTimeFunction extends ScalarFunction {
     private static final ZoneId BJ_ZONE_ID = ZoneId.of("+8");
 
     public LocalDateTime eval(Long timestamp) {
+        if (timestamp == null) {
+            return null;
+        }
+
         return LocalDateTime.ofInstant(Instant.ofEpochMilli(timestamp), BJ_ZONE_ID);
     }
 }
