@@ -68,6 +68,13 @@ public class JobFlowDagHelper {
             return false;
         }
 
+        if (vertices.stream()
+                .map(JobVertex::getJobRunStatus)
+                .filter(Objects::nonNull)
+                .anyMatch(executionStatus -> !executionStatus.isTerminalState())) {
+            return true;
+        }
+
         Collection<JobVertex> beginVertices = dag.getBeginVertices();
         if (beginVertices.stream().anyMatch(jobVertex -> jobVertex.getJobRunStatus() == null)) {
             return true;
