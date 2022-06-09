@@ -13,8 +13,6 @@ import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
-import java.util.Map;
-
 /** Alert sending service. */
 @Slf4j
 @Service
@@ -42,19 +40,15 @@ public class AlertSendingService {
         }
     }
 
-    private boolean sendToFeiShu(FeiShuAlert alert, JobFlowRun jobFlowRun) {
+    public boolean sendToFeiShu(FeiShuAlert alert, JobFlowRun jobFlowRun) {
         try {
             String content =
-                    alert.getContent()
+                    JsonUtil.toJsonString(alert.getContent())
                             .replace("${id}", jobFlowRun.getId().toString())
                             .replace("${name}", jobFlowRun.getName())
                             .replace("${status}", jobFlowRun.getStatus().name());
-            Map<String, Object> data = JsonUtil.toMap(content);
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_JSON);
-            String message =
-                    restTemplate.postForObject(
-                            alert.getWebhook(), new HttpEntity<>(data, headers), String.class);
+            FeiShuAlert feiShuAlert = new FeiShuAlert(alert.getWebhook(), JsonUtil.toMap(content));
+            String message = sendToFeiShu(feiShuAlert);
             log.info(
                     "send notify message to feiShu complete. flowRunId: {}, response: {} ",
                     jobFlowRun.getId(),
@@ -64,5 +58,12 @@ public class AlertSendingService {
             log.error("send alert info to feiShu failed.", e);
             return false;
         }
+    }
+
+    public String sendToFeiShu(FeiShuAlert alert) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        return restTemplate.postForObject(
+                alert.getWebhook(), new HttpEntity<>(alert.getContent(), headers), String.class);
     }
 }
