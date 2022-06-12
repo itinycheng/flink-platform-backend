@@ -1,0 +1,38 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "com.flink.platform.grpc";
+option java_outer_classname = "HelloWorldProto";
+
+import public "google/protobuf/timestamp.proto";
+
+// The job process service definition.
+service JobProcessGrpcService {
+  // process job.
+  rpc ProcessJob (ProcessJobRequest) returns (ProcessJobReply) {
+  }
+
+  // get job status.
+  rpc GetJobStatus (JobStatusRequest) returns (JobStatusReply) {
+  }
+}
+
+message ProcessJobRequest {
+  int64 jobId = 1;
+  int64 flowRunId = 2;
+}
+
+message ProcessJobReply {
+  int64 jobRunId = 1;
+}
+
+message JobStatusRequest {
+  int64 jobRunId = 1;
+  string backInfo = 2;
+
+}
+
+message JobStatusReply {
+  string status = 1;
+  google.protobuf.Timestamp startTime = 2;
+}
