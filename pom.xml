@@ -8,7 +8,7 @@
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-dependencies</artifactId>
-		<version>2.4.4</version>
+		<version>2.5.8</version>
 	</parent>
 
 	<groupId>com.flink.platform</groupId>
@@ -48,6 +48,8 @@
 		<mybatis-plus.version>3.4.2</mybatis-plus.version>
 		<dynamic-datasource.version>3.3.2</dynamic-datasource.version>
 		<janino.version>3.1.6</janino.version>
+		<grpc.version>1.42.2</grpc.version>
+		<grpc-spring-boot.version>2.13.1.RELEASE</grpc-spring-boot.version>
 		<maven-checkstyle-plugin.version>2.17</maven-checkstyle-plugin.version>
 		<spotless-maven-plugin.version>2.4.2</spotless-maven-plugin.version>
 		<maven-shade-plugin.version>3.2.1</maven-shade-plugin.version>
@@ -80,7 +82,7 @@
 				<artifactId>jackson-databind</artifactId>
 				<version>${jackson.version}</version>
 			</dependency>
-			<!-- spring jdbc -->
+			<!-- spring -->
 			<dependency>
 				<groupId>com.alibaba</groupId>
 				<artifactId>druid-spring-boot-starter</artifactId>
@@ -97,9 +99,30 @@
 				<version>${dynamic-datasource.version}</version>
 			</dependency>
 			<dependency>
+				<groupId>net.devh</groupId>
+				<artifactId>grpc-client-spring-boot-starter</artifactId>
+				<version>${grpc-spring-boot.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>net.devh</groupId>
+				<artifactId>grpc-server-spring-boot-starter</artifactId>
+				<version>${grpc-spring-boot.version}</version>
+			</dependency>
+			<dependency>
 				<groupId>ru.yandex.clickhouse</groupId>
 				<artifactId>clickhouse-jdbc</artifactId>
 				<version>${clickhouse-jdbc.version}</version>
+			</dependency>
+			<!-- grpc -->
+			<dependency>
+				<groupId>io.grpc</groupId>
+				<artifactId>grpc-stub</artifactId>
+				<version>${grpc.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>io.grpc</groupId>
+				<artifactId>grpc-protobuf</artifactId>
+				<version>${grpc.version}</version>
 			</dependency>
 			<!-- flink -->
 			<dependency>
@@ -314,5 +337,6 @@
 		<module>flink-platform-udf</module>
 		<module>flink-platform-monitor</module>
 		<module>flink-platform-dao</module>
+		<module>flink-platform-grpc</module>
 	</modules>
 </project>
