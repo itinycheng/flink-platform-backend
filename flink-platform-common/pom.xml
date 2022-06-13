@@ -12,6 +12,7 @@
 
 	<artifactId>flink-platform-common</artifactId>
 	<name>flink-platform-common</name>
+	<packaging>jar</packaging>
 
 	<properties>
 		<scope.provided>provided</scope.provided>

@@ -13,6 +13,7 @@
 
 	<artifactId>flink-platform-udf</artifactId>
 	<name>flink-platform-udf</name>
+	<packaging>jar</packaging>
 
 	<dependencies>
 		<dependency>

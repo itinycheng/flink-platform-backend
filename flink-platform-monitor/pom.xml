@@ -13,6 +13,7 @@
 
 	<artifactId>flink-platform-monitor</artifactId>
 	<name>flink-platform-monitor</name>
+	<packaging>jar</packaging>
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>

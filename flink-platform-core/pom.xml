@@ -13,6 +13,7 @@
 
 	<artifactId>flink-platform-core</artifactId>
 	<name>flink-platform-core</name>
+	<packaging>jar</packaging>
 
 	<dependencies>
 		<dependency>
