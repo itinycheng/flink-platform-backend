@@ -411,3 +411,21 @@ CREATE TABLE `t_datasource` (
   `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'update time',
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COMMENT='datasource info';
+
+
+-- ----------------------------
+-- Records of t_user
+-- ----------------------------
+BEGIN;
+INSERT INTO `t_user` VALUES (1, 'admin', '111111', 'ADMIN', 'admin@email.com', NULL, now(), now());
+COMMIT;
+
+-- ----------------------------
+-- Records of t_catalog_info
+-- ----------------------------
+BEGIN;
+INSERT INTO `t_catalog_info` VALUES (1, 'hive', 'hive_db', 'HIVE', 'profile', '/etc/hive/conf', NULL, NULL, NULL, now());
+INSERT INTO `t_catalog_info` VALUES (2, 'tidb', 'tidb_db', 'TIDB', 'discovery', NULL, '{\"tidb.database.url\":\"jdbc:mysql://0.0.0.0:4000/discovery\",\"tidb.username\":\"admin\",\"tidb.password\":\"passwd\",\"tidb.filter-push-down\":\"true\"}', NULL, NULL, now());
+INSERT INTO `t_catalog_info` VALUES (3, 'clickhouse', 'user_db', 'CLICKHOUSE', 'user_db', NULL, '{\"url\":\"clickhouse://0.0.0.0:8123\", \"username\":\"user\", \"password\":\"passwd\", \"sink.flush-interval\":\"60s\", \"sink.write-local\":\"true\", \"sink.batch-size\":\"500000\"}', NULL, NULL, now());
+INSERT INTO `t_catalog_info` VALUES (4, 'iceberg', 'default: iceberg_db', 'ICEBERG', 'iceberg_db', NULL, NULL, 'CREATE CATALOG iceberg WITH (\n  \'type\'=\'iceberg\',\n  \'catalog-type\'=\'hive\',\n  \'hive-conf-dir\'=\'/etc/hive/conf\',\n  \'property-version\'=\'1\',\n  \'warehouse\'=\'hdfs:///iceberg/warehouse\',\n  \'default-database\'=\'iceberg_db\'\n)', NULL, now());
+COMMIT;
