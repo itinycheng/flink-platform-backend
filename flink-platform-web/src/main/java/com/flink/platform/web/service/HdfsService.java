@@ -6,9 +6,9 @@ import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.LocalFileSystem;
 import org.apache.hadoop.fs.Path;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
-
-import javax.annotation.Resource;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -25,7 +25,7 @@ import static com.flink.platform.common.constants.Constant.DOT;
 @Service
 public class HdfsService {
 
-    @Resource private FileSystem fileSystem;
+    @Lazy @Autowired private FileSystem fileSystem;
 
     public void copyFileToLocalIfChanged(Path hdfsFile, Path localFile) throws IOException {
         boolean isCopy = true;
