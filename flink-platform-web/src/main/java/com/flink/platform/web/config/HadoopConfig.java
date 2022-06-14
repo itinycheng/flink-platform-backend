@@ -6,6 +6,7 @@ import org.apache.hadoop.fs.FileSystem;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Lazy;
 
 import java.io.File;
 import java.nio.file.Path;
@@ -29,6 +30,7 @@ public class HadoopConfig {
 
     private Map<String, String> properties;
 
+    @Lazy
     @Bean("hdfsFileSystem")
     public FileSystem createHdfsFileSystem() throws Exception {
         System.setProperty("HADOOP_USER_NAME", username);
@@ -62,6 +64,7 @@ public class HadoopConfig {
         return path.toString();
     }
 
+    @Lazy
     @Bean("projectHdfsPath")
     public String createHdfsFilePath(FileSystem hdfsFileSystem) throws Exception {
         org.apache.hadoop.fs.Path path = new org.apache.hadoop.fs.Path(hdfsFilePath);
