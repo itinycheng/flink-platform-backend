@@ -1,12 +1,13 @@
 package com.flink.platform.web.monitor;
 
 import com.flink.platform.common.enums.DeployMode;
-import com.flink.platform.dao.entity.JobRunInfo;
+import com.flink.platform.grpc.JobStatusReply;
+import com.flink.platform.grpc.JobStatusRequest;
 
 /** status monitor. */
 public interface StatusFetcher {
 
     boolean isSupported(DeployMode deployMode);
 
-    StatusInfo getStatus(JobRunInfo jobRunInfo);
+    JobStatusReply getStatus(JobStatusRequest request);
 }

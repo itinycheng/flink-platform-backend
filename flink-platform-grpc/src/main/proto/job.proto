@@ -6,8 +6,8 @@ option java_outer_classname = "HelloWorldProto";
 
 import public "google/protobuf/timestamp.proto";
 
-// The job process service definition.
-service JobProcessGrpcService {
+// The job service definition.
+service JobGrpcService {
   // process job.
   rpc ProcessJob (ProcessJobRequest) returns (ProcessJobReply) {
   }
@@ -19,7 +19,7 @@ service JobProcessGrpcService {
 
 message ProcessJobRequest {
   int64 jobId = 1;
-  int64 flowRunId = 2;
+  optional int64 flowRunId = 2;
 }
 
 message ProcessJobReply {
@@ -28,11 +28,12 @@ message ProcessJobReply {
 
 message JobStatusRequest {
   int64 jobRunId = 1;
-  string backInfo = 2;
-
+  string deployMode = 2;
+  string backInfo = 3;
 }
 
 message JobStatusReply {
-  string status = 1;
-  google.protobuf.Timestamp startTime = 2;
+  int32 status = 1;
+  optional int64 startTime = 2;
+  optional int64 endTime = 3;
 }

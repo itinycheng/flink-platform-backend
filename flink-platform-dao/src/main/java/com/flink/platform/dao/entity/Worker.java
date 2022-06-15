@@ -31,6 +31,8 @@ public class Worker {
 
     private String port;
 
+    private Integer grpcPort;
+
     private WorkerStatus status;
 
     private Long heartbeat;

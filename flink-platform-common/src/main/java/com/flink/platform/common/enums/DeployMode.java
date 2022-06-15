@@ -17,4 +17,14 @@ public enum DeployMode {
         this.mode = mode;
         this.target = target;
     }
+
+    public static DeployMode from(String name) {
+        for (DeployMode value : values()) {
+            if (value.name().equals(name)) {
+                return value;
+            }
+        }
+
+        throw new IllegalArgumentException("Unknown deploy mode: " + name);
+    }
 }

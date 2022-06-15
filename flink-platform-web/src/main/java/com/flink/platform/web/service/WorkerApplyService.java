@@ -37,4 +37,18 @@ public class WorkerApplyService {
         Worker worker = workers.get(idx);
         return HttpUtil.buildHttpUrl(worker.getIp(), worker.getPort());
     }
+
+    public Worker randomWorker(List<Long> workerIds) {
+        if (CollectionUtils.isEmpty(workerIds)) {
+            return null;
+        }
+
+        List<Worker> workers = workerService.listByIds(workerIds);
+        if (CollectionUtils.isEmpty(workers)) {
+            return null;
+        }
+
+        int idx = new Random().nextInt(workers.size());
+        return workers.get(idx);
+    }
 }
