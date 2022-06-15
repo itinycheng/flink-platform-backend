@@ -1,20 +1,23 @@
 package com.flink.platform.web.monitor;
 
 import com.flink.platform.common.enums.DeployMode;
+import com.flink.platform.common.enums.ExecutionStatus;
+import com.flink.platform.common.exception.JobStatusScrapeException;
 import com.flink.platform.common.util.JsonUtil;
-import com.flink.platform.dao.entity.JobRunInfo;
+import com.flink.platform.grpc.JobStatusReply;
+import com.flink.platform.grpc.JobStatusRequest;
 import com.flink.platform.web.command.JobCallback;
 import com.flink.platform.web.external.YarnClientService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.yarn.api.records.ApplicationReport;
+import org.apache.hadoop.yarn.api.records.FinalApplicationStatus;
+import org.apache.hadoop.yarn.api.records.YarnApplicationState;
 import org.apache.hadoop.yarn.exceptions.ApplicationNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
-
-import java.time.LocalDateTime;
 
 import static com.flink.platform.common.enums.ExecutionStatus.NOT_EXIST;
 
@@ -39,26 +42,71 @@ public class YarnStatusFetcher implements StatusFetcher {
     }
 
     @Override
-    public StatusInfo getStatus(JobRunInfo jobRunInfo) {
-        JobCallback jobCallback = JsonUtil.toBean(jobRunInfo.getBackInfo(), JobCallback.class);
+    public JobStatusReply getStatus(JobStatusRequest request) {
+        long currentTimeMillis = System.currentTimeMillis();
+        JobCallback jobCallback = JsonUtil.toBean(request.getBackInfo(), JobCallback.class);
         if (jobCallback == null || StringUtils.isEmpty(jobCallback.getAppId())) {
-            return new CustomizeStatusInfo(NOT_EXIST, LocalDateTime.now(), LocalDateTime.now());
+            return newJobStatusReply(NOT_EXIST.getCode(), currentTimeMillis, currentTimeMillis);
         }
 
         String applicationId = jobCallback.getAppId();
         try {
             ApplicationReport applicationReport =
                     yarnClientService.getApplicationReport(jobCallback.getAppId());
-            return new YarnStatusInfo(applicationReport);
+            return newJobStatusReply(
+                    getStatus(applicationReport).getCode(),
+                    applicationReport.getStartTime(),
+                    applicationReport.getFinishTime());
         } catch (ApplicationNotFoundException e) {
             log.warn("Application: {} not found.", applicationId, e);
-            return new CustomizeStatusInfo(NOT_EXIST, LocalDateTime.now(), LocalDateTime.now());
+            return newJobStatusReply(NOT_EXIST.getCode(), currentTimeMillis, currentTimeMillis);
         } catch (Exception e) {
             log.error(
                     "Use yarn client to get ApplicationReport failed, application: {}",
                     applicationId,
                     e);
             throw new RuntimeException(e);
+        }
+    }
+
+    private JobStatusReply newJobStatusReply(int status, long startTime, long endTime) {
+        return JobStatusReply.newBuilder()
+                .setStatus(status)
+                .setStartTime(startTime)
+                .setEndTime(endTime)
+                .build();
+    }
+
+    private ExecutionStatus getStatus(ApplicationReport applicationReport) {
+        FinalApplicationStatus finalStatus = applicationReport.getFinalApplicationStatus();
+        switch (finalStatus) {
+            case UNDEFINED:
+                return getNonFinalStatus(applicationReport);
+            case FAILED:
+                return ExecutionStatus.FAILURE;
+            case KILLED:
+                return ExecutionStatus.KILLED;
+            case SUCCEEDED:
+                return ExecutionStatus.SUCCESS;
+            case ENDED:
+                return ExecutionStatus.ABNORMAL;
+            default:
+                throw new JobStatusScrapeException("Unrecognized final status: " + finalStatus);
+        }
+    }
+
+    private ExecutionStatus getNonFinalStatus(ApplicationReport applicationReport) {
+        YarnApplicationState yarnState = applicationReport.getYarnApplicationState();
+        switch (yarnState) {
+            case NEW:
+            case NEW_SAVING:
+            case SUBMITTED:
+            case ACCEPTED:
+                return ExecutionStatus.SUBMITTED;
+            case RUNNING:
+                return ExecutionStatus.RUNNING;
+            default:
+                throw new JobStatusScrapeException("Unrecognized nonFinal status: " + yarnState);
         }
     }
 }

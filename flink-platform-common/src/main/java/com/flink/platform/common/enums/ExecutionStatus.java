@@ -42,16 +42,6 @@ public enum ExecutionStatus {
         return status == ERROR || status == NOT_EXIST;
     }
 
-    public static List<ExecutionStatus> getTerminals() {
-        List<ExecutionStatus> statusList = new ArrayList<>(values().length);
-        for (ExecutionStatus value : values()) {
-            if (value.terminalState == TerminalState.TERMINAL) {
-                statusList.add(value);
-            }
-        }
-        return statusList;
-    }
-
     public static List<ExecutionStatus> getNonTerminals() {
         List<ExecutionStatus> statusList = new ArrayList<>(values().length);
         for (ExecutionStatus value : values()) {

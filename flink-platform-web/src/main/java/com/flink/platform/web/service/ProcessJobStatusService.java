@@ -2,9 +2,9 @@ package com.flink.platform.web.service;
 
 import com.flink.platform.common.enums.DeployMode;
 import com.flink.platform.common.exception.JobStatusScrapeException;
-import com.flink.platform.dao.entity.JobRunInfo;
+import com.flink.platform.grpc.JobStatusReply;
+import com.flink.platform.grpc.JobStatusRequest;
 import com.flink.platform.web.monitor.StatusFetcher;
-import com.flink.platform.web.monitor.StatusInfo;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -26,12 +26,12 @@ public class ProcessJobStatusService {
     }
 
     @Nonnull
-    public StatusInfo getStatus(JobRunInfo jobRunInfo) {
-        final DeployMode deployMode = jobRunInfo.getDeployMode();
+    public JobStatusReply getStatus(JobStatusRequest request) {
+        final DeployMode deployMode = DeployMode.from(request.getDeployMode());
         return statusFetchers.stream()
                 .filter(fetcher -> fetcher.isSupported(deployMode))
                 .findFirst()
                 .orElseThrow(() -> new JobStatusScrapeException("No available job status fetcher"))
-                .getStatus(jobRunInfo);
+                .getStatus(request);
     }
 }

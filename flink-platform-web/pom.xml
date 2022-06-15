@@ -16,6 +16,11 @@
 	<dependencies>
 		<dependency>
 			<groupId>com.flink.platform</groupId>
+			<artifactId>flink-platform-grpc</artifactId>
+			<version>${project.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>com.flink.platform</groupId>
 			<artifactId>flink-platform-dao</artifactId>
 			<version>${project.version}</version>
 		</dependency>

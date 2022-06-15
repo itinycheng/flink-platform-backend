@@ -3,6 +3,8 @@ package com.flink.platform.web.monitor;
 import com.flink.platform.common.enums.DeployMode;
 import com.flink.platform.dao.entity.JobRunInfo;
 import com.flink.platform.dao.service.JobRunInfoService;
+import com.flink.platform.grpc.JobStatusReply;
+import com.flink.platform.grpc.JobStatusRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
@@ -18,8 +20,8 @@ public class DefaultStatusFetcher implements StatusFetcher {
         return true;
     }
 
-    public StatusInfo getStatus(JobRunInfo jobRunInfo) {
-        JobRunInfo current = jobRunInfoService.getById(jobRunInfo.getId());
-        return new CustomizeStatusInfo(current.getStatus(), null, null);
+    public JobStatusReply getStatus(JobStatusRequest request) {
+        JobRunInfo current = jobRunInfoService.getById(request.getJobRunId());
+        return JobStatusReply.newBuilder().setStatus(current.getStatus().getCode()).build();
     }
 }

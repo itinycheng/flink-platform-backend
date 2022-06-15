@@ -3,6 +3,7 @@ package com.flink.platform.common.util;
 import org.apache.commons.lang3.time.DateUtils;
 
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
@@ -17,6 +18,10 @@ public class DateUtil {
     public static final long MILLIS_PER_MINUTE = DateUtils.MILLIS_PER_MINUTE;
 
     private static final Map<String, DateTimeFormatter> FORMATTERS = new ConcurrentHashMap<>();
+
+    public static LocalDateTime toLocalDateTime(long timestamp) {
+        return LocalDateTime.ofInstant(Instant.ofEpochMilli(timestamp), DEFAULT_ZONE_ID);
+    }
 
     public static String format(Long timestamp, String format) {
         DateTimeFormatter formatter = getFormatter(format);
