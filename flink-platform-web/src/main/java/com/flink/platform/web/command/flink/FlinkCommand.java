@@ -1,5 +1,6 @@
-package com.flink.platform.web.command;
+package com.flink.platform.web.command.flink;
 
+import com.flink.platform.web.command.JobCommand;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.apache.commons.lang3.StringUtils;

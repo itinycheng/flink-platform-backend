@@ -1,4 +1,4 @@
-package com.flink.platform.web.command;
+package com.flink.platform.web.command.flink;
 
 import com.flink.platform.web.config.FlinkConfig;
 import org.springframework.beans.factory.annotation.Autowired;

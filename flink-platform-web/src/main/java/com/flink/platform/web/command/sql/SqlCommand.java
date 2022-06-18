@@ -1,4 +1,4 @@
-package com.flink.platform.web.command.jdbc;
+package com.flink.platform.web.command.sql;
 
 import com.flink.platform.common.util.JsonUtil;
 import com.flink.platform.web.command.JobCommand;

@@ -1,5 +1,8 @@
-package com.flink.platform.web.command;
+package com.flink.platform.web.command.flink;
 
+import com.flink.platform.web.command.CommandExecutor;
+import com.flink.platform.web.command.JobCallback;
+import com.flink.platform.web.command.JobCommand;
 import com.flink.platform.web.config.WorkerConfig;
 import com.flink.platform.web.util.CommandCallback;
 import com.flink.platform.web.util.CommandUtil;
