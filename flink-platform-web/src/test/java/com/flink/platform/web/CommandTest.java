@@ -1,6 +1,6 @@
 package com.flink.platform.web;
 
-import com.flink.platform.web.command.FlinkCommandExecutor;
+import com.flink.platform.web.command.flink.FlinkCommandExecutor;
 import com.flink.platform.web.enums.SqlVar;
 import com.flink.platform.web.util.CommandCallback;
 import com.flink.platform.web.util.CommandUtil;

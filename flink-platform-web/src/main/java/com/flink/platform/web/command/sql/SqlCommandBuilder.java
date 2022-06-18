@@ -1,4 +1,4 @@
-package com.flink.platform.web.command.jdbc;
+package com.flink.platform.web.command.sql;
 
 import com.flink.platform.common.enums.JobType;
 import com.flink.platform.common.exception.JobCommandGenException;

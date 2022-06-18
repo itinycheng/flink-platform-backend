@@ -1,4 +1,4 @@
-package com.flink.platform.web.command.jdbc;
+package com.flink.platform.web.command.sql;
 
 import com.flink.platform.common.enums.DbType;
 import com.flink.platform.dao.entity.Datasource;
