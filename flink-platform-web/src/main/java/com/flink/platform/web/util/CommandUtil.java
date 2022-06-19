@@ -18,7 +18,10 @@ import static com.flink.platform.web.util.CommandUtil.CmdOutType.ERR;
 import static com.flink.platform.web.util.CommandUtil.CmdOutType.STD;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
-/** Command util. */
+/**
+ * Command util. <br>
+ * TODO: processId, exitValue.
+ */
 @Slf4j
 public class CommandUtil {
 

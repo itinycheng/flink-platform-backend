@@ -8,4 +8,7 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
-public class ShellJob extends BaseJob {}
+public class ShellJob extends BaseJob {
+
+    private long timeout;
+}

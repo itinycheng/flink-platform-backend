@@ -1,20 +1,22 @@
-package com.flink.platform.web.command.condition;
+package com.flink.platform.web.command.shell;
 
 import com.flink.platform.web.command.JobCommand;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-/** condition command. */
+/** shell command. */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class ConditionCommand implements JobCommand {
+public class ShellCommand implements JobCommand {
 
-    private boolean success;
+    private long timeout;
+
+    private String script;
 
     @Override
     public String toCommandString() {
-        return "do nothing";
+        return script;
     }
 }

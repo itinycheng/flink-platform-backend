@@ -6,6 +6,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.validation.annotation.Validated;
 
+import javax.validation.constraints.Max;
 import javax.validation.constraints.Min;
 
 /** Worker config. */
@@ -33,4 +34,8 @@ public class WorkerConfig {
 
     @Min(20_000)
     private long flinkSubmitTimeoutMills;
+
+    @Min(1_000)
+    @Max(24 * 60 * 60 * 1000)
+    private long shellExecuteTimeoutMills;
 }
