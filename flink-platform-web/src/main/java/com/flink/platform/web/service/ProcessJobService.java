@@ -178,6 +178,7 @@ public class ProcessJobService {
             case CLICKHOUSE_SQL:
             case COMMON_JAR:
             case CONDITION:
+            case SHELL:
                 return SUCCESS;
             default:
                 return ExecutionStatus.SUBMITTED;
