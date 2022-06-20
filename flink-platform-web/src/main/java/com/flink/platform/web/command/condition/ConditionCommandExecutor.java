@@ -6,6 +6,8 @@ import com.flink.platform.web.command.JobCommand;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
+import javax.annotation.Nonnull;
+
 import static com.flink.platform.common.enums.ExecutionStatus.FAILURE;
 import static com.flink.platform.common.enums.ExecutionStatus.SUCCESS;
 
@@ -19,6 +21,7 @@ public class ConditionCommandExecutor implements CommandExecutor {
         return jobCommand instanceof ConditionCommand;
     }
 
+    @Nonnull
     @Override
     public JobCallback execCommand(JobCommand command) throws Exception {
         ConditionCommand conditionCommand = (ConditionCommand) command;

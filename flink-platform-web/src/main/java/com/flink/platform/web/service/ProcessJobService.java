@@ -29,7 +29,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
-import static com.flink.platform.common.enums.ExecutionStatus.SUCCESS;
 import static java.util.stream.Collectors.toMap;
 
 /** Process job service. */
@@ -129,7 +128,7 @@ public class ProcessJobService {
                             .execCommand(command);
 
             // step 5: write job run info to db
-            ExecutionStatus executionStatus = getExecutionStatus(jobType, callback);
+            ExecutionStatus executionStatus = callback.getStatus();
             JobRunInfo jobRunInfo = new JobRunInfo();
             jobRunInfo.setName(jobInfo.getName() + "-" + System.currentTimeMillis());
             jobRunInfo.setJobId(jobInfo.getId());
@@ -166,22 +165,6 @@ public class ProcessJobService {
                     log.warn("Delete sql context file failed", e);
                 }
             }
-        }
-    }
-
-    private ExecutionStatus getExecutionStatus(JobType jobType, JobCallback callback) {
-        if (callback.getStatus() != SUCCESS) {
-            return callback.getStatus();
-        }
-
-        switch (jobType) {
-            case CLICKHOUSE_SQL:
-            case COMMON_JAR:
-            case CONDITION:
-            case SHELL:
-                return SUCCESS;
-            default:
-                return ExecutionStatus.SUBMITTED;
         }
     }
 }
