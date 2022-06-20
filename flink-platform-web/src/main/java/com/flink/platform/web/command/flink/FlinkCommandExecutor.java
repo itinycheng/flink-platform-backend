@@ -12,6 +12,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+import javax.annotation.Nonnull;
+
 import java.util.regex.Matcher;
 
 import static com.flink.platform.common.constants.Constant.LINE_SEPARATOR;
@@ -19,7 +21,7 @@ import static com.flink.platform.common.constants.JobConstant.APP_ID_PATTERN;
 import static com.flink.platform.common.constants.JobConstant.HADOOP_USER_NAME;
 import static com.flink.platform.common.constants.JobConstant.JOB_ID_PATTERN;
 import static com.flink.platform.common.enums.ExecutionStatus.FAILURE;
-import static com.flink.platform.common.enums.ExecutionStatus.SUCCESS;
+import static com.flink.platform.common.enums.ExecutionStatus.SUBMITTED;
 
 /** Flink command executor. */
 @Slf4j
@@ -36,6 +38,7 @@ public class FlinkCommandExecutor implements CommandExecutor {
         return jobCommand instanceof FlinkCommand;
     }
 
+    @Nonnull
     @Override
     public JobCallback execCommand(JobCommand command) throws Exception {
         CommandCallback callback =
@@ -53,7 +56,7 @@ public class FlinkCommandExecutor implements CommandExecutor {
         }
 
         boolean isSucceed = StringUtils.isNotEmpty(appId);
-        return new JobCallback(jobId, appId, message, isSucceed ? SUCCESS : FAILURE);
+        return new JobCallback(jobId, appId, message, isSucceed ? SUBMITTED : FAILURE);
     }
 
     // ------------------------------------------------------------------------

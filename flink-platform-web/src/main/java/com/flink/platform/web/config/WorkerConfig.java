@@ -37,5 +37,5 @@ public class WorkerConfig {
 
     @Min(1_000)
     @Max(24 * 60 * 60 * 1000)
-    private long shellExecuteTimeoutMills;
+    private long maxShellExecTimeoutMills;
 }

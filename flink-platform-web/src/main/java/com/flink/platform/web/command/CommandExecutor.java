@@ -1,5 +1,7 @@
 package com.flink.platform.web.command;
 
+import javax.annotation.Nonnull;
+
 /** parse result. */
 public interface CommandExecutor {
 
@@ -18,5 +20,6 @@ public interface CommandExecutor {
      * @return execute result
      * @throws Exception execute exception
      */
+    @Nonnull
     JobCallback execCommand(JobCommand command) throws Exception;
 }

@@ -20,10 +20,12 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 /**
  * Command util. <br>
- * TODO: processId, exitValue.
+ * TODO: get processId, exitValue and save log to HDFS.
  */
 @Slf4j
 public class CommandUtil {
+
+    private static final int MAX_LOG_ROWS = 50000;
 
     public static CommandCallback exec(String command, String[] envProps, long timeoutMills)
             throws IOException, InterruptedException {
@@ -38,10 +40,14 @@ public class CommandUtil {
                         (inputType, value) -> {
                             switch (inputType) {
                                 case STD:
-                                    stdList.add(value);
+                                    if (stdList.size() <= MAX_LOG_ROWS) {
+                                        stdList.add(value);
+                                    }
                                     break;
                                 case ERR:
-                                    errList.add(value);
+                                    if (errList.size() <= MAX_LOG_ROWS) {
+                                        errList.add(value);
+                                    }
                                     break;
                                 default:
                                     log.error("unknown command log type: {}", inputType);
@@ -75,12 +81,7 @@ public class CommandUtil {
                 log.error("Start log collection thread failed", e);
             }
 
-            boolean status;
-            try {
-                status = process.waitFor(timeoutMills, MILLISECONDS);
-            } finally {
-                process.destroy();
-            }
+            boolean status = process.waitFor(timeoutMills, MILLISECONDS);
 
             try {
                 stdThread.join();
@@ -90,6 +91,8 @@ public class CommandUtil {
             }
 
             return status;
+        } finally {
+            process.destroy();
         }
     }
 

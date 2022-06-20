@@ -94,4 +94,4 @@ worker:
   streamingJobToSuccessMills: 300000
   reactiveExecThreads: 10
   flinkSubmitTimeoutMills: 300000
-  shellExecuteTimeoutMills: 3600000
+  maxShellExecTimeoutMills: 28800000

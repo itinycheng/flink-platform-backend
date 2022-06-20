@@ -12,6 +12,8 @@ import org.apache.commons.lang3.ArrayUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import javax.annotation.Nonnull;
+
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.sql.Connection;
@@ -41,6 +43,7 @@ public class SqlCommandExecutor implements CommandExecutor {
         return jobCommand instanceof SqlCommand;
     }
 
+    @Nonnull
     @Override
     public JobCallback execCommand(JobCommand command) throws Exception {
         SqlCommand sqlCommand = (SqlCommand) command;
