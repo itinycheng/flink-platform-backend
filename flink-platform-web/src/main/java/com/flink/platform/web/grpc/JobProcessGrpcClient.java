@@ -13,6 +13,7 @@ import javax.annotation.PreDestroy;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 
 import static com.flink.platform.grpc.JobGrpcServiceGrpc.JobGrpcServiceBlockingStub;
 
@@ -25,6 +26,8 @@ public class JobProcessGrpcClient {
     private JobGrpcServiceBlockingStub localGrpcStub;
 
     private final Map<String, JobGrpcServiceBlockingStub> grpcStubMap = new ConcurrentHashMap<>();
+
+    private final Map<String, ManagedChannel> channelMap = new ConcurrentHashMap<>();
 
     private final Object lock = new Object();
 
@@ -40,15 +43,20 @@ public class JobProcessGrpcClient {
         }
 
         synchronized (lock) {
+            stub = grpcStubMap.get(key);
             if (stub != null) {
                 return stub;
             }
 
             ManagedChannel channel =
-                    ManagedChannelBuilder.forAddress(worker.getIp(), worker.getGrpcPort())
-                            .keepAliveWithoutCalls(true)
-                            .usePlaintext()
-                            .build();
+                    channelMap.computeIfAbsent(
+                            key,
+                            s ->
+                                    ManagedChannelBuilder.forAddress(
+                                                    worker.getIp(), worker.getGrpcPort())
+                                            .keepAliveWithoutCalls(true)
+                                            .usePlaintext()
+                                            .build());
             stub = JobGrpcServiceGrpc.newBlockingStub(channel);
             grpcStubMap.put(key, stub);
         }
@@ -60,7 +68,19 @@ public class JobProcessGrpcClient {
     }
 
     @PreDestroy
-    public void destroyStubs() {
-        // TODO
+    public void destroy() {
+        log.debug("Initiating manually created grpc ManagedChannel shutdown.");
+        channelMap.forEach(
+                (key, channel) -> {
+                    try {
+                        channel.shutdown().awaitTermination(2, TimeUnit.SECONDS);
+                    } catch (Exception e) {
+                        log.error("Shutdown grpc ManagedChannel failed, host: {}", key, e);
+                    }
+                });
+
+        grpcStubMap.clear();
+        channelMap.clear();
+        log.info("Shutdown manually created grpc ManagedChannel successfully.");
     }
 }

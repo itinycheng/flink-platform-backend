@@ -45,7 +45,7 @@ public class JobFlowScheduleService {
                         (o1, o2) -> ObjectUtils.compare(o2.getPriority(), o1.getPriority()));
     }
 
-    @Scheduled(fixedDelay = 5000)
+    @Scheduled(fixedDelay = 2000)
     public void scheduleJobFlow() {
         // TODO: activeCount is an approximate value.
         if (flowExecService.getActiveCount() > workerConfig.getFlowExecThreads()) {
