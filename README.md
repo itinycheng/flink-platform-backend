@@ -3,7 +3,11 @@
 > This project is a job scheduling framework with center less structure, easy to scale up.
 > We can customize the workflow DAG and schedule it.
 
-## Architecture
+1. [Quick Start](docs/startup.md)
+2. [Configuration Details](docs/configuration.md)
+3. [Architecture Design](docs/architecture.md)
+
+## Overview
 
 ![arch](docs/img/arch_overview.png)
 
@@ -17,8 +21,9 @@
 ## Task Support
 
 - Flink sql/jar, deployment mode: YARN-Per-Job(tested), Other(untested).
-- Shell (underway).
+- Shell (tested).
 - ClickHouse sql(tested).
+- Condition(tested, support: AND, OR).
 
 - More: I don't have enough time to develop multi type task support, but implementing a new task
   type is easy, sometimes you can do it yourself or tell me your needs.
@@ -37,6 +42,7 @@
 | t_user          | login user info                                                |
 | t_user_session  | login user session info.                                       |
 | t_worker        | Worker node instance info.                                     |
+| t_datasource    | Store datasource info, such as: clickhouse, mysql, etc.        |
 
 Refer to: [create table statements](docs/sql/schema.sql)
 
@@ -60,7 +66,7 @@ mvn clean package -DskipTests
 export HADOOP_CONF_DIR=/data0/app/dw_hadoop/yarn-conf
 
 # start project
-nohup java -Xms4g -Xmx4g -jar -Dspring.profiles.active=prod flink-platform-web-0.0.1.jar >/dev/null 2>&1 &
+nohup java -Xms4g -Xmx4g -jar -Dspring.profiles.active=dev flink-platform-web-0.0.1.jar >/dev/null 2>&1 &
 ```
 
 ## License
