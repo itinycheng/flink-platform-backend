@@ -233,13 +233,14 @@ CREATE TABLE `t_catalog_info` (
   `id` bigint(11) unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
   `name` varchar(64) NOT NULL COMMENT 'catalog name',
   `description` varchar(255) DEFAULT NULL COMMENT 'catalog desc',
+  `user_id` bigint(11) NOT NULL COMMENT 'user id',
   `type` varchar(32) NOT NULL COMMENT 'catalog type',
   `default_database` varchar(64) NOT NULL COMMENT 'default database',
   `config_path` varchar(128) DEFAULT NULL COMMENT 'config dir path',
   `configs` varchar(1024) DEFAULT NULL COMMENT 'config properties',
   `create_sql` varchar(2048) DEFAULT NULL COMMENT 'catalog create sql',
-  `create_user` varchar(32) DEFAULT 'sys' COMMENT 'create user',
   `create_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT 'create time',
+  `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'update time',
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COMMENT='job catalog info';
 
@@ -390,6 +391,7 @@ CREATE TABLE `t_worker` (
   `desc` varchar(255) DEFAULT NULL,
   `ip` varchar(64) DEFAULT NULL,
   `port` varchar(16) DEFAULT NULL,
+  `grpc_port` int(6) DEFAULT NULL,
   `status` varchar(32) DEFAULT NULL,
   `heartbeat` bigint(11) DEFAULT NULL,
   `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
