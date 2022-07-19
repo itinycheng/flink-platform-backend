@@ -20,7 +20,8 @@ import static com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
     @JsonSubTypes.Type(value = JavaJob.class, name = "COMMON_JAR"),
     @JsonSubTypes.Type(value = SqlJob.class, name = "CLICKHOUSE_SQL"),
     @JsonSubTypes.Type(value = ShellJob.class, name = "SHELL"),
-    @JsonSubTypes.Type(value = ConditionJob.class, name = "CONDITION")
+    @JsonSubTypes.Type(value = ConditionJob.class, name = "CONDITION"),
+    @JsonSubTypes.Type(value = DependentJob.class, name = "DEPENDENT"),
 })
 public class BaseJob {
 
