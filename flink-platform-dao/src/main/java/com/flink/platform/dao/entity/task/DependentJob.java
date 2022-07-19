@@ -18,6 +18,7 @@ public class DependentJob extends BaseJob {
 
     private DependentRelation relation;
 
+    /** dependent item. */
     @Data
     @NoArgsConstructor
     public static class DependentItem {
@@ -33,6 +34,7 @@ public class DependentJob extends BaseJob {
         private LocalDateTime endTime;
     }
 
+    /** dependent relation. */
     public enum DependentRelation {
         AND,
         OR

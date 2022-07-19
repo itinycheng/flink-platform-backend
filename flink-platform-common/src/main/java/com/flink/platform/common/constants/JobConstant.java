@@ -29,8 +29,6 @@ public class JobConstant {
 
     public static final String TIDB_PASSWORD = "tidb.password";
 
-    public static final String TIDB_FILTER_PUSH_DOWN = "tidb.filter-push-down";
-
     public static final String SQL_LINE_SEPARATOR = "\n";
 
     public static final String SQL_COMMENT_SYMBOL = "--";
