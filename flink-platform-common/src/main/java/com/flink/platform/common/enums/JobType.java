@@ -20,7 +20,10 @@ public enum JobType {
     COMMON_JAR(JAVA, null),
     CLICKHOUSE_SQL(SQL, CLICKHOUSE),
     SHELL(Constant.SHELL, null),
-    CONDITION(Constant.CONDITION, null);
+    CONDITION(Constant.CONDITION, null),
+
+    DEPENDENT(Constant.DEPENDENT, null),
+    ;
 
     private final String classification;
 
