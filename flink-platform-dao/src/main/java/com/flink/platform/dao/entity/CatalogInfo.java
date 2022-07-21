@@ -34,6 +34,9 @@ public class CatalogInfo implements Serializable {
     /** catalog desc. */
     private String description;
 
+    /** user id. */
+    private Long userId;
+
     /** default database. */
     private String defaultDatabase;
 
@@ -46,9 +49,9 @@ public class CatalogInfo implements Serializable {
     /** catalog create sql. */
     private String createSql;
 
-    /** create user. */
-    private String createUser;
-
     /** create time. */
     private LocalDateTime createTime;
+
+    /** update time. */
+    private LocalDateTime updateTime;
 }
