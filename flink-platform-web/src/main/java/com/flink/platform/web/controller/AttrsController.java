@@ -6,6 +6,7 @@ import com.flink.platform.common.enums.ExecutionCondition;
 import com.flink.platform.common.enums.ExecutionStatus;
 import com.flink.platform.common.enums.JobType;
 import com.flink.platform.dao.entity.Worker;
+import com.flink.platform.dao.entity.task.DependentJob;
 import com.flink.platform.dao.service.JobInfoService;
 import com.flink.platform.dao.service.WorkerService;
 import com.flink.platform.web.config.FlinkConfig;
@@ -59,6 +60,11 @@ public class AttrsController {
         conditions.add(AND);
         conditions.add(OR);
         return ResultInfo.success(conditions);
+    }
+
+    @GetMapping(value = "/dependentRelations")
+    public ResultInfo<DependentJob.DependentRelation[]> dependentRelations() {
+        return ResultInfo.success(DependentJob.DependentRelation.values());
     }
 
     @GetMapping(value = "/versions")

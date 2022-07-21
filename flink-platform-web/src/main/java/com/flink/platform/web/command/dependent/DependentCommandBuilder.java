@@ -37,7 +37,6 @@ public class DependentCommandBuilder implements CommandBuilder {
     public JobCommand buildCommand(Long flowRunId, JobInfo jobInfo) {
         try {
             DependentJob dependentJob = jobInfo.getConfig().unwrap(DependentJob.class);
-
             if (CollectionUtils.isEmpty(dependentJob.getDependentItems())) {
                 return new DependentCommand(true);
             }
@@ -70,7 +69,6 @@ public class DependentCommandBuilder implements CommandBuilder {
                                     new QueryWrapper<JobRunInfo>()
                                             .lambda()
                                             .select(JobRunInfo::getStatus)
-                                            .eq(JobRunInfo::getFlowRunId, dependentItem.getFlowId())
                                             .eq(JobRunInfo::getJobId, dependentItem.getJobId())
                                             .ge(
                                                     nonNull(dependentItem.getStartTime()),

@@ -1,5 +1,6 @@
 package com.flink.platform.dao.entity.task;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.flink.platform.common.enums.ExecutionStatus;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -7,6 +8,8 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 import java.util.List;
+
+import static com.flink.platform.common.util.DateUtil.GLOBAL_DATE_TIME_FORMAT;
 
 /** dependent job. */
 @Data
@@ -29,9 +32,24 @@ public class DependentJob extends BaseJob {
 
         private List<ExecutionStatus> statuses;
 
-        private LocalDateTime startTime;
+        @JsonFormat(pattern = GLOBAL_DATE_TIME_FORMAT, timezone = "GMT+8")
+        private LocalDateTime[] timeRange;
 
-        private LocalDateTime endTime;
+        public LocalDateTime getStartTime() {
+            if (timeRange == null || timeRange.length != 2) {
+                return null;
+            }
+
+            return timeRange[0];
+        }
+
+        public LocalDateTime getEndTime() {
+            if (timeRange == null || timeRange.length != 2) {
+                return null;
+            }
+
+            return timeRange[1];
+        }
     }
 
     /** dependent relation. */

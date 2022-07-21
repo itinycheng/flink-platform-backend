@@ -33,8 +33,9 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
-import java.util.Objects;
+import java.util.Map;
 
 import static com.flink.platform.common.enums.ResponseStatus.ERROR_PARAMETER;
 import static com.flink.platform.common.enums.ResponseStatus.EXIST_UNFINISHED_PROCESS;
@@ -44,6 +45,8 @@ import static com.flink.platform.common.enums.ResponseStatus.SERVICE_ERROR;
 import static com.flink.platform.common.enums.ResponseStatus.UNABLE_SCHEDULE_STREAMING_JOB;
 import static com.flink.platform.common.enums.ResponseStatus.USER_HAVE_NO_PERMISSION;
 import static com.flink.platform.web.entity.response.ResultInfo.failure;
+import static java.util.Objects.nonNull;
+import static java.util.stream.Collectors.toList;
 
 /** crud job flow. */
 @RestController
@@ -125,8 +128,8 @@ public class JobFlowController {
         return ResultInfo.success(flowId);
     }
 
-    @GetMapping(value = "/list")
-    public ResultInfo<IPage<JobFlow>> list(
+    @GetMapping(value = "/page")
+    public ResultInfo<IPage<JobFlow>> page(
             @RequestAttribute(value = Constant.SESSION_USER) User loginUser,
             @RequestParam(name = "page", required = false, defaultValue = "1") Integer page,
             @RequestParam(name = "size", required = false, defaultValue = "20") Integer size,
@@ -139,14 +142,36 @@ public class JobFlowController {
                 new QueryWrapper<JobFlow>()
                         .lambda()
                         .eq(JobFlow::getUserId, loginUser.getId())
-                        .eq(Objects.nonNull(status), JobFlow::getStatus, status)
-                        .like(Objects.nonNull(name), JobFlow::getName, name);
+                        .eq(nonNull(status), JobFlow::getStatus, status)
+                        .like(nonNull(name), JobFlow::getName, name);
         if ("-id".equals(sort)) {
             queryWrapper.orderByDesc(JobFlow::getId);
         }
 
         IPage<JobFlow> iPage = jobFlowService.page(pager, queryWrapper);
         return ResultInfo.success(iPage);
+    }
+
+    @GetMapping(value = "/idNameMapList")
+    public ResultInfo<List<Map<String, Object>>> idNameMap(
+            @RequestParam(name = "name", required = false) String name) {
+        List<Map<String, Object>> listMap =
+                jobFlowService
+                        .list(
+                                new QueryWrapper<JobFlow>()
+                                        .lambda()
+                                        .select(JobFlow::getId, JobFlow::getName)
+                                        .like(nonNull(name), JobFlow::getName, name))
+                        .stream()
+                        .map(
+                                jobFlow -> {
+                                    Map<String, Object> map = new HashMap<>(2);
+                                    map.put("id", jobFlow.getId());
+                                    map.put("name", jobFlow.getName());
+                                    return map;
+                                })
+                        .collect(toList());
+        return ResultInfo.success(listMap);
     }
 
     @GetMapping(value = "/schedule/start/{flowId}")

@@ -77,6 +77,11 @@
 							<shadedPattern>com.flink.platform.shaded.org.apache.commons
 							</shadedPattern>
 						</relocation>
+						<relocation>
+							<pattern>com.fasterxml.jackson</pattern>
+							<shadedPattern>com.flink.platform.shaded.com.fasterxml.jackson
+							</shadedPattern>
+						</relocation>
 					</relocations>
 				</configuration>
 			</plugin>
