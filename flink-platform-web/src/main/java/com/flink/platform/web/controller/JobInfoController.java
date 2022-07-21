@@ -29,7 +29,6 @@ import org.springframework.web.bind.annotation.RestController;
 import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
 
 import static com.flink.platform.common.enums.JobStatus.ONLINE;
 import static com.flink.platform.common.enums.ResponseStatus.ERROR_PARAMETER;
@@ -37,6 +36,7 @@ import static com.flink.platform.common.enums.ResponseStatus.EXIST_UNFINISHED_PR
 import static com.flink.platform.common.enums.ResponseStatus.NOT_RUNNABLE_STATUS;
 import static com.flink.platform.common.enums.ResponseStatus.SERVICE_ERROR;
 import static com.flink.platform.web.entity.response.ResultInfo.failure;
+import static java.util.Objects.nonNull;
 
 /** manage job info. */
 @RestController
@@ -101,13 +101,23 @@ public class JobInfoController {
                         pager,
                         new QueryWrapper<JobInfo>()
                                 .lambda()
-                                .like(Objects.nonNull(name), JobInfo::getName, name));
+                                .like(nonNull(name), JobInfo::getName, name));
 
         return ResultInfo.success(iPage);
     }
 
+    @GetMapping(value = "/list")
+    public ResultInfo<List<JobInfo>> list(@RequestParam(name = "flowId") Long flowId) {
+        List<JobInfo> list =
+                jobInfoService.list(
+                        new QueryWrapper<JobInfo>()
+                                .lambda()
+                                .like(nonNull(flowId), JobInfo::getFlowId, flowId));
+        return ResultInfo.success(list);
+    }
+
     @PostMapping(value = "/getByIds")
-    public ResultInfo<List<JobInfo>> list(@RequestBody List<Long> ids) {
+    public ResultInfo<List<JobInfo>> getByIds(@RequestBody List<Long> ids) {
         if (CollectionUtils.isEmpty(ids)) {
             return ResultInfo.success(Collections.emptyList());
         }

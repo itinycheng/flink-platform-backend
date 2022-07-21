@@ -13,6 +13,8 @@ import java.util.concurrent.ConcurrentHashMap;
 /** date utils. */
 public class DateUtil {
 
+    public static final String GLOBAL_DATE_TIME_FORMAT = "yyyy-MM-dd HH:mm:ss";
+
     public static final ZoneId DEFAULT_ZONE_ID = ZoneId.systemDefault();
 
     public static final long MILLIS_PER_MINUTE = DateUtils.MILLIS_PER_MINUTE;
@@ -21,6 +23,10 @@ public class DateUtil {
 
     public static LocalDateTime toLocalDateTime(long timestamp) {
         return LocalDateTime.ofInstant(Instant.ofEpochMilli(timestamp), DEFAULT_ZONE_ID);
+    }
+
+    public static String format(LocalDateTime dateTime) {
+        return dateTime.format(getFormatter(GLOBAL_DATE_TIME_FORMAT));
     }
 
     public static String format(Long timestamp, String format) {
