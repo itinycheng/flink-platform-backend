@@ -61,46 +61,47 @@ public class DependentCommandBuilder implements CommandBuilder {
             return true;
         }
 
-        ExecutionStatus latestStatus;
+        ExecutionStatus latestStatus = null;
         if (dependentItem.getJobId() != null) {
-            latestStatus =
-                    jobRunInfoService
-                            .getOne(
-                                    new QueryWrapper<JobRunInfo>()
-                                            .lambda()
-                                            .select(JobRunInfo::getStatus)
-                                            .eq(JobRunInfo::getJobId, dependentItem.getJobId())
-                                            .ge(
-                                                    nonNull(dependentItem.getStartTime()),
-                                                    JobRunInfo::getCreateTime,
-                                                    dependentItem.getStartTime())
-                                            .le(
-                                                    nonNull(dependentItem.getEndTime()),
-                                                    JobRunInfo::getCreateTime,
-                                                    dependentItem.getEndTime())
-                                            .orderByDesc(JobRunInfo::getId)
-                                            .last("limit 1"))
-                            .getStatus();
-
+            JobRunInfo jobRunInfo =
+                    jobRunInfoService.getOne(
+                            new QueryWrapper<JobRunInfo>()
+                                    .lambda()
+                                    .select(JobRunInfo::getStatus)
+                                    .eq(JobRunInfo::getJobId, dependentItem.getJobId())
+                                    .ge(
+                                            nonNull(dependentItem.getStartTime()),
+                                            JobRunInfo::getCreateTime,
+                                            dependentItem.getStartTime())
+                                    .le(
+                                            nonNull(dependentItem.getEndTime()),
+                                            JobRunInfo::getCreateTime,
+                                            dependentItem.getEndTime())
+                                    .orderByDesc(JobRunInfo::getId)
+                                    .last("limit 1"));
+            if (jobRunInfo != null) {
+                latestStatus = jobRunInfo.getStatus();
+            }
         } else {
-            latestStatus =
-                    jobFlowRunService
-                            .getOne(
-                                    new QueryWrapper<JobFlowRun>()
-                                            .lambda()
-                                            .select(JobFlowRun::getStatus)
-                                            .eq(JobFlowRun::getFlowId, dependentItem.getFlowId())
-                                            .ge(
-                                                    nonNull(dependentItem.getStartTime()),
-                                                    JobFlowRun::getCreateTime,
-                                                    dependentItem.getStartTime())
-                                            .le(
-                                                    nonNull(dependentItem.getEndTime()),
-                                                    JobFlowRun::getCreateTime,
-                                                    dependentItem.getEndTime())
-                                            .orderByDesc(JobFlowRun::getId)
-                                            .last("limit 1"))
-                            .getStatus();
+            JobFlowRun jobFlowRun =
+                    jobFlowRunService.getOne(
+                            new QueryWrapper<JobFlowRun>()
+                                    .lambda()
+                                    .select(JobFlowRun::getStatus)
+                                    .eq(JobFlowRun::getFlowId, dependentItem.getFlowId())
+                                    .ge(
+                                            nonNull(dependentItem.getStartTime()),
+                                            JobFlowRun::getCreateTime,
+                                            dependentItem.getStartTime())
+                                    .le(
+                                            nonNull(dependentItem.getEndTime()),
+                                            JobFlowRun::getCreateTime,
+                                            dependentItem.getEndTime())
+                                    .orderByDesc(JobFlowRun::getId)
+                                    .last("limit 1"));
+            if (jobFlowRun != null) {
+                latestStatus = jobFlowRun.getStatus();
+            }
         }
 
         return dependentItem.getStatuses().contains(latestStatus);

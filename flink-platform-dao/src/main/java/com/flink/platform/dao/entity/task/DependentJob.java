@@ -1,15 +1,14 @@
 package com.flink.platform.dao.entity.task;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.flink.platform.common.enums.ExecutionStatus;
+import com.flink.platform.common.enums.TimeRange;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 import java.util.List;
-
-import static com.flink.platform.common.util.DateUtil.GLOBAL_DATE_TIME_FORMAT;
 
 /** dependent job. */
 @Data
@@ -32,23 +31,43 @@ public class DependentJob extends BaseJob {
 
         private List<ExecutionStatus> statuses;
 
-        @JsonFormat(pattern = GLOBAL_DATE_TIME_FORMAT, timezone = "GMT+8")
-        private LocalDateTime[] timeRange;
+        private TimeRange timeRange;
 
+        private Integer lastN;
+
+        @JsonIgnore private LocalDateTime[] timeArr;
+
+        @JsonIgnore
         public LocalDateTime getStartTime() {
-            if (timeRange == null || timeRange.length != 2) {
+            LocalDateTime[] timeArr = getTimeArr();
+            if (timeArr == null) {
                 return null;
             }
 
-            return timeRange[0];
+            return timeArr[0];
         }
 
+        @JsonIgnore
         public LocalDateTime getEndTime() {
-            if (timeRange == null || timeRange.length != 2) {
+            LocalDateTime[] timeArr = getTimeArr();
+            if (timeArr == null) {
                 return null;
             }
 
-            return timeRange[1];
+            return timeArr[1];
+        }
+
+        private LocalDateTime[] getTimeArr() {
+            if (timeArr != null) {
+                return timeArr;
+            }
+
+            if (timeRange == null) {
+                return null;
+            }
+
+            timeArr = timeRange.getCalculator().apply(lastN);
+            return timeArr;
         }
     }
 
