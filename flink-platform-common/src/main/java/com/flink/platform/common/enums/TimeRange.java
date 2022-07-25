@@ -9,6 +9,7 @@ import java.time.LocalTime;
 import java.time.temporal.TemporalAdjusters;
 import java.util.function.Function;
 
+/** time range. */
 @Getter
 public enum TimeRange {
     LAST_N_HOUR(
@@ -76,6 +77,7 @@ public enum TimeRange {
         this.calculator = calculator;
     }
 
+    /** time granularity. */
     public enum TimeGranularity {
         HOUR,
         DAY,
