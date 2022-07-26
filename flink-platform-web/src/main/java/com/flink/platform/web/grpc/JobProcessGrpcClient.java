@@ -7,6 +7,7 @@ import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import lombok.extern.slf4j.Slf4j;
 import net.devh.boot.grpc.client.inject.GrpcClient;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PreDestroy;
@@ -32,7 +33,10 @@ public class JobProcessGrpcClient {
     private final Object lock = new Object();
 
     public JobGrpcServiceBlockingStub grpcClient(Worker worker) {
-        if (worker == null || Constant.HOST_IP.equals(worker.getIp())) {
+        if (worker == null
+                || StringUtils.isEmpty(worker.getIp())
+                || Constant.LOCALHOST_IP.equals(worker.getIp())
+                || Constant.HOST_IP.equals(worker.getIp())) {
             return localGrpcStub;
         }
 
