@@ -38,6 +38,7 @@ public class AppConfiguration implements WebMvcConfigurer {
                         "/user/**",
                         "/worker/**",
                         "/datasource/**",
-                        "/catalog/**");
+                        "/catalog/**",
+                        "/dashboard/**");
     }
 }

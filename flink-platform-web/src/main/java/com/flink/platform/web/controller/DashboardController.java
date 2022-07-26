@@ -1,14 +1,17 @@
 package com.flink.platform.web.controller;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.flink.platform.common.constants.Constant;
 import com.flink.platform.dao.entity.JobFlowRun;
 import com.flink.platform.dao.entity.JobRunInfo;
+import com.flink.platform.dao.entity.User;
 import com.flink.platform.dao.service.JobFlowRunService;
 import com.flink.platform.dao.service.JobRunInfoService;
 import com.flink.platform.web.entity.response.ResultInfo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestAttribute;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -30,6 +33,7 @@ public class DashboardController {
 
     @GetMapping(value = "/jobRunStatusCount")
     public ResultInfo<List<Map<String, Object>>> jobRunStatusCount(
+            @RequestAttribute(value = Constant.SESSION_USER) User loginUser,
             @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
                     @RequestParam(name = "startTime", required = false)
                     LocalDateTime startTime,
@@ -45,12 +49,14 @@ public class DashboardController {
                                         nonNull(startTime) && nonNull(endTime),
                                         "create_time",
                                         startTime,
-                                        endTime));
+                                        endTime)
+                                .eq("user_id", loginUser.getId()));
         return ResultInfo.success(maps);
     }
 
     @GetMapping(value = "/jobFlowRunStatusCount")
     public ResultInfo<List<Map<String, Object>>> jobFlowRunStatusCount(
+            @RequestAttribute(value = Constant.SESSION_USER) User loginUser,
             @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
                     @RequestParam(name = "startTime", required = false)
                     LocalDateTime startTime,
@@ -66,7 +72,8 @@ public class DashboardController {
                                         nonNull(startTime) && nonNull(endTime),
                                         "create_time",
                                         startTime,
-                                        endTime));
+                                        endTime)
+                                .eq("user_id", loginUser.getId()));
         return ResultInfo.success(maps);
     }
 }
