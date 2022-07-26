@@ -86,10 +86,6 @@ public class AttrsController {
     @GetMapping(value = "/routeUrls")
     public ResultInfo<List<Worker>> routeUrls() {
         List<Worker> routingUrls = new ArrayList<>();
-        Worker worker = new Worker();
-        worker.setId(0L);
-        worker.setName("unlimited");
-        routingUrls.add(worker);
         List<Worker> list =
                 workerService.list(
                         new QueryWrapper<Worker>().lambda().eq(Worker::getStatus, ACTIVE));
