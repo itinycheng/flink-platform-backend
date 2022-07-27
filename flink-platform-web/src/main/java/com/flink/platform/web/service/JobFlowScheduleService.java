@@ -45,6 +45,7 @@ public class JobFlowScheduleService {
                         (o1, o2) -> ObjectUtils.compare(o2.getPriority(), o1.getPriority()));
     }
 
+    /** TODO: condition wait/notify. */
     @Scheduled(fixedDelay = 2000)
     public void scheduleJobFlow() {
         // TODO: activeCount is an approximate value.

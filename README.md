@@ -3,11 +3,13 @@
 > This project is a job scheduling framework with center less structure, easy to scale up.
 > We can customize the workflow DAG and schedule it.
 
+[preview video](https://user-images.githubusercontent.com/14097070/181010270-af6209f5-3c77-4743-bda0-672469524e7e.mov)
+
+## Overview
+
 1. [Quick Start](docs/startup.md)
 2. [Configuration Details](docs/configuration.md)
 3. [Architecture Design](docs/architecture.md)
-
-## Overview
 
 ![arch](docs/img/arch_overview.png)
 
