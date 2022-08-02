@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+		 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+		 xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<parent>
+		<artifactId>flink-sql-submit</artifactId>
+		<groupId>com.flink.platform</groupId>
+		<version>0.0.1</version>
+	</parent>
+	<modelVersion>4.0.0</modelVersion>
+
+	<artifactId>flink-sql-submit-1.15</artifactId>
+	<name>flink-sql-submit-1.15</name>
+	<packaging>jar</packaging>
+
+	<properties>
+		<flink.version>1.15.1</flink.version>
+		<maven.compiler.source>8</maven.compiler.source>
+		<maven.compiler.target>8</maven.compiler.target>
+	</properties>
+
+	<dependencies>
+		<dependency>
+			<groupId>org.yaml</groupId>
+			<artifactId>snakeyaml</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>com.flink.platform</groupId>
+			<artifactId>flink-platform-udf</artifactId>
+			<version>${project.version}</version>
+		</dependency>
+		<!-- flink -->
+		<dependency>
+			<groupId>org.apache.flink</groupId>
+			<artifactId>flink-table-planner_2.12</artifactId>
+			<version>${flink.version}</version>
+			<scope>${flink.scope}</scope>
+		</dependency>
+	</dependencies>
+
+	<build>
+		<finalName>flink-sql-submit-1.15</finalName>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-shade-plugin</artifactId>
+				<configuration>
+					<relocations>
+						<relocation>
+							<pattern>org.yaml</pattern>
+							<shadedPattern>com.flink.platform.shaded.org.yaml</shadedPattern>
+						</relocation>
+						<relocation>
+							<pattern>lombok</pattern>
+							<shadedPattern>com.flink.platform.shaded.lombok</shadedPattern>
+						</relocation>
+						<relocation>
+							<pattern>org.apache.commons</pattern>
+							<shadedPattern>com.flink.platform.shaded.org.apache.commons
+							</shadedPattern>
+						</relocation>
+						<relocation>
+							<pattern>com.fasterxml.jackson</pattern>
+							<shadedPattern>com.flink.platform.shaded.com.fasterxml.jackson
+							</shadedPattern>
+						</relocation>
+					</relocations>
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
+</project>

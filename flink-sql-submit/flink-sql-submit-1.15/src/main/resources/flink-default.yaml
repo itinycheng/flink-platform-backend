@@ -1,0 +1,28 @@
+streaming:
+  parallelism.default: 1
+  pipeline.max-parallelism: 4096
+  pipeline.object-reuse: true
+  pipeline.auto-watermark-interval: 20000
+  pipeline.time-characteristic: EventTime
+  restart-strategy: failure-rate
+  restart-strategy.failure-rate.delay: 10s
+  restart-strategy.failure-rate.failure-rate-interval: 5min
+  restart-strategy.failure-rate.max-failures-per-interval: 3
+  state.backend: rocksdb # hashmap
+  state.checkpoint-storage: filesystem
+  state.checkpoints.dir: hdfs:///flink/checkpoints
+  state.savepoints.dir: hdfs:///flink/savepoints
+  state.backend.incremental: true
+  state.checkpoints.num-retained: 2
+  execution.checkpointing.mode: EXACTLY_ONCE # AT_LEAST_ONCE
+  execution.checkpointing.interval: 5min
+  execution.checkpointing.min-pause: 2min
+  execution.checkpointing.tolerable-failed-checkpoints: 0
+
+batch:
+  parallelism.default: 1
+  pipeline.max-parallelism: 4096
+  pipeline.object-reuse: true
+  table.exec.resource.default-parallelism: 1
+  table.exec.hive.infer-source-parallelism: true
+  table.exec.hive.infer-source-parallelism.max: 100
