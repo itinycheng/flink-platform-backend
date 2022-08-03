@@ -69,6 +69,12 @@ flink:
     jar-file: hdfs:///flink/jars/job_jar/flink-platform-core.jar
     class-name: com.flink.platform.core.Sql113Application
     lib-dirs: hdfs:///flink/jars/flink_1.13.2/lib/
+  sql115:
+    version: 1.15.1
+    command-path: /data0/app/flink-1.15.1/bin/flink
+    jar-file: hdfs:///flink/jars/job_jar/flink-sql-submit-1.15.jar
+    class-name: com.flink.platform.sql.submit.Sql115Application
+    lib-dirs: hdfs:///flink/jars/flink_1.15.1/lib/
 
 hadoop:
   username: admin

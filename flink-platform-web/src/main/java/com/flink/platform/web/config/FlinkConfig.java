@@ -33,4 +33,10 @@ public class FlinkConfig {
     public FlinkConfig createFlinkConfig113() {
         return new FlinkConfig();
     }
+
+    @Bean("flink115")
+    @ConfigurationProperties(prefix = "flink.sql115")
+    public FlinkConfig createFlinkConfig115() {
+        return new FlinkConfig();
+    }
 }
