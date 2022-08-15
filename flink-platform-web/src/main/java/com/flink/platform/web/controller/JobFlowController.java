@@ -111,8 +111,8 @@ public class JobFlowController {
         return ResultInfo.success(jobFlow);
     }
 
-    @GetMapping(value = "/delete/{flowId}")
-    public ResultInfo<Long> delete(
+    @GetMapping(value = "/purge/{flowId}")
+    public ResultInfo<Long> purge(
             @RequestAttribute(value = Constant.SESSION_USER) User loginUser,
             @PathVariable long flowId) {
         JobFlow jobFlow = jobFlowService.getById(flowId);
@@ -142,8 +142,14 @@ public class JobFlowController {
                 new QueryWrapper<JobFlow>()
                         .lambda()
                         .eq(JobFlow::getUserId, loginUser.getId())
-                        .eq(nonNull(status), JobFlow::getStatus, status)
                         .like(nonNull(name), JobFlow::getName, name);
+
+        if (status != null) {
+            queryWrapper.eq(JobFlow::getStatus, status);
+        } else {
+            queryWrapper.ne(JobFlow::getStatus, JobFlowStatus.DELETE);
+        }
+
         if ("-id".equals(sort)) {
             queryWrapper.orderByDesc(JobFlow::getId);
         }
