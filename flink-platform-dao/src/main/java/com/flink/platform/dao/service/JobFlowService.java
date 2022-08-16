@@ -3,6 +3,7 @@ package com.flink.platform.dao.service;
 import com.baomidou.dynamic.datasource.annotation.DS;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.flink.platform.common.model.JobVertex;
 import com.flink.platform.dao.entity.JobFlow;
 import com.flink.platform.dao.entity.JobFlowDag;
 import com.flink.platform.dao.entity.JobFlowRun;
@@ -48,10 +49,19 @@ public class JobFlowService extends ServiceImpl<JobFlowMapper, JobFlow> {
         return true;
     }
 
-    public boolean containsStreamingJob(JobFlowDag jobFlowDag) {
-        return jobFlowDag.getVertices().stream()
-                .map(jobVertex -> jobInfoService.getById(jobVertex.getJobId()))
-                .anyMatch(jobInfo -> jobInfo.getExecMode() == STREAMING);
+    public boolean allStreamingJobs(JobFlowDag jobFlowDag) {
+        List<Long> jobIds =
+                jobFlowDag.getVertices().stream().map(JobVertex::getJobId).collect(toList());
+
+        return jobInfoService
+                .list(
+                        new QueryWrapper<JobInfo>()
+                                .lambda()
+                                .select(JobInfo::getExecMode)
+                                .in(JobInfo::getId, jobIds))
+                .stream()
+                .distinct()
+                .allMatch(jobInfo -> jobInfo.getExecMode() == STREAMING);
     }
 
     @Transactional(rollbackFor = Exception.class)

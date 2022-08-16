@@ -17,7 +17,7 @@ public enum ResponseStatus {
     USER_NAME_PASSWD_ERROR(10013, "Username or password error"),
     NOT_RUNNABLE_STATUS(10014, "not runnable status"),
     NO_CRONTAB_SET(10015, "no crontab set"),
-    UNABLE_SCHEDULE_STREAMING_JOB(10016, "unable to schedule streaming job"),
+    UNABLE_SCHEDULE_STREAMING_JOB_FLOW(10016, "unable to schedule streaming job flow for now"),
     FILE_NOT_FOUND(10017, "file not found"),
     EXIST_UNFINISHED_PROCESS(10018, "There is an unfinished job or flow"),
     DATASOURCE_NOT_FOUND(10019, "Datasource not found");

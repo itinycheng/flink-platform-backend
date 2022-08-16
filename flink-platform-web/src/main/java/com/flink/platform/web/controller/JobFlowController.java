@@ -42,7 +42,7 @@ import static com.flink.platform.common.enums.ResponseStatus.EXIST_UNFINISHED_PR
 import static com.flink.platform.common.enums.ResponseStatus.NOT_RUNNABLE_STATUS;
 import static com.flink.platform.common.enums.ResponseStatus.NO_CRONTAB_SET;
 import static com.flink.platform.common.enums.ResponseStatus.SERVICE_ERROR;
-import static com.flink.platform.common.enums.ResponseStatus.UNABLE_SCHEDULE_STREAMING_JOB;
+import static com.flink.platform.common.enums.ResponseStatus.UNABLE_SCHEDULE_STREAMING_JOB_FLOW;
 import static com.flink.platform.common.enums.ResponseStatus.USER_HAVE_NO_PERMISSION;
 import static com.flink.platform.web.entity.response.ResultInfo.failure;
 import static java.util.Objects.nonNull;
@@ -199,8 +199,10 @@ public class JobFlowController {
         }
 
         JobFlowDag flow = jobFlow.getFlow();
-        if (flow == null || jobFlowService.containsStreamingJob(flow)) {
-            return failure(UNABLE_SCHEDULE_STREAMING_JOB);
+        if (flow == null
+                || CollectionUtils.isEmpty(flow.getVertices())
+                || jobFlowService.allStreamingJobs(flow)) {
+            return failure(UNABLE_SCHEDULE_STREAMING_JOB_FLOW);
         }
 
         jobFlowQuartzService.scheduleJob(jobFlow);
