@@ -7,6 +7,7 @@ import com.flink.platform.common.model.JobVertex;
 import com.flink.platform.dao.entity.JobInfo;
 import com.flink.platform.dao.entity.JobRunInfo;
 import com.flink.platform.dao.entity.Worker;
+import com.flink.platform.dao.entity.task.FlinkJob;
 import com.flink.platform.dao.service.JobInfoService;
 import com.flink.platform.dao.service.JobRunInfoService;
 import com.flink.platform.grpc.JobStatusReply;
@@ -127,7 +128,8 @@ public class JobExecuteThread implements Callable<JobResponse> {
             return new JobResponse(jobId, jobRunId, status);
         } catch (Exception e) {
             log.error("Submit job and wait for complete failed.", e);
-            updateJobRunInfo(jobRunInfo, new StatusInfo(ERROR, null, System.currentTimeMillis()));
+            updateJobRunIfNeeded(
+                    jobRunInfo, new StatusInfo(ERROR, null, System.currentTimeMillis()));
             return new JobResponse(jobId, jobRunId, ERROR);
         }
     }
@@ -171,7 +173,12 @@ public class JobExecuteThread implements Callable<JobResponse> {
                     if (jobRunInfo.getCreateTime() == null) {
                         jobRunInfo.setCreateTime(LocalDateTime.now());
                     }
-                    statusInfo = correctStreamJobStatus(statusInfo, jobRunInfo.getCreateTime());
+
+                    // Interim solution: finite data streams can also use streaming mode.
+                    FlinkJob flinkJob = jobRunInfo.getConfig().unwrap(FlinkJob.class);
+                    if (flinkJob != null && !flinkJob.isWaitForTermination()) {
+                        statusInfo = correctStreamJobStatus(statusInfo, jobRunInfo.getCreateTime());
+                    }
                 }
 
                 if (statusInfo != null) {
@@ -180,7 +187,7 @@ public class JobExecuteThread implements Callable<JobResponse> {
                             jobRunInfo.getJobId(),
                             jobRunInfo.getName(),
                             statusInfo.getStatus());
-                    updateJobRunInfo(jobRunInfo, statusInfo);
+                    updateJobRunIfNeeded(jobRunInfo, statusInfo);
                     if (statusInfo.getStatus().isTerminalState()) {
                         return statusInfo;
                     }
@@ -214,7 +221,7 @@ public class JobExecuteThread implements Callable<JobResponse> {
         return statusInfo;
     }
 
-    private void updateJobRunInfo(JobRunInfo jobRunInfo, StatusInfo statusInfo) {
+    private void updateJobRunIfNeeded(JobRunInfo jobRunInfo, StatusInfo statusInfo) {
         try {
             if (jobRunInfo == null || jobRunInfo.getId() == null) {
                 return;
