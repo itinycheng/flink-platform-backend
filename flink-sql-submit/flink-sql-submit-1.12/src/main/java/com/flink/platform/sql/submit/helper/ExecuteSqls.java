@@ -1,4 +1,4 @@
-package com.flink.platform.core.helper;
+package com.flink.platform.sql.submit.helper;
 
 import org.apache.flink.table.api.StatementSet;
 import org.apache.flink.table.api.TableEnvironment;
