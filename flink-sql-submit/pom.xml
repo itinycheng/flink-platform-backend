@@ -13,9 +13,56 @@
 	<name>flink-sql-submit</name>
 	<packaging>pom</packaging>
 
+	<properties>
+		<flink.version>unknown</flink.version>
+		<flink.scope>provided</flink.scope>
+		<scala.binary.version>2.11</scala.binary.version>
+	</properties>
+
 	<modules>
 		<module>flink-sql-submit-1.15</module>
 		<module>flink-sql-submit-1.12</module>
+		<module>flink-sql-submit-base</module>
 	</modules>
+
+	<build>
+		<finalName>${project.artifactId}</finalName>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+			</plugin>
+		</plugins>
+		<pluginManagement>
+			<plugins>
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-shade-plugin</artifactId>
+					<configuration>
+						<relocations>
+							<relocation>
+								<pattern>org.yaml</pattern>
+								<shadedPattern>com.flink.platform.shaded.org.yaml</shadedPattern>
+							</relocation>
+							<relocation>
+								<pattern>lombok</pattern>
+								<shadedPattern>com.flink.platform.shaded.lombok</shadedPattern>
+							</relocation>
+							<relocation>
+								<pattern>org.apache.commons</pattern>
+								<shadedPattern>com.flink.platform.shaded.org.apache.commons
+								</shadedPattern>
+							</relocation>
+							<relocation>
+								<pattern>com.fasterxml.jackson</pattern>
+								<shadedPattern>com.flink.platform.shaded.com.fasterxml.jackson
+								</shadedPattern>
+							</relocation>
+						</relocations>
+					</configuration>
+				</plugin>
+			</plugins>
+		</pluginManagement>
+	</build>
 
 </project>

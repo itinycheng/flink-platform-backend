@@ -1,4 +1,4 @@
-package com.flink.platform.core;
+package com.flink.platform.sql.submit;
 
 import org.apache.flink.table.api.TableEnvironment;
 
@@ -8,12 +8,12 @@ import com.flink.platform.common.job.Function;
 import com.flink.platform.common.job.Sql;
 import com.flink.platform.common.job.SqlContext;
 import com.flink.platform.common.util.JsonUtil;
-import com.flink.platform.core.common.ConfigLoader;
-import com.flink.platform.core.helper.Catalogs;
-import com.flink.platform.core.helper.Configurations;
-import com.flink.platform.core.helper.ExecuteSqls;
-import com.flink.platform.core.helper.ExecutionEnvs;
-import com.flink.platform.core.helper.Functions;
+import com.flink.platform.sql.submit.base.common.ConfigLoader;
+import com.flink.platform.sql.submit.helper.Catalogs;
+import com.flink.platform.sql.submit.helper.Configurations;
+import com.flink.platform.sql.submit.helper.ExecuteSqls;
+import com.flink.platform.sql.submit.helper.ExecutionEnvs;
+import com.flink.platform.sql.submit.helper.Functions;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;

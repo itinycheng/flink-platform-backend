@@ -1,7 +1,7 @@
-package com.flink.platform.core;
+package com.flink.platform.sql.submit.base;
 
 import com.flink.platform.common.enums.ExecutionMode;
-import com.flink.platform.core.common.ConfigLoader;
+import com.flink.platform.sql.submit.base.common.ConfigLoader;
 import org.junit.Test;
 
 import java.util.HashMap;
