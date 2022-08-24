@@ -1,4 +1,4 @@
-package com.flink.platform.sql.submit.common;
+package com.flink.platform.sql.submit.base;
 
 import com.flink.platform.common.enums.ExecutionMode;
 import com.flink.platform.common.exception.FlinkJobGenException;

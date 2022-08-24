@@ -8,7 +8,7 @@ import com.flink.platform.common.job.Function;
 import com.flink.platform.common.job.Sql;
 import com.flink.platform.common.job.SqlContext;
 import com.flink.platform.common.util.JsonUtil;
-import com.flink.platform.sql.submit.base.common.ConfigLoader;
+import com.flink.platform.sql.submit.base.ConfigLoader;
 import com.flink.platform.sql.submit.helper.Catalogs;
 import com.flink.platform.sql.submit.helper.Configurations;
 import com.flink.platform.sql.submit.helper.ExecuteSqls;
