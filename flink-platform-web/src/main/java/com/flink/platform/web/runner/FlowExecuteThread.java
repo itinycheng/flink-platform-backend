@@ -4,7 +4,6 @@ import com.flink.platform.common.enums.ExecutionStatus;
 import com.flink.platform.common.model.JobVertex;
 import com.flink.platform.dao.entity.JobFlowDag;
 import com.flink.platform.dao.entity.JobFlowRun;
-import com.flink.platform.dao.entity.alert.AlertConfig;
 import com.flink.platform.dao.service.JobFlowRunService;
 import com.flink.platform.web.common.SpringContext;
 import com.flink.platform.web.config.WorkerConfig;
@@ -12,10 +11,8 @@ import com.flink.platform.web.service.AlertSendingService;
 import com.flink.platform.web.util.JobFlowDagHelper;
 import com.flink.platform.web.util.ThreadUtil;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.collections4.CollectionUtils;
 
 import java.time.LocalDateTime;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
@@ -88,23 +85,8 @@ public class FlowExecuteThread implements Runnable {
             jobFlowRunService.updateById(newJobFlowRun);
 
             // send notification.
-            sendNotification();
+            alertSendingService.sendAlert(jobFlowRun);
         }
-    }
-
-    public void sendNotification() {
-        List<AlertConfig> alerts = jobFlowRun.getAlerts();
-        if (CollectionUtils.isEmpty(alerts)) {
-            return;
-        }
-
-        ExecutionStatus finalStatus = jobFlowRun.getStatus();
-        alerts.stream()
-                .filter(
-                        alert ->
-                                CollectionUtils.isEmpty(alert.getStatuses())
-                                        || alert.getStatuses().contains(finalStatus))
-                .forEach(alert -> alertSendingService.sendAlert(alert.getAlertId(), jobFlowRun));
     }
 
     private synchronized void execVertex(JobVertex jobVertex, JobFlowDag flow) {
