@@ -1,17 +1,22 @@
 package com.flink.platform.web.service;
 
+import com.flink.platform.common.enums.ExecutionStatus;
 import com.flink.platform.common.util.JsonUtil;
 import com.flink.platform.dao.entity.AlertInfo;
 import com.flink.platform.dao.entity.JobFlowRun;
+import com.flink.platform.dao.entity.alert.AlertConfig;
 import com.flink.platform.dao.entity.alert.FeiShuAlert;
 import com.flink.platform.dao.service.AlertService;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
+
+import java.util.List;
 
 /** Alert sending service. */
 @Slf4j
@@ -21,6 +26,21 @@ public class AlertSendingService {
     @Autowired private AlertService alertService;
 
     @Autowired private RestTemplate restTemplate;
+
+    public void sendAlert(JobFlowRun jobFlowRun) {
+        List<AlertConfig> alerts = jobFlowRun.getAlerts();
+        if (CollectionUtils.isEmpty(alerts)) {
+            return;
+        }
+
+        ExecutionStatus finalStatus = jobFlowRun.getStatus();
+        alerts.stream()
+                .filter(
+                        alert ->
+                                CollectionUtils.isEmpty(alert.getStatuses())
+                                        || alert.getStatuses().contains(finalStatus))
+                .forEach(alert -> sendAlert(alert.getAlertId(), jobFlowRun));
+    }
 
     public boolean sendAlert(Long alertId, JobFlowRun jobFlowRun) {
         AlertInfo alertInfo = alertService.getById(alertId);

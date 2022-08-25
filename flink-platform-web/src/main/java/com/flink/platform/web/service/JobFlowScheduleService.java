@@ -3,6 +3,7 @@ package com.flink.platform.web.service;
 import com.flink.platform.dao.entity.JobFlowDag;
 import com.flink.platform.dao.entity.JobFlowRun;
 import com.flink.platform.dao.service.JobFlowRunService;
+import com.flink.platform.web.config.AppRunner;
 import com.flink.platform.web.config.WorkerConfig;
 import com.flink.platform.web.runner.FlowExecuteThread;
 import com.flink.platform.web.util.ThreadUtil;
@@ -28,14 +29,20 @@ public class JobFlowScheduleService {
 
     private final JobFlowRunService jobFlowRunService;
 
+    private final AlertSendingService alertSendingService;
+
     private final ThreadPoolExecutor flowExecService;
 
     private final PriorityBlockingQueue<JobFlowRun> inFlightFlows;
 
     @Autowired
-    public JobFlowScheduleService(WorkerConfig workerConfig, JobFlowRunService jobFlowRunService) {
+    public JobFlowScheduleService(
+            WorkerConfig workerConfig,
+            JobFlowRunService jobFlowRunService,
+            AlertSendingService alertSendingService) {
         this.workerConfig = workerConfig;
         this.jobFlowRunService = jobFlowRunService;
+        this.alertSendingService = alertSendingService;
         this.flowExecService =
                 ThreadUtil.newFixedThreadExecutor(
                         "FlowExecThread", workerConfig.getFlowExecThreads());
@@ -45,19 +52,23 @@ public class JobFlowScheduleService {
                         (o1, o2) -> ObjectUtils.compare(o2.getPriority(), o1.getPriority()));
     }
 
-    /** TODO: condition wait/notify. */
-    @Scheduled(fixedDelay = 2000)
+    @Scheduled(fixedDelay = 1000)
     public void scheduleJobFlow() {
-        // TODO: activeCount is an approximate value.
-        if (flowExecService.getActiveCount() > workerConfig.getFlowExecThreads()) {
-            return;
-        }
-
-        while (!inFlightFlows.isEmpty()) {
-            JobFlowRun jobFlowRun = inFlightFlows.poll();
-            if (jobFlowRun != null) {
-                flowExecService.execute(new FlowExecuteThread(jobFlowRun, workerConfig));
+        while (AppRunner.isRunning()) {
+            // TODO: activeCount is an approximate value.
+            if (flowExecService.getActiveCount() > workerConfig.getFlowExecThreads()) {
+                log.info(
+                        "No enough threads to start a new job flow, active count: {}",
+                        flowExecService.getActiveCount());
+                return;
             }
+
+            JobFlowRun jobFlowRun = inFlightFlows.poll();
+            if (jobFlowRun == null) {
+                return;
+            }
+
+            flowExecService.execute(new FlowExecuteThread(jobFlowRun, workerConfig));
         }
     }
 
@@ -76,13 +87,17 @@ public class JobFlowScheduleService {
             return;
         }
 
-        if (inFlightFlows.size() > 2 * workerConfig.getFlowExecThreads()) {
+        if (inFlightFlows.size() > 10 * workerConfig.getFlowExecThreads()) {
             log.warn("Not have enough resources to execute flow: {}", jobFlowRun);
             JobFlowRun newJobFlowRun = new JobFlowRun();
             newJobFlowRun.setId(jobFlowRun.getId());
             newJobFlowRun.setStatus(FAILURE);
             newJobFlowRun.setEndTime(LocalDateTime.now());
             jobFlowRunService.updateById(newJobFlowRun);
+
+            jobFlowRun.setStatus(FAILURE);
+            jobFlowRun.setEndTime(LocalDateTime.now());
+            alertSendingService.sendAlert(jobFlowRun);
             return;
         }
 
