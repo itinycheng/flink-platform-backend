@@ -9,6 +9,9 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
+import static com.flink.platform.common.util.DateUtil.GLOBAL_DATE_TIME_FORMAT;
+import static com.flink.platform.common.util.DateUtil.GLOBAL_TIMEZONE;
+
 /** User login session. */
 @Data
 @NoArgsConstructor
@@ -24,6 +27,6 @@ public class Session {
 
     private String ip;
 
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
+    @JsonFormat(pattern = GLOBAL_DATE_TIME_FORMAT, timezone = GLOBAL_TIMEZONE)
     private LocalDateTime lastLoginTime;
 }
