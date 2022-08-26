@@ -30,6 +30,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
+import static com.flink.platform.common.util.DateUtil.GLOBAL_DATE_TIME_FORMAT;
 import static java.util.Objects.nonNull;
 import static java.util.stream.Collectors.toList;
 
@@ -57,10 +58,10 @@ public class JobRunController {
             @RequestParam(name = "jobId", required = false) Long jobId,
             @RequestParam(name = "status", required = false) ExecutionStatus status,
             @RequestParam(name = "name", required = false) String name,
-            @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+            @DateTimeFormat(pattern = GLOBAL_DATE_TIME_FORMAT)
                     @RequestParam(name = "startTime", required = false)
                     LocalDateTime startTime,
-            @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+            @DateTimeFormat(pattern = GLOBAL_DATE_TIME_FORMAT)
                     @RequestParam(name = "endTime", required = false)
                     LocalDateTime endTime,
             @RequestParam(name = "sort", required = false) String sort) {

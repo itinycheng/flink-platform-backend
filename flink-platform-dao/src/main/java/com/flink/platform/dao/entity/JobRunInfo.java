@@ -18,6 +18,9 @@ import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.Map;
 
+import static com.flink.platform.common.util.DateUtil.GLOBAL_DATE_TIME_FORMAT;
+import static com.flink.platform.common.util.DateUtil.GLOBAL_TIMEZONE;
+
 /** Job run info. */
 @Data
 @NoArgsConstructor
@@ -62,11 +65,13 @@ public class JobRunInfo implements Serializable {
     private String backInfo;
 
     /** submit time. */
+    @JsonFormat(pattern = GLOBAL_DATE_TIME_FORMAT, timezone = GLOBAL_TIMEZONE)
     private LocalDateTime submitTime;
 
     /** stop time. */
+    @JsonFormat(pattern = GLOBAL_DATE_TIME_FORMAT, timezone = GLOBAL_TIMEZONE)
     private LocalDateTime stopTime;
 
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
+    @JsonFormat(pattern = GLOBAL_DATE_TIME_FORMAT, timezone = GLOBAL_TIMEZONE)
     private LocalDateTime createTime;
 }

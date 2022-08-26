@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.time.LocalDateTime;
 
+import static com.flink.platform.common.util.DateUtil.GLOBAL_DATE_TIME_FORMAT;
 import static java.util.Objects.nonNull;
 
 /** crud job flow. */
@@ -43,10 +44,10 @@ public class JobFlowRunController {
             @RequestParam(name = "size", required = false, defaultValue = "20") Integer size,
             @RequestParam(name = "name", required = false) String name,
             @RequestParam(name = "status", required = false) ExecutionStatus status,
-            @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+            @DateTimeFormat(pattern = GLOBAL_DATE_TIME_FORMAT)
                     @RequestParam(name = "startTime", required = false)
                     LocalDateTime startTime,
-            @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+            @DateTimeFormat(pattern = GLOBAL_DATE_TIME_FORMAT)
                     @RequestParam(name = "endTime", required = false)
                     LocalDateTime endTime,
             @RequestParam(name = "sort", required = false) String sort) {

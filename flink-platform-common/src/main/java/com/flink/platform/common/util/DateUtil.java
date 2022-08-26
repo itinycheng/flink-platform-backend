@@ -8,6 +8,7 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.util.Map;
+import java.util.TimeZone;
 import java.util.concurrent.ConcurrentHashMap;
 
 /** date utils. */
@@ -15,7 +16,9 @@ public class DateUtil {
 
     public static final String GLOBAL_DATE_TIME_FORMAT = "yyyy-MM-dd HH:mm:ss";
 
-    public static final ZoneId DEFAULT_ZONE_ID = ZoneId.systemDefault();
+    public static final String GLOBAL_TIMEZONE = "Asia/Shanghai";
+
+    public static final ZoneId DEFAULT_ZONE_ID = TimeZone.getTimeZone(GLOBAL_TIMEZONE).toZoneId();
 
     public static final long MILLIS_PER_MINUTE = DateUtils.MILLIS_PER_MINUTE;
 
@@ -41,6 +44,6 @@ public class DateUtil {
                         new DateTimeFormatterBuilder()
                                 .appendPattern(s)
                                 .toFormatter()
-                                .withZone(ZoneId.of("+8")));
+                                .withZone(DEFAULT_ZONE_ID));
     }
 }

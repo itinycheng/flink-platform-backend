@@ -13,6 +13,9 @@ import lombok.Setter;
 
 import java.time.LocalDateTime;
 
+import static com.flink.platform.common.util.DateUtil.GLOBAL_DATE_TIME_FORMAT;
+import static com.flink.platform.common.util.DateUtil.GLOBAL_TIMEZONE;
+
 /** Worker instance. */
 @Data
 @NoArgsConstructor
@@ -38,10 +41,10 @@ public class Worker {
     private Long heartbeat;
 
     @Setter(AccessLevel.NONE)
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
+    @JsonFormat(pattern = GLOBAL_DATE_TIME_FORMAT, timezone = GLOBAL_TIMEZONE)
     private LocalDateTime updateTime;
 
     @Setter(AccessLevel.NONE)
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
+    @JsonFormat(pattern = GLOBAL_DATE_TIME_FORMAT, timezone = GLOBAL_TIMEZONE)
     private LocalDateTime createTime;
 }

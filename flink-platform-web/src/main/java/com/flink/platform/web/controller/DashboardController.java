@@ -20,6 +20,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
+import static com.flink.platform.common.util.DateUtil.GLOBAL_DATE_TIME_FORMAT;
 import static java.util.Objects.nonNull;
 
 /** Dashboard statistics. */
@@ -34,10 +35,10 @@ public class DashboardController {
     @GetMapping(value = "/jobRunStatusCount")
     public ResultInfo<List<Map<String, Object>>> jobRunStatusCount(
             @RequestAttribute(value = Constant.SESSION_USER) User loginUser,
-            @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+            @DateTimeFormat(pattern = GLOBAL_DATE_TIME_FORMAT)
                     @RequestParam(name = "startTime", required = false)
                     LocalDateTime startTime,
-            @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+            @DateTimeFormat(pattern = GLOBAL_DATE_TIME_FORMAT)
                     @RequestParam(name = "endTime", required = false)
                     LocalDateTime endTime) {
         List<Map<String, Object>> maps =
@@ -57,10 +58,10 @@ public class DashboardController {
     @GetMapping(value = "/jobFlowRunStatusCount")
     public ResultInfo<List<Map<String, Object>>> jobFlowRunStatusCount(
             @RequestAttribute(value = Constant.SESSION_USER) User loginUser,
-            @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+            @DateTimeFormat(pattern = GLOBAL_DATE_TIME_FORMAT)
                     @RequestParam(name = "startTime", required = false)
                     LocalDateTime startTime,
-            @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+            @DateTimeFormat(pattern = GLOBAL_DATE_TIME_FORMAT)
                     @RequestParam(name = "endTime", required = false)
                     LocalDateTime endTime) {
         List<Map<String, Object>> maps =

@@ -16,6 +16,9 @@ import lombok.Setter;
 
 import java.time.LocalDateTime;
 
+import static com.flink.platform.common.util.DateUtil.GLOBAL_DATE_TIME_FORMAT;
+import static com.flink.platform.common.util.DateUtil.GLOBAL_TIMEZONE;
+
 /** Datasource entity. */
 @Data
 @NoArgsConstructor
@@ -44,11 +47,11 @@ public class Datasource {
 
     /** create time. */
     @Setter(AccessLevel.NONE)
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
+    @JsonFormat(pattern = GLOBAL_DATE_TIME_FORMAT, timezone = GLOBAL_TIMEZONE)
     private LocalDateTime createTime;
 
     /** update time. */
     @Setter(AccessLevel.NONE)
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
+    @JsonFormat(pattern = GLOBAL_DATE_TIME_FORMAT, timezone = GLOBAL_TIMEZONE)
     private LocalDateTime updateTime;
 }
