@@ -95,6 +95,7 @@ public class ReactiveController {
 
     @PostMapping(value = "/execJob")
     public ResultInfo<?> execJob(@RequestBody ReactiveRequest reactiveRequest) {
+        String execId = generateExecId();
         try {
             String routeUrl = workerApplyService.chooseWorker(reactiveRequest.getRouteUrl());
             if (HttpUtil.isRemoteUrl(routeUrl)) {
@@ -103,11 +104,11 @@ public class ReactiveController {
             }
 
             if (SQL.equals(reactiveRequest.getType().getClassification())) {
-                return execSql(reactiveRequest);
+                return execSql(execId, reactiveRequest);
             }
 
             if (reactiveRequest.getType().equals(JobType.FLINK_SQL)) {
-                return execFlink(reactiveRequest);
+                return execFlink(execId, reactiveRequest);
             }
 
             throw new RuntimeException("unsupported job type: " + reactiveRequest.getType());
@@ -115,12 +116,13 @@ public class ReactiveController {
             StringWriter writer = new StringWriter();
             e.printStackTrace(new PrintWriter(writer, true));
             ReactiveDataVo reactiveDataVo =
-                    new ReactiveDataVo(new String[] {"exception"}, null, writer.toString());
+                    new ReactiveDataVo(execId, new String[] {"exception"}, null, writer.toString());
             return success(reactiveDataVo);
         }
     }
 
-    private ResultInfo<?> execFlink(ReactiveRequest reactiveRequest) throws Exception {
+    private ResultInfo<?> execFlink(String execId, ReactiveRequest reactiveRequest)
+            throws Exception {
         FlinkJob flinkJob = reactiveRequest.getConfig().unwrap(FlinkJob.class);
         if (flinkJob == null) {
             return failure(ERROR_PARAMETER);
@@ -131,9 +133,8 @@ public class ReactiveController {
             return failure(ERROR_PARAMETER, errorMsg);
         }
 
-        String execId = UUID.randomUUID().toString().replace("-", "");
         reactiveRequest.setId(0L);
-        reactiveRequest.setName("reactive-" + execId);
+        reactiveRequest.setName(execId);
 
         ReactiveExecVo reactiveExecVo =
                 reactiveService.execFlink(
@@ -141,7 +142,8 @@ public class ReactiveController {
         return success(reactiveExecVo);
     }
 
-    private ResultInfo<ReactiveDataVo> execSql(ReactiveRequest reactiveRequest) throws Exception {
+    private ResultInfo<ReactiveDataVo> execSql(String execId, ReactiveRequest reactiveRequest)
+            throws Exception {
         SqlJob sqlJob = reactiveRequest.getConfig().unwrap(SqlJob.class);
         if (sqlJob == null) {
             return failure(ERROR_PARAMETER);
@@ -158,7 +160,11 @@ public class ReactiveController {
         }
 
         ReactiveDataVo reactiveDataVo =
-                reactiveService.execSql(reactiveRequest.getJobInfo(), datasource);
+                reactiveService.execSql(execId, reactiveRequest.getJobInfo(), datasource);
         return success(reactiveDataVo);
+    }
+
+    private String generateExecId() {
+        return "reactive-" + UUID.randomUUID().toString().replace("-", "");
     }
 }

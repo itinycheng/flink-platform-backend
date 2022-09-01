@@ -7,5 +7,8 @@ import lombok.Data;
 @Data
 @AllArgsConstructor
 public class ReactiveVo {
-    boolean sync;
+
+    protected final boolean sync;
+
+    protected final String execId;
 }
