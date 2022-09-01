@@ -14,8 +14,8 @@ public class ReactiveDataVo extends ReactiveVo {
 
     private final String exception;
 
-    public ReactiveDataVo(String[] meta, List<Object[]> data, String exception) {
-        super(true);
+    public ReactiveDataVo(String execId, String[] meta, List<Object[]> data, String exception) {
+        super(true, execId);
         this.meta = meta;
         this.data = data;
         this.exception = exception;

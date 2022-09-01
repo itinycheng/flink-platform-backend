@@ -101,7 +101,8 @@ public class ReactiveService {
         return new ReactiveExecVo(execId);
     }
 
-    public ReactiveDataVo execSql(JobInfo jobInfo, Datasource datasource) throws Exception {
+    public ReactiveDataVo execSql(String execId, JobInfo jobInfo, Datasource datasource)
+            throws Exception {
         List<Sql> sqls = SqlUtil.convertToSqls(jobInfo.getSubject());
         if (sqls.size() != 1) {
             throw new RuntimeException("Only one sql can be executed at a time");
@@ -138,7 +139,7 @@ public class ReactiveService {
                 dataList.add(new Object[] {false});
             }
 
-            return new ReactiveDataVo(columnNames, dataList, null);
+            return new ReactiveDataVo(execId, columnNames, dataList, null);
         }
     }
 
