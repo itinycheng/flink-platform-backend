@@ -1,18 +1,15 @@
 package com.flink.platform.web.monitor;
 
 import com.flink.platform.common.enums.DeployMode;
-import com.flink.platform.common.enums.ExecutionStatus;
-import com.flink.platform.common.exception.JobStatusScrapeException;
 import com.flink.platform.common.util.JsonUtil;
 import com.flink.platform.grpc.JobStatusReply;
 import com.flink.platform.grpc.JobStatusRequest;
 import com.flink.platform.web.command.JobCallback;
 import com.flink.platform.web.external.YarnClientService;
+import com.flink.platform.web.util.YarnHelper;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.yarn.api.records.ApplicationReport;
-import org.apache.hadoop.yarn.api.records.FinalApplicationStatus;
-import org.apache.hadoop.yarn.api.records.YarnApplicationState;
 import org.apache.hadoop.yarn.exceptions.ApplicationNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
@@ -54,7 +51,7 @@ public class YarnStatusFetcher implements StatusFetcher {
             ApplicationReport applicationReport =
                     yarnClientService.getApplicationReport(jobCallback.getAppId());
             return newJobStatusReply(
-                    getStatus(applicationReport).getCode(),
+                    YarnHelper.getStatus(applicationReport).getCode(),
                     applicationReport.getStartTime(),
                     applicationReport.getFinishTime());
         } catch (ApplicationNotFoundException e) {
@@ -75,38 +72,5 @@ public class YarnStatusFetcher implements StatusFetcher {
                 .setStartTime(startTime)
                 .setEndTime(endTime)
                 .build();
-    }
-
-    private ExecutionStatus getStatus(ApplicationReport applicationReport) {
-        FinalApplicationStatus finalStatus = applicationReport.getFinalApplicationStatus();
-        switch (finalStatus) {
-            case UNDEFINED:
-                return getNonFinalStatus(applicationReport);
-            case FAILED:
-                return ExecutionStatus.FAILURE;
-            case KILLED:
-                return ExecutionStatus.KILLED;
-            case SUCCEEDED:
-                return ExecutionStatus.SUCCESS;
-            case ENDED:
-                return ExecutionStatus.ABNORMAL;
-            default:
-                throw new JobStatusScrapeException("Unrecognized final status: " + finalStatus);
-        }
-    }
-
-    private ExecutionStatus getNonFinalStatus(ApplicationReport applicationReport) {
-        YarnApplicationState yarnState = applicationReport.getYarnApplicationState();
-        switch (yarnState) {
-            case NEW:
-            case NEW_SAVING:
-            case SUBMITTED:
-            case ACCEPTED:
-                return ExecutionStatus.SUBMITTED;
-            case RUNNING:
-                return ExecutionStatus.RUNNING;
-            default:
-                throw new JobStatusScrapeException("Unrecognized nonFinal status: " + yarnState);
-        }
     }
 }

@@ -18,8 +18,17 @@ public class JobCallback {
     /** hadoop application id. */
     private String appId;
 
+    private String trackingUrl;
+
     /** callback log. */
     private String message;
 
     @JsonIgnore private ExecutionStatus status;
+
+    public JobCallback(String jobId, String appId, String message, ExecutionStatus status) {
+        this.jobId = jobId;
+        this.appId = appId;
+        this.message = message;
+        this.status = status;
+    }
 }
