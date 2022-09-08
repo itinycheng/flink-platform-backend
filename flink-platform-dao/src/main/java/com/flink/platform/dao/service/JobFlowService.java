@@ -32,21 +32,29 @@ public class JobFlowService extends ServiceImpl<JobFlowMapper, JobFlow> {
     @Autowired private JobRunInfoService jobRunInfoService;
 
     @Transactional(rollbackFor = Exception.class)
-    public boolean deleteAllById(long flowId) {
+    public void deleteAllById(long flowId, long userId) {
         List<JobInfo> jobInfoList =
                 jobInfoService.list(
-                        new QueryWrapper<JobInfo>().lambda().eq(JobInfo::getFlowId, flowId));
+                        new QueryWrapper<JobInfo>()
+                                .lambda()
+                                .eq(JobInfo::getFlowId, flowId)
+                                .eq(JobInfo::getUserId, userId));
         if (CollectionUtils.isNotEmpty(jobInfoList)) {
             List<Long> jobIds = jobInfoList.stream().map(JobInfo::getId).collect(toList());
             jobRunInfoService.remove(
                     new QueryWrapper<JobRunInfo>().lambda().in(JobRunInfo::getJobId, jobIds));
-            jobInfoService.remove(
-                    new QueryWrapper<JobInfo>().lambda().eq(JobInfo::getFlowId, flowId));
+            jobInfoService.remove(new QueryWrapper<JobInfo>().lambda().in(JobInfo::getId, jobIds));
         }
         jobFlowRunService.remove(
-                new QueryWrapper<JobFlowRun>().lambda().eq(JobFlowRun::getFlowId, flowId));
-        removeById(flowId);
-        return true;
+                new QueryWrapper<JobFlowRun>()
+                        .lambda()
+                        .eq(JobFlowRun::getFlowId, flowId)
+                        .eq(JobFlowRun::getUserId, userId));
+        remove(
+                new QueryWrapper<JobFlow>()
+                        .lambda()
+                        .eq(JobFlow::getId, flowId)
+                        .eq(JobFlow::getUserId, userId));
     }
 
     public boolean allStreamingJobs(JobFlowDag jobFlowDag) {

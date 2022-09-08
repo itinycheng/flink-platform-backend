@@ -124,7 +124,7 @@ public class JobFlowController {
             return ResultInfo.failure(USER_HAVE_NO_PERMISSION);
         }
 
-        jobFlowService.deleteAllById(flowId);
+        jobFlowService.deleteAllById(flowId, loginUser.getId());
         return ResultInfo.success(flowId);
     }
 
