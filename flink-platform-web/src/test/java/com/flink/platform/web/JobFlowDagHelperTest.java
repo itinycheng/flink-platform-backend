@@ -163,7 +163,6 @@ public class JobFlowDagHelperTest {
         System.out.println(executableVertices);
     }
 
-    // TODO
     @Test
     public void test10() {
         JobVertex vertex = dag.getVertex(2L);
