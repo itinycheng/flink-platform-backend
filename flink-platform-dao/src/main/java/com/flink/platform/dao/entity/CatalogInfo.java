@@ -3,18 +3,22 @@ package com.flink.platform.dao.entity;
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.flink.platform.common.enums.CatalogType;
-import lombok.AllArgsConstructor;
+import lombok.AccessLevel;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
 
+import static com.flink.platform.common.util.DateUtil.GLOBAL_DATE_TIME_FORMAT;
+import static com.flink.platform.common.util.DateUtil.GLOBAL_TIMEZONE;
+
 /** Job catalog info. */
 @Data
-@AllArgsConstructor
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = false)
 @TableName("t_catalog_info")
@@ -38,20 +42,24 @@ public class CatalogInfo implements Serializable {
     private Long userId;
 
     /** default database. */
-    private String defaultDatabase;
+    @Deprecated private String defaultDatabase;
 
     /** config dir path. */
-    private String configPath;
+    @Deprecated private String configPath;
 
     /** config properties. */
-    private String configs;
+    @Deprecated private String configs;
 
     /** catalog create sql. */
     private String createSql;
 
     /** create time. */
+    @Setter(AccessLevel.NONE)
+    @JsonFormat(pattern = GLOBAL_DATE_TIME_FORMAT, timezone = GLOBAL_TIMEZONE)
     private LocalDateTime createTime;
 
     /** update time. */
+    @Setter(AccessLevel.NONE)
+    @JsonFormat(pattern = GLOBAL_DATE_TIME_FORMAT, timezone = GLOBAL_TIMEZONE)
     private LocalDateTime updateTime;
 }
