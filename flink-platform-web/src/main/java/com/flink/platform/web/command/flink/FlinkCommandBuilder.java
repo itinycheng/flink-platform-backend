@@ -2,7 +2,7 @@ package com.flink.platform.web.command.flink;
 
 import com.flink.platform.common.enums.DeployMode;
 import com.flink.platform.common.enums.JobType;
-import com.flink.platform.common.exception.JobCommandGenException;
+import com.flink.platform.common.exception.CommandUnableGenException;
 import com.flink.platform.dao.entity.JobInfo;
 import com.flink.platform.dao.entity.task.FlinkJob;
 import com.flink.platform.dao.service.ResourceService;
@@ -99,7 +99,7 @@ public abstract class FlinkCommandBuilder implements CommandBuilder {
                 command.setMainClass(flinkConfig.getClassName());
                 break;
             default:
-                throw new JobCommandGenException("unsupported job type");
+                throw new CommandUnableGenException("unsupported job type");
         }
         return command;
     }
@@ -154,7 +154,7 @@ public abstract class FlinkCommandBuilder implements CommandBuilder {
         try {
             hdfsService.copyFileToLocalIfChanged(new Path(hdfsFile), new Path(localFile));
         } catch (Exception e) {
-            throw new JobCommandGenException(
+            throw new RuntimeException(
                     String.format("Copy %s from hdfs to local disk failed", hdfsFile), e);
         }
     }

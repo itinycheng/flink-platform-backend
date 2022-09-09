@@ -1,7 +1,7 @@
 package com.flink.platform.web.service;
 
 import com.flink.platform.common.enums.DbType;
-import com.flink.platform.common.exception.JobCommandGenException;
+import com.flink.platform.common.exception.UnrecoverableException;
 import com.flink.platform.common.job.Sql;
 import com.flink.platform.common.util.SqlUtil;
 import com.flink.platform.dao.entity.Datasource;
@@ -69,7 +69,7 @@ public class ReactiveService {
                         .findFirst()
                         .orElseThrow(
                                 () ->
-                                        new JobCommandGenException(
+                                        new UnrecoverableException(
                                                 "No available job command builder"))
                         .buildCommand(null, jobInfo)
                         .toCommandString();

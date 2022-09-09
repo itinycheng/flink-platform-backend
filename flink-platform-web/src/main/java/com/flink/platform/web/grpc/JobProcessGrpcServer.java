@@ -1,5 +1,6 @@
 package com.flink.platform.web.grpc;
 
+import com.flink.platform.common.exception.UnrecoverableException;
 import com.flink.platform.dao.entity.JobRunInfo;
 import com.flink.platform.grpc.JobGrpcServiceGrpc;
 import com.flink.platform.grpc.JobStatusReply;
@@ -8,6 +9,7 @@ import com.flink.platform.grpc.ProcessJobReply;
 import com.flink.platform.grpc.ProcessJobRequest;
 import com.flink.platform.web.service.ProcessJobService;
 import com.flink.platform.web.service.ProcessJobStatusService;
+import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 import lombok.extern.slf4j.Slf4j;
 import net.devh.boot.grpc.server.service.GrpcService;
@@ -33,7 +35,8 @@ public class JobProcessGrpcServer extends JobGrpcServiceGrpc.JobGrpcServiceImplB
             responseObserver.onNext(reply);
         } catch (Exception e) {
             log.error("process job via grpc failed", e);
-            responseObserver.onError(e);
+            responseObserver.onError(
+                    getStatus(e).withCause(e).withDescription(e.getMessage()).asRuntimeException());
         }
         responseObserver.onCompleted();
     }
@@ -46,8 +49,13 @@ public class JobProcessGrpcServer extends JobGrpcServiceGrpc.JobGrpcServiceImplB
             responseObserver.onNext(reply);
         } catch (Exception e) {
             log.error("process job via grpc failed", e);
-            responseObserver.onError(e);
+            responseObserver.onError(
+                    getStatus(e).withCause(e).withDescription(e.getMessage()).asRuntimeException());
         }
         responseObserver.onCompleted();
+    }
+
+    private Status getStatus(Exception exception) {
+        return exception instanceof UnrecoverableException ? Status.UNAVAILABLE : Status.INTERNAL;
     }
 }

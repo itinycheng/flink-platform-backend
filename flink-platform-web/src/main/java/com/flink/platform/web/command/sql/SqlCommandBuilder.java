@@ -1,7 +1,7 @@
 package com.flink.platform.web.command.sql;
 
 import com.flink.platform.common.enums.JobType;
-import com.flink.platform.common.exception.JobCommandGenException;
+import com.flink.platform.common.exception.CommandUnableGenException;
 import com.flink.platform.common.job.Sql;
 import com.flink.platform.dao.entity.JobInfo;
 import com.flink.platform.dao.entity.task.SqlJob;
@@ -30,7 +30,7 @@ public class SqlCommandBuilder implements CommandBuilder {
     public JobCommand buildCommand(Long flowRunId, JobInfo jobInfo) {
         SqlJob sqlJob = jobInfo.getConfig().unwrap(SqlJob.class);
         if (sqlJob == null) {
-            throw new JobCommandGenException("Invalid job config.");
+            throw new CommandUnableGenException("Invalid job config.");
         }
 
         List<String> sqlList = new ArrayList<>();
@@ -39,7 +39,7 @@ public class SqlCommandBuilder implements CommandBuilder {
         }
 
         if (sqlList.size() == 0) {
-            throw new JobCommandGenException(
+            throw new CommandUnableGenException(
                     String.format(
                             "No available sql or parsing failed, subject: %s",
                             jobInfo.getSubject()));

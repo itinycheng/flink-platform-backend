@@ -21,6 +21,8 @@ import com.flink.platform.web.grpc.JobProcessGrpcClient;
 import com.flink.platform.web.monitor.StatusInfo;
 import com.flink.platform.web.service.WorkerApplyService;
 import com.flink.platform.web.util.ThreadUtil;
+import io.grpc.Status;
+import io.grpc.StatusRuntimeException;
 import lombok.extern.slf4j.Slf4j;
 
 import java.time.LocalDateTime;
@@ -137,6 +139,7 @@ public class JobExecuteThread implements Callable<JobResponse> {
     /** Send request to process remote job. */
     private JobRunInfo processRemoteJob(JobGrpcServiceBlockingStub stub, long jobId) {
         int retryTimes = 0;
+        Exception exception = null;
         while (retryTimes++ <= errorRetries) {
             try {
                 ProcessJobRequest.Builder request = ProcessJobRequest.newBuilder().setJobId(jobId);
@@ -147,11 +150,21 @@ public class JobExecuteThread implements Callable<JobResponse> {
                 return jobRunInfoService.getById(reply.getJobRunId());
             } catch (Exception e) {
                 log.error("Process job: {} failed.", jobId, e);
+                exception = e;
+                if (e instanceof StatusRuntimeException) {
+                    Status status = ((StatusRuntimeException) e).getStatus();
+                    // break loop.
+                    if (status == Status.UNAVAILABLE) {
+                        break;
+                    }
+                }
+
                 sleep(retryTimes);
             }
         }
 
-        throw new IllegalStateException("Times to submit job exceeded limit: " + errorRetries);
+        throw new IllegalStateException(
+                "Process remote job failed, retryTimes: " + retryTimes, exception);
     }
 
     public StatusInfo updateAndWaitForComplete(
