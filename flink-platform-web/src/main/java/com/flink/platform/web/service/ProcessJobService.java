@@ -4,7 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.flink.platform.common.enums.ExecutionStatus;
 import com.flink.platform.common.enums.JobStatus;
 import com.flink.platform.common.enums.JobType;
-import com.flink.platform.common.exception.JobCommandGenException;
+import com.flink.platform.common.exception.UnrecoverableException;
 import com.flink.platform.common.util.JsonUtil;
 import com.flink.platform.dao.entity.JobInfo;
 import com.flink.platform.dao.entity.JobRunInfo;
@@ -69,7 +69,7 @@ public class ProcessJobService {
                                     .eq(JobInfo::getId, jobId)
                                     .eq(JobInfo::getStatus, JobStatus.ONLINE));
             if (jobInfo == null) {
-                throw new JobCommandGenException(
+                throw new UnrecoverableException(
                         String.format(
                                 "The job: %s is no longer exists or in delete status.", jobId));
             }
@@ -110,7 +110,7 @@ public class ProcessJobService {
                             .findFirst()
                             .orElseThrow(
                                     () ->
-                                            new JobCommandGenException(
+                                            new UnrecoverableException(
                                                     "No available job command builder"))
                             .buildCommand(flowRunId, jobInfo);
 
@@ -123,7 +123,7 @@ public class ProcessJobService {
                             .findFirst()
                             .orElseThrow(
                                     () ->
-                                            new JobCommandGenException(
+                                            new UnrecoverableException(
                                                     "No available job command executor"))
                             .execCommand(command);
 

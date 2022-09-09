@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.flink.platform.common.enums.ExecutionCondition;
 import com.flink.platform.common.enums.ExecutionStatus;
 import com.flink.platform.common.enums.JobType;
+import com.flink.platform.common.exception.CommandUnableGenException;
 import com.flink.platform.common.model.JobEdge;
 import com.flink.platform.common.model.JobVertex;
 import com.flink.platform.dao.entity.JobFlowDag;
@@ -94,7 +95,8 @@ public class ConditionCommandBuilder implements CommandBuilder {
                                                                             toVertexId));
                     break;
                 default:
-                    throw new RuntimeException("Unsupported execution condition: " + condition);
+                    throw new CommandUnableGenException(
+                            "Unsupported execution condition: " + condition);
             }
 
             return new ConditionCommand(success);

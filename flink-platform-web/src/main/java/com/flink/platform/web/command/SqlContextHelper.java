@@ -1,6 +1,6 @@
 package com.flink.platform.web.command;
 
-import com.flink.platform.common.exception.JobCommandGenException;
+import com.flink.platform.common.exception.CommandUnableGenException;
 import com.flink.platform.common.job.Catalog;
 import com.flink.platform.common.job.Function;
 import com.flink.platform.common.job.Sql;
@@ -90,7 +90,7 @@ public class SqlContextHelper {
     public List<Sql> toSqls(String subject) {
         List<Sql> sqlList = SqlUtil.convertToSqls(subject);
         if (sqlList.size() == 0) {
-            throw new JobCommandGenException(
+            throw new CommandUnableGenException(
                     String.format("no sql found or parsing failed, subject: %s", subject));
         }
         return sqlList;
@@ -107,7 +107,7 @@ public class SqlContextHelper {
                     json);
             return sqlFilePath;
         } catch (Exception e) {
-            throw new JobCommandGenException("serde sql context to local disk failed", e);
+            throw new RuntimeException("serde sql context to local disk failed", e);
         }
     }
 
