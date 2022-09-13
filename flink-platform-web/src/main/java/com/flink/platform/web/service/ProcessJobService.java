@@ -29,6 +29,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
+import static com.flink.platform.common.enums.ExecutionStatus.CREATED;
 import static java.util.stream.Collectors.toMap;
 
 /** Process job service. */
@@ -56,37 +57,48 @@ public class ProcessJobService {
         this.jobCommandExecutors = jobCommandExecutors;
     }
 
-    public JobRunInfo processJob(final long jobId, final Long flowRunId) throws Exception {
+    public JobRunInfo processJob(final long jobRunId) throws Exception {
         JobCommand jobCommand = null;
-        JobInfo jobInfo = null;
+        JobRunInfo jobRunInfo = null;
 
         try {
             // step 1: get job info
-            jobInfo =
+            jobRunInfo =
+                    jobRunInfoService.getOne(
+                            new QueryWrapper<JobRunInfo>()
+                                    .lambda()
+                                    .eq(JobRunInfo::getId, jobRunId)
+                                    .eq(JobRunInfo::getStatus, CREATED));
+            if (jobRunInfo == null) {
+                throw new UnrecoverableException(
+                        String.format("The job run: %s is no longer exists.", jobRunId));
+            }
+
+            JobInfo jobInfo =
                     jobInfoService.getOne(
                             new QueryWrapper<JobInfo>()
                                     .lambda()
-                                    .eq(JobInfo::getId, jobId)
+                                    .eq(JobInfo::getId, jobRunInfo.getJobId())
                                     .eq(JobInfo::getStatus, JobStatus.ONLINE));
             if (jobInfo == null) {
                 throw new UnrecoverableException(
                         String.format(
-                                "The job: %s is no longer exists or in delete status.", jobId));
+                                "The job: %s is no longer exists or in delete status.",
+                                jobRunInfo.getJobId()));
             }
 
             // step 2: replace variables in the sql statement
-            JobInfo finalJobInfo = jobInfo;
             Map<String, Object> variableMap =
                     Arrays.stream(SqlVar.values())
                             .filter(sqlVar -> sqlVar.type == SqlVar.VarType.VARIABLE)
-                            .filter(sqlVar -> finalJobInfo.getSubject().contains(sqlVar.variable))
+                            .filter(sqlVar -> jobInfo.getSubject().contains(sqlVar.variable))
                             .map(
                                     sqlVar ->
                                             Pair.of(
                                                     sqlVar.variable,
-                                                    sqlVar.valueProvider.apply(finalJobInfo)))
+                                                    sqlVar.valueProvider.apply(jobInfo)))
                             .collect(toMap(Pair::getLeft, Pair::getRight));
-            MapUtils.emptyIfNull(finalJobInfo.getVariables())
+            MapUtils.emptyIfNull(jobInfo.getVariables())
                     .forEach(
                             (name, value) -> {
                                 SqlVar sqlVar = SqlVar.matchPrefix(name);
@@ -112,7 +124,7 @@ public class ProcessJobService {
                                     () ->
                                             new UnrecoverableException(
                                                     "No available job command builder"))
-                            .buildCommand(flowRunId, jobInfo);
+                            .buildCommand(jobRunInfo.getFlowRunId(), jobInfo);
 
             // step 4: submit job
             LocalDateTime submitTime = LocalDateTime.now();
@@ -129,33 +141,27 @@ public class ProcessJobService {
 
             // step 5: write job run info to db
             ExecutionStatus executionStatus = callback.getStatus();
-            JobRunInfo jobRunInfo = new JobRunInfo();
-            jobRunInfo.setName(jobInfo.getName() + "-" + System.currentTimeMillis());
-            jobRunInfo.setJobId(jobInfo.getId());
-            jobRunInfo.setFlowRunId(flowRunId);
-            jobRunInfo.setUserId(jobInfo.getUserId());
-            jobRunInfo.setType(jobInfo.getType());
-            jobRunInfo.setVersion(jobInfo.getVersion());
-            jobRunInfo.setDeployMode(jobInfo.getDeployMode());
-            jobRunInfo.setExecMode(jobInfo.getExecMode());
-            jobRunInfo.setRouteUrl(jobInfo.getRouteUrl());
-            jobRunInfo.setConfig(jobInfo.getConfig());
-            jobRunInfo.setSubject(jobInfo.getSubject());
-            jobRunInfo.setStatus(executionStatus);
-            jobRunInfo.setVariables(variableMap);
-            jobRunInfo.setBackInfo(JsonUtil.toJsonString(callback));
-            jobRunInfo.setSubmitTime(submitTime);
+            JobRunInfo newJobRun = new JobRunInfo();
+            newJobRun.setId(jobRunInfo.getId());
+            newJobRun.setConfig(jobInfo.getConfig());
+            newJobRun.setSubject(jobInfo.getSubject());
+            newJobRun.setStatus(executionStatus);
+            newJobRun.setVariables(variableMap);
+            newJobRun.setBackInfo(JsonUtil.toJsonString(callback));
+            newJobRun.setSubmitTime(submitTime);
             if (executionStatus.isTerminalState()) {
-                jobRunInfo.setStopTime(LocalDateTime.now());
+                newJobRun.setStopTime(LocalDateTime.now());
             }
-            jobRunInfoService.save(jobRunInfo);
+            jobRunInfoService.updateById(newJobRun);
 
             // step 6: print job command info
-            log.info("Job: {} submitted, time: {}", jobId, System.currentTimeMillis());
+            log.info("Job run: {} submitted, time: {}", jobRunId, System.currentTimeMillis());
 
             return jobRunInfo;
         } finally {
-            if (jobInfo != null && jobInfo.getType() == JobType.FLINK_SQL && jobCommand != null) {
+            if (jobRunInfo != null
+                    && jobRunInfo.getType() == JobType.FLINK_SQL
+                    && jobCommand != null) {
                 try {
                     FlinkCommand flinkCommand = (FlinkCommand) jobCommand;
                     if (flinkCommand.getMainArgs() != null) {

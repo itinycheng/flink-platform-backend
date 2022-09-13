@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.flink.platform.common.enums.ExecutionStatus;
 import com.flink.platform.common.enums.JobStatus;
 import com.flink.platform.common.model.JobVertex;
+import com.flink.platform.common.util.JsonUtil;
 import com.flink.platform.dao.entity.JobInfo;
 import com.flink.platform.dao.entity.JobRunInfo;
 import com.flink.platform.dao.entity.Worker;
@@ -14,6 +15,7 @@ import com.flink.platform.grpc.JobStatusReply;
 import com.flink.platform.grpc.JobStatusRequest;
 import com.flink.platform.grpc.ProcessJobReply;
 import com.flink.platform.grpc.ProcessJobRequest;
+import com.flink.platform.web.command.JobCallback;
 import com.flink.platform.web.common.SpringContext;
 import com.flink.platform.web.config.AppRunner;
 import com.flink.platform.web.config.WorkerConfig;
@@ -30,12 +32,14 @@ import java.time.temporal.ChronoUnit;
 import java.util.concurrent.Callable;
 
 import static com.flink.platform.common.enums.ExecutionMode.STREAMING;
+import static com.flink.platform.common.enums.ExecutionStatus.CREATED;
 import static com.flink.platform.common.enums.ExecutionStatus.ERROR;
 import static com.flink.platform.common.enums.ExecutionStatus.FAILURE;
 import static com.flink.platform.common.enums.ExecutionStatus.NOT_EXIST;
 import static com.flink.platform.common.enums.ExecutionStatus.RUNNING;
 import static com.flink.platform.common.enums.ExecutionStatus.SUCCESS;
 import static com.flink.platform.grpc.JobGrpcServiceGrpc.JobGrpcServiceBlockingStub;
+import static java.util.Objects.nonNull;
 
 /** Execute job in a separate thread. */
 @Slf4j
@@ -107,7 +111,21 @@ public class JobExecuteThread implements Callable<JobResponse> {
                 jobRunInfo = jobRunInfoService.getById(jobRunId);
                 log.info("Job:{} already submitted, runId = {}.", jobId, jobRunId);
             } else {
-                jobRunInfo = processRemoteJob(stub, jobId);
+                // Create a job run record if needed.
+                jobRunInfo =
+                        jobRunInfoService.getOne(
+                                new QueryWrapper<JobRunInfo>()
+                                        .lambda()
+                                        .eq(JobRunInfo::getJobId, jobId)
+                                        .eq(nonNull(flowRunId), JobRunInfo::getFlowRunId, flowRunId)
+                                        .eq(JobRunInfo::getStatus, CREATED)
+                                        .last("LIMIT 1"));
+                if (jobRunInfo == null) {
+                    jobRunInfo = initJobRunInfo(jobInfo);
+                }
+
+                // Process job run.
+                jobRunInfo = processRemoteJob(stub, jobRunInfo.getId());
             }
 
             if (jobRunInfo == null) {
@@ -131,25 +149,42 @@ public class JobExecuteThread implements Callable<JobResponse> {
         } catch (Exception e) {
             log.error("Submit job and wait for complete failed.", e);
             updateJobRunIfNeeded(
-                    jobRunInfo, new StatusInfo(ERROR, null, System.currentTimeMillis()));
+                    jobRunInfo, new StatusInfo(ERROR, null, System.currentTimeMillis()), e);
             return new JobResponse(jobId, jobRunId, ERROR);
         }
     }
 
+    private JobRunInfo initJobRunInfo(JobInfo jobInfo) {
+        JobRunInfo jobRunInfo = new JobRunInfo();
+        jobRunInfo.setName(jobInfo.getName() + "-" + System.currentTimeMillis());
+        jobRunInfo.setJobId(jobInfo.getId());
+        jobRunInfo.setFlowRunId(flowRunId);
+        jobRunInfo.setUserId(jobInfo.getUserId());
+        jobRunInfo.setType(jobInfo.getType());
+        jobRunInfo.setVersion(jobInfo.getVersion());
+        jobRunInfo.setDeployMode(jobInfo.getDeployMode());
+        jobRunInfo.setExecMode(jobInfo.getExecMode());
+        jobRunInfo.setRouteUrl(jobInfo.getRouteUrl());
+        jobRunInfo.setConfig(jobInfo.getConfig());
+        jobRunInfo.setSubject(jobInfo.getSubject());
+        jobRunInfo.setStatus(CREATED);
+        jobRunInfo.setVariables(jobInfo.getVariables());
+        jobRunInfoService.save(jobRunInfo);
+        return jobRunInfo;
+    }
+
     /** Send request to process remote job. */
-    private JobRunInfo processRemoteJob(JobGrpcServiceBlockingStub stub, long jobId) {
+    private JobRunInfo processRemoteJob(JobGrpcServiceBlockingStub stub, long jobRunId) {
         int retryTimes = 0;
         Exception exception = null;
         while (retryTimes++ <= errorRetries) {
             try {
-                ProcessJobRequest.Builder request = ProcessJobRequest.newBuilder().setJobId(jobId);
-                if (flowRunId != null) {
-                    request.setFlowRunId(flowRunId);
-                }
+                ProcessJobRequest.Builder request =
+                        ProcessJobRequest.newBuilder().setJobRunId(jobRunId);
                 ProcessJobReply reply = stub.processJob(request.build());
                 return jobRunInfoService.getById(reply.getJobRunId());
             } catch (Exception e) {
-                log.error("Process job: {} failed.", jobId, e);
+                log.error("Process job run: {} failed.", jobRunId, e);
                 exception = e;
                 if (e instanceof StatusRuntimeException) {
                     Status status = ((StatusRuntimeException) e).getStatus();
@@ -200,7 +235,7 @@ public class JobExecuteThread implements Callable<JobResponse> {
                             jobRunInfo.getJobId(),
                             jobRunInfo.getName(),
                             statusInfo.getStatus());
-                    updateJobRunIfNeeded(jobRunInfo, statusInfo);
+                    updateJobRunIfNeeded(jobRunInfo, statusInfo, null);
                     if (statusInfo.getStatus().isTerminalState()) {
                         return statusInfo;
                     }
@@ -234,7 +269,8 @@ public class JobExecuteThread implements Callable<JobResponse> {
         return statusInfo;
     }
 
-    private void updateJobRunIfNeeded(JobRunInfo jobRunInfo, StatusInfo statusInfo) {
+    private void updateJobRunIfNeeded(
+            JobRunInfo jobRunInfo, StatusInfo statusInfo, Exception exception) {
         try {
             if (jobRunInfo == null || jobRunInfo.getId() == null) {
                 return;
@@ -254,6 +290,12 @@ public class JobExecuteThread implements Callable<JobResponse> {
                 }
                 newJobRun.setStopTime(endTime);
             }
+            if (exception != null) {
+                newJobRun.setBackInfo(
+                        JsonUtil.toJsonString(
+                                new JobCallback(null, null, exception.getMessage(), null)));
+            }
+
             jobRunInfoService.updateById(newJobRun);
             jobRunInfo.setStatus(statusInfo.getStatus());
         } catch (Exception e) {
