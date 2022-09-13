@@ -18,8 +18,7 @@ service JobGrpcService {
 }
 
 message ProcessJobRequest {
-  int64 jobId = 1;
-  optional int64 flowRunId = 2;
+  int64 jobRunId = 1;
 }
 
 message ProcessJobReply {

@@ -68,7 +68,7 @@ public class JobInfo implements Serializable {
 
     /** variables for `subject`. */
     @TableField(typeHandler = JacksonTypeHandler.class)
-    private Map<String, String> variables;
+    private Map<String, Object> variables;
 
     /** main content to process. */
     private String subject;
