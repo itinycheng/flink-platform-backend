@@ -1,12 +1,16 @@
 package com.flink.platform.web.entity.request;
 
+import com.flink.platform.common.util.DateUtil;
 import com.flink.platform.dao.entity.JobFlow;
 import com.flink.platform.dao.entity.alert.AlertConfig;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.experimental.Delegate;
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.quartz.CronExpression;
 
+import java.util.Date;
 import java.util.List;
 
 /** Job flow request info. */
@@ -16,7 +20,12 @@ public class JobFlowRequest {
     @Getter @Delegate private final JobFlow jobFlow = new JobFlow();
 
     public String validateOnCreate() {
-        return verifyName();
+        String msg = verifyName();
+        if (msg != null) {
+            return msg;
+        }
+
+        return verifyCronExpr();
     }
 
     public String validateOnUpdate() {
@@ -29,6 +38,12 @@ public class JobFlowRequest {
         if (msg != null) {
             return msg;
         }
+
+        msg = verifyCronExpr();
+        if (msg != null) {
+            return msg;
+        }
+
         return verifyFlow();
     }
 
@@ -72,5 +87,23 @@ public class JobFlowRequest {
             }
         }
         return null;
+    }
+
+    public String verifyCronExpr() {
+        try {
+            String cronExpr = getCronExpr();
+            if (StringUtils.isNotBlank(cronExpr)) {
+                CronExpression cronExpression = new CronExpression(cronExpr);
+                Date validTime1 = cronExpression.getNextValidTimeAfter(new Date());
+                Date validTime2 = cronExpression.getNextValidTimeAfter(validTime1);
+                if (validTime2.getTime() - validTime1.getTime() < 5 * DateUtil.MILLIS_PER_MINUTE) {
+                    return "Quartz schedule interval must bigger than 5 minute";
+                }
+            }
+
+            return null;
+        } catch (Exception e) {
+            return "Quartz cron parsing failed";
+        }
     }
 }
