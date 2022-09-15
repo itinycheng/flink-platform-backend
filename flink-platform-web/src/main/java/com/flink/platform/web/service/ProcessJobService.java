@@ -143,7 +143,6 @@ public class ProcessJobService {
             ExecutionStatus executionStatus = callback.getStatus();
             JobRunInfo newJobRun = new JobRunInfo();
             newJobRun.setId(jobRunInfo.getId());
-            newJobRun.setConfig(jobInfo.getConfig());
             newJobRun.setSubject(jobInfo.getSubject());
             newJobRun.setStatus(executionStatus);
             newJobRun.setVariables(variableMap);

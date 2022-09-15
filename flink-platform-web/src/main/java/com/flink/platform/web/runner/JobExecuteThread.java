@@ -189,7 +189,7 @@ public class JobExecuteThread implements Callable<JobResponse> {
                 if (e instanceof StatusRuntimeException) {
                     Status status = ((StatusRuntimeException) e).getStatus();
                     // break loop.
-                    if (status == Status.UNAVAILABLE) {
+                    if (status != null && Status.Code.UNAVAILABLE.equals(status.getCode())) {
                         break;
                     }
                 }
