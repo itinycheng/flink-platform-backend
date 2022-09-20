@@ -9,7 +9,6 @@ import com.flink.platform.common.model.JobEdge;
 import com.flink.platform.common.model.JobVertex;
 import com.flink.platform.dao.entity.JobFlowDag;
 import com.flink.platform.dao.entity.JobFlowRun;
-import com.flink.platform.dao.entity.JobInfo;
 import com.flink.platform.dao.entity.JobRunInfo;
 import com.flink.platform.dao.entity.task.ConditionJob;
 import com.flink.platform.dao.service.JobFlowRunService;
@@ -41,7 +40,7 @@ public class ConditionCommandBuilder implements CommandBuilder {
     }
 
     @Override
-    public JobCommand buildCommand(Long flowRunId, JobInfo jobInfo) {
+    public JobCommand buildCommand(Long flowRunId, JobRunInfo jobRunInfo) {
         if (flowRunId == null) {
             return new ConditionCommand(true);
         }
@@ -49,7 +48,7 @@ public class ConditionCommandBuilder implements CommandBuilder {
         try {
             JobFlowRun jobFlowRun = jobFlowRunService.getById(flowRunId);
             JobFlowDag flow = jobFlowRun.getFlow();
-            JobVertex vertex = flow.getVertex(jobInfo.getId());
+            JobVertex vertex = flow.getVertex(jobRunInfo.getJobId());
             List<Long> jobIds =
                     flow.getPreVertices(vertex).stream().map(JobVertex::getJobId).collect(toList());
 
@@ -65,9 +64,9 @@ public class ConditionCommandBuilder implements CommandBuilder {
                                     .in(JobRunInfo::getJobId, jobIds));
 
             boolean success;
-            Long toVertexId = jobInfo.getId();
+            Long toVertexId = jobRunInfo.getJobId();
             ExecutionCondition condition =
-                    jobInfo.getConfig().unwrap(ConditionJob.class).getCondition();
+                    jobRunInfo.getConfig().unwrap(ConditionJob.class).getCondition();
             switch (condition) {
                 case AND:
                     success =

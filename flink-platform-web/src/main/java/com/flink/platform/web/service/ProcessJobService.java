@@ -2,13 +2,10 @@ package com.flink.platform.web.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.flink.platform.common.enums.ExecutionStatus;
-import com.flink.platform.common.enums.JobStatus;
 import com.flink.platform.common.enums.JobType;
 import com.flink.platform.common.exception.UnrecoverableException;
 import com.flink.platform.common.util.JsonUtil;
-import com.flink.platform.dao.entity.JobInfo;
 import com.flink.platform.dao.entity.JobRunInfo;
-import com.flink.platform.dao.service.JobInfoService;
 import com.flink.platform.dao.service.JobRunInfoService;
 import com.flink.platform.web.command.CommandBuilder;
 import com.flink.platform.web.command.CommandExecutor;
@@ -37,8 +34,6 @@ import static java.util.stream.Collectors.toMap;
 @Service
 public class ProcessJobService {
 
-    private final JobInfoService jobInfoService;
-
     private final JobRunInfoService jobRunInfoService;
 
     private final List<CommandBuilder> jobCommandBuilders;
@@ -47,11 +42,9 @@ public class ProcessJobService {
 
     @Autowired
     public ProcessJobService(
-            JobInfoService jobInfoService,
             JobRunInfoService jobRunInfoService,
             List<CommandBuilder> jobCommandBuilders,
             List<CommandExecutor> jobCommandExecutors) {
-        this.jobInfoService = jobInfoService;
         this.jobRunInfoService = jobRunInfoService;
         this.jobCommandBuilders = jobCommandBuilders;
         this.jobCommandExecutors = jobCommandExecutors;
@@ -74,31 +67,19 @@ public class ProcessJobService {
                         String.format("The job run: %s is no longer exists.", jobRunId));
             }
 
-            JobInfo jobInfo =
-                    jobInfoService.getOne(
-                            new QueryWrapper<JobInfo>()
-                                    .lambda()
-                                    .eq(JobInfo::getId, jobRunInfo.getJobId())
-                                    .eq(JobInfo::getStatus, JobStatus.ONLINE));
-            if (jobInfo == null) {
-                throw new UnrecoverableException(
-                        String.format(
-                                "The job: %s is no longer exists or in delete status.",
-                                jobRunInfo.getJobId()));
-            }
-
             // step 2: replace variables in the sql statement
+            JobRunInfo finalJobRun = jobRunInfo;
             Map<String, Object> variableMap =
                     Arrays.stream(SqlVar.values())
                             .filter(sqlVar -> sqlVar.type == SqlVar.VarType.VARIABLE)
-                            .filter(sqlVar -> jobInfo.getSubject().contains(sqlVar.variable))
+                            .filter(sqlVar -> finalJobRun.getSubject().contains(sqlVar.variable))
                             .map(
                                     sqlVar ->
                                             Pair.of(
                                                     sqlVar.variable,
-                                                    sqlVar.valueProvider.apply(jobInfo)))
+                                                    sqlVar.valueProvider.apply(finalJobRun)))
                             .collect(toMap(Pair::getLeft, Pair::getRight));
-            MapUtils.emptyIfNull(jobInfo.getVariables())
+            MapUtils.emptyIfNull(jobRunInfo.getVariables())
                     .forEach(
                             (name, value) -> {
                                 SqlVar sqlVar = SqlVar.matchPrefix(name);
@@ -106,14 +87,14 @@ public class ProcessJobService {
                             });
             // replace variable with actual value
             for (Map.Entry<String, Object> entry : variableMap.entrySet()) {
-                String originSubject = jobInfo.getSubject();
+                String originSubject = jobRunInfo.getSubject();
                 String distSubject =
                         originSubject.replace(entry.getKey(), entry.getValue().toString());
-                jobInfo.setSubject(distSubject);
+                jobRunInfo.setSubject(distSubject);
             }
 
-            JobType jobType = jobInfo.getType();
-            String version = jobInfo.getVersion();
+            JobType jobType = jobRunInfo.getType();
+            String version = jobRunInfo.getVersion();
 
             // step 3: build job command, create a SqlContext if needed
             jobCommand =
@@ -124,7 +105,7 @@ public class ProcessJobService {
                                     () ->
                                             new UnrecoverableException(
                                                     "No available job command builder"))
-                            .buildCommand(jobRunInfo.getFlowRunId(), jobInfo);
+                            .buildCommand(jobRunInfo.getFlowRunId(), jobRunInfo);
 
             // step 4: submit job
             LocalDateTime submitTime = LocalDateTime.now();
@@ -143,7 +124,7 @@ public class ProcessJobService {
             ExecutionStatus executionStatus = callback.getStatus();
             JobRunInfo newJobRun = new JobRunInfo();
             newJobRun.setId(jobRunInfo.getId());
-            newJobRun.setSubject(jobInfo.getSubject());
+            newJobRun.setSubject(jobRunInfo.getSubject());
             newJobRun.setStatus(executionStatus);
             newJobRun.setVariables(variableMap);
             newJobRun.setBackInfo(JsonUtil.toJsonString(callback));

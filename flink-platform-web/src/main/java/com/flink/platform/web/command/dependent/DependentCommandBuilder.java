@@ -4,7 +4,6 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.flink.platform.common.enums.ExecutionStatus;
 import com.flink.platform.common.enums.JobType;
 import com.flink.platform.dao.entity.JobFlowRun;
-import com.flink.platform.dao.entity.JobInfo;
 import com.flink.platform.dao.entity.JobRunInfo;
 import com.flink.platform.dao.entity.task.DependentJob;
 import com.flink.platform.dao.service.JobFlowRunService;
@@ -34,9 +33,9 @@ public class DependentCommandBuilder implements CommandBuilder {
     }
 
     @Override
-    public JobCommand buildCommand(Long flowRunId, JobInfo jobInfo) {
+    public JobCommand buildCommand(Long flowRunId, JobRunInfo jobRunInfo) {
         try {
-            DependentJob dependentJob = jobInfo.getConfig().unwrap(DependentJob.class);
+            DependentJob dependentJob = jobRunInfo.getConfig().unwrap(DependentJob.class);
             if (CollectionUtils.isEmpty(dependentJob.getDependentItems())) {
                 return new DependentCommand(true);
             }
