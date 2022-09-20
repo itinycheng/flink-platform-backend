@@ -1,7 +1,7 @@
 package com.flink.platform.web.command;
 
 import com.flink.platform.common.enums.JobType;
-import com.flink.platform.dao.entity.JobInfo;
+import com.flink.platform.dao.entity.JobRunInfo;
 
 /** Command builder. */
 public interface CommandBuilder {
@@ -18,9 +18,9 @@ public interface CommandBuilder {
      * build a command from JobInfo.
      *
      * @param flowRunId flow run id
-     * @param jobInfo job info
-     * @return shell command
+     * @param jobRunInfo job run info
+     * @return job command
      * @throws Exception IO exception
      */
-    JobCommand buildCommand(Long flowRunId, JobInfo jobInfo) throws Exception;
+    JobCommand buildCommand(Long flowRunId, JobRunInfo jobRunInfo) throws Exception;
 }

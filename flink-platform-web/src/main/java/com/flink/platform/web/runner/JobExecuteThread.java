@@ -121,7 +121,7 @@ public class JobExecuteThread implements Callable<JobResponse> {
                                         .eq(JobRunInfo::getStatus, CREATED)
                                         .last("LIMIT 1"));
                 if (jobRunInfo == null) {
-                    jobRunInfo = initJobRunInfo(jobInfo);
+                    jobRunInfo = jobRunInfoService.initJobRunInfo(flowRunId, jobInfo);
                 }
 
                 // Process job run.
@@ -152,25 +152,6 @@ public class JobExecuteThread implements Callable<JobResponse> {
                     jobRunInfo, new StatusInfo(ERROR, null, System.currentTimeMillis()), e);
             return new JobResponse(jobId, jobRunId, ERROR);
         }
-    }
-
-    private JobRunInfo initJobRunInfo(JobInfo jobInfo) {
-        JobRunInfo jobRunInfo = new JobRunInfo();
-        jobRunInfo.setName(jobInfo.getName() + "-" + System.currentTimeMillis());
-        jobRunInfo.setJobId(jobInfo.getId());
-        jobRunInfo.setFlowRunId(flowRunId);
-        jobRunInfo.setUserId(jobInfo.getUserId());
-        jobRunInfo.setType(jobInfo.getType());
-        jobRunInfo.setVersion(jobInfo.getVersion());
-        jobRunInfo.setDeployMode(jobInfo.getDeployMode());
-        jobRunInfo.setExecMode(jobInfo.getExecMode());
-        jobRunInfo.setRouteUrl(jobInfo.getRouteUrl());
-        jobRunInfo.setConfig(jobInfo.getConfig());
-        jobRunInfo.setSubject(jobInfo.getSubject());
-        jobRunInfo.setStatus(CREATED);
-        jobRunInfo.setVariables(jobInfo.getVariables());
-        jobRunInfoService.save(jobRunInfo);
-        return jobRunInfo;
     }
 
     /** Send request to process remote job. */

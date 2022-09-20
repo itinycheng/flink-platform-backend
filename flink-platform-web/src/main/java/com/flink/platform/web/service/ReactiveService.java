@@ -6,6 +6,8 @@ import com.flink.platform.common.job.Sql;
 import com.flink.platform.common.util.SqlUtil;
 import com.flink.platform.dao.entity.Datasource;
 import com.flink.platform.dao.entity.JobInfo;
+import com.flink.platform.dao.entity.JobRunInfo;
+import com.flink.platform.dao.service.JobRunInfoService;
 import com.flink.platform.web.command.CommandBuilder;
 import com.flink.platform.web.config.WorkerConfig;
 import com.flink.platform.web.entity.vo.ReactiveDataVo;
@@ -48,18 +50,25 @@ public class ReactiveService {
 
     private final List<CommandBuilder> commandBuilders;
 
+    private final JobRunInfoService jobRunInfoService;
+
     @Autowired
-    public ReactiveService(WorkerConfig workerConfig, List<CommandBuilder> commandBuilders) {
+    public ReactiveService(
+            WorkerConfig workerConfig,
+            List<CommandBuilder> commandBuilders,
+            JobRunInfoService jobRunInfoService) {
         this.workerConfig = workerConfig;
+        this.commandBuilders = commandBuilders;
+        this.jobRunInfoService = jobRunInfoService;
         this.executor =
                 ThreadUtil.newDaemonFixedThreadExecutor(
                         "Reactive-job", workerConfig.getReactiveExecThreads());
         this.cmdOutputBufferMap = new ConcurrentHashMap<>();
-        this.commandBuilders = commandBuilders;
     }
 
     public ReactiveExecVo execFlink(String execId, JobInfo jobInfo, String[] envProps)
             throws Exception {
+        JobRunInfo jobRunInfo = jobRunInfoService.initJobRunInfo(null, jobInfo);
         String command =
                 commandBuilders.stream()
                         .filter(
@@ -71,7 +80,7 @@ public class ReactiveService {
                                 () ->
                                         new UnrecoverableException(
                                                 "No available job command builder"))
-                        .buildCommand(null, jobInfo)
+                        .buildCommand(null, jobRunInfo)
                         .toCommandString();
 
         CompletableFuture.runAsync(

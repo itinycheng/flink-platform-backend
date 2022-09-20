@@ -1,7 +1,7 @@
 package com.flink.platform.web.enums;
 
 import com.flink.platform.common.util.DateUtil;
-import com.flink.platform.dao.entity.JobInfo;
+import com.flink.platform.dao.entity.JobRunInfo;
 import org.codehaus.commons.compiler.CompilerFactoryFactory;
 import org.codehaus.commons.compiler.IScriptEvaluator;
 
@@ -14,7 +14,7 @@ import static com.flink.platform.common.util.FunctionUtil.uncheckedFunction;
 public enum SqlVar {
 
     /** sql variables. */
-    JOB_CODE("${jobCode}", VarType.VARIABLE, (Object obj) -> ((JobInfo) obj).getCode()),
+    JOB_CODE("${jobCode}", VarType.VARIABLE, (Object obj) -> ((JobRunInfo) obj).getJobCode()),
 
     CURRENT_TIMESTAMP(
             "${currentTimestamp}", VarType.VARIABLE, (Object obj) -> System.currentTimeMillis()),

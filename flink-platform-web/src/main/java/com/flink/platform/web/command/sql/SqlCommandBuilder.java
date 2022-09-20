@@ -3,7 +3,7 @@ package com.flink.platform.web.command.sql;
 import com.flink.platform.common.enums.JobType;
 import com.flink.platform.common.exception.CommandUnableGenException;
 import com.flink.platform.common.job.Sql;
-import com.flink.platform.dao.entity.JobInfo;
+import com.flink.platform.dao.entity.JobRunInfo;
 import com.flink.platform.dao.entity.task.SqlJob;
 import com.flink.platform.web.command.CommandBuilder;
 import com.flink.platform.web.command.JobCommand;
@@ -27,14 +27,14 @@ public class SqlCommandBuilder implements CommandBuilder {
     }
 
     @Override
-    public JobCommand buildCommand(Long flowRunId, JobInfo jobInfo) {
-        SqlJob sqlJob = jobInfo.getConfig().unwrap(SqlJob.class);
+    public JobCommand buildCommand(Long flowRunId, JobRunInfo jobRunInfo) {
+        SqlJob sqlJob = jobRunInfo.getConfig().unwrap(SqlJob.class);
         if (sqlJob == null) {
             throw new CommandUnableGenException("Invalid job config.");
         }
 
         List<String> sqlList = new ArrayList<>();
-        for (Sql sql : convertToSqls(jobInfo.getSubject())) {
+        for (Sql sql : convertToSqls(jobRunInfo.getSubject())) {
             sqlList.add(sql.toSqlString());
         }
 
@@ -42,7 +42,7 @@ public class SqlCommandBuilder implements CommandBuilder {
             throw new CommandUnableGenException(
                     String.format(
                             "No available sql or parsing failed, subject: %s",
-                            jobInfo.getSubject()));
+                            jobRunInfo.getSubject()));
         }
 
         return new SqlCommand(sqlJob.getDsId(), sqlList);

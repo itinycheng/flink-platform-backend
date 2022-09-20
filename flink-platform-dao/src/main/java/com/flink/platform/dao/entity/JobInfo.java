@@ -6,7 +6,6 @@ import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.baomidou.mybatisplus.extension.handlers.JacksonTypeHandler;
 import com.fasterxml.jackson.annotation.JsonFormat;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.flink.platform.common.enums.DeployMode;
 import com.flink.platform.common.enums.ExecutionMode;
 import com.flink.platform.common.enums.JobStatus;
@@ -92,10 +91,4 @@ public class JobInfo implements Serializable {
     @Setter(AccessLevel.NONE)
     @JsonFormat(pattern = GLOBAL_DATE_TIME_FORMAT, timezone = GLOBAL_TIMEZONE)
     private LocalDateTime updateTime;
-
-    /** json ignore method. */
-    @JsonIgnore
-    public String getCode() {
-        return "job_" + id;
-    }
 }

@@ -7,7 +7,7 @@ import com.flink.platform.common.job.Sql;
 import com.flink.platform.common.job.SqlContext;
 import com.flink.platform.common.util.JsonUtil;
 import com.flink.platform.common.util.SqlUtil;
-import com.flink.platform.dao.entity.JobInfo;
+import com.flink.platform.dao.entity.JobRunInfo;
 import com.flink.platform.dao.entity.task.FlinkJob;
 import com.flink.platform.dao.service.CatalogInfoService;
 import lombok.extern.slf4j.Slf4j;
@@ -42,20 +42,20 @@ public class SqlContextHelper {
 
     @Resource private CatalogInfoService catalogInfoService;
 
-    public String convertFromAndSaveToFile(JobInfo jobInfo) {
-        SqlContext sqlContext = convertFrom(jobInfo);
+    public String convertFromAndSaveToFile(JobRunInfo jobRun) {
+        SqlContext sqlContext = convertFrom(jobRun);
         long timestamp = System.currentTimeMillis();
         String fileName =
-                String.join(DOT, jobInfo.getCode(), String.valueOf(timestamp), JSON_FILE_SUFFIX);
+                String.join(DOT, jobRun.getJobCode(), String.valueOf(timestamp), JSON_FILE_SUFFIX);
         return saveToFile(fileName, sqlContext);
     }
 
-    public SqlContext convertFrom(JobInfo jobInfo) {
-        FlinkJob flinkJob = jobInfo.getConfig().unwrap(FlinkJob.class);
+    public SqlContext convertFrom(JobRunInfo jobRun) {
+        FlinkJob flinkJob = jobRun.getConfig().unwrap(FlinkJob.class);
         SqlContext sqlContext = new SqlContext();
-        sqlContext.setId(jobInfo.getCode());
-        sqlContext.setSqls(toSqls(jobInfo.getSubject()));
-        sqlContext.setExecMode(jobInfo.getExecMode());
+        sqlContext.setId(jobRun.getJobCode());
+        sqlContext.setSqls(toSqls(jobRun.getSubject()));
+        sqlContext.setExecMode(jobRun.getExecMode());
         sqlContext.setExtJars(flinkJob.getExtJarPaths());
         sqlContext.setConfigs(toConfigs(flinkJob.getConfigs()));
         sqlContext.setCatalogs(toCatalogs(flinkJob.getCatalogs()));

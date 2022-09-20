@@ -3,7 +3,7 @@ package com.flink.platform.web.command.flink;
 import com.flink.platform.common.enums.DeployMode;
 import com.flink.platform.common.enums.JobType;
 import com.flink.platform.common.exception.CommandUnableGenException;
-import com.flink.platform.dao.entity.JobInfo;
+import com.flink.platform.dao.entity.JobRunInfo;
 import com.flink.platform.dao.entity.task.FlinkJob;
 import com.flink.platform.dao.service.ResourceService;
 import com.flink.platform.web.command.CommandBuilder;
@@ -64,11 +64,11 @@ public abstract class FlinkCommandBuilder implements CommandBuilder {
     }
 
     @Override
-    public JobCommand buildCommand(Long flowRunId, JobInfo jobInfo) throws Exception {
-        FlinkJob flinkJob = jobInfo.getConfig().unwrap(FlinkJob.class);
+    public JobCommand buildCommand(Long flowRunId, JobRunInfo jobRunInfo) throws Exception {
+        FlinkJob flinkJob = jobRunInfo.getConfig().unwrap(FlinkJob.class);
         initResources(flinkJob);
         FlinkCommand command = new FlinkCommand();
-        DeployMode deployMode = jobInfo.getDeployMode();
+        DeployMode deployMode = jobRunInfo.getDeployMode();
         String execMode = String.format(EXEC_MODE, deployMode.mode, deployMode.target);
         command.setPrefix(flinkConfig.getCommandPath() + execMode);
         // add configurations
@@ -77,15 +77,16 @@ public abstract class FlinkCommandBuilder implements CommandBuilder {
             configs.putAll(flinkJob.getConfigs());
         }
         // add yarn application name
-        configs.put(YARN_APPLICATION_NAME, createAppName(jobInfo));
+        configs.put(YARN_APPLICATION_NAME, createAppName(jobRunInfo));
         // add lib dirs and user classpaths
         configs.put(YARN_PROVIDED_LIB_DIRS, getMergedLibDirs(flinkJob.getExtJarPaths()));
-        List<URL> classpaths = getOrCreateClasspaths(jobInfo.getCode(), flinkJob.getExtJarPaths());
+        List<URL> classpaths =
+                getOrCreateClasspaths(jobRunInfo.getJobCode(), flinkJob.getExtJarPaths());
         command.setClasspaths(classpaths);
-        switch (jobInfo.getType()) {
+        switch (jobRunInfo.getType()) {
             case FLINK_JAR:
                 String localPathOfMainJar =
-                        getLocalPathOfMainJar(jobInfo.getCode(), jobInfo.getSubject());
+                        getLocalPathOfMainJar(jobRunInfo.getJobCode(), jobRunInfo.getSubject());
                 command.setMainJar(localPathOfMainJar);
                 command.setMainArgs(flinkJob.getMainArgs());
                 command.setMainClass(flinkJob.getMainClass());
@@ -93,7 +94,7 @@ public abstract class FlinkCommandBuilder implements CommandBuilder {
                 break;
             case FLINK_SQL:
                 String localJarPath = getLocalPathOfSqlJarFile();
-                String filePath = sqlContextHelper.convertFromAndSaveToFile(jobInfo);
+                String filePath = sqlContextHelper.convertFromAndSaveToFile(jobRunInfo);
                 command.setMainArgs(filePath);
                 command.setMainJar(localJarPath);
                 command.setMainClass(flinkConfig.getClassName());
@@ -104,9 +105,9 @@ public abstract class FlinkCommandBuilder implements CommandBuilder {
         return command;
     }
 
-    private String createAppName(JobInfo jobInfo) {
-        String jobName = jobInfo.getName().replaceAll("\\s+", "");
-        return String.join("-", jobInfo.getExecMode().name(), jobInfo.getCode(), jobName);
+    private String createAppName(JobRunInfo jobRun) {
+        String jobName = jobRun.getName().replaceAll("\\s+", "");
+        return String.join("-", jobRun.getExecMode().name(), jobRun.getJobCode(), jobName);
     }
 
     private String getLocalPathOfMainJar(String jobCode, String jarPath) {
