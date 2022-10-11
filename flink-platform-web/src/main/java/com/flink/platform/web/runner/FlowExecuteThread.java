@@ -63,7 +63,7 @@ public class FlowExecuteThread implements Runnable {
         flow.getBeginVertices().forEach(jobVertex -> execVertex(jobVertex, flow));
 
         // Wait until all vertices are executed.
-        while (JobFlowDagHelper.hasUnExecutedVertices(flow)) {
+        while (isRunning && JobFlowDagHelper.hasUnExecutedVertices(flow)) {
             ThreadUtil.sleep(5000);
         }
 
