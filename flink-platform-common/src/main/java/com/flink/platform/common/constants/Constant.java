@@ -1,8 +1,6 @@
 package com.flink.platform.common.constants;
 
-import com.flink.platform.common.util.FunctionUtil;
-
-import java.net.InetAddress;
+import com.flink.platform.common.util.OSUtil;
 
 /** constant. */
 public class Constant {
@@ -55,9 +53,11 @@ public class Constant {
 
     public static final String FULL_VERSION = "FULL_VERSION";
 
+    public static final String PID = OSUtil.isWindows() ? "handle" : "pid";
+
     static {
         PATH_SEPARATOR = System.getProperty("path.separator");
         ROOT_DIR = System.getProperty("user.dir");
-        HOST_IP = FunctionUtil.getOrDefault(() -> InetAddress.getLocalHost().getHostAddress(), "");
+        HOST_IP = OSUtil.getHostIp();
     }
 }
