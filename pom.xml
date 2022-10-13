@@ -27,6 +27,7 @@
 		<maven.compiler.target>1.8</maven.compiler.target>
 		<spring.boot.version>2.4.4</spring.boot.version>
 		<guava.version>29.0-jre</guava.version>
+		<oshi.version>6.2.2</oshi.version>
 		<commons-pool2.version>2.9.0</commons-pool2.version>
 		<commons-lang3.version>3.5</commons-lang3.version>
 		<commons-io.version>2.7</commons-io.version>
@@ -73,6 +74,12 @@
 				<groupId>com.google.guava</groupId>
 				<artifactId>guava</artifactId>
 				<version>${guava.version}</version>
+			</dependency>
+			<!-- OS -->
+			<dependency>
+				<groupId>com.github.oshi</groupId>
+				<artifactId>oshi-core</artifactId>
+				<version>${oshi.version}</version>
 			</dependency>
 			<!-- spring -->
 			<dependency>

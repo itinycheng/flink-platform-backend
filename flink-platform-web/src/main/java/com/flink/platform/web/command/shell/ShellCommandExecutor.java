@@ -14,6 +14,7 @@ import javax.annotation.Nonnull;
 
 import static com.flink.platform.common.enums.ExecutionStatus.FAILURE;
 import static com.flink.platform.common.enums.ExecutionStatus.SUCCESS;
+import static com.flink.platform.web.util.CommandCallback.EXIT_CODE_SUCCESS;
 
 /** shell command executor. */
 @Slf4j
@@ -40,6 +41,11 @@ public class ShellCommandExecutor implements CommandExecutor {
                                 shellCommand.getTimeout()));
 
         return new JobCallback(
-                null, null, callback.getMessage(), callback.isSuccess() ? SUCCESS : FAILURE);
+                null,
+                null,
+                callback.getMessage(),
+                callback.isExited() && callback.getExitCode() == EXIT_CODE_SUCCESS
+                        ? SUCCESS
+                        : FAILURE);
     }
 }

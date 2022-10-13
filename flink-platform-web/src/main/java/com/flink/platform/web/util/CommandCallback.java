@@ -9,11 +9,25 @@ import static com.flink.platform.common.constants.Constant.LINE_SEPARATOR;
 @Data
 public class CommandCallback {
 
-    private final boolean success;
+    public static final int EXIT_CODE_SUCCESS = 0;
 
-    private final String stdMessage;
+    public static final int EXIT_CODE_FAILURE = 1;
 
-    private final String errMessage;
+    private final boolean exited;
+
+    private final Integer exitCode;
+
+    private final Integer processId;
+
+    private String stdMessage;
+
+    private String errMessage;
+
+    public CommandCallback(boolean exited, Integer exitCode, Integer processId) {
+        this.exited = exited;
+        this.exitCode = exitCode;
+        this.processId = processId;
+    }
 
     public String getMessage() {
         if (StringUtils.isEmpty(stdMessage) || StringUtils.isEmpty(errMessage)) {

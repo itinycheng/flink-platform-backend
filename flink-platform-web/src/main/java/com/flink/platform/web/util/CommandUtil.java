@@ -1,11 +1,16 @@
 package com.flink.platform.web.util;
 
+import com.flink.platform.common.constants.Constant;
+import com.flink.platform.common.util.OSUtil;
+import com.sun.jna.platform.win32.Kernel32;
 import lombok.extern.slf4j.Slf4j;
+import oshi.jna.platform.windows.WinNT;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.lang.reflect.Field;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -14,6 +19,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
 
 import static com.flink.platform.common.constants.Constant.LINE_SEPARATOR;
+import static com.flink.platform.web.util.CommandCallback.EXIT_CODE_FAILURE;
 import static com.flink.platform.web.util.CommandUtil.CmdOutType.ERR;
 import static com.flink.platform.web.util.CommandUtil.CmdOutType.STD;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -32,7 +38,7 @@ public class CommandUtil {
         List<String> stdList = Collections.synchronizedList(new ArrayList<>());
         List<String> errList = Collections.synchronizedList(new ArrayList<>());
 
-        boolean success =
+        CommandCallback callback =
                 exec(
                         command,
                         envProps,
@@ -54,13 +60,12 @@ public class CommandUtil {
                             }
                         });
 
-        return new CommandCallback(
-                success,
-                String.join(LINE_SEPARATOR, stdList),
-                String.join(LINE_SEPARATOR, errList));
+        callback.setStdMessage(String.join(LINE_SEPARATOR, stdList));
+        callback.setErrMessage(String.join(LINE_SEPARATOR, errList));
+        return callback;
     }
 
-    public static boolean exec(
+    public static CommandCallback exec(
             String command,
             String[] envProps,
             long timeoutMills,
@@ -68,6 +73,7 @@ public class CommandUtil {
             throws IOException, InterruptedException {
         log.info("Exec command: {}, env properties: {}", command, envProps);
         Process process = Runtime.getRuntime().exec(command, envProps);
+        Integer processId = getProcessId(process);
 
         try (InputStream stdStream = process.getInputStream();
                 InputStream errStream = process.getErrorStream()) {
@@ -82,6 +88,7 @@ public class CommandUtil {
             }
 
             boolean status = process.waitFor(timeoutMills, MILLISECONDS);
+            int exitValue = status ? process.exitValue() : EXIT_CODE_FAILURE;
 
             try {
                 stdThread.join();
@@ -90,9 +97,50 @@ public class CommandUtil {
                 log.error("join log collection thread failed", e);
             }
 
-            return status;
+            return new CommandCallback(status, exitValue, processId);
         } finally {
             process.destroy();
+        }
+    }
+
+    public static void forceKill(Integer processId, String[] envProps) {
+        if (processId == null || processId <= 0) {
+            log.warn("kill process failed, pid: {}", processId);
+            return;
+        }
+
+        Process process = null;
+        try {
+            String command = String.format("kill -9 %d", processId);
+            process = Runtime.getRuntime().exec(command, envProps);
+            process.waitFor();
+        } catch (Exception e) {
+            log.error("force kill process {} failed, envs: {}", processId, envProps);
+        } finally {
+            if (process != null) {
+                process.destroy();
+            }
+        }
+    }
+
+    /** Get process id. */
+    public static Integer getProcessId(Process process) {
+        try {
+            Field f = process.getClass().getDeclaredField(Constant.PID);
+            f.setAccessible(true);
+
+            int processId;
+            if (OSUtil.isWindows()) {
+                WinNT.HANDLE handle = (WinNT.HANDLE) f.get(process);
+                processId = Kernel32.INSTANCE.GetProcessId(handle);
+            } else {
+                processId = f.getInt(process);
+            }
+
+            return processId;
+        } catch (Throwable e) {
+            log.error(e.getMessage(), e);
+            return null;
         }
     }
 
