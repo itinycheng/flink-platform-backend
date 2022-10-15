@@ -21,7 +21,11 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.time.LocalDateTime;
 
+import static com.flink.platform.common.enums.ExecutionStatus.KILLED;
+import static com.flink.platform.common.enums.ResponseStatus.FLOW_ALREADY_TERMINATED;
 import static com.flink.platform.common.util.DateUtil.GLOBAL_DATE_TIME_FORMAT;
+import static com.flink.platform.web.entity.response.ResultInfo.failure;
+import static com.flink.platform.web.entity.response.ResultInfo.success;
 import static java.util.Objects.nonNull;
 
 /** crud job flow. */
@@ -34,7 +38,7 @@ public class JobFlowRunController {
     @GetMapping(value = "/get/{flowRunId}")
     public ResultInfo<JobFlowRun> get(@PathVariable long flowRunId) {
         JobFlowRun jobFlowRun = jobFlowRunService.getById(flowRunId);
-        return ResultInfo.success(jobFlowRun);
+        return success(jobFlowRun);
     }
 
     @GetMapping(value = "/page")
@@ -69,6 +73,21 @@ public class JobFlowRunController {
         }
 
         IPage<JobFlowRun> iPage = jobFlowRunService.page(pager, queryWrapper);
-        return ResultInfo.success(iPage);
+        return success(iPage);
+    }
+
+    @GetMapping(value = "/kill/{flowRunId}")
+    public ResultInfo<Long> kill(@PathVariable Long flowRunId) {
+        JobFlowRun jobFlowRun = jobFlowRunService.getById(flowRunId);
+        ExecutionStatus status = jobFlowRun.getStatus();
+        if (status != null && status.isTerminalState()) {
+            return failure(FLOW_ALREADY_TERMINATED);
+        }
+
+        JobFlowRun newFlowRun = new JobFlowRun();
+        newFlowRun.setId(jobFlowRun.getId());
+        newFlowRun.setStatus(KILLED);
+        jobFlowRunService.updateById(newFlowRun);
+        return success(flowRunId);
     }
 }
