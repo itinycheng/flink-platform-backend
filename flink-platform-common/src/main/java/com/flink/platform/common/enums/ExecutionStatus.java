@@ -15,7 +15,9 @@ public enum ExecutionStatus {
     /** Internal status for job run only. */
     ERROR(6, TerminalState.TERMINAL),
     NOT_EXIST(7, TerminalState.TERMINAL),
-    CREATED(8, TerminalState.NON_TERMINAL);
+    CREATED(8, TerminalState.NON_TERMINAL),
+    KILLABLE(9, TerminalState.NON_TERMINAL),
+    ;
 
     private enum TerminalState {
         TERMINAL,

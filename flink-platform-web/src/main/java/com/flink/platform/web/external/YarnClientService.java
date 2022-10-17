@@ -30,6 +30,11 @@ public class YarnClientService {
         return yarnClient.getApplicationReport(applicationId);
     }
 
+    public void killApplication(String applicationName) throws Exception {
+        ApplicationId applicationId = ApplicationId.fromString(applicationName);
+        yarnClient.killApplication(applicationId);
+    }
+
     @PreDestroy
     public void destroy() {
         yarnClient.stop();

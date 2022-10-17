@@ -101,8 +101,6 @@ public class SqlCommandExecutor implements CommandExecutor {
 
         boolean isSucceed = exceptionMsg == null;
         return new JobCallback(
-                null,
-                null,
                 isSucceed
                         ? dataList.toString()
                         : String.join(LINE_SEPARATOR, dataList.toString(), exceptionMsg),
