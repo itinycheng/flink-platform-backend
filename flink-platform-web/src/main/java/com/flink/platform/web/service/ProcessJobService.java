@@ -26,6 +26,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
+import static com.flink.platform.common.constants.Constant.HOST_IP;
 import static com.flink.platform.common.enums.ExecutionStatus.CREATED;
 import static java.util.stream.Collectors.toMap;
 
@@ -129,6 +130,7 @@ public class ProcessJobService {
             newJobRun.setVariables(variableMap);
             newJobRun.setBackInfo(JsonUtil.toJsonString(callback));
             newJobRun.setSubmitTime(submitTime);
+            newJobRun.setHost(HOST_IP);
             if (executionStatus.isTerminalState()) {
                 newJobRun.setStopTime(LocalDateTime.now());
             }

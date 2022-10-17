@@ -389,14 +389,15 @@ CREATE TABLE `t_worker` (
   `id` bigint(11) unsigned NOT NULL AUTO_INCREMENT,
   `name` varchar(64) NOT NULL,
   `desc` varchar(255) DEFAULT NULL,
-  `ip` varchar(64) DEFAULT NULL,
+  `ip` varchar(64) NOT NULL,
   `port` varchar(16) DEFAULT NULL,
   `grpc_port` int(6) DEFAULT NULL,
   `status` varchar(32) DEFAULT NULL,
   `heartbeat` bigint(11) DEFAULT NULL,
   `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   `create_time` datetime DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `ip_idx` (`ip`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COMMENT='worker instance info';
 
 -- ----------------------------

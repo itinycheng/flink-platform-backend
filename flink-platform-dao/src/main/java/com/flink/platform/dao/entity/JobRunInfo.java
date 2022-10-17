@@ -60,6 +60,8 @@ public class JobRunInfo implements Serializable {
     @TableField(typeHandler = JacksonTypeHandler.class)
     private LongArrayList routeUrl;
 
+    private String host;
+
     private ExecutionStatus status;
 
     /** store json data of JobStatistics. */
