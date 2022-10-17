@@ -29,8 +29,6 @@ public class Constant {
 
     public static final String EMPTY = "";
 
-    public static final String AS = "AS";
-
     public static final String SINGLE_QUOTE = "'";
 
     public static final String LINE_SEPARATOR = "\n";
