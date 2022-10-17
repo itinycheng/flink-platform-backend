@@ -13,8 +13,10 @@ import org.springframework.stereotype.Component;
 import javax.annotation.Nonnull;
 
 import static com.flink.platform.common.enums.ExecutionStatus.FAILURE;
+import static com.flink.platform.common.enums.ExecutionStatus.KILLABLE;
 import static com.flink.platform.common.enums.ExecutionStatus.SUCCESS;
 import static com.flink.platform.web.util.CommandCallback.EXIT_CODE_SUCCESS;
+import static com.flink.platform.web.util.CommandUtil.forceKill;
 
 /** shell command executor. */
 @Slf4j
@@ -41,11 +43,20 @@ public class ShellCommandExecutor implements CommandExecutor {
                                 shellCommand.getTimeout()));
 
         return new JobCallback(
-                null,
-                null,
+                callback,
                 callback.getMessage(),
                 callback.isExited() && callback.getExitCode() == EXIT_CODE_SUCCESS
                         ? SUCCESS
-                        : FAILURE);
+                        : (callback.isExited() ? FAILURE : KILLABLE));
+    }
+
+    @Override
+    public void killCommand(long jobRunId, JobCallback callback) {
+        // Kill shell command.
+        CommandCallback cmdCallback = callback.getCmdCallback();
+        Integer processId = cmdCallback != null ? cmdCallback.getProcessId() : null;
+        if (processId != null && processId > 0) {
+            forceKill(processId, null);
+        }
     }
 }

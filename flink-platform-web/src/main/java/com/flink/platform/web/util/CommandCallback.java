@@ -1,5 +1,6 @@
 package com.flink.platform.web.util;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
 import org.apache.commons.lang3.StringUtils;
 
@@ -19,9 +20,9 @@ public class CommandCallback {
 
     private final Integer processId;
 
-    private String stdMessage;
+    @JsonIgnore private String stdMessage;
 
-    private String errMessage;
+    @JsonIgnore private String errMessage;
 
     public CommandCallback(boolean exited, Integer exitCode, Integer processId) {
         this.exited = exited;

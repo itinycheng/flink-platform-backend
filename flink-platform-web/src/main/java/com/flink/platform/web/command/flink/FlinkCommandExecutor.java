@@ -1,6 +1,8 @@
 package com.flink.platform.web.command.flink;
 
 import com.flink.platform.common.enums.ExecutionStatus;
+import com.flink.platform.dao.entity.JobRunInfo;
+import com.flink.platform.dao.service.JobRunInfoService;
 import com.flink.platform.web.command.CommandExecutor;
 import com.flink.platform.web.command.JobCallback;
 import com.flink.platform.web.command.JobCommand;
@@ -26,8 +28,12 @@ import static com.flink.platform.common.constants.Constant.LINE_SEPARATOR;
 import static com.flink.platform.common.constants.JobConstant.APP_ID_PATTERN;
 import static com.flink.platform.common.constants.JobConstant.HADOOP_USER_NAME;
 import static com.flink.platform.common.constants.JobConstant.JOB_ID_PATTERN;
+import static com.flink.platform.common.enums.DeployMode.FLINK_YARN_PER;
 import static com.flink.platform.common.enums.ExecutionStatus.FAILURE;
+import static com.flink.platform.common.enums.ExecutionStatus.KILLABLE;
 import static com.flink.platform.common.enums.ExecutionStatus.SUBMITTED;
+import static com.flink.platform.web.util.CommandCallback.EXIT_CODE_SUCCESS;
+import static com.flink.platform.web.util.CommandUtil.forceKill;
 
 /** Flink command executor. */
 @Slf4j
@@ -41,6 +47,8 @@ public class FlinkCommandExecutor implements CommandExecutor {
 
     @Lazy @Autowired private YarnClientService yarnClientService;
 
+    @Autowired private JobRunInfoService jobRunInfoService;
+
     @Override
     public boolean isSupported(JobCommand jobCommand) {
         return jobCommand instanceof FlinkCommand;
@@ -52,11 +60,16 @@ public class FlinkCommandExecutor implements CommandExecutor {
         CommandCallback callback =
                 CommandUtil.exec(
                         command.toCommandString(),
-                        new String[] {String.format("%s=%s", HADOOP_USER_NAME, hadoopUser)},
+                        buildEnvProps(),
                         workerConfig.getFlinkSubmitTimeoutMills());
 
         String appId = extractApplicationId(callback.getStdMessage());
         String jobId = extractJobId(callback.getStdMessage());
+
+        // call `killCommand` method if execute command failed.
+        if (!callback.getExitCode().equals(EXIT_CODE_SUCCESS)) {
+            return new JobCallback(jobId, appId, null, callback, EMPTY, KILLABLE);
+        }
 
         if (StringUtils.isNotEmpty(appId) && StringUtils.isNotEmpty(jobId)) {
             ExecutionStatus status = SUBMITTED;
@@ -68,12 +81,46 @@ public class FlinkCommandExecutor implements CommandExecutor {
             } catch (Exception e) {
                 log.error("Failed to get ApplicationReport after command executed", e);
             }
-            return new JobCallback(jobId, appId, trackingUrl, EMPTY, status);
+            return new JobCallback(jobId, appId, trackingUrl, callback, EMPTY, status);
         } else {
             String message =
                     String.join(LINE_SEPARATOR, callback.getStdMessage(), callback.getErrMessage());
-            return new JobCallback(jobId, appId, EMPTY, message, FAILURE);
+            return new JobCallback(jobId, appId, EMPTY, callback, message, FAILURE);
         }
+    }
+
+    @Override
+    public void killCommand(long jobRunId, JobCallback jobCallback) {
+        // Kill shell command.
+        CommandCallback cmdCallback = jobCallback.getCmdCallback();
+        Integer processId = cmdCallback != null ? cmdCallback.getProcessId() : null;
+        if (processId != null && processId > 0) {
+            forceKill(processId, buildEnvProps());
+        }
+
+        // kill application.
+        String appId = jobCallback.getAppId();
+        if (StringUtils.isEmpty(appId)) {
+            return;
+        }
+
+        JobRunInfo jobRun = jobRunInfoService.getById(jobRunId);
+        if (FLINK_YARN_PER.equals(jobRun.getDeployMode())) {
+            try {
+                yarnClientService.killApplication(appId);
+            } catch (Exception e) {
+                log.error("Kill yarn application: {} failed", appId, e);
+            }
+        } else {
+            log.warn(
+                    "Kill command unsupported, applicationId: {}, deployMode: {}",
+                    appId,
+                    jobRun.getDeployMode());
+        }
+    }
+
+    private String[] buildEnvProps() {
+        return new String[] {String.format("%s=%s", HADOOP_USER_NAME, hadoopUser)};
     }
 
     // ------------------------------------------------------------------------

@@ -273,8 +273,7 @@ public class JobExecuteThread implements Callable<JobResponse> {
             }
             if (exception != null) {
                 newJobRun.setBackInfo(
-                        JsonUtil.toJsonString(
-                                new JobCallback(null, null, exception.getMessage(), null)));
+                        JsonUtil.toJsonString(new JobCallback(exception.getMessage(), null)));
             }
 
             jobRunInfoService.updateById(newJobRun);

@@ -21,7 +21,8 @@ public enum ResponseStatus {
     UNABLE_SCHEDULE_STREAMING_JOB_FLOW(10016, "unable to schedule streaming job flow for now"),
     FILE_NOT_FOUND(10017, "file not found"),
     EXIST_UNFINISHED_PROCESS(10018, "There is an unfinished job or flow"),
-    DATASOURCE_NOT_FOUND(10019, "Datasource not found");
+    DATASOURCE_NOT_FOUND(10019, "Datasource not found"),
+    FLOW_ALREADY_TERMINATED(10020, "Workflow already terminated");
 
     private final int code;
     private final String desc;
