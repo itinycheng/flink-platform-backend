@@ -328,6 +328,7 @@ CREATE TABLE `t_job_run` (
   `variables` varchar(1024) DEFAULT NULL COMMENT 'variables map',
   `subject` text COMMENT 'subject',
   `back_info` text COMMENT 'callback info',
+  `host` varchar(255) DEFAULT NULL COMMENT 'host ip',
   `status` varchar(32) NOT NULL COMMENT 'instance status',
   `submit_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT 'submit time',
   `stop_time` datetime DEFAULT NULL COMMENT 'stop time',
