@@ -14,6 +14,7 @@ import javax.annotation.Nonnull;
 
 import static com.flink.platform.common.enums.ExecutionStatus.FAILURE;
 import static com.flink.platform.common.enums.ExecutionStatus.KILLABLE;
+import static com.flink.platform.common.enums.ExecutionStatus.KILLED;
 import static com.flink.platform.common.enums.ExecutionStatus.SUCCESS;
 import static com.flink.platform.web.util.CommandCallback.EXIT_CODE_SUCCESS;
 import static com.flink.platform.web.util.CommandUtil.forceKill;
@@ -52,11 +53,11 @@ public class ShellCommandExecutor implements CommandExecutor {
 
     @Override
     public void killCommand(long jobRunId, JobCallback callback) {
-        // Kill shell command.
         CommandCallback cmdCallback = callback.getCmdCallback();
         Integer processId = cmdCallback != null ? cmdCallback.getProcessId() : null;
         if (processId != null && processId > 0) {
             forceKill(processId, null);
+            callback.setStatus(KILLED);
         }
     }
 }
