@@ -91,10 +91,17 @@ public class CommandUtil {
             int exitValue = status ? process.exitValue() : EXIT_CODE_FAILURE;
 
             try {
+                stdThread.interrupt();
                 stdThread.join();
+            } catch (Exception e) {
+                log.error("interrupt std log collection thread failed", e);
+            }
+
+            try {
+                errThread.interrupt();
                 errThread.join();
             } catch (Exception e) {
-                log.error("join log collection thread failed", e);
+                log.error("interrupt err log collection thread failed", e);
             }
 
             return new CommandCallback(status, exitValue, processId);
@@ -166,11 +173,16 @@ public class CommandUtil {
 
         @Override
         public void run() {
-            try {
-                BufferedReader reader =
-                        new BufferedReader(
-                                new InputStreamReader(inputStream, StandardCharsets.UTF_8));
-                reader.lines().forEach(line -> consumer.accept(inputType, line));
+            try (BufferedReader reader =
+                    new BufferedReader(
+                            new InputStreamReader(inputStream, StandardCharsets.UTF_8))) {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    consumer.accept(inputType, line);
+                    if (Thread.currentThread().isInterrupted()) {
+                        break;
+                    }
+                }
             } catch (Exception e) {
                 log.error("Error found while reading from stream", e);
             }
