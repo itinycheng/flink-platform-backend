@@ -1,8 +1,8 @@
 package com.flink.platform.web.command.flink;
 
 import com.flink.platform.web.command.JobCommand;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.Getter;
+import lombok.Setter;
 import org.apache.commons.lang3.StringUtils;
 
 import java.net.URL;
@@ -13,9 +13,9 @@ import java.util.Map;
 import static com.flink.platform.common.constants.Constant.LINE_SEPARATOR;
 
 /** job command. */
-@Data
-@NoArgsConstructor
-public class FlinkCommand implements JobCommand {
+@Setter
+@Getter
+public class FlinkCommand extends JobCommand {
 
     private String prefix;
 
@@ -30,6 +30,10 @@ public class FlinkCommand implements JobCommand {
     private String mainJar;
 
     private List<URL> classpaths;
+
+    public FlinkCommand(long jobRunId) {
+        super(jobRunId);
+    }
 
     @Override
     public String toCommandString() {

@@ -4,8 +4,8 @@ import com.flink.platform.web.command.CommandExecutor;
 import com.flink.platform.web.command.JobCallback;
 import com.flink.platform.web.command.JobCommand;
 import com.flink.platform.web.config.WorkerConfig;
-import com.flink.platform.web.util.CommandCallback;
 import com.flink.platform.web.util.CommandUtil;
+import com.flink.platform.web.util.ShellCallback;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -14,9 +14,8 @@ import javax.annotation.Nonnull;
 
 import static com.flink.platform.common.enums.ExecutionStatus.FAILURE;
 import static com.flink.platform.common.enums.ExecutionStatus.KILLABLE;
-import static com.flink.platform.common.enums.ExecutionStatus.KILLED;
 import static com.flink.platform.common.enums.ExecutionStatus.SUCCESS;
-import static com.flink.platform.web.util.CommandCallback.EXIT_CODE_SUCCESS;
+import static com.flink.platform.web.util.CommandUtil.EXIT_CODE_SUCCESS;
 import static com.flink.platform.web.util.CommandUtil.forceKill;
 
 /** shell command executor. */
@@ -35,7 +34,7 @@ public class ShellCommandExecutor implements CommandExecutor {
     @Override
     public JobCallback execCommand(JobCommand command) throws Exception {
         ShellCommand shellCommand = (ShellCommand) command;
-        CommandCallback callback =
+        ShellCallback callback =
                 CommandUtil.exec(
                         shellCommand.getScript(),
                         null,
@@ -52,12 +51,15 @@ public class ShellCommandExecutor implements CommandExecutor {
     }
 
     @Override
-    public void killCommand(long jobRunId, JobCallback callback) {
-        CommandCallback cmdCallback = callback.getCmdCallback();
-        Integer processId = cmdCallback != null ? cmdCallback.getProcessId() : null;
+    public void killCommand(JobCommand jobCommand) {
+        ShellTask task = jobCommand.getTask().unwrap(ShellTask.class);
+        if (task == null) {
+            return;
+        }
+
+        Integer processId = task.getProcessId();
         if (processId != null && processId > 0) {
             forceKill(processId, null);
-            callback.setStatus(KILLED);
         }
     }
 }

@@ -15,6 +15,8 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import javax.annotation.Nonnull;
+
 import static com.flink.platform.common.enums.JobType.DEPENDENT;
 import static java.util.Objects.nonNull;
 
@@ -33,11 +35,12 @@ public class DependentCommandBuilder implements CommandBuilder {
     }
 
     @Override
-    public JobCommand buildCommand(Long flowRunId, JobRunInfo jobRunInfo) {
+    public JobCommand buildCommand(Long flowRunId, @Nonnull JobRunInfo jobRunInfo) {
+        Long jobRunId = jobRunInfo.getId();
         try {
             DependentJob dependentJob = jobRunInfo.getConfig().unwrap(DependentJob.class);
             if (CollectionUtils.isEmpty(dependentJob.getDependentItems())) {
-                return new DependentCommand(true);
+                return new DependentCommand(jobRunId, true);
             }
 
             boolean matched =
@@ -47,10 +50,10 @@ public class DependentCommandBuilder implements CommandBuilder {
                             : dependentJob.getDependentItems().stream()
                                     .allMatch(this::validateDependentItem);
 
-            return new DependentCommand(matched);
+            return new DependentCommand(jobRunId, matched);
         } catch (Exception e) {
             log.error("Build dependent command failed, ", e);
-            return new DependentCommand(false);
+            return new DependentCommand(jobRunId, false);
         }
     }
 

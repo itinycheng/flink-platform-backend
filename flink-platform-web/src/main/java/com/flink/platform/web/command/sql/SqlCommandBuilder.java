@@ -10,6 +10,8 @@ import com.flink.platform.web.command.JobCommand;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
+import javax.annotation.Nonnull;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -27,7 +29,7 @@ public class SqlCommandBuilder implements CommandBuilder {
     }
 
     @Override
-    public JobCommand buildCommand(Long flowRunId, JobRunInfo jobRunInfo) {
+    public JobCommand buildCommand(Long flowRunId, @Nonnull JobRunInfo jobRunInfo) {
         SqlJob sqlJob = jobRunInfo.getConfig().unwrap(SqlJob.class);
         if (sqlJob == null) {
             throw new CommandUnableGenException("Invalid job config.");
@@ -45,6 +47,6 @@ public class SqlCommandBuilder implements CommandBuilder {
                             jobRunInfo.getSubject()));
         }
 
-        return new SqlCommand(sqlJob.getDsId(), sqlList);
+        return new SqlCommand(jobRunInfo.getId(), sqlJob.getDsId(), sqlList);
     }
 }

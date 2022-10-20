@@ -8,6 +8,8 @@ import com.flink.platform.web.command.JobCommand;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
+import javax.annotation.Nonnull;
+
 /** shell command builder. */
 @Slf4j
 @Component("shellCommandBuilder")
@@ -19,8 +21,8 @@ public class ShellCommandBuilder implements CommandBuilder {
     }
 
     @Override
-    public JobCommand buildCommand(Long flowRunId, JobRunInfo jobRunInfo) {
+    public JobCommand buildCommand(Long flowRunId, @Nonnull JobRunInfo jobRunInfo) {
         ShellJob unwrap = jobRunInfo.getConfig().unwrap(ShellJob.class);
-        return new ShellCommand(unwrap.getTimeout(), jobRunInfo.getSubject());
+        return new ShellCommand(jobRunInfo.getId(), unwrap.getTimeout(), jobRunInfo.getSubject());
     }
 }

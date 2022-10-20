@@ -2,7 +2,7 @@ package com.flink.platform.web.command;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.flink.platform.common.enums.ExecutionStatus;
-import com.flink.platform.web.util.CommandCallback;
+import com.flink.platform.web.util.ShellCallback;
 import lombok.Data;
 
 /** call back info from the command line. */
@@ -17,7 +17,7 @@ public class JobCallback {
 
     private String trackingUrl;
 
-    private CommandCallback cmdCallback;
+    private ShellCallback cmdCallback;
 
     /** callback log. */
     private String message;
@@ -29,7 +29,7 @@ public class JobCallback {
         this.status = status;
     }
 
-    public JobCallback(CommandCallback cmdCallback, String message, ExecutionStatus status) {
+    public JobCallback(ShellCallback cmdCallback, String message, ExecutionStatus status) {
         this.cmdCallback = cmdCallback;
         this.message = message;
         this.status = status;
@@ -39,7 +39,7 @@ public class JobCallback {
             String jobId,
             String appId,
             String trackingUrl,
-            CommandCallback cmdCallback,
+            ShellCallback cmdCallback,
             String message,
             ExecutionStatus status) {
         this.jobId = jobId;

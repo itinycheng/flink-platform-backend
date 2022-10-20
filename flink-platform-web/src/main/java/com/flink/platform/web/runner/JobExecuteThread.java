@@ -121,7 +121,8 @@ public class JobExecuteThread implements Callable<JobResponse> {
                                         .eq(JobRunInfo::getStatus, CREATED)
                                         .last("LIMIT 1"));
                 if (jobRunInfo == null) {
-                    jobRunInfo = jobRunInfoService.initJobRunInfo(flowRunId, jobInfo);
+                    jobRunInfo =
+                            jobRunInfoService.initJobRunInfo(jobInfo, flowRunId, worker.getIp());
                 }
 
                 // Process job run.

@@ -20,6 +20,8 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import javax.annotation.Nonnull;
+
 import java.util.List;
 
 import static com.flink.platform.common.enums.JobType.CONDITION;
@@ -40,9 +42,10 @@ public class ConditionCommandBuilder implements CommandBuilder {
     }
 
     @Override
-    public JobCommand buildCommand(Long flowRunId, JobRunInfo jobRunInfo) {
+    public JobCommand buildCommand(Long flowRunId, @Nonnull JobRunInfo jobRunInfo) {
+        Long jobRunId = jobRunInfo.getId();
         if (flowRunId == null) {
-            return new ConditionCommand(true);
+            return new ConditionCommand(jobRunId, true);
         }
 
         try {
@@ -53,7 +56,7 @@ public class ConditionCommandBuilder implements CommandBuilder {
                     flow.getPreVertices(vertex).stream().map(JobVertex::getJobId).collect(toList());
 
             if (CollectionUtils.isEmpty(jobIds)) {
-                return new ConditionCommand(true);
+                return new ConditionCommand(jobRunId, true);
             }
 
             List<JobRunInfo> prevJobRunList =
@@ -98,10 +101,10 @@ public class ConditionCommandBuilder implements CommandBuilder {
                             "Unsupported execution condition: " + condition);
             }
 
-            return new ConditionCommand(success);
+            return new ConditionCommand(jobRunId, success);
         } catch (Exception e) {
             log.error("Build condition command failed, ", e);
-            return new ConditionCommand(false);
+            return new ConditionCommand(jobRunId, false);
         }
     }
 

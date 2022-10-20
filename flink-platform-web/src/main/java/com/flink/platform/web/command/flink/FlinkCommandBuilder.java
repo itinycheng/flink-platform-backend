@@ -16,6 +16,7 @@ import org.apache.commons.collections4.ListUtils;
 import org.apache.hadoop.fs.Path;
 import org.springframework.beans.factory.annotation.Value;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Resource;
 
 import java.net.URL;
@@ -64,10 +65,11 @@ public abstract class FlinkCommandBuilder implements CommandBuilder {
     }
 
     @Override
-    public JobCommand buildCommand(Long flowRunId, JobRunInfo jobRunInfo) throws Exception {
+    public JobCommand buildCommand(Long flowRunId, @Nonnull JobRunInfo jobRunInfo)
+            throws Exception {
         FlinkJob flinkJob = jobRunInfo.getConfig().unwrap(FlinkJob.class);
         initResources(flinkJob);
-        FlinkCommand command = new FlinkCommand();
+        FlinkCommand command = new FlinkCommand(jobRunInfo.getId());
         DeployMode deployMode = jobRunInfo.getDeployMode();
         String execMode = String.format(EXEC_MODE, deployMode.mode, deployMode.target);
         command.setPrefix(flinkConfig.getCommandPath() + execMode);
