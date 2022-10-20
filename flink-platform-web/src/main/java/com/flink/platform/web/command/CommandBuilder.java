@@ -3,6 +3,8 @@ package com.flink.platform.web.command;
 import com.flink.platform.common.enums.JobType;
 import com.flink.platform.dao.entity.JobRunInfo;
 
+import javax.annotation.Nonnull;
+
 /** Command builder. */
 public interface CommandBuilder {
 
@@ -22,5 +24,5 @@ public interface CommandBuilder {
      * @return job command
      * @throws Exception IO exception
      */
-    JobCommand buildCommand(Long flowRunId, JobRunInfo jobRunInfo) throws Exception;
+    JobCommand buildCommand(Long flowRunId, @Nonnull JobRunInfo jobRunInfo) throws Exception;
 }

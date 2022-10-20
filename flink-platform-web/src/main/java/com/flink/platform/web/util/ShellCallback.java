@@ -8,11 +8,7 @@ import static com.flink.platform.common.constants.Constant.LINE_SEPARATOR;
 
 /** Command callback. */
 @Data
-public class CommandCallback {
-
-    public static final int EXIT_CODE_SUCCESS = 0;
-
-    public static final int EXIT_CODE_FAILURE = 1;
+public class ShellCallback {
 
     private final boolean exited;
 
@@ -20,20 +16,20 @@ public class CommandCallback {
 
     private final Integer processId;
 
-    @JsonIgnore private String stdMessage;
+    @JsonIgnore private String stdMsg;
 
-    @JsonIgnore private String errMessage;
+    @JsonIgnore private String errMsg;
 
-    public CommandCallback(boolean exited, Integer exitCode, Integer processId) {
+    public ShellCallback(boolean exited, Integer exitCode, Integer processId) {
         this.exited = exited;
         this.exitCode = exitCode;
         this.processId = processId;
     }
 
     public String getMessage() {
-        if (StringUtils.isEmpty(stdMessage) || StringUtils.isEmpty(errMessage)) {
-            return StringUtils.isEmpty(stdMessage) ? errMessage : stdMessage;
+        if (StringUtils.isEmpty(stdMsg) || StringUtils.isEmpty(errMsg)) {
+            return StringUtils.isEmpty(stdMsg) ? errMsg : stdMsg;
         }
-        return String.join(LINE_SEPARATOR, stdMessage, errMessage);
+        return String.join(LINE_SEPARATOR, stdMsg, errMsg);
     }
 }

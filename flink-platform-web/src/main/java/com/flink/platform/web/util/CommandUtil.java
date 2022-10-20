@@ -19,7 +19,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
 
 import static com.flink.platform.common.constants.Constant.LINE_SEPARATOR;
-import static com.flink.platform.web.util.CommandCallback.EXIT_CODE_FAILURE;
 import static com.flink.platform.web.util.CommandUtil.CmdOutType.ERR;
 import static com.flink.platform.web.util.CommandUtil.CmdOutType.STD;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -31,14 +30,18 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 @Slf4j
 public class CommandUtil {
 
+    public static final int EXIT_CODE_SUCCESS = 0;
+
+    public static final int EXIT_CODE_FAILURE = 1;
+
     private static final int MAX_LOG_ROWS = 50000;
 
-    public static CommandCallback exec(String command, String[] envProps, long timeoutMills)
+    public static ShellCallback exec(String command, String[] envProps, long timeoutMills)
             throws IOException, InterruptedException {
         List<String> stdList = Collections.synchronizedList(new ArrayList<>());
         List<String> errList = Collections.synchronizedList(new ArrayList<>());
 
-        CommandCallback callback =
+        ShellCallback callback =
                 exec(
                         command,
                         envProps,
@@ -60,12 +63,12 @@ public class CommandUtil {
                             }
                         });
 
-        callback.setStdMessage(String.join(LINE_SEPARATOR, stdList));
-        callback.setErrMessage(String.join(LINE_SEPARATOR, errList));
+        callback.setStdMsg(String.join(LINE_SEPARATOR, stdList));
+        callback.setErrMsg(String.join(LINE_SEPARATOR, errList));
         return callback;
     }
 
-    public static CommandCallback exec(
+    public static ShellCallback exec(
             String command,
             String[] envProps,
             long timeoutMills,
@@ -104,7 +107,7 @@ public class CommandUtil {
                 log.error("interrupt err log collection thread failed", e);
             }
 
-            return new CommandCallback(status, exitValue, processId);
+            return new ShellCallback(status, exitValue, processId);
         } finally {
             process.destroy();
         }

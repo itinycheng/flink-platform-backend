@@ -1,12 +1,19 @@
 package com.flink.platform.web.command;
 
+import lombok.Data;
+
 /** job command. */
-public interface JobCommand {
+@Data
+public abstract class JobCommand {
+
+    protected final long jobRunId;
+
+    protected AbstractTask task;
 
     /**
      * build a command.
      *
      * @return command to execute.
      */
-    String toCommandString();
+    public abstract String toCommandString();
 }

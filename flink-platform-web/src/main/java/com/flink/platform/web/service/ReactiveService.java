@@ -68,7 +68,7 @@ public class ReactiveService {
 
     public ReactiveExecVo execFlink(String execId, JobInfo jobInfo, String[] envProps)
             throws Exception {
-        JobRunInfo jobRunInfo = jobRunInfoService.initJobRunInfo(null, jobInfo);
+        JobRunInfo jobRunInfo = jobRunInfoService.initJobRunInfo(jobInfo, null, null);
         String command =
                 commandBuilders.stream()
                         .filter(

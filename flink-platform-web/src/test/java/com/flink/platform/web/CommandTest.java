@@ -2,8 +2,8 @@ package com.flink.platform.web;
 
 import com.flink.platform.web.command.flink.FlinkCommandExecutor;
 import com.flink.platform.web.enums.SqlVar;
-import com.flink.platform.web.util.CommandCallback;
 import com.flink.platform.web.util.CommandUtil;
+import com.flink.platform.web.util.ShellCallback;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -38,7 +38,7 @@ public class CommandTest {
 
     @Test
     public void testTimeout() throws IOException, InterruptedException {
-        CommandCallback exec = CommandUtil.exec("tree -r /", null, 5000);
+        ShellCallback exec = CommandUtil.exec("tree -r /", null, 5000);
         System.out.println(exec);
     }
 }

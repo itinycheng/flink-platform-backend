@@ -1,18 +1,19 @@
 package com.flink.platform.web.command.dependent;
 
 import com.flink.platform.web.command.JobCommand;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.Getter;
 
 /** condition command. */
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
-public class DependentCommand implements JobCommand {
+@Getter
+public class DependentCommand extends JobCommand {
 
     /** whether the dependent verification is successful. */
-    private boolean success;
+    private final boolean success;
+
+    public DependentCommand(long jobRunId, boolean success) {
+        super(jobRunId);
+        this.success = success;
+    }
 
     @Override
     public String toCommandString() {

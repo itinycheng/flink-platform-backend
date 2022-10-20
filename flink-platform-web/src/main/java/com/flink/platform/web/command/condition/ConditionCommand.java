@@ -1,17 +1,18 @@
 package com.flink.platform.web.command.condition;
 
 import com.flink.platform.web.command.JobCommand;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.Getter;
 
 /** condition command. */
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
-public class ConditionCommand implements JobCommand {
+@Getter
+public class ConditionCommand extends JobCommand {
 
-    private boolean success;
+    private final boolean success;
+
+    public ConditionCommand(long jobRunId, boolean success) {
+        super(jobRunId);
+        this.success = success;
+    }
 
     @Override
     public String toCommandString() {

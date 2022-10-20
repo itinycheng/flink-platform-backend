@@ -1,19 +1,21 @@
 package com.flink.platform.web.command.shell;
 
 import com.flink.platform.web.command.JobCommand;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.Getter;
 
 /** shell command. */
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
-public class ShellCommand implements JobCommand {
+@Getter
+public class ShellCommand extends JobCommand {
 
-    private long timeout;
+    private final long timeout;
 
-    private String script;
+    private final String script;
+
+    public ShellCommand(long jobRunId, long timeout, String script) {
+        super(jobRunId);
+        this.timeout = timeout;
+        this.script = script;
+    }
 
     @Override
     public String toCommandString() {

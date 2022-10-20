@@ -2,10 +2,16 @@ package com.flink.platform.web.command;
 
 import javax.annotation.Nonnull;
 
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
 import static com.flink.platform.common.enums.ExecutionStatus.KILLABLE;
+import static com.flink.platform.common.enums.ExecutionStatus.KILLED;
 
 /** parse result. */
 public interface CommandExecutor {
+
+    Map<Long, JobCommand> JOB_RUNNING_MAP = new ConcurrentHashMap<>();
 
     /**
      * whether support.
@@ -17,11 +23,17 @@ public interface CommandExecutor {
 
     @Nonnull
     default JobCallback exec(long jobRunId, JobCommand jobCommand) throws Exception {
-        JobCallback jobCallback = execCommand(jobCommand);
-        if (jobCallback.getStatus() == KILLABLE) {
-            killCommand(jobRunId, jobCallback);
+        try {
+            JOB_RUNNING_MAP.put(jobRunId, jobCommand);
+            JobCallback jobCallback = execCommand(jobCommand);
+            if (jobCallback.getStatus() == KILLABLE) {
+                killCommand(jobCommand);
+                jobCallback.setStatus(KILLED);
+            }
+            return jobCallback;
+        } finally {
+            JOB_RUNNING_MAP.remove(jobRunId);
         }
-        return jobCallback;
     }
 
     /**
@@ -37,8 +49,7 @@ public interface CommandExecutor {
     /**
      * kill command if needed.
      *
-     * @param jobRunId job run id
-     * @param callback job callback
+     * @param command job command
      */
-    default void killCommand(long jobRunId, JobCallback callback) {}
+    default void killCommand(JobCommand command) {}
 }

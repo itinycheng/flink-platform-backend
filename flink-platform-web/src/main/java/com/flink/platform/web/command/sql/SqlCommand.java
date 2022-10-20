@@ -2,21 +2,23 @@ package com.flink.platform.web.command.sql;
 
 import com.flink.platform.common.util.JsonUtil;
 import com.flink.platform.web.command.JobCommand;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.Getter;
 
 import java.util.List;
 
 /** SQL command. */
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
-public class SqlCommand implements JobCommand {
+@Getter
+public class SqlCommand extends JobCommand {
 
-    private Long dsId;
+    private final Long dsId;
 
-    private List<String> sqls;
+    private final List<String> sqls;
+
+    public SqlCommand(long jobRunId, Long dsId, List<String> sqls) {
+        super(jobRunId);
+        this.dsId = dsId;
+        this.sqls = sqls;
+    }
 
     /** build a command. */
     @Override

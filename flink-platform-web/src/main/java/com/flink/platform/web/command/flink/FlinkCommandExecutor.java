@@ -1,6 +1,7 @@
 package com.flink.platform.web.command.flink;
 
 import com.flink.platform.common.enums.ExecutionStatus;
+import com.flink.platform.common.util.JsonUtil;
 import com.flink.platform.dao.entity.JobRunInfo;
 import com.flink.platform.dao.service.JobRunInfoService;
 import com.flink.platform.web.command.CommandExecutor;
@@ -8,8 +9,7 @@ import com.flink.platform.web.command.JobCallback;
 import com.flink.platform.web.command.JobCommand;
 import com.flink.platform.web.config.WorkerConfig;
 import com.flink.platform.web.external.YarnClientService;
-import com.flink.platform.web.util.CommandCallback;
-import com.flink.platform.web.util.CommandUtil;
+import com.flink.platform.web.util.ShellCallback;
 import com.flink.platform.web.util.YarnHelper;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -32,7 +32,7 @@ import static com.flink.platform.common.enums.DeployMode.FLINK_YARN_PER;
 import static com.flink.platform.common.enums.ExecutionStatus.FAILURE;
 import static com.flink.platform.common.enums.ExecutionStatus.KILLABLE;
 import static com.flink.platform.common.enums.ExecutionStatus.SUBMITTED;
-import static com.flink.platform.web.util.CommandCallback.EXIT_CODE_SUCCESS;
+import static com.flink.platform.web.util.CommandUtil.EXIT_CODE_SUCCESS;
 import static com.flink.platform.web.util.CommandUtil.forceKill;
 
 /** Flink command executor. */
@@ -57,17 +57,21 @@ public class FlinkCommandExecutor implements CommandExecutor {
     @Nonnull
     @Override
     public JobCallback execCommand(JobCommand command) throws Exception {
-        CommandCallback callback =
-                CommandUtil.exec(
+        FlinkYarnTask task =
+                new FlinkYarnTask(
+                        command.getJobRunId(),
                         command.toCommandString(),
                         buildEnvProps(),
                         workerConfig.getFlinkSubmitTimeoutMills());
+        command.setTask(task);
+        task.run();
 
-        String appId = extractApplicationId(callback.getStdMessage());
-        String jobId = extractJobId(callback.getStdMessage());
+        String appId = task.getAppId();
+        String jobId = task.getJobId();
+        ShellCallback callback = task.buildCallback();
 
         // call `killCommand` method if execute command failed.
-        if (!callback.getExitCode().equals(EXIT_CODE_SUCCESS)) {
+        if (task.getExitValue() != EXIT_CODE_SUCCESS) {
             return new JobCallback(jobId, appId, null, callback, EMPTY, KILLABLE);
         }
 
@@ -81,41 +85,53 @@ public class FlinkCommandExecutor implements CommandExecutor {
             } catch (Exception e) {
                 log.error("Failed to get ApplicationReport after command executed", e);
             }
-            return new JobCallback(jobId, appId, trackingUrl, callback, EMPTY, status);
+            return new JobCallback(jobId, appId, trackingUrl, null, EMPTY, status);
         } else {
             String message =
-                    String.join(LINE_SEPARATOR, callback.getStdMessage(), callback.getErrMessage());
+                    String.join(LINE_SEPARATOR, callback.getStdMsg(), callback.getErrMsg());
             return new JobCallback(jobId, appId, EMPTY, callback, message, FAILURE);
         }
     }
 
     @Override
-    public void killCommand(long jobRunId, JobCallback jobCallback) {
+    public void killCommand(JobCommand command) {
+        Integer processId = null;
+        String applicationId = null;
+
+        FlinkYarnTask task = command.getTask().unwrap(FlinkYarnTask.class);
+        if (task != null) {
+            processId = task.getProcessId();
+            applicationId = task.getAppId();
+        } else {
+            JobRunInfo jobRun = jobRunInfoService.getById(command.getJobRunId());
+            JobCallback jobCallback = JsonUtil.toBean(jobRun.getBackInfo(), JobCallback.class);
+            if (jobCallback != null) {
+                ShellCallback cmdCallback = jobCallback.getCmdCallback();
+                processId = cmdCallback != null ? cmdCallback.getProcessId() : null;
+                applicationId = jobCallback.getAppId();
+            }
+        }
+
         // Kill shell command.
-        CommandCallback cmdCallback = jobCallback.getCmdCallback();
-        Integer processId = cmdCallback != null ? cmdCallback.getProcessId() : null;
         if (processId != null && processId > 0) {
             forceKill(processId, buildEnvProps());
         }
 
         // kill application.
-        String appId = jobCallback.getAppId();
-        if (StringUtils.isEmpty(appId)) {
-            return;
-        }
-
-        JobRunInfo jobRun = jobRunInfoService.getById(jobRunId);
-        if (FLINK_YARN_PER.equals(jobRun.getDeployMode())) {
-            try {
-                yarnClientService.killApplication(appId);
-            } catch (Exception e) {
-                log.error("Kill yarn application: {} failed", appId, e);
+        if (StringUtils.isNotEmpty(applicationId)) {
+            JobRunInfo jobRun = jobRunInfoService.getById(command.getJobRunId());
+            if (FLINK_YARN_PER.equals(jobRun.getDeployMode())) {
+                try {
+                    yarnClientService.killApplication(applicationId);
+                } catch (Exception e) {
+                    log.error("Kill yarn application: {} failed", applicationId, e);
+                }
+            } else {
+                log.warn(
+                        "Kill command unsupported, applicationId: {}, deployMode: {}",
+                        applicationId,
+                        jobRun.getDeployMode());
             }
-        } else {
-            log.warn(
-                    "Kill command unsupported, applicationId: {}, deployMode: {}",
-                    appId,
-                    jobRun.getDeployMode());
         }
     }
 
