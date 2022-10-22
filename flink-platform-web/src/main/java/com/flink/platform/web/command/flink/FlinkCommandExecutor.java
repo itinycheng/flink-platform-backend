@@ -68,7 +68,7 @@ public class FlinkCommandExecutor implements CommandExecutor {
 
         String appId = task.getAppId();
         String jobId = task.getJobId();
-        ShellCallback callback = task.buildCallback();
+        ShellCallback callback = task.buildShellCallback();
 
         // call `killCommand` method if execute command failed.
         if (task.getExitValue() != EXIT_CODE_SUCCESS) {

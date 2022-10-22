@@ -6,21 +6,17 @@ import com.sun.jna.platform.win32.Kernel32;
 import lombok.extern.slf4j.Slf4j;
 import oshi.jna.platform.windows.WinNT;
 
-import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.lang.reflect.Field;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
 
 import static com.flink.platform.common.constants.Constant.LINE_SEPARATOR;
-import static com.flink.platform.web.util.CommandUtil.CmdOutType.ERR;
-import static com.flink.platform.web.util.CommandUtil.CmdOutType.STD;
+import static com.flink.platform.web.util.CollectLogThread.CmdOutType.ERR;
+import static com.flink.platform.web.util.CollectLogThread.CmdOutType.STD;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 /**
@@ -72,7 +68,7 @@ public class CommandUtil {
             String command,
             String[] envProps,
             long timeoutMills,
-            BiConsumer<CmdOutType, String> logConsumer)
+            BiConsumer<CollectLogThread.CmdOutType, String> logConsumer)
             throws IOException, InterruptedException {
         log.info("Exec command: {}, env properties: {}", command, envProps);
         Process process = Runtime.getRuntime().exec(command, envProps);
@@ -152,49 +148,5 @@ public class CommandUtil {
             log.error(e.getMessage(), e);
             return null;
         }
-    }
-
-    static class CollectLogThread extends Thread {
-
-        private static final AtomicInteger COUNTER = new AtomicInteger(0);
-
-        private final InputStream inputStream;
-
-        private final CmdOutType inputType;
-
-        private final BiConsumer<CmdOutType, String> consumer;
-
-        public CollectLogThread(
-                InputStream inputStream,
-                CmdOutType inputType,
-                BiConsumer<CmdOutType, String> consumer) {
-            super("collect-stream-log-" + COUNTER.incrementAndGet());
-            this.inputStream = inputStream;
-            this.inputType = inputType;
-            this.consumer = consumer;
-        }
-
-        @Override
-        public void run() {
-            try (BufferedReader reader =
-                    new BufferedReader(
-                            new InputStreamReader(inputStream, StandardCharsets.UTF_8))) {
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    consumer.accept(inputType, line);
-                    if (Thread.currentThread().isInterrupted()) {
-                        break;
-                    }
-                }
-            } catch (Exception e) {
-                log.error("Error found while reading from stream", e);
-            }
-        }
-    }
-
-    /** command output type. */
-    public enum CmdOutType {
-        STD,
-        ERR
     }
 }

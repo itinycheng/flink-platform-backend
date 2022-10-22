@@ -12,6 +12,7 @@ import com.flink.platform.web.command.CommandBuilder;
 import com.flink.platform.web.config.WorkerConfig;
 import com.flink.platform.web.entity.vo.ReactiveDataVo;
 import com.flink.platform.web.entity.vo.ReactiveExecVo;
+import com.flink.platform.web.util.CollectLogThread;
 import com.flink.platform.web.util.CommandUtil;
 import com.flink.platform.web.util.ThreadUtil;
 import lombok.extern.slf4j.Slf4j;
@@ -167,7 +168,7 @@ public class ReactiveService {
         }
     }
 
-    private BiConsumer<CommandUtil.CmdOutType, String> collectCmdResult(String execId) {
+    private BiConsumer<CollectLogThread.CmdOutType, String> collectCmdResult(String execId) {
         BlockingQueue<String> cmdLogQueue = new ArrayBlockingQueue<>(50_000);
         cmdOutputBufferMap.put(execId, cmdLogQueue);
         return (cmdOutType, line) -> {
