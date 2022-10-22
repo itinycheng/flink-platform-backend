@@ -108,7 +108,7 @@ public class ShellTask extends AbstractTask {
         return errMsg.toString();
     }
 
-    public ShellCallback buildCallback() {
+    public ShellCallback buildShellCallback() {
         ShellCallback callback = new ShellCallback(exited, exitValue, processId);
         callback.setStdMsg(getStdMsg());
         callback.setErrMsg(getErrMsg());

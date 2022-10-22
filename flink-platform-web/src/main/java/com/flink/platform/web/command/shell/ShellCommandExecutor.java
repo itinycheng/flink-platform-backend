@@ -4,7 +4,6 @@ import com.flink.platform.web.command.CommandExecutor;
 import com.flink.platform.web.command.JobCallback;
 import com.flink.platform.web.command.JobCommand;
 import com.flink.platform.web.config.WorkerConfig;
-import com.flink.platform.web.util.CommandUtil;
 import com.flink.platform.web.util.ShellCallback;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,17 +33,21 @@ public class ShellCommandExecutor implements CommandExecutor {
     @Override
     public JobCallback execCommand(JobCommand command) throws Exception {
         ShellCommand shellCommand = (ShellCommand) command;
-        ShellCallback callback =
-                CommandUtil.exec(
+        ShellTask task =
+                new ShellTask(
+                        shellCommand.getJobRunId(),
                         shellCommand.getScript(),
                         null,
                         Math.min(
                                 workerConfig.getMaxShellExecTimeoutMills(),
                                 shellCommand.getTimeout()));
+        shellCommand.setTask(task);
+        task.run();
 
+        ShellCallback callback = task.buildShellCallback();
         return new JobCallback(
                 callback,
-                callback.getMessage(),
+                null,
                 callback.isExited() && callback.getExitCode() == EXIT_CODE_SUCCESS
                         ? SUCCESS
                         : (callback.isExited() ? FAILURE : KILLABLE));

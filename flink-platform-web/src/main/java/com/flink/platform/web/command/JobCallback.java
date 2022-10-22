@@ -1,12 +1,15 @@
 package com.flink.platform.web.command;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.flink.platform.common.enums.ExecutionStatus;
 import com.flink.platform.web.util.ShellCallback;
 import lombok.Data;
+import lombok.experimental.Delegate;
 
 /** call back info from the command line. */
 @Data
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class JobCallback {
 
     /** flink job id. */
@@ -17,16 +20,19 @@ public class JobCallback {
 
     private String trackingUrl;
 
-    private ShellCallback cmdCallback;
-
-    /** callback log. */
     private String message;
 
     @JsonIgnore private ExecutionStatus status;
 
+    @Delegate @JsonIgnore private ShellCallback cmdCallback;
+
+    /** Only for deSeral. */
+    public JobCallback() {
+        cmdCallback = new ShellCallback();
+    }
+
     public JobCallback(String message, ExecutionStatus status) {
-        this.message = message;
-        this.status = status;
+        this(null, message, status);
     }
 
     public JobCallback(ShellCallback cmdCallback, String message, ExecutionStatus status) {
