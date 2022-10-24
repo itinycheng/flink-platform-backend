@@ -119,7 +119,7 @@ public class ProcessJobService {
                                     () ->
                                             new UnrecoverableException(
                                                     "No available job command executor"))
-                            .exec(jobRunId, command);
+                            .exec(command);
 
             // step 5: write job run info to db
             ExecutionStatus executionStatus = callback.getStatus();

@@ -4,17 +4,12 @@ import com.flink.platform.web.command.CommandExecutor;
 import com.flink.platform.web.command.JobCallback;
 import com.flink.platform.web.command.JobCommand;
 import com.flink.platform.web.config.WorkerConfig;
-import com.flink.platform.web.util.ShellCallback;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.Nonnull;
 
-import static com.flink.platform.common.enums.ExecutionStatus.FAILURE;
-import static com.flink.platform.common.enums.ExecutionStatus.KILLABLE;
-import static com.flink.platform.common.enums.ExecutionStatus.SUCCESS;
-import static com.flink.platform.web.util.CommandUtil.EXIT_CODE_SUCCESS;
 import static com.flink.platform.web.util.CommandUtil.forceKill;
 
 /** shell command executor. */
@@ -44,13 +39,7 @@ public class ShellCommandExecutor implements CommandExecutor {
         shellCommand.setTask(task);
         task.run();
 
-        ShellCallback callback = task.buildShellCallback();
-        return new JobCallback(
-                callback,
-                null,
-                callback.isExited() && callback.getExitCode() == EXIT_CODE_SUCCESS
-                        ? SUCCESS
-                        : (callback.isExited() ? FAILURE : KILLABLE));
+        return new JobCallback(task.buildShellCallback(), null, task.finalStatus());
     }
 
     @Override

@@ -1,5 +1,6 @@
 package com.flink.platform.web.command.shell;
 
+import com.flink.platform.common.enums.ExecutionStatus;
 import com.flink.platform.web.command.AbstractTask;
 import com.flink.platform.web.util.CollectLogThread;
 import com.flink.platform.web.util.CommandUtil;
@@ -12,10 +13,16 @@ import javax.annotation.Nullable;
 import java.io.InputStream;
 import java.util.function.BiConsumer;
 
+import static com.flink.platform.common.enums.ExecutionStatus.FAILURE;
+import static com.flink.platform.common.enums.ExecutionStatus.KILLABLE;
+import static com.flink.platform.common.enums.ExecutionStatus.KILLED;
+import static com.flink.platform.common.enums.ExecutionStatus.SUCCESS;
 import static com.flink.platform.web.util.CollectLogThread.CmdOutType;
 import static com.flink.platform.web.util.CollectLogThread.CmdOutType.ERR;
 import static com.flink.platform.web.util.CollectLogThread.CmdOutType.STD;
 import static com.flink.platform.web.util.CommandUtil.EXIT_CODE_FAILURE;
+import static com.flink.platform.web.util.CommandUtil.EXIT_CODE_KILLED;
+import static com.flink.platform.web.util.CommandUtil.EXIT_CODE_SUCCESS;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 /** Flink yarn task. */
@@ -48,6 +55,7 @@ public class ShellTask extends AbstractTask {
         this.command = command;
         this.envs = envs;
         this.timeoutMills = timeoutMills;
+        this.logConsumer = newLogBuffer(null);
     }
 
     @Override
@@ -96,23 +104,27 @@ public class ShellTask extends AbstractTask {
         }
     }
 
-    public void setLogConsumer(BiConsumer<CmdOutType, String> logConsumer) {
-        this.logConsumer = newLogBuffer(logConsumer);
-    }
-
-    public String getStdMsg() {
-        return stdMsg.toString();
-    }
-
-    public String getErrMsg() {
-        return errMsg.toString();
-    }
-
     public ShellCallback buildShellCallback() {
         ShellCallback callback = new ShellCallback(exited, exitValue, processId);
-        callback.setStdMsg(getStdMsg());
-        callback.setErrMsg(getErrMsg());
+        // No need to record log if shell executed successfully.
+        if (exited && exitValue == EXIT_CODE_SUCCESS) {
+            callback.setStdMsg(getStdMsg());
+            callback.setErrMsg(getErrMsg());
+        }
         return callback;
+    }
+
+    public ExecutionStatus finalStatus() {
+        if (exited) {
+            if (exitValue == EXIT_CODE_SUCCESS) {
+                return SUCCESS;
+            } else if (exitValue == EXIT_CODE_KILLED) {
+                return KILLED;
+            }
+            return FAILURE;
+        }
+
+        return KILLABLE;
     }
 
     public BiConsumer<CmdOutType, String> newLogBuffer(BiConsumer<CmdOutType, String> consumer) {
@@ -129,5 +141,17 @@ public class ShellTask extends AbstractTask {
                 errMsg.append(line);
             }
         };
+    }
+
+    public void setLogConsumer(BiConsumer<CmdOutType, String> logConsumer) {
+        this.logConsumer = newLogBuffer(logConsumer);
+    }
+
+    public String getStdMsg() {
+        return stdMsg.toString();
+    }
+
+    public String getErrMsg() {
+        return errMsg.toString();
     }
 }

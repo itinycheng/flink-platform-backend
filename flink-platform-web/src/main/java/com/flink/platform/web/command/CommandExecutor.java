@@ -22,7 +22,8 @@ public interface CommandExecutor {
     boolean isSupported(JobCommand jobCommand);
 
     @Nonnull
-    default JobCallback exec(long jobRunId, JobCommand jobCommand) throws Exception {
+    default JobCallback exec(JobCommand jobCommand) throws Exception {
+        long jobRunId = jobCommand.getJobRunId();
         try {
             JOB_RUNNING_MAP.put(jobRunId, jobCommand);
             JobCallback jobCallback = execCommand(jobCommand);
