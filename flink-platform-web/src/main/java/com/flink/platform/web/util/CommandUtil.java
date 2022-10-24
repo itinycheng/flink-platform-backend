@@ -30,6 +30,8 @@ public class CommandUtil {
 
     public static final int EXIT_CODE_FAILURE = 1;
 
+    public static final int EXIT_CODE_KILLED = 137;
+
     private static final int MAX_LOG_ROWS = 50000;
 
     public static ShellCallback exec(String command, String[] envProps, long timeoutMills)
