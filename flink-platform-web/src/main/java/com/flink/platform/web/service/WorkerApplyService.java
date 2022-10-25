@@ -8,6 +8,8 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import javax.annotation.Nullable;
+
 import java.util.List;
 import java.util.Random;
 
@@ -38,7 +40,7 @@ public class WorkerApplyService {
         return HttpUtil.buildHttpUrl(worker.getIp(), worker.getPort());
     }
 
-    public Worker randomWorker(List<Long> workerIds) {
+    public @Nullable Worker randomWorker(List<Long> workerIds) {
         if (CollectionUtils.isEmpty(workerIds)) {
             return null;
         }

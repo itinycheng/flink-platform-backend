@@ -28,7 +28,7 @@ public class JobCallback {
 
     /** Only for deSeral. */
     public JobCallback() {
-        cmdCallback = new ShellCallback();
+        this(null, null);
     }
 
     public JobCallback(String message, ExecutionStatus status) {
@@ -36,9 +36,7 @@ public class JobCallback {
     }
 
     public JobCallback(ShellCallback cmdCallback, String message, ExecutionStatus status) {
-        this.cmdCallback = cmdCallback;
-        this.message = message;
-        this.status = status;
+        this(null, null, null, cmdCallback, message, status);
     }
 
     public JobCallback(
@@ -51,7 +49,7 @@ public class JobCallback {
         this.jobId = jobId;
         this.appId = appId;
         this.trackingUrl = trackingUrl;
-        this.cmdCallback = cmdCallback;
+        this.cmdCallback = cmdCallback != null ? cmdCallback : new ShellCallback();
         this.message = message;
         this.status = status;
     }
