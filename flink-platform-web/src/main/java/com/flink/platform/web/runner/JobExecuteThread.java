@@ -1,6 +1,7 @@
 package com.flink.platform.web.runner;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.flink.platform.common.constants.Constant;
 import com.flink.platform.common.enums.ExecutionStatus;
 import com.flink.platform.common.enums.JobStatus;
 import com.flink.platform.common.model.JobVertex;
@@ -121,8 +122,8 @@ public class JobExecuteThread implements Callable<JobResponse> {
                                         .eq(JobRunInfo::getStatus, CREATED)
                                         .last("LIMIT 1"));
                 if (jobRunInfo == null) {
-                    jobRunInfo =
-                            jobRunInfoService.initJobRunInfo(jobInfo, flowRunId, worker.getIp());
+                    String workerIp = worker != null ? worker.getIp() : Constant.HOST_IP;
+                    jobRunInfo = jobRunInfoService.initJobRunInfo(jobInfo, flowRunId, workerIp);
                 }
 
                 // Process job run.

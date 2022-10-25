@@ -30,9 +30,8 @@ import static com.flink.platform.common.constants.JobConstant.HADOOP_USER_NAME;
 import static com.flink.platform.common.constants.JobConstant.JOB_ID_PATTERN;
 import static com.flink.platform.common.enums.DeployMode.FLINK_YARN_PER;
 import static com.flink.platform.common.enums.ExecutionStatus.FAILURE;
-import static com.flink.platform.common.enums.ExecutionStatus.KILLABLE;
 import static com.flink.platform.common.enums.ExecutionStatus.SUBMITTED;
-import static com.flink.platform.web.util.CommandUtil.EXIT_CODE_SUCCESS;
+import static com.flink.platform.common.enums.ExecutionStatus.SUCCESS;
 import static com.flink.platform.web.util.CommandUtil.forceKill;
 
 /** Flink command executor. */
@@ -71,8 +70,8 @@ public class FlinkCommandExecutor implements CommandExecutor {
         ShellCallback callback = task.buildShellCallback();
 
         // call `killCommand` method if execute command failed.
-        if (task.getExitValue() != EXIT_CODE_SUCCESS) {
-            return new JobCallback(jobId, appId, null, callback, EMPTY, KILLABLE);
+        if (task.finalStatus() != SUCCESS) {
+            return new JobCallback(jobId, appId, null, callback, EMPTY, task.finalStatus());
         }
 
         if (StringUtils.isNotEmpty(appId) && StringUtils.isNotEmpty(jobId)) {
