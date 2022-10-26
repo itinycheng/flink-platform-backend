@@ -1,8 +1,12 @@
 package com.flink.platform.web.command.flink;
 
+import com.flink.platform.common.enums.DeployMode;
 import com.flink.platform.web.command.shell.ShellTask;
+import com.flink.platform.web.common.SpringContext;
+import com.flink.platform.web.external.YarnClientService;
 import com.flink.platform.web.util.CollectLogThread;
 import lombok.Getter;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
@@ -12,6 +16,7 @@ import java.util.regex.Matcher;
 
 import static com.flink.platform.common.constants.JobConstant.APP_ID_PATTERN;
 import static com.flink.platform.common.constants.JobConstant.JOB_ID_PATTERN;
+import static com.flink.platform.common.enums.DeployMode.FLINK_YARN_PER;
 import static com.flink.platform.web.util.CollectLogThread.CmdOutType;
 import static com.flink.platform.web.util.CollectLogThread.CmdOutType.ERR;
 import static com.flink.platform.web.util.CollectLogThread.CmdOutType.STD;
@@ -21,15 +26,29 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 /** Flink yarn task. */
 @Slf4j
 @Getter
+@Setter
 public class FlinkYarnTask extends ShellTask {
+
+    private final YarnClientService yarnClientService =
+            SpringContext.getBean(YarnClientService.class);
+
+    private DeployMode mode;
 
     private String appId;
 
     private String jobId;
 
-    public FlinkYarnTask(long jobRunId, String command, String[] envs, long timeoutMills) {
+    public FlinkYarnTask(
+            long jobRunId, DeployMode mode, String command, String[] envs, long timeoutMills) {
         super(jobRunId, command, envs, timeoutMills);
+        this.mode = mode;
         setLogConsumer(this.extractAppIdAndJobId());
+    }
+
+    /** Only for kill job. */
+    public FlinkYarnTask(long jobRunId, DeployMode mode) {
+        super(jobRunId, null, null, 0);
+        this.mode = mode;
     }
 
     public void run() throws Exception {
@@ -68,7 +87,24 @@ public class FlinkYarnTask extends ShellTask {
         }
     }
 
-    public void cancel() {}
+    @Override
+    public void cancel() {
+        // kill shell.
+        super.cancel();
+
+        // kill application.
+        if (StringUtils.isNotEmpty(appId)) {
+            if (FLINK_YARN_PER.equals(mode)) {
+                try {
+                    yarnClientService.killApplication(appId);
+                } catch (Exception e) {
+                    log.error("Kill yarn application: {} failed", appId, e);
+                }
+            } else {
+                log.warn("Kill command unsupported deployMode: {}, applicationId: {}", mode, appId);
+            }
+        }
+    }
 
     public BiConsumer<CmdOutType, String> extractAppIdAndJobId() {
         return (cmdOutType, line) -> {

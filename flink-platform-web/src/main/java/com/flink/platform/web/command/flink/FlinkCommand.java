@@ -1,5 +1,6 @@
 package com.flink.platform.web.command.flink;
 
+import com.flink.platform.common.enums.DeployMode;
 import com.flink.platform.web.command.JobCommand;
 import lombok.Getter;
 import lombok.Setter;
@@ -17,6 +18,8 @@ import static com.flink.platform.common.constants.Constant.LINE_SEPARATOR;
 @Getter
 public class FlinkCommand extends JobCommand {
 
+    private DeployMode mode;
+
     private String prefix;
 
     private String optionArgs;
@@ -31,8 +34,9 @@ public class FlinkCommand extends JobCommand {
 
     private List<URL> classpaths;
 
-    public FlinkCommand(long jobRunId) {
+    public FlinkCommand(long jobRunId, DeployMode mode) {
         super(jobRunId);
+        this.mode = mode;
     }
 
     @Override

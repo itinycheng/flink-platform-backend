@@ -1,5 +1,7 @@
 package com.flink.platform.web.command;
 
+import com.flink.platform.common.enums.JobType;
+
 import javax.annotation.Nonnull;
 
 import java.util.Map;
@@ -16,10 +18,10 @@ public interface CommandExecutor {
     /**
      * whether support.
      *
-     * @param jobCommand job command
+     * @param jobType job type
      * @return whether support
      */
-    boolean isSupported(JobCommand jobCommand);
+    boolean isSupported(JobType jobType);
 
     @Nonnull
     default JobCallback exec(JobCommand jobCommand) throws Exception {
@@ -35,6 +37,20 @@ public interface CommandExecutor {
         } finally {
             JOB_RUNNING_MAP.remove(jobRunId);
         }
+    }
+
+    default void kill(long jobRunId) {
+        JobCommand jobCommand = JOB_RUNNING_MAP.get(jobRunId);
+        if (jobCommand == null) {
+            jobCommand =
+                    new JobCommand(jobRunId) {
+                        @Override
+                        public String toCommandString() {
+                            return "no class matched";
+                        }
+                    };
+        }
+        killCommand(jobCommand);
     }
 
     /**
