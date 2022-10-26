@@ -1,6 +1,7 @@
 package com.flink.platform.web.command.sql;
 
 import com.flink.platform.common.enums.DbType;
+import com.flink.platform.common.enums.JobType;
 import com.flink.platform.dao.entity.Datasource;
 import com.flink.platform.dao.service.DatasourceService;
 import com.flink.platform.dao.service.JobRunInfoService;
@@ -26,6 +27,7 @@ import java.util.List;
 import static com.flink.platform.common.constants.Constant.LINE_SEPARATOR;
 import static com.flink.platform.common.enums.ExecutionStatus.FAILURE;
 import static com.flink.platform.common.enums.ExecutionStatus.SUCCESS;
+import static com.flink.platform.common.enums.JobType.CLICKHOUSE_SQL;
 import static com.flink.platform.web.util.JdbcUtil.createConnection;
 import static com.flink.platform.web.util.JdbcUtil.toJavaObject;
 
@@ -39,8 +41,8 @@ public class SqlCommandExecutor implements CommandExecutor {
     @Autowired private JobRunInfoService jobRunInfoService;
 
     @Override
-    public boolean isSupported(JobCommand jobCommand) {
-        return jobCommand instanceof SqlCommand;
+    public boolean isSupported(JobType jobType) {
+        return jobType == CLICKHOUSE_SQL;
     }
 
     @Nonnull

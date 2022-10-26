@@ -1,5 +1,6 @@
 package com.flink.platform.web.command.dependent;
 
+import com.flink.platform.common.enums.JobType;
 import com.flink.platform.web.command.CommandExecutor;
 import com.flink.platform.web.command.JobCallback;
 import com.flink.platform.web.command.JobCommand;
@@ -10,6 +11,7 @@ import javax.annotation.Nonnull;
 
 import static com.flink.platform.common.enums.ExecutionStatus.FAILURE;
 import static com.flink.platform.common.enums.ExecutionStatus.SUCCESS;
+import static com.flink.platform.common.enums.JobType.DEPENDENT;
 
 /** dependent executor. */
 @Slf4j
@@ -17,8 +19,8 @@ import static com.flink.platform.common.enums.ExecutionStatus.SUCCESS;
 public class DependentCommandExecutor implements CommandExecutor {
 
     @Override
-    public boolean isSupported(JobCommand jobCommand) {
-        return jobCommand instanceof DependentCommand;
+    public boolean isSupported(JobType jobType) {
+        return jobType == DEPENDENT;
     }
 
     @Nonnull

@@ -69,8 +69,8 @@ public abstract class FlinkCommandBuilder implements CommandBuilder {
             throws Exception {
         FlinkJob flinkJob = jobRunInfo.getConfig().unwrap(FlinkJob.class);
         initResources(flinkJob);
-        FlinkCommand command = new FlinkCommand(jobRunInfo.getId());
         DeployMode deployMode = jobRunInfo.getDeployMode();
+        FlinkCommand command = new FlinkCommand(jobRunInfo.getId(), deployMode);
         String execMode = String.format(EXEC_MODE, deployMode.mode, deployMode.target);
         command.setPrefix(flinkConfig.getCommandPath() + execMode);
         // add configurations

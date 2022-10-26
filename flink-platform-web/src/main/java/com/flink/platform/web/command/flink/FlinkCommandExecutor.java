@@ -1,6 +1,7 @@
 package com.flink.platform.web.command.flink;
 
 import com.flink.platform.common.enums.ExecutionStatus;
+import com.flink.platform.common.enums.JobType;
 import com.flink.platform.common.util.JsonUtil;
 import com.flink.platform.dao.entity.JobRunInfo;
 import com.flink.platform.dao.service.JobRunInfoService;
@@ -21,6 +22,8 @@ import org.springframework.stereotype.Component;
 
 import javax.annotation.Nonnull;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.regex.Matcher;
 
 import static com.flink.platform.common.constants.Constant.EMPTY;
@@ -28,16 +31,17 @@ import static com.flink.platform.common.constants.Constant.LINE_SEPARATOR;
 import static com.flink.platform.common.constants.JobConstant.APP_ID_PATTERN;
 import static com.flink.platform.common.constants.JobConstant.HADOOP_USER_NAME;
 import static com.flink.platform.common.constants.JobConstant.JOB_ID_PATTERN;
-import static com.flink.platform.common.enums.DeployMode.FLINK_YARN_PER;
 import static com.flink.platform.common.enums.ExecutionStatus.FAILURE;
 import static com.flink.platform.common.enums.ExecutionStatus.SUBMITTED;
 import static com.flink.platform.common.enums.ExecutionStatus.SUCCESS;
-import static com.flink.platform.web.util.CommandUtil.forceKill;
 
 /** Flink command executor. */
 @Slf4j
 @Component("flinkCommandExecutor")
 public class FlinkCommandExecutor implements CommandExecutor {
+
+    private static final List<JobType> SUPPORTED_JOB_TYPES =
+            Arrays.asList(JobType.FLINK_JAR, JobType.FLINK_SQL);
 
     @Value("${hadoop.username}")
     private String hadoopUser;
@@ -49,20 +53,22 @@ public class FlinkCommandExecutor implements CommandExecutor {
     @Autowired private JobRunInfoService jobRunInfoService;
 
     @Override
-    public boolean isSupported(JobCommand jobCommand) {
-        return jobCommand instanceof FlinkCommand;
+    public boolean isSupported(JobType jobType) {
+        return SUPPORTED_JOB_TYPES.contains(jobType);
     }
 
     @Nonnull
     @Override
     public JobCallback execCommand(JobCommand command) throws Exception {
+        FlinkCommand flinkCommand = (FlinkCommand) command;
         FlinkYarnTask task =
                 new FlinkYarnTask(
-                        command.getJobRunId(),
-                        command.toCommandString(),
+                        flinkCommand.getJobRunId(),
+                        flinkCommand.getMode(),
+                        flinkCommand.toCommandString(),
                         buildEnvProps(),
                         workerConfig.getFlinkSubmitTimeoutMills());
-        command.setTask(task);
+        flinkCommand.setTask(task);
         task.run();
 
         String appId = task.getAppId();
@@ -94,43 +100,20 @@ public class FlinkCommandExecutor implements CommandExecutor {
 
     @Override
     public void killCommand(JobCommand command) {
-        Integer processId = null;
-        String applicationId = null;
-
+        // Need provide processId, applicationId, deployMode.
         FlinkYarnTask task = command.getTask().unwrap(FlinkYarnTask.class);
-        if (task != null) {
-            processId = task.getProcessId();
-            applicationId = task.getAppId();
-        } else {
+        if (task == null) {
             JobRunInfo jobRun = jobRunInfoService.getById(command.getJobRunId());
             JobCallback jobCallback = JsonUtil.toBean(jobRun.getBackInfo(), JobCallback.class);
             if (jobCallback != null) {
-                ShellCallback cmdCallback = jobCallback.getCmdCallback();
-                processId = cmdCallback != null ? cmdCallback.getProcessId() : null;
-                applicationId = jobCallback.getAppId();
+                task = new FlinkYarnTask(jobRun.getId(), jobRun.getDeployMode());
+                task.setProcessId(jobCallback.getProcessId());
+                task.setAppId(jobCallback.getAppId());
             }
         }
 
-        // Kill shell command.
-        if (processId != null && processId > 0) {
-            forceKill(processId, buildEnvProps());
-        }
-
-        // kill application.
-        if (StringUtils.isNotEmpty(applicationId)) {
-            JobRunInfo jobRun = jobRunInfoService.getById(command.getJobRunId());
-            if (FLINK_YARN_PER.equals(jobRun.getDeployMode())) {
-                try {
-                    yarnClientService.killApplication(applicationId);
-                } catch (Exception e) {
-                    log.error("Kill yarn application: {} failed", applicationId, e);
-                }
-            } else {
-                log.warn(
-                        "Kill command unsupported, applicationId: {}, deployMode: {}",
-                        applicationId,
-                        jobRun.getDeployMode());
-            }
+        if (task != null) {
+            task.cancel();
         }
     }
 

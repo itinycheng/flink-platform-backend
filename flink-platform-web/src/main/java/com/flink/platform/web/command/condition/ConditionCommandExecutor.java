@@ -1,5 +1,6 @@
 package com.flink.platform.web.command.condition;
 
+import com.flink.platform.common.enums.JobType;
 import com.flink.platform.web.command.CommandExecutor;
 import com.flink.platform.web.command.JobCallback;
 import com.flink.platform.web.command.JobCommand;
@@ -10,6 +11,7 @@ import javax.annotation.Nonnull;
 
 import static com.flink.platform.common.enums.ExecutionStatus.FAILURE;
 import static com.flink.platform.common.enums.ExecutionStatus.SUCCESS;
+import static com.flink.platform.common.enums.JobType.CONDITION;
 
 /** condition executor. */
 @Slf4j
@@ -17,8 +19,8 @@ import static com.flink.platform.common.enums.ExecutionStatus.SUCCESS;
 public class ConditionCommandExecutor implements CommandExecutor {
 
     @Override
-    public boolean isSupported(JobCommand jobCommand) {
-        return jobCommand instanceof ConditionCommand;
+    public boolean isSupported(JobType jobType) {
+        return jobType == CONDITION;
     }
 
     @Nonnull

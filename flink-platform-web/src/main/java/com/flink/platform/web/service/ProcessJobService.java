@@ -113,7 +113,7 @@ public class ProcessJobService {
             final JobCommand command = jobCommand;
             JobCallback callback =
                     jobCommandExecutors.stream()
-                            .filter(executor -> executor.isSupported(command))
+                            .filter(executor -> executor.isSupported(jobType))
                             .findFirst()
                             .orElseThrow(
                                     () ->

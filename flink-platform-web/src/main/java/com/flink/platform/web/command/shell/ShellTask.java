@@ -6,6 +6,7 @@ import com.flink.platform.web.util.CollectLogThread;
 import com.flink.platform.web.util.CommandUtil;
 import com.flink.platform.web.util.ShellCallback;
 import lombok.Getter;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
 import javax.annotation.Nullable;
@@ -28,13 +29,14 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 /** Flink yarn task. */
 @Slf4j
 @Getter
+@Setter
 public class ShellTask extends AbstractTask {
 
-    protected final String command;
+    protected String command;
 
-    protected final String[] envs;
+    protected String[] envs;
 
-    protected final long timeoutMills;
+    protected long timeoutMills;
 
     protected BiConsumer<CmdOutType, String> logConsumer;
 
@@ -56,6 +58,12 @@ public class ShellTask extends AbstractTask {
         this.envs = envs;
         this.timeoutMills = timeoutMills;
         this.logConsumer = newLogBuffer(null);
+    }
+
+    /** Only for kill command process. */
+    public ShellTask(long id, Integer processId) {
+        super(id);
+        this.processId = processId;
     }
 
     @Override
