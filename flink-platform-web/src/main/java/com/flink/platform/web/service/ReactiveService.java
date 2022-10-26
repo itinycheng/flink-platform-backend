@@ -1,5 +1,6 @@
 package com.flink.platform.web.service;
 
+import com.flink.platform.common.constants.Constant;
 import com.flink.platform.common.enums.DbType;
 import com.flink.platform.common.exception.UnrecoverableException;
 import com.flink.platform.common.job.Sql;
@@ -69,7 +70,7 @@ public class ReactiveService {
 
     public ReactiveExecVo execFlink(String execId, JobInfo jobInfo, String[] envProps)
             throws Exception {
-        JobRunInfo jobRunInfo = jobRunInfoService.initJobRunInfo(jobInfo, null, null);
+        JobRunInfo jobRunInfo = jobRunInfoService.createFrom(jobInfo, null, Constant.HOST_IP);
         String command =
                 commandBuilders.stream()
                         .filter(
