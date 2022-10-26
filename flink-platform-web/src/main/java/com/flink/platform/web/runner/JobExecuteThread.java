@@ -123,7 +123,8 @@ public class JobExecuteThread implements Callable<JobResponse> {
                                         .last("LIMIT 1"));
                 if (jobRunInfo == null) {
                     String workerIp = worker != null ? worker.getIp() : Constant.HOST_IP;
-                    jobRunInfo = jobRunInfoService.initJobRunInfo(jobInfo, flowRunId, workerIp);
+                    jobRunInfo = jobRunInfoService.createFrom(jobInfo, flowRunId, workerIp);
+                    jobRunInfoService.save(jobRunInfo);
                 }
 
                 // Process job run.

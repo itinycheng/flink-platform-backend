@@ -14,7 +14,7 @@ import static com.flink.platform.common.enums.ExecutionStatus.CREATED;
 @DS("master_platform")
 public class JobRunInfoService extends ServiceImpl<JobRunInfoMapper, JobRunInfo> {
 
-    public JobRunInfo initJobRunInfo(JobInfo jobInfo, Long flowRunId, String ip) {
+    public JobRunInfo createFrom(JobInfo jobInfo, Long flowRunId, String host) {
         JobRunInfo jobRunInfo = new JobRunInfo();
         jobRunInfo.setName(jobInfo.getName() + "-" + System.currentTimeMillis());
         jobRunInfo.setJobId(jobInfo.getId());
@@ -24,14 +24,12 @@ public class JobRunInfoService extends ServiceImpl<JobRunInfoMapper, JobRunInfo>
         jobRunInfo.setVersion(jobInfo.getVersion());
         jobRunInfo.setDeployMode(jobInfo.getDeployMode());
         jobRunInfo.setExecMode(jobInfo.getExecMode());
-        jobRunInfo.setRouteUrl(jobInfo.getRouteUrl());
         jobRunInfo.setConfig(jobInfo.getConfig());
-        jobRunInfo.setSubject(jobInfo.getSubject());
-        jobRunInfo.setHost(ip);
-        jobRunInfo.setStatus(CREATED);
         jobRunInfo.setVariables(jobInfo.getVariables());
-        save(jobRunInfo);
-
+        jobRunInfo.setSubject(jobInfo.getSubject());
+        jobRunInfo.setRouteUrl(jobInfo.getRouteUrl());
+        jobRunInfo.setHost(host);
+        jobRunInfo.setStatus(CREATED);
         return jobRunInfo;
     }
 }
