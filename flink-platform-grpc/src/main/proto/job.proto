@@ -5,6 +5,7 @@ option java_package = "com.flink.platform.grpc";
 option java_outer_classname = "HelloWorldProto";
 
 import public "google/protobuf/timestamp.proto";
+import public "google/protobuf/empty.proto";
 
 // The job service definition.
 service JobGrpcService {
@@ -14,6 +15,10 @@ service JobGrpcService {
 
   // get job status.
   rpc GetJobStatus (JobStatusRequest) returns (JobStatusReply) {
+  }
+
+  // kill job.
+  rpc KillJob (KillJobRequest) returns (KillJobReply) {
   }
 }
 
@@ -35,4 +40,12 @@ message JobStatusReply {
   int32 status = 1;
   optional int64 startTime = 2;
   optional int64 endTime = 3;
+}
+
+message KillJobRequest {
+  int64 jobRunId = 1;
+}
+
+message KillJobReply {
+  int64 jobRunId = 1;
 }

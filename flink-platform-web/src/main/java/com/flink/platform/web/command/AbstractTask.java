@@ -20,8 +20,4 @@ public abstract class AbstractTask {
     public abstract void run() throws Exception;
 
     public abstract void cancel();
-
-    public <T> T unwrap(Class<T> clazz) {
-        return clazz.isInstance(this) ? clazz.cast(this) : null;
-    }
 }

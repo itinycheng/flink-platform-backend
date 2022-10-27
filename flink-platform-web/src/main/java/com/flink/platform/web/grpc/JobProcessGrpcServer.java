@@ -5,8 +5,11 @@ import com.flink.platform.dao.entity.JobRunInfo;
 import com.flink.platform.grpc.JobGrpcServiceGrpc;
 import com.flink.platform.grpc.JobStatusReply;
 import com.flink.platform.grpc.JobStatusRequest;
+import com.flink.platform.grpc.KillJobReply;
+import com.flink.platform.grpc.KillJobRequest;
 import com.flink.platform.grpc.ProcessJobReply;
 import com.flink.platform.grpc.ProcessJobRequest;
+import com.flink.platform.web.service.KillJobService;
 import com.flink.platform.web.service.ProcessJobService;
 import com.flink.platform.web.service.ProcessJobStatusService;
 import io.grpc.Status;
@@ -23,6 +26,8 @@ public class JobProcessGrpcServer extends JobGrpcServiceGrpc.JobGrpcServiceImplB
     @Autowired private ProcessJobService processJobService;
 
     @Autowired private ProcessJobStatusService processJobStatusService;
+
+    @Autowired private KillJobService killJobService;
 
     @Override
     public void processJob(
@@ -48,6 +53,21 @@ public class JobProcessGrpcServer extends JobGrpcServiceGrpc.JobGrpcServiceImplB
             responseObserver.onNext(reply);
         } catch (Exception e) {
             log.error("process job via grpc failed", e);
+            responseObserver.onError(
+                    getStatus(e).withCause(e).withDescription(e.getMessage()).asRuntimeException());
+        }
+        responseObserver.onCompleted();
+    }
+
+    @Override
+    public void killJob(KillJobRequest request, StreamObserver<KillJobReply> responseObserver) {
+        try {
+            killJobService.killJob(request.getJobRunId());
+            KillJobReply reply =
+                    KillJobReply.newBuilder().setJobRunId(request.getJobRunId()).build();
+            responseObserver.onNext(reply);
+        } catch (Exception e) {
+            log.error("kill job via grpc failed", e);
             responseObserver.onError(
                     getStatus(e).withCause(e).withDescription(e.getMessage()).asRuntimeException());
         }
