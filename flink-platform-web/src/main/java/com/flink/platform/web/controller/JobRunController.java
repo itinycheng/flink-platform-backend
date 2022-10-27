@@ -13,6 +13,7 @@ import com.flink.platform.dao.service.JobInfoService;
 import com.flink.platform.dao.service.JobRunInfoService;
 import com.flink.platform.web.entity.request.JobRunRequest;
 import com.flink.platform.web.entity.response.ResultInfo;
+import com.flink.platform.web.service.KillJobService;
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -30,7 +31,10 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
+import static com.flink.platform.common.enums.ResponseStatus.JOB_ALREADY_TERMINATED;
 import static com.flink.platform.common.util.DateUtil.GLOBAL_DATE_TIME_FORMAT;
+import static com.flink.platform.web.entity.response.ResultInfo.failure;
+import static com.flink.platform.web.entity.response.ResultInfo.success;
 import static java.util.Objects.nonNull;
 import static java.util.stream.Collectors.toList;
 
@@ -43,10 +47,12 @@ public class JobRunController {
 
     @Autowired private JobInfoService jobInfoService;
 
+    @Autowired private KillJobService killJobService;
+
     @GetMapping(value = "/get/{runId}")
     public ResultInfo<JobRunInfo> get(@PathVariable Long runId) {
         JobRunInfo jobRunInfo = jobRunInfoService.getById(runId);
-        return ResultInfo.success(jobRunInfo);
+        return success(jobRunInfo);
     }
 
     @GetMapping(value = "/page")
@@ -84,14 +90,14 @@ public class JobRunController {
 
         Page<JobRunInfo> pager = new Page<>(page, size);
         IPage<JobRunInfo> iPage = jobRunInfoService.page(pager, queryWrapper);
-        return ResultInfo.success(iPage);
+        return success(iPage);
     }
 
     @PostMapping(value = "/getJobOrRunByJobIds")
     public ResultInfo<Collection<Object>> list(@RequestBody JobRunRequest jobRunRequest) {
         if (CollectionUtils.isEmpty(jobRunRequest.getJobIds())
                 || jobRunRequest.getFlowRunId() == null) {
-            return ResultInfo.success(Collections.emptyList());
+            return success(Collections.emptyList());
         }
 
         List<JobRunInfo> jobRunList =
@@ -117,6 +123,16 @@ public class JobRunController {
                 CollectionUtils.union(
                         CollectionUtils.emptyIfNull(jobRunList),
                         CollectionUtils.emptyIfNull(jobList));
-        return ResultInfo.success(jobAndJobRunList);
+        return success(jobAndJobRunList);
+    }
+
+    @GetMapping(value = "/kill/{runId}")
+    public ResultInfo<Long> kill(@PathVariable Long runId) {
+        JobRunInfo jobRun = jobRunInfoService.getById(runId);
+        if (jobRun == null || jobRun.getStatus().isTerminalState()) {
+            return failure(JOB_ALREADY_TERMINATED);
+        }
+        long jobRunId = killJobService.killRemoteJob(jobRun);
+        return success(jobRunId);
     }
 }

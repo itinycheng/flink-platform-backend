@@ -4,6 +4,7 @@ import com.flink.platform.common.enums.JobType;
 import com.flink.platform.common.util.JsonUtil;
 import com.flink.platform.dao.entity.JobRunInfo;
 import com.flink.platform.dao.service.JobRunInfoService;
+import com.flink.platform.web.command.AbstractTask;
 import com.flink.platform.web.command.CommandExecutor;
 import com.flink.platform.web.command.JobCallback;
 import com.flink.platform.web.command.JobCommand;
@@ -48,7 +49,7 @@ public class ShellCommandExecutor implements CommandExecutor {
 
     @Override
     public void killCommand(JobCommand command) {
-        ShellTask task = command.getTask().unwrap(ShellTask.class);
+        AbstractTask task = command.getTask();
         if (task == null) {
             JobRunInfo jobRun = jobRunInfoService.getById(command.getJobRunId());
             JobCallback jobCallback = JsonUtil.toBean(jobRun.getBackInfo(), JobCallback.class);

@@ -29,8 +29,7 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 @Setter
 public class FlinkYarnTask extends ShellTask {
 
-    private final YarnClientService yarnClientService =
-            SpringContext.getBean(YarnClientService.class);
+    private YarnClientService yarnClientService;
 
     private DeployMode mode;
 
@@ -49,6 +48,7 @@ public class FlinkYarnTask extends ShellTask {
     public FlinkYarnTask(long jobRunId, DeployMode mode) {
         super(jobRunId, null, null, 0);
         this.mode = mode;
+        this.yarnClientService = SpringContext.getBean(YarnClientService.class);
     }
 
     public void run() throws Exception {
