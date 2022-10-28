@@ -31,7 +31,7 @@ public class ShellCommandExecutor implements CommandExecutor {
 
     @Nonnull
     @Override
-    public JobCallback execCommand(JobCommand command) throws Exception {
+    public JobCallback execCommand(@Nonnull JobCommand command) throws Exception {
         ShellCommand shellCommand = (ShellCommand) command;
         ShellTask task =
                 new ShellTask(
@@ -48,7 +48,7 @@ public class ShellCommandExecutor implements CommandExecutor {
     }
 
     @Override
-    public void killCommand(JobCommand command) {
+    public void killCommand(@Nonnull JobCommand command) {
         AbstractTask task = command.getTask();
         if (task == null) {
             JobRunInfo jobRun = jobRunInfoService.getById(command.getJobRunId());

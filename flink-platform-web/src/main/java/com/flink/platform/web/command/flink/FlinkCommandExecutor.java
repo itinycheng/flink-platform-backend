@@ -60,7 +60,7 @@ public class FlinkCommandExecutor implements CommandExecutor {
 
     @Nonnull
     @Override
-    public JobCallback execCommand(JobCommand command) throws Exception {
+    public JobCallback execCommand(@Nonnull JobCommand command) throws Exception {
         FlinkCommand flinkCommand = (FlinkCommand) command;
         FlinkYarnTask task =
                 new FlinkYarnTask(
@@ -100,7 +100,7 @@ public class FlinkCommandExecutor implements CommandExecutor {
     }
 
     @Override
-    public void killCommand(JobCommand command) {
+    public void killCommand(@Nonnull JobCommand command) {
         // Need provide processId, applicationId, deployMode.
         AbstractTask task = command.getTask();
         if (task == null) {

@@ -25,7 +25,7 @@ public class ConditionCommandExecutor implements CommandExecutor {
 
     @Nonnull
     @Override
-    public JobCallback execCommand(JobCommand command) {
+    public JobCallback execCommand(@Nonnull JobCommand command) {
         ConditionCommand conditionCommand = (ConditionCommand) command;
         return new JobCallback(null, conditionCommand.isSuccess() ? SUCCESS : FAILURE);
     }

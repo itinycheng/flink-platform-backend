@@ -47,7 +47,7 @@ public class SqlCommandExecutor implements CommandExecutor {
 
     @Nonnull
     @Override
-    public JobCallback execCommand(JobCommand command) throws Exception {
+    public JobCallback execCommand(@Nonnull JobCommand command) throws Exception {
         SqlCommand sqlCommand = (SqlCommand) command;
         Datasource datasource = datasourceService.getById(sqlCommand.getDsId());
 
