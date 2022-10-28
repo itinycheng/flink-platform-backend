@@ -31,7 +31,8 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
-import static com.flink.platform.common.enums.ResponseStatus.JOB_ALREADY_TERMINATED;
+import static com.flink.platform.common.enums.ExecutionStatus.getNonTerminals;
+import static com.flink.platform.common.enums.ResponseStatus.NO_RUNNING_JOB_FOUND;
 import static com.flink.platform.common.util.DateUtil.GLOBAL_DATE_TIME_FORMAT;
 import static com.flink.platform.web.entity.response.ResultInfo.failure;
 import static com.flink.platform.web.entity.response.ResultInfo.success;
@@ -127,12 +128,22 @@ public class JobRunController {
     }
 
     @GetMapping(value = "/kill/{runId}")
-    public ResultInfo<Long> kill(@PathVariable Long runId) {
-        JobRunInfo jobRun = jobRunInfoService.getById(runId);
-        if (jobRun == null || jobRun.getStatus().isTerminalState()) {
-            return failure(JOB_ALREADY_TERMINATED);
+    public ResultInfo<Boolean> kill(
+            @RequestAttribute(value = Constant.SESSION_USER) User loginUser,
+            @PathVariable Long runId) {
+        JobRunInfo jobRun =
+                jobRunInfoService.getOne(
+                        new QueryWrapper<JobRunInfo>()
+                                .lambda()
+                                .eq(JobRunInfo::getId, runId)
+                                .eq(JobRunInfo::getUserId, loginUser.getId())
+                                .in(JobRunInfo::getStatus, getNonTerminals()));
+
+        if (jobRun == null) {
+            return failure(NO_RUNNING_JOB_FOUND);
         }
-        long jobRunId = killJobService.killRemoteJob(jobRun);
-        return success(jobRunId);
+
+        boolean bool = killJobService.killRemoteJob(jobRun);
+        return success(bool);
     }
 }

@@ -7,7 +7,6 @@ import com.flink.platform.dao.entity.Worker;
 import com.flink.platform.dao.service.JobRunInfoService;
 import com.flink.platform.dao.service.WorkerService;
 import com.flink.platform.grpc.JobGrpcServiceGrpc;
-import com.flink.platform.grpc.KillJobReply;
 import com.flink.platform.grpc.KillJobRequest;
 import com.flink.platform.web.command.CommandExecutor;
 import com.flink.platform.web.grpc.JobProcessGrpcClient;
@@ -46,7 +45,7 @@ public class KillJobService {
         this.workerService = workerService;
     }
 
-    public long killRemoteJob(JobRunInfo jobRun) {
+    public boolean killRemoteJob(JobRunInfo jobRun) {
         String host = jobRun.getHost();
         Worker worker =
                 workerService.getOne(
@@ -58,8 +57,8 @@ public class KillJobService {
         JobGrpcServiceGrpc.JobGrpcServiceBlockingStub stub =
                 jobProcessGrpcClient.grpcClient(worker);
         KillJobRequest request = KillJobRequest.newBuilder().setJobRunId(jobRun.getId()).build();
-        KillJobReply killJobReply = stub.killJob(request);
-        return killJobReply.getJobRunId();
+        stub.killJob(request);
+        return true;
     }
 
     public void killJob(final long jobRunId) {

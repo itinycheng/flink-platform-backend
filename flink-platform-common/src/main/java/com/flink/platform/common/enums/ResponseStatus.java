@@ -23,7 +23,9 @@ public enum ResponseStatus {
     EXIST_UNFINISHED_PROCESS(10018, "There is an unfinished job or flow"),
     DATASOURCE_NOT_FOUND(10019, "Datasource not found"),
     FLOW_ALREADY_TERMINATED(10020, "Workflow already terminated"),
-    JOB_ALREADY_TERMINATED(10021, "Job already terminated");
+    JOB_ALREADY_TERMINATED(10021, "Job already terminated"),
+    KILL_FLOW_EXCEPTION_FOUND(10022, "Job already terminated"),
+    NO_RUNNING_JOB_FOUND(10023, "No running job found");
 
     private final int code;
     private final String desc;
