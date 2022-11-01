@@ -6,10 +6,12 @@ import com.flink.platform.common.enums.ExecutionStatus;
 import com.flink.platform.common.enums.JobStatus;
 import com.flink.platform.common.model.JobVertex;
 import com.flink.platform.common.util.JsonUtil;
+import com.flink.platform.dao.entity.JobFlowRun;
 import com.flink.platform.dao.entity.JobInfo;
 import com.flink.platform.dao.entity.JobRunInfo;
 import com.flink.platform.dao.entity.Worker;
 import com.flink.platform.dao.entity.task.FlinkJob;
+import com.flink.platform.dao.service.JobFlowRunService;
 import com.flink.platform.dao.service.JobInfoService;
 import com.flink.platform.dao.service.JobRunInfoService;
 import com.flink.platform.grpc.JobStatusReply;
@@ -36,6 +38,8 @@ import static com.flink.platform.common.enums.ExecutionMode.STREAMING;
 import static com.flink.platform.common.enums.ExecutionStatus.CREATED;
 import static com.flink.platform.common.enums.ExecutionStatus.ERROR;
 import static com.flink.platform.common.enums.ExecutionStatus.FAILURE;
+import static com.flink.platform.common.enums.ExecutionStatus.KILLABLE;
+import static com.flink.platform.common.enums.ExecutionStatus.KILLED;
 import static com.flink.platform.common.enums.ExecutionStatus.NOT_EXIST;
 import static com.flink.platform.common.enums.ExecutionStatus.RUNNING;
 import static com.flink.platform.common.enums.ExecutionStatus.SUCCESS;
@@ -62,6 +66,8 @@ public class JobExecuteThread implements Callable<JobResponse> {
 
     private final JobRunInfoService jobRunInfoService;
 
+    private final JobFlowRunService jobFlowRunService;
+
     private final WorkerApplyService workerApplyService;
 
     private final JobProcessGrpcClient jobProcessGrpcClient;
@@ -73,6 +79,7 @@ public class JobExecuteThread implements Callable<JobResponse> {
         this.streamingJobToSuccessMills = workerConfig.getStreamingJobToSuccessMills();
         this.jobInfoService = SpringContext.getBean(JobInfoService.class);
         this.jobRunInfoService = SpringContext.getBean(JobRunInfoService.class);
+        this.jobFlowRunService = SpringContext.getBean(JobFlowRunService.class);
         this.workerApplyService = SpringContext.getBean(WorkerApplyService.class);
         this.jobProcessGrpcClient = SpringContext.getBean(JobProcessGrpcClient.class);
     }
@@ -84,20 +91,33 @@ public class JobExecuteThread implements Callable<JobResponse> {
         JobRunInfo jobRunInfo = null;
 
         try {
-            // terminated job don't need to be processed
+            // Terminated job don't need to be processed again.
             ExecutionStatus jobRunStatus = jobVertex.getJobRunStatus();
             if (jobRunStatus != null && jobRunStatus.isTerminalState()) {
                 return new JobResponse(jobId, jobRunId, jobRunStatus);
             }
 
-            // Step 1: get job info
+            // Check workflow status and return if KILLABLE.
+            if (flowRunId != null) {
+                JobFlowRun jobFlowRun =
+                        jobFlowRunService.getOne(
+                                new QueryWrapper<JobFlowRun>()
+                                        .lambda()
+                                        .select(JobFlowRun::getStatus)
+                                        .eq(JobFlowRun::getId, flowRunId));
+                ExecutionStatus status = jobFlowRun.getStatus();
+                if (KILLABLE.equals(status) || status.isTerminalState()) {
+                    return new JobResponse(jobId, jobRunId, KILLED);
+                }
+            }
+
+            // Step 1: get job info and return if null.
             JobInfo jobInfo =
                     jobInfoService.getOne(
                             new QueryWrapper<JobInfo>()
                                     .lambda()
                                     .eq(JobInfo::getId, jobId)
                                     .eq(JobInfo::getStatus, JobStatus.ONLINE));
-
             if (jobInfo == null) {
                 log.warn("The job:{} is no longer exists or not in ready/scheduled status.", jobId);
                 return new JobResponse(jobId, jobRunId, NOT_EXIST);

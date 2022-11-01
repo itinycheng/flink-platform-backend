@@ -1,6 +1,7 @@
 package com.flink.platform.web.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.flink.platform.common.enums.JobType;
 import com.flink.platform.common.exception.UnrecoverableException;
 import com.flink.platform.dao.entity.JobRunInfo;
 import com.flink.platform.dao.entity.Worker;
@@ -62,30 +63,40 @@ public class KillJobService {
     }
 
     public void killJob(final long jobRunId) {
-        JobRunInfo jobRun =
+        JobRunInfo latestJobRun =
                 jobRunInfoService.getOne(
                         new QueryWrapper<JobRunInfo>()
                                 .lambda()
+                                .select(JobRunInfo::getType)
                                 .eq(JobRunInfo::getId, jobRunId)
                                 .in(JobRunInfo::getStatus, getNonTerminals()));
-        if (jobRun == null) {
+        if (latestJobRun == null) {
             return;
         }
 
         // exec kill
+        JobType type = latestJobRun.getType();
         jobCommandExecutors.stream()
-                .filter(executor -> executor.isSupported(jobRun.getType()))
+                .filter(executor -> executor.isSupported(type))
                 .findFirst()
                 .orElseThrow(() -> new UnrecoverableException("No available job command executor"))
                 .kill(jobRunId);
 
-        // set status to KILLED
-        JobRunInfo newJobRun = new JobRunInfo();
-        newJobRun.setId(jobRun.getId());
-        newJobRun.setStatus(KILLED);
-        newJobRun.setStopTime(LocalDateTime.now());
-        jobRunInfoService.updateById(newJobRun);
+        latestJobRun =
+                jobRunInfoService.getOne(
+                        new QueryWrapper<JobRunInfo>()
+                                .lambda()
+                                .select(JobRunInfo::getStatus)
+                                .eq(JobRunInfo::getId, jobRunId));
 
-        log.info("Kill job run: {} finished, time: {}", jobRunId, System.currentTimeMillis());
+        // set status to KILLED
+        if (!latestJobRun.getStatus().isTerminalState()) {
+            JobRunInfo newJobRun = new JobRunInfo();
+            newJobRun.setId(jobRunId);
+            newJobRun.setStatus(KILLED);
+            newJobRun.setStopTime(LocalDateTime.now());
+            jobRunInfoService.updateById(newJobRun);
+            log.info("Kill job run: {} finished, time: {}", jobRunId, System.currentTimeMillis());
+        }
     }
 }
