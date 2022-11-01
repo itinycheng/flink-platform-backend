@@ -27,6 +27,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import static com.flink.platform.common.enums.ExecutionStatus.KILLABLE;
 import static com.flink.platform.common.enums.ExecutionStatus.getNonTerminals;
 import static com.flink.platform.common.enums.ResponseStatus.FLOW_ALREADY_TERMINATED;
 import static com.flink.platform.common.enums.ResponseStatus.KILL_FLOW_EXCEPTION_FOUND;
@@ -99,6 +100,13 @@ public class JobFlowRunController {
             return failure(FLOW_ALREADY_TERMINATED);
         }
 
+        // Set the status of the workflow to KILLABLE.
+        JobFlowRun newJobFlowRun = new JobFlowRun();
+        newJobFlowRun.setId(jobFlowRun.getId());
+        newJobFlowRun.setStatus(KILLABLE);
+        jobFlowRunService.updateById(newJobFlowRun);
+
+        // Get unfinished jobs and kill them concurrently.
         List<JobRunInfo> unfinishedJobs =
                 jobRunInfoService.list(
                         new QueryWrapper<JobRunInfo>()
