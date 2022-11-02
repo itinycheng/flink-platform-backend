@@ -7,6 +7,8 @@ import com.flink.platform.web.util.ShellCallback;
 import lombok.Data;
 import lombok.experimental.Delegate;
 
+import javax.annotation.Nonnull;
+
 /** call back info from the command line. */
 @Data
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -24,7 +26,7 @@ public class JobCallback {
 
     @JsonIgnore private ExecutionStatus status;
 
-    @Delegate @JsonIgnore private ShellCallback cmdCallback;
+    @Nonnull @Delegate @JsonIgnore private ShellCallback cmdCallback;
 
     /** Only for deSeral. */
     public JobCallback() {

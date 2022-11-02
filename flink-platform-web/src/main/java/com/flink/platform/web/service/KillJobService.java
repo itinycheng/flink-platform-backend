@@ -18,7 +18,7 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.List;
 
-import static com.flink.platform.common.enums.ExecutionStatus.KILLED;
+import static com.flink.platform.common.enums.ExecutionStatus.KILLABLE;
 import static com.flink.platform.common.enums.ExecutionStatus.getNonTerminals;
 
 /** Kill job service. */
@@ -90,10 +90,11 @@ public class KillJobService {
                                 .eq(JobRunInfo::getId, jobRunId));
 
         // set status to KILLED
+        // Better in a transaction with serializable isolation level.
         if (!latestJobRun.getStatus().isTerminalState()) {
             JobRunInfo newJobRun = new JobRunInfo();
             newJobRun.setId(jobRunId);
-            newJobRun.setStatus(KILLED);
+            newJobRun.setStatus(KILLABLE);
             newJobRun.setStopTime(LocalDateTime.now());
             jobRunInfoService.updateById(newJobRun);
             log.info("Kill job run: {} finished, time: {}", jobRunId, System.currentTimeMillis());

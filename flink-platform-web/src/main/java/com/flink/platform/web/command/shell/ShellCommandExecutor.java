@@ -53,7 +53,7 @@ public class ShellCommandExecutor implements CommandExecutor {
         if (task == null) {
             JobRunInfo jobRun = jobRunInfoService.getById(command.getJobRunId());
             JobCallback jobCallback = JsonUtil.toBean(jobRun.getBackInfo(), JobCallback.class);
-            if (jobCallback != null) {
+            if (!jobRun.getStatus().isTerminalState() && jobCallback != null) {
                 task = new ShellTask(jobRun.getId(), jobCallback.getProcessId());
             }
         }
