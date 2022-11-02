@@ -113,7 +113,7 @@ public class CommandUtil {
 
     public static void forceKill(Integer processId, String[] envProps) {
         if (processId == null || processId <= 0) {
-            log.warn("kill process failed, pid: {}", processId);
+            log.warn("kill process failed, invalid pid: {}", processId);
             return;
         }
 
