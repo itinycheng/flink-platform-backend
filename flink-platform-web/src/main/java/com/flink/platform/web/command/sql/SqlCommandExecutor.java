@@ -2,6 +2,7 @@ package com.flink.platform.web.command.sql;
 
 import com.flink.platform.common.enums.DbType;
 import com.flink.platform.common.enums.JobType;
+import com.flink.platform.common.util.JsonUtil;
 import com.flink.platform.dao.entity.Datasource;
 import com.flink.platform.dao.service.DatasourceService;
 import com.flink.platform.dao.service.JobRunInfoService;
@@ -9,7 +10,6 @@ import com.flink.platform.web.command.CommandExecutor;
 import com.flink.platform.web.command.JobCallback;
 import com.flink.platform.web.command.JobCommand;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.ArrayUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -22,7 +22,9 @@ import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static com.flink.platform.common.constants.Constant.LINE_SEPARATOR;
 import static com.flink.platform.common.enums.ExecutionStatus.FAILURE;
@@ -52,16 +54,20 @@ public class SqlCommandExecutor implements CommandExecutor {
         Datasource datasource = datasourceService.getById(sqlCommand.getDsId());
 
         Exception exception = null;
-        List<String> dataList = new ArrayList<>();
+        List<Map<String, Object>> dataList = new ArrayList<>();
         try (Connection connection =
                         createConnection(datasource.getType(), datasource.getParams());
                 Statement stmt = connection.createStatement()) {
             String executingSql = null;
             try {
-                for (String sql : sqlCommand.getSqls()) {
-                    executingSql = sql;
-                    if (!stmt.execute(sql)) {
-                        dataList.add(String.format("exec: %s, result: %s", sql, false));
+                for (int j = 0; j < sqlCommand.getSqls().size(); j++) {
+                    executingSql = sqlCommand.getSqls().get(j);
+
+                    // execute sq.
+                    if (!stmt.execute(executingSql)) {
+                        Map<String, Object> itemMap = new HashMap<>(1);
+                        itemMap.put("_no_result_" + j, String.format("executed: %s", executingSql));
+                        dataList.add(itemMap);
                         continue;
                     }
 
@@ -73,20 +79,22 @@ public class SqlCommandExecutor implements CommandExecutor {
                         for (int i = 1; i <= num; i++) {
                             columnNames[i - 1] = metaData.getColumnName(i);
                         }
-                        dataList.add(ArrayUtils.toString(columnNames));
 
                         // data list.
                         DbType dbType = datasource.getType();
-                        while (resultSet.next()) {
-                            Object[] item = new Object[num];
+                        int count = 0;
+                        while (resultSet.next() && count++ < 2000) {
+                            Map<String, Object> itemMap = new HashMap<>(num);
                             for (int i = 1; i <= num; i++) {
-                                item[i - 1] = toJavaObject(resultSet.getObject(i), dbType);
+                                itemMap.put(
+                                        columnNames[i - 1],
+                                        toJavaObject(resultSet.getObject(i), dbType));
                             }
-                            dataList.add(ArrayUtils.toString(item));
+                            dataList.add(itemMap);
                         }
                     }
 
-                    log.info("Execute sql successfully: {}", sql);
+                    log.info("Execute sql successfully: {}", executingSql);
                 }
             } catch (Exception e) {
                 exception = e;
@@ -102,10 +110,9 @@ public class SqlCommandExecutor implements CommandExecutor {
         }
 
         boolean isSucceed = exceptionMsg == null;
+        String dataString = JsonUtil.toJsonString(dataList);
         return new JobCallback(
-                isSucceed
-                        ? dataList.toString()
-                        : String.join(LINE_SEPARATOR, dataList.toString(), exceptionMsg),
+                isSucceed ? dataString : String.join(LINE_SEPARATOR, dataString, exceptionMsg),
                 isSucceed ? SUCCESS : FAILURE);
     }
 }
