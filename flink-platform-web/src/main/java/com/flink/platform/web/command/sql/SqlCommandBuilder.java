@@ -16,6 +16,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static com.flink.platform.common.enums.JobType.CLICKHOUSE_SQL;
+import static com.flink.platform.common.enums.JobType.MYSQL_SQL;
 import static com.flink.platform.common.util.SqlUtil.convertToSqls;
 
 /** SQL command builder. */
@@ -25,7 +26,7 @@ public class SqlCommandBuilder implements CommandBuilder {
 
     @Override
     public boolean isSupported(JobType jobType, String version) {
-        return jobType == CLICKHOUSE_SQL;
+        return jobType == CLICKHOUSE_SQL || jobType == MYSQL_SQL;
     }
 
     @Override

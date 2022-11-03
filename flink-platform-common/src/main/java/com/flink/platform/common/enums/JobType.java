@@ -10,6 +10,7 @@ import static com.flink.platform.common.constants.Constant.FLINK;
 import static com.flink.platform.common.constants.Constant.JAVA;
 import static com.flink.platform.common.constants.Constant.SQL;
 import static com.flink.platform.common.enums.DbType.CLICKHOUSE;
+import static com.flink.platform.common.enums.DbType.MYSQL;
 import static java.util.stream.Collectors.toList;
 
 /** job type. */
@@ -19,6 +20,9 @@ public enum JobType {
     FLINK_JAR(FLINK, null),
     COMMON_JAR(JAVA, null),
     CLICKHOUSE_SQL(SQL, CLICKHOUSE),
+
+    MYSQL_SQL(SQL, MYSQL),
+
     SHELL(Constant.SHELL, null),
     CONDITION(Constant.CONDITION, null),
 

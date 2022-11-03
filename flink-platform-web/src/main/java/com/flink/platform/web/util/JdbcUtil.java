@@ -2,6 +2,7 @@ package com.flink.platform.web.util;
 
 import com.flink.platform.common.enums.DbType;
 import com.flink.platform.dao.entity.ds.DatasourceParam;
+import org.apache.commons.collections4.MapUtils;
 
 import java.sql.Array;
 import java.sql.Connection;
@@ -17,16 +18,20 @@ public class JdbcUtil {
             throws Exception {
         Class.forName(params.getDriver());
         Properties properties = new Properties();
+
         switch (dbType) {
             case CLICKHOUSE:
+            case MYSQL:
                 properties.setProperty("user", params.getUsername());
                 properties.setProperty("password", params.getPassword());
                 break;
-            case MYSQL:
             default:
                 throw new RuntimeException("unsupported db type: " + dbType);
         }
-        properties.putAll(params.getProperties());
+        if (MapUtils.isNotEmpty(params.getProperties())) {
+            properties.putAll(params.getProperties());
+        }
+
         return DriverManager.getConnection(params.getUrl(), properties);
     }
 
