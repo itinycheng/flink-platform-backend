@@ -45,8 +45,6 @@ data_dir/
 job_jar/
 sql_file/
 
-application-test.yml
-application-prod.yml
 ### macOS template
 # General
 .DS_Store
