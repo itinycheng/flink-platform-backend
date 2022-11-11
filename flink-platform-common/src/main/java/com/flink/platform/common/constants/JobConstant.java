@@ -45,4 +45,9 @@ public class JobConstant {
             Pattern.compile(
                     "\\$\\{\\s*jobRun:(?<field>\\S+)\\s*}",
                     Pattern.CASE_INSENSITIVE | Pattern.MULTILINE);
+
+    public static final Pattern HDFS_DOWNLOAD_PATTERN =
+            Pattern.compile(
+                    "\\$\\{\\s*hdfsResourceDownload:(?<file>\\S+)\\s*}",
+                    Pattern.CASE_INSENSITIVE | Pattern.MULTILINE);
 }
