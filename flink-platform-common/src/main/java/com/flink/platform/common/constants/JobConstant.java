@@ -17,18 +17,6 @@ public class JobConstant {
 
     public static final String YARN_PROVIDED_LIB_DIRS = "yarn.provided.lib.dirs";
 
-    public static final String JDBC_URL = "jdbc.url";
-
-    public static final String JDBC_USERNAME = "jdbc.username";
-
-    public static final String JDBC_PASSWORD = "jdbc.password";
-
-    public static final String TIDB_DATABASE_URL = "tidb.database.url";
-
-    public static final String TIDB_USERNAME = "tidb.username";
-
-    public static final String TIDB_PASSWORD = "tidb.password";
-
     public static final String SQL_LINE_SEPARATOR = "\n";
 
     public static final String SQL_COMMENT_SYMBOL = "--";
@@ -36,6 +24,12 @@ public class JobConstant {
     public static final String JSON_FILE_SUFFIX = "json";
 
     public static final String TMP_FILE_SUFFIX = "tmp";
+
+    public static final String JOB_CODE_VAR = "${jobCode}";
+
+    public static final String CURRENT_TIMESTAMP_VAR = "${currentTimestamp}";
+
+    public static final String TODAY_YYYY_MM_DD_VAR = "${today_yyyyMMdd}";
 
     public static final int READ_MAX_ROWS = 1000;
 
@@ -46,4 +40,9 @@ public class JobConstant {
 
     public static final Pattern LIMIT_PATTERN =
             Pattern.compile("LIMIT\\s+(?<num1>\\d+)(,\\s*(?<num2>\\d+))?$", SQL_PATTERN_CONFIGS);
+
+    public static final Pattern JOB_RUN_PLACEHOLDER_PATTERN =
+            Pattern.compile(
+                    "\\$\\{\\s*jobRun:(?<field>\\S+)\\s*}",
+                    Pattern.CASE_INSENSITIVE | Pattern.MULTILINE);
 }
