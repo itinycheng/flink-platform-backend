@@ -12,10 +12,10 @@ import com.flink.platform.web.command.CommandExecutor;
 import com.flink.platform.web.command.JobCallback;
 import com.flink.platform.web.command.JobCommand;
 import com.flink.platform.web.command.flink.FlinkCommand;
-import com.flink.platform.web.enums.SqlVar;
+import com.flink.platform.web.enums.Placeholder;
+import com.flink.platform.web.enums.Variable;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.MapUtils;
-import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -23,12 +23,12 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import static com.flink.platform.common.constants.Constant.HOST_IP;
 import static com.flink.platform.common.enums.ExecutionStatus.CREATED;
-import static java.util.stream.Collectors.toMap;
 
 /** Process job service. */
 @Slf4j
@@ -70,21 +70,17 @@ public class ProcessJobService {
 
             // step 2: replace variables in the sql statement
             JobRunInfo finalJobRun = jobRunInfo;
-            Map<String, Object> variableMap =
-                    Arrays.stream(SqlVar.values())
-                            .filter(sqlVar -> sqlVar.type == SqlVar.VarType.VARIABLE)
-                            .filter(sqlVar -> finalJobRun.getSubject().contains(sqlVar.variable))
-                            .map(
-                                    sqlVar ->
-                                            Pair.of(
-                                                    sqlVar.variable,
-                                                    sqlVar.valueProvider.apply(finalJobRun)))
-                            .collect(toMap(Pair::getLeft, Pair::getRight));
+            Map<String, Object> variableMap = new HashMap<>();
+            Arrays.stream(Placeholder.values())
+                    .filter(placeholder -> finalJobRun.getSubject().contains(placeholder.wildcard))
+                    .map(placeholder -> placeholder.provider.apply(finalJobRun))
+                    .forEach(variableMap::putAll);
+
             MapUtils.emptyIfNull(jobRunInfo.getVariables())
                     .forEach(
                             (name, value) -> {
-                                SqlVar sqlVar = SqlVar.matchPrefix(name);
-                                variableMap.put(name, sqlVar.valueProvider.apply(value));
+                                Variable sqlVar = Variable.matchPrefix(name);
+                                variableMap.put(name, sqlVar.provider.apply(value));
                             });
             // replace variable with actual value
             for (Map.Entry<String, Object> entry : variableMap.entrySet()) {

@@ -1,7 +1,6 @@
 package com.flink.platform.web;
 
 import com.flink.platform.web.command.flink.FlinkCommandExecutor;
-import com.flink.platform.web.enums.SqlVar;
 import com.flink.platform.web.util.CommandUtil;
 import com.flink.platform.web.util.ShellCallback;
 import org.junit.Assert;
@@ -28,12 +27,6 @@ public class CommandTest {
         String jobId = FlinkCommandExecutor.extractJobId(YARN_CLIENT_MESSAGE);
         Assert.assertEquals("application_1616984365313_0284", appId);
         Assert.assertEquals("698185836ffa4165f35c71627eb8c6f7", jobId);
-    }
-
-    @Test
-    public void testLongToString() {
-        System.out.println(SqlVar.CURRENT_TIMESTAMP.valueProvider.apply(null).toString());
-        System.out.println(SqlVar.CURRENT_TIME_MINUS.valueProvider.apply(null).toString());
     }
 
     @Test
