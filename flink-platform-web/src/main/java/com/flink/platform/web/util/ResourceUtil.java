@@ -1,7 +1,9 @@
 package com.flink.platform.web.util;
 
 import com.flink.platform.web.common.SpringContext;
+import com.flink.platform.web.service.HdfsService;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.hadoop.fs.Path;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
@@ -14,17 +16,18 @@ import static com.flink.platform.common.constants.Constant.SLASH;
 /** Resource util. */
 public class ResourceUtil {
 
-    private static final String RESOURCE_ROOT = "resource";
+    private static final String RESOURCE_DIR = "resource";
 
-    private static final String localDataRootPath =
-            SpringContext.getBean("localDataDir", String.class);
+    private static final String localRootPath = SpringContext.getBean("localDataDir", String.class);
 
     private static final String hdfsRootPath =
             SpringContext.getBean("projectHdfsPath", String.class);
 
-    public static String getHdfsUserDir(Long userId) {
-        String userDir = "user_id_" + userId;
-        return String.join(SLASH, hdfsRootPath, RESOURCE_ROOT, userDir);
+    private static final HdfsService hdfsService = SpringContext.getBean(HdfsService.class);
+
+    public static String getHdfsFilePath(String relativePath, Long userId) {
+        String hdfsUserDir = getHdfsUserDir(userId);
+        return String.join(SLASH, hdfsUserDir, relativePath);
     }
 
     public static String getHdfsRelativePath(String path, Long userId) {
@@ -41,9 +44,10 @@ public class ResourceUtil {
 
     public static String randomLocalTmpFile() {
         String fileName = UUID.randomUUID().toString();
-        return String.join(SLASH, localDataRootPath, fileName);
+        return String.join(SLASH, localRootPath, fileName);
     }
 
+    /** Only for file upload. */
     public static String getFullHdfsFilePath(Long userId, String parentPath, String fileName) {
         if (StringUtils.isBlank(parentPath)) {
             parentPath = getHdfsUserDir(userId);
@@ -61,5 +65,21 @@ public class ResourceUtil {
         }
 
         Files.copy(file.getInputStream(), dstFile.toPath());
+    }
+
+    public static String copyFromHdfsToLocal(String hdfsPath) throws IOException {
+        String localPath = hdfsPath.replace(hdfsRootPath, localRootPath);
+        hdfsService.copyFileToLocalIfChanged(new Path(hdfsPath), new Path(localPath));
+        return localPath;
+    }
+
+    private static String getHdfsUserDir(Long userId) {
+        String userDir = "user_id_" + userId;
+        return String.join(SLASH, hdfsRootPath, RESOURCE_DIR, userDir);
+    }
+
+    private static String getLocalUserDir(Long userId) {
+        String userDir = "user_id_" + userId;
+        return String.join(SLASH, localRootPath, RESOURCE_DIR, userDir);
     }
 }

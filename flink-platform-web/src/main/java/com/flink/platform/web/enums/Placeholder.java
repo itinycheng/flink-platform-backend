@@ -2,6 +2,7 @@ package com.flink.platform.web.enums;
 
 import com.flink.platform.common.util.DateUtil;
 import com.flink.platform.dao.entity.JobRunInfo;
+import org.apache.commons.lang3.StringUtils;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -9,11 +10,15 @@ import java.util.function.Function;
 import java.util.regex.Matcher;
 
 import static com.flink.platform.common.constants.JobConstant.CURRENT_TIMESTAMP_VAR;
+import static com.flink.platform.common.constants.JobConstant.HDFS_DOWNLOAD_PATTERN;
 import static com.flink.platform.common.constants.JobConstant.JOB_CODE_VAR;
 import static com.flink.platform.common.constants.JobConstant.JOB_RUN_PLACEHOLDER_PATTERN;
 import static com.flink.platform.common.constants.JobConstant.TODAY_YYYY_MM_DD_VAR;
+import static com.flink.platform.common.util.FunctionUtil.uncheckedFunction;
+import static com.flink.platform.web.util.ResourceUtil.copyFromHdfsToLocal;
+import static com.flink.platform.web.util.ResourceUtil.getHdfsFilePath;
 
-/** sql var. */
+/** placeholder in subject field of job. */
 public enum Placeholder {
 
     /** placeholders. */
@@ -35,6 +40,31 @@ public enum Placeholder {
                 }
                 return result;
             }),
+
+    HDFS_RESOURCE_DOWNLOAD(
+            "${hdfsResourceDownload",
+            uncheckedFunction(
+                    obj -> {
+                        JobRunInfo jobRun = (JobRunInfo) obj;
+                        Map<String, Object> result = new HashMap<>();
+                        Matcher matcher = HDFS_DOWNLOAD_PATTERN.matcher(jobRun.getSubject());
+                        while (matcher.find()) {
+                            String variable = matcher.group();
+                            String filePath = matcher.group("file");
+                            if (StringUtils.isBlank(filePath) || !filePath.startsWith("hdfs")) {
+                                throw new RuntimeException(
+                                        "Hdfs path not found or isn't start with 'hdfs', variable:"
+                                                + variable);
+                            }
+
+                            String absoluteHdfsPath =
+                                    filePath.startsWith("hdfs")
+                                            ? filePath
+                                            : getHdfsFilePath(filePath, jobRun.getUserId());
+                            result.put(variable, copyFromHdfsToLocal(absoluteHdfsPath));
+                        }
+                        return result;
+                    })),
 
     @Deprecated
     JOB_CODE(
@@ -61,7 +91,8 @@ public enum Placeholder {
             (Object obj) -> {
                 Map<String, Object> result = new HashMap<>(1);
                 result.put(
-                        TODAY_YYYY_MM_DD_VAR, DateUtil.format(System.currentTimeMillis(), "yyyyMMdd"));
+                        TODAY_YYYY_MM_DD_VAR,
+                        DateUtil.format(System.currentTimeMillis(), "yyyyMMdd"));
                 return result;
             });
 

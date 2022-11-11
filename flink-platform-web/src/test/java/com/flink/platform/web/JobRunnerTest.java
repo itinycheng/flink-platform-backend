@@ -37,8 +37,8 @@ public class JobRunnerTest {
         jobRun.setJobId(33L);
 
         jobRun.setSubject("${ JobRUn:id } wow, ${JobRUn:id}, ${  JobRUn:code  }");
-        Map<String, Object> apply = JOB_RUN.provider.apply(jobRun);
-        apply.forEach((s, o) -> jobRun.setSubject(jobRun.getSubject().replace(s, o.toString())));
+        Map<String, Object> result = JOB_RUN.provider.apply(jobRun);
+        result.forEach((s, o) -> jobRun.setSubject(jobRun.getSubject().replace(s, o.toString())));
         assertEquals("22 wow, 22, job_33", jobRun.getSubject());
     }
 }
