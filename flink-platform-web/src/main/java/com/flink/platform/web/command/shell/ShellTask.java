@@ -115,7 +115,7 @@ public class ShellTask extends AbstractTask {
     public ShellCallback buildShellCallback() {
         ShellCallback callback = new ShellCallback(exited, exitValue, processId);
         // No need to record log if shell executed successfully.
-        if (exited && exitValue == EXIT_CODE_SUCCESS) {
+        if (finalStatus() != SUCCESS) {
             callback.setStdMsg(getStdMsg());
             callback.setErrMsg(getErrMsg());
         }
