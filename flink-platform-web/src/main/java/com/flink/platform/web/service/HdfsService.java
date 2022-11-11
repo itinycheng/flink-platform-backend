@@ -33,7 +33,10 @@ public class HdfsService {
         if (local.exists(localFile)) {
             FileStatus localFileStatus = local.getFileStatus(localFile);
             FileStatus hdfsFileStatus = fileSystem.getFileStatus(hdfsFile);
-            isCopy = localFileStatus.getLen() != hdfsFileStatus.getLen();
+            isCopy =
+                    localFileStatus.getLen() != hdfsFileStatus.getLen()
+                            || localFileStatus.getModificationTime()
+                                    < hdfsFileStatus.getModificationTime();
         }
         if (isCopy) {
             fileSystem.copyToLocalFile(hdfsFile, localFile);
