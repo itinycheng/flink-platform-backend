@@ -10,7 +10,7 @@ import lombok.NoArgsConstructor;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class ShellCallback {
 
-    private boolean exited;
+    private Boolean exited;
 
     private Integer exitCode;
 
@@ -20,7 +20,7 @@ public class ShellCallback {
 
     private String errMsg;
 
-    public ShellCallback(boolean exited, Integer exitCode, Integer processId) {
+    public ShellCallback(Boolean exited, Integer exitCode, Integer processId) {
         this.exited = exited;
         this.exitCode = exitCode;
         this.processId = processId;

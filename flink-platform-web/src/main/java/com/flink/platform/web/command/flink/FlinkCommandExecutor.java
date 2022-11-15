@@ -91,7 +91,7 @@ public class FlinkCommandExecutor implements CommandExecutor {
             } catch (Exception e) {
                 log.error("Failed to get ApplicationReport after command executed", e);
             }
-            return new JobCallback(jobId, appId, trackingUrl, null, EMPTY, status);
+            return new JobCallback(jobId, appId, trackingUrl, callback, EMPTY, status);
         } else {
             String message =
                     String.join(LINE_SEPARATOR, callback.getStdMsg(), callback.getErrMsg());
