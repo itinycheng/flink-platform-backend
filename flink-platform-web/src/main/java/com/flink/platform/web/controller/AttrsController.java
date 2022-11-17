@@ -39,6 +39,7 @@ import static com.flink.platform.common.enums.ExecutionCondition.OR;
 import static com.flink.platform.common.enums.ExecutionStatus.FAILURE;
 import static com.flink.platform.common.enums.ExecutionStatus.SUCCESS;
 import static com.flink.platform.common.enums.WorkerStatus.ACTIVE;
+import static com.flink.platform.web.entity.response.ResultInfo.success;
 import static java.util.stream.Collectors.toList;
 
 /** Attrs controller. */
@@ -59,12 +60,12 @@ public class AttrsController {
         List<ExecutionCondition> conditions = new ArrayList<>();
         conditions.add(AND);
         conditions.add(OR);
-        return ResultInfo.success(conditions);
+        return success(conditions);
     }
 
     @GetMapping(value = "/dependentRelations")
     public ResultInfo<DependentJob.DependentRelation[]> dependentRelations() {
-        return ResultInfo.success(DependentJob.DependentRelation.values());
+        return success(DependentJob.DependentRelation.values());
     }
 
     @GetMapping(value = "/versions")
@@ -80,7 +81,7 @@ public class AttrsController {
             versions.add(FULL_VERSION);
         }
 
-        return ResultInfo.success(versions);
+        return success(versions);
     }
 
     @GetMapping(value = "/routeUrls")
@@ -92,7 +93,7 @@ public class AttrsController {
         if (CollectionUtils.isNotEmpty(list)) {
             routingUrls.addAll(list);
         }
-        return ResultInfo.success(routingUrls);
+        return success(routingUrls);
     }
 
     @GetMapping(value = "/deployModes")
@@ -103,18 +104,18 @@ public class AttrsController {
         } else {
             result = Collections.singletonList(RUN_LOCAL);
         }
-        return ResultInfo.success(result);
+        return success(result);
     }
 
     @GetMapping(value = "/nodeTypes")
     public ResultInfo<List<JobType>> nodeTypes(String type) {
-        return ResultInfo.success(JobType.from(type));
+        return success(JobType.from(type));
     }
 
     @GetMapping(value = "/edgeStates")
     public ResultInfo<List<ExecutionStatus>> edgeStates(Long jobId) {
         // Add RUNNING status for STREAMING job ?
-        return ResultInfo.success(Arrays.asList(SUCCESS, FAILURE));
+        return success(Arrays.asList(SUCCESS, FAILURE));
     }
 
     @GetMapping(value = "/list")
@@ -136,6 +137,6 @@ public class AttrsController {
         } catch (Exception e) {
             e.printStackTrace();
         }
-        return ResultInfo.success(enums);
+        return success(enums);
     }
 }
