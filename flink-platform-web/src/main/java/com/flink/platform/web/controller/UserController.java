@@ -30,6 +30,7 @@ import static com.flink.platform.common.enums.ResponseStatus.ERROR_PARAMETER;
 import static com.flink.platform.common.enums.ResponseStatus.USER_HAVE_NO_PERMISSION;
 import static com.flink.platform.common.enums.UserType.ADMIN;
 import static com.flink.platform.web.entity.response.ResultInfo.failure;
+import static com.flink.platform.web.entity.response.ResultInfo.success;
 
 /** user controller. */
 @RestController
@@ -43,7 +44,7 @@ public class UserController {
     @GetMapping(value = "/get/{userId}")
     public ResultInfo<User> get(@PathVariable Long userId) {
         User user = userService.getById(userId);
-        return ResultInfo.success(user);
+        return success(user);
     }
 
     @PostMapping(value = "/create")
@@ -60,7 +61,7 @@ public class UserController {
         User user = userRequest.getUser();
         user.setId(null);
         userService.save(user);
-        return ResultInfo.success(user.getId());
+        return success(user.getId());
     }
 
     @PostMapping(value = "/update")
@@ -76,7 +77,7 @@ public class UserController {
 
         User user = userRequest.getUser();
         userService.updateById(user);
-        return ResultInfo.success(user.getId());
+        return success(user.getId());
     }
 
     @GetMapping(value = "/page")
@@ -96,7 +97,7 @@ public class UserController {
 
         Page<User> pager = new Page<>(page, size);
         IPage<User> iPage = userService.page(pager, queryWrapper);
-        return ResultInfo.success(iPage);
+        return success(iPage);
     }
 
     @GetMapping(value = "/info")
@@ -108,6 +109,6 @@ public class UserController {
         result.put("introduction", "A fixed user given by the backend");
         result.put("avatar", "https://wpimg.wallstcn.com/f778738c-e4f8-4870-b634-56703b4acafe.gif");
         result.put("name", loginUser.getUsername());
-        return ResultInfo.success(result);
+        return success(result);
     }
 }

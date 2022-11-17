@@ -25,6 +25,7 @@ import java.util.Objects;
 
 import static com.flink.platform.common.enums.ResponseStatus.ERROR_PARAMETER;
 import static com.flink.platform.web.entity.response.ResultInfo.failure;
+import static com.flink.platform.web.entity.response.ResultInfo.success;
 
 /** Alert controller. */
 @RestController
@@ -46,7 +47,7 @@ public class AlertController {
         alertInfo.setId(null);
         alertInfo.setUserId(loginUser.getId());
         alertService.save(alertInfo);
-        return ResultInfo.success(alertInfo.getId());
+        return success(alertInfo.getId());
     }
 
     @PostMapping(value = "/update")
@@ -59,19 +60,19 @@ public class AlertController {
         AlertInfo alertInfo = alertInfoRequest.getAlertInfo();
         alertInfo.setUserId(null);
         alertService.updateById(alertInfo);
-        return ResultInfo.success(alertInfo.getId());
+        return success(alertInfo.getId());
     }
 
     @GetMapping(value = "/get/{alertId}")
     public ResultInfo<AlertInfo> get(@PathVariable Long alertId) {
         AlertInfo alertInfo = alertService.getById(alertId);
-        return ResultInfo.success(alertInfo);
+        return success(alertInfo);
     }
 
     @GetMapping(value = "/delete/{alertId}")
     public ResultInfo<Boolean> delete(@PathVariable Long alertId) {
         boolean bool = alertService.removeById(alertId);
-        return ResultInfo.success(bool);
+        return success(bool);
     }
 
     @GetMapping(value = "/page")
@@ -89,7 +90,7 @@ public class AlertController {
                                 .eq(AlertInfo::getUserId, loginUser.getId())
                                 .like(Objects.nonNull(name), AlertInfo::getName, name));
 
-        return ResultInfo.success(iPage);
+        return success(iPage);
     }
 
     @GetMapping(value = "/list")
@@ -100,6 +101,6 @@ public class AlertController {
                         new QueryWrapper<AlertInfo>()
                                 .lambda()
                                 .eq(AlertInfo::getUserId, loginUser.getId()));
-        return ResultInfo.success(list);
+        return success(list);
     }
 }

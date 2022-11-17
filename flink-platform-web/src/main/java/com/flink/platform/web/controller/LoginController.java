@@ -25,6 +25,7 @@ import java.util.UUID;
 
 import static com.flink.platform.common.enums.ResponseStatus.USER_NOT_FOUNT;
 import static com.flink.platform.web.entity.response.ResultInfo.failure;
+import static com.flink.platform.web.entity.response.ResultInfo.success;
 
 /** user controller. */
 @RestController
@@ -67,7 +68,7 @@ public class LoginController {
 
         Map<String, String> result = new HashMap<>(1);
         result.put("token", session.getToken());
-        return ResultInfo.success(result);
+        return success(result);
     }
 
     @PostMapping(value = "/logout")
@@ -78,6 +79,6 @@ public class LoginController {
 
         sessionService.remove(
                 new QueryWrapper<Session>().lambda().eq(Session::getToken, userRequest.getToken()));
-        return ResultInfo.success(userRequest.getToken());
+        return success(userRequest.getToken());
     }
 }

@@ -36,6 +36,7 @@ import static com.flink.platform.common.enums.ResponseStatus.EXIST_UNFINISHED_PR
 import static com.flink.platform.common.enums.ResponseStatus.NOT_RUNNABLE_STATUS;
 import static com.flink.platform.common.enums.ResponseStatus.SERVICE_ERROR;
 import static com.flink.platform.web.entity.response.ResultInfo.failure;
+import static com.flink.platform.web.entity.response.ResultInfo.success;
 import static java.util.Objects.nonNull;
 
 /** manage job info. */
@@ -63,7 +64,7 @@ public class JobInfoController {
         jobInfo.setStatus(ONLINE);
         jobInfo.setUserId(loginUser.getId());
         jobInfoService.save(jobInfo);
-        return ResultInfo.success(jobInfo);
+        return success(jobInfo);
     }
 
     @PostMapping(value = "/update")
@@ -75,19 +76,19 @@ public class JobInfoController {
 
         JobInfo jobInfo = jobInfoRequest.getJobInfo();
         jobInfoService.updateById(jobInfo);
-        return ResultInfo.success(jobInfo);
+        return success(jobInfo);
     }
 
     @GetMapping(value = "/get/{jobId}")
     public ResultInfo<JobInfo> get(@PathVariable Long jobId) {
         JobInfo jobInfo = jobInfoService.getById(jobId);
-        return ResultInfo.success(jobInfo);
+        return success(jobInfo);
     }
 
     @GetMapping(value = "/delete/{jobId}")
     public ResultInfo<Boolean> delete(@PathVariable Long jobId) {
         boolean bool = jobInfoService.removeById(jobId);
-        return ResultInfo.success(bool);
+        return success(bool);
     }
 
     @GetMapping(value = "/page")
@@ -103,7 +104,7 @@ public class JobInfoController {
                                 .lambda()
                                 .like(nonNull(name), JobInfo::getName, name));
 
-        return ResultInfo.success(iPage);
+        return success(iPage);
     }
 
     @GetMapping(value = "/list")
@@ -113,17 +114,17 @@ public class JobInfoController {
                         new QueryWrapper<JobInfo>()
                                 .lambda()
                                 .like(nonNull(flowId), JobInfo::getFlowId, flowId));
-        return ResultInfo.success(list);
+        return success(list);
     }
 
     @PostMapping(value = "/getByIds")
     public ResultInfo<List<JobInfo>> getByIds(@RequestBody List<Long> ids) {
         if (CollectionUtils.isEmpty(ids)) {
-            return ResultInfo.success(Collections.emptyList());
+            return success(Collections.emptyList());
         }
 
         List<JobInfo> jobs = jobInfoService.listByIds(ids);
-        return ResultInfo.success(jobs);
+        return success(jobs);
     }
 
     @GetMapping(value = "/schedule/runOnce/{jobId}")
@@ -146,7 +147,7 @@ public class JobInfoController {
 
         JobQuartzInfo jobQuartzInfo = new JobQuartzInfo(jobInfo);
         if (quartzService.runOnce(jobQuartzInfo)) {
-            return ResultInfo.success(jobId);
+            return success(jobId);
         } else {
             return failure(SERVICE_ERROR);
         }
