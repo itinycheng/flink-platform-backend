@@ -9,6 +9,8 @@ public class Constant {
 
     public static final String HOST_IP;
 
+    public static final String HOSTNAME;
+
     public static final String ROOT_DIR;
 
     public static final String PATH_SEPARATOR;
@@ -57,5 +59,6 @@ public class Constant {
         PATH_SEPARATOR = System.getProperty("path.separator");
         ROOT_DIR = System.getProperty("user.dir");
         HOST_IP = OSUtil.getHostIp();
+        HOSTNAME = OSUtil.getHostname();
     }
 }

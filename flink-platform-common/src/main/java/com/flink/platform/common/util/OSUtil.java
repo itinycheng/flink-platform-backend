@@ -1,9 +1,10 @@
 package com.flink.platform.common.util;
 
-import com.flink.platform.common.constants.Constant;
 import lombok.extern.slf4j.Slf4j;
 
 import java.net.InetAddress;
+
+import static com.flink.platform.common.constants.Constant.EMPTY;
 
 /** OS utils. */
 @Slf4j
@@ -29,8 +30,18 @@ public class OSUtil {
         try {
             return InetAddress.getLocalHost().getHostAddress();
         } catch (Exception e) {
-            log.error("get localhost ip address failed", e);
-            return Constant.EMPTY;
+            log.error("Get ip address failed", e);
+            return EMPTY;
+        }
+    }
+
+    /** Get hostname. */
+    public static String getHostname() {
+        try {
+            return InetAddress.getLocalHost().getHostName();
+        } catch (Exception e) {
+            log.error("Get hostname failed", e);
+            return EMPTY;
         }
     }
 }
