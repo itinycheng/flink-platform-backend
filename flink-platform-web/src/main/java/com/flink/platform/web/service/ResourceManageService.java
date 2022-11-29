@@ -35,6 +35,7 @@ public class ResourceManageService {
                 }
                 break;
             case JAR:
+            case SHELL:
                 if (hdfsService.exists(entity.getFullName())) {
                     return resourceService.save(entity);
                 }
