@@ -3,6 +3,9 @@ package com.flink.platform.common.enums;
 /** Alert type. */
 public enum ResourceType {
     JAR,
+
+    SHELL,
+
     DIR;
 
     public boolean isFile() {

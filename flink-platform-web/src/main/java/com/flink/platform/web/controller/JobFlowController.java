@@ -45,6 +45,7 @@ import static com.flink.platform.common.enums.ResponseStatus.SERVICE_ERROR;
 import static com.flink.platform.common.enums.ResponseStatus.UNABLE_SCHEDULE_STREAMING_JOB_FLOW;
 import static com.flink.platform.common.enums.ResponseStatus.USER_HAVE_NO_PERMISSION;
 import static com.flink.platform.web.entity.response.ResultInfo.failure;
+import static com.flink.platform.web.entity.response.ResultInfo.success;
 import static java.util.Objects.nonNull;
 import static java.util.stream.Collectors.toList;
 
@@ -77,7 +78,7 @@ public class JobFlowController {
         jobFlow.setUserId(loginUser.getId());
         jobFlow.setStatus(JobFlowStatus.OFFLINE);
         jobFlowService.save(jobFlow);
-        return ResultInfo.success(jobFlowRequest.getId());
+        return success(jobFlowRequest.getId());
     }
 
     @ApiException
@@ -91,7 +92,7 @@ public class JobFlowController {
         jobFlowRequest.setCode(null);
         jobFlowRequest.setUserId(null);
         jobFlowService.updateById(jobFlowRequest.getJobFlow());
-        return ResultInfo.success(jobFlowRequest.getId());
+        return success(jobFlowRequest.getId());
     }
 
     @PostMapping(value = "/updateFlow")
@@ -102,13 +103,13 @@ public class JobFlowController {
         }
 
         jobFlowService.updateFlowById(jobFlowRequest.getJobFlow());
-        return ResultInfo.success(jobFlowRequest.getId());
+        return success(jobFlowRequest.getId());
     }
 
     @GetMapping(value = "/get/{flowId}")
     public ResultInfo<JobFlow> get(@PathVariable long flowId) {
         JobFlow jobFlow = jobFlowService.getById(flowId);
-        return ResultInfo.success(jobFlow);
+        return success(jobFlow);
     }
 
     @GetMapping(value = "/purge/{flowId}")
@@ -125,7 +126,7 @@ public class JobFlowController {
         }
 
         jobFlowService.deleteAllById(flowId, loginUser.getId());
-        return ResultInfo.success(flowId);
+        return success(flowId);
     }
 
     @GetMapping(value = "/page")
@@ -155,7 +156,7 @@ public class JobFlowController {
         }
 
         IPage<JobFlow> iPage = jobFlowService.page(pager, queryWrapper);
-        return ResultInfo.success(iPage);
+        return success(iPage);
     }
 
     @GetMapping(value = "/idNameMapList")
@@ -177,7 +178,7 @@ public class JobFlowController {
                                     return map;
                                 })
                         .collect(toList());
-        return ResultInfo.success(listMap);
+        return success(listMap);
     }
 
     @GetMapping(value = "/schedule/start/{flowId}")
@@ -206,7 +207,7 @@ public class JobFlowController {
         }
 
         jobFlowQuartzService.scheduleJob(jobFlow);
-        return ResultInfo.success(flowId);
+        return success(flowId);
     }
 
     @GetMapping(value = "/schedule/stop/{flowId}")
@@ -224,7 +225,7 @@ public class JobFlowController {
         }
 
         jobFlowQuartzService.stopJob(jobFlow);
-        return ResultInfo.success(flowId);
+        return success(flowId);
     }
 
     @GetMapping(value = "/schedule/runOnce/{flowId}")
@@ -249,7 +250,7 @@ public class JobFlowController {
 
         JobFlowQuartzInfo jobFlowQuartzInfo = new JobFlowQuartzInfo(jobFlow);
         if (quartzService.runOnce(jobFlowQuartzInfo)) {
-            return ResultInfo.success(flowId);
+            return success(flowId);
         } else {
             return failure(SERVICE_ERROR);
         }

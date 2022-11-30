@@ -27,6 +27,7 @@ import java.util.Objects;
 import static com.flink.platform.common.constants.Constant.EMPTY;
 import static com.flink.platform.common.enums.ResponseStatus.ERROR_PARAMETER;
 import static com.flink.platform.web.entity.response.ResultInfo.failure;
+import static com.flink.platform.web.entity.response.ResultInfo.success;
 
 /** Catalog info controller. */
 @RestController
@@ -49,7 +50,7 @@ public class CatalogInfoController {
         catalogInfo.setDefaultDatabase(EMPTY);
         catalogInfo.setUserId(loginUser.getId());
         catalogService.save(catalogInfo);
-        return ResultInfo.success(catalogInfo.getId());
+        return success(catalogInfo.getId());
     }
 
     @PostMapping(value = "/update")
@@ -62,13 +63,13 @@ public class CatalogInfoController {
         CatalogInfo catalogInfo = catalogInfoRequest.getCatalogInfo();
         catalogInfo.setUserId(null);
         catalogService.updateById(catalogInfo);
-        return ResultInfo.success(catalogInfo.getId());
+        return success(catalogInfo.getId());
     }
 
     @GetMapping(value = "/get/{catalogId}")
     public ResultInfo<CatalogInfo> get(@PathVariable Long catalogId) {
         CatalogInfo catalogInfo = catalogService.getById(catalogId);
-        return ResultInfo.success(catalogInfo);
+        return success(catalogInfo);
     }
 
     @GetMapping(value = "/delete/{catalogId}")
@@ -81,7 +82,7 @@ public class CatalogInfoController {
                                 .lambda()
                                 .eq(CatalogInfo::getId, catalogId)
                                 .eq(CatalogInfo::getUserId, loginUser.getId()));
-        return ResultInfo.success(bool);
+        return success(bool);
     }
 
     @GetMapping(value = "/page")
@@ -100,7 +101,7 @@ public class CatalogInfoController {
                                 .eq(CatalogInfo::getUserId, loginUser.getId())
                                 .eq(Objects.nonNull(type), CatalogInfo::getType, type)
                                 .like(Objects.nonNull(name), CatalogInfo::getName, name));
-        return ResultInfo.success(iPage);
+        return success(iPage);
     }
 
     @GetMapping(value = "/list")
@@ -111,6 +112,6 @@ public class CatalogInfoController {
                         new QueryWrapper<CatalogInfo>()
                                 .lambda()
                                 .eq(CatalogInfo::getUserId, loginUser.getId()));
-        return ResultInfo.success(list);
+        return success(list);
     }
 }

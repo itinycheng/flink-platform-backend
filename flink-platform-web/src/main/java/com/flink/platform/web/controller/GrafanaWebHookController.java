@@ -13,6 +13,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Map;
 
+import static com.flink.platform.web.entity.response.ResultInfo.success;
+
 /** Do something about alarm forwarding. */
 @Slf4j
 @RestController
@@ -30,6 +32,6 @@ public class GrafanaWebHookController {
         if (feiShuAlert != null) {
             result = alertSendingService.sendToFeiShu(feiShuAlert);
         }
-        return ResultInfo.success(result);
+        return success(result);
     }
 }

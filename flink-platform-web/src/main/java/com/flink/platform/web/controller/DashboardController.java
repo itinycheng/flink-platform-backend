@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 
 import static com.flink.platform.common.util.DateUtil.GLOBAL_DATE_TIME_FORMAT;
+import static com.flink.platform.web.entity.response.ResultInfo.success;
 import static java.util.Objects.nonNull;
 
 /** Dashboard statistics. */
@@ -52,7 +53,7 @@ public class DashboardController {
                                         startTime,
                                         endTime)
                                 .eq("user_id", loginUser.getId()));
-        return ResultInfo.success(maps);
+        return success(maps);
     }
 
     @GetMapping(value = "/jobFlowRunStatusCount")
@@ -75,6 +76,6 @@ public class DashboardController {
                                         startTime,
                                         endTime)
                                 .eq("user_id", loginUser.getId()));
-        return ResultInfo.success(maps);
+        return success(maps);
     }
 }

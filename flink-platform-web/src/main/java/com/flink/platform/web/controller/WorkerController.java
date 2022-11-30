@@ -28,6 +28,7 @@ import static com.flink.platform.common.enums.ResponseStatus.USER_HAVE_NO_PERMIS
 import static com.flink.platform.common.enums.UserType.ADMIN;
 import static com.flink.platform.common.enums.WorkerStatus.ACTIVE;
 import static com.flink.platform.web.entity.response.ResultInfo.failure;
+import static com.flink.platform.web.entity.response.ResultInfo.success;
 
 /** Worker controller. */
 @RestController
@@ -39,7 +40,7 @@ public class WorkerController {
     @GetMapping(value = "/get/{workerId}")
     public ResultInfo<Worker> get(@PathVariable Long workerId) {
         Worker worker = workerService.getById(workerId);
-        return ResultInfo.success(worker);
+        return success(worker);
     }
 
     @PostMapping(value = "/create")
@@ -58,7 +59,7 @@ public class WorkerController {
         Worker worker = workerRequest.getWorker();
         worker.setId(null);
         workerService.save(worker);
-        return ResultInfo.success(worker.getId());
+        return success(worker.getId());
     }
 
     @PostMapping(value = "/update")
@@ -76,7 +77,7 @@ public class WorkerController {
 
         Worker worker = workerRequest.getWorker();
         workerService.updateById(worker);
-        return ResultInfo.success(worker.getId());
+        return success(worker.getId());
     }
 
     @GetMapping(value = "/page")
@@ -93,12 +94,12 @@ public class WorkerController {
                                 .lambda()
                                 .like(Objects.nonNull(name), Worker::getName, name)
                                 .like(Objects.nonNull(ip), Worker::getIp, ip));
-        return ResultInfo.success(iPage);
+        return success(iPage);
     }
 
     @GetMapping(value = "/list")
     public ResultInfo<List<Worker>> list() {
-        return ResultInfo.success(
+        return success(
                 workerService.list(
                         new QueryWrapper<Worker>().lambda().eq(Worker::getStatus, ACTIVE)));
     }

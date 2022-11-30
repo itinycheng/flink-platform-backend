@@ -2,8 +2,12 @@ package com.flink.platform.web.enums;
 
 import com.flink.platform.common.util.DateUtil;
 import com.flink.platform.dao.entity.JobRunInfo;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.nio.file.attribute.PosixFilePermissions;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
@@ -14,11 +18,13 @@ import static com.flink.platform.common.constants.JobConstant.HDFS_DOWNLOAD_PATT
 import static com.flink.platform.common.constants.JobConstant.JOB_CODE_VAR;
 import static com.flink.platform.common.constants.JobConstant.JOB_RUN_PLACEHOLDER_PATTERN;
 import static com.flink.platform.common.constants.JobConstant.TODAY_YYYY_MM_DD_VAR;
+import static com.flink.platform.common.enums.JobType.SHELL;
 import static com.flink.platform.common.util.FunctionUtil.uncheckedFunction;
 import static com.flink.platform.web.util.ResourceUtil.copyFromHdfsToLocal;
 import static com.flink.platform.web.util.ResourceUtil.getHdfsFilePath;
 
 /** placeholder in subject field of job. */
+@Slf4j
 public enum Placeholder {
 
     /** placeholders. */
@@ -61,7 +67,20 @@ public enum Placeholder {
                                     filePath.startsWith("hdfs")
                                             ? filePath
                                             : getHdfsFilePath(filePath, jobRun.getUserId());
-                            result.put(variable, copyFromHdfsToLocal(absoluteHdfsPath));
+                            String localPath = copyFromHdfsToLocal(absoluteHdfsPath);
+                            result.put(variable, localPath);
+
+                            // Make the local file readable and executable.
+                            // TODO: Should only for executable files.
+                            if (SHELL.equals(jobRun.getType())) {
+                                try {
+                                    Files.setPosixFilePermissions(
+                                            Paths.get(localPath),
+                                            PosixFilePermissions.fromString("rwxr-xr-x"));
+                                } catch (Exception e) {
+                                    log.error("Failed to set file permissions", e);
+                                }
+                            }
                         }
                         return result;
                     })),

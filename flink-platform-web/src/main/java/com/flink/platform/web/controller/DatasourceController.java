@@ -27,6 +27,7 @@ import java.util.Objects;
 
 import static com.flink.platform.common.enums.ResponseStatus.ERROR_PARAMETER;
 import static com.flink.platform.web.entity.response.ResultInfo.failure;
+import static com.flink.platform.web.entity.response.ResultInfo.success;
 
 /** datasource controller. */
 @RestController
@@ -48,7 +49,7 @@ public class DatasourceController {
         datasource.setId(null);
         datasource.setUserId(loginUser.getId());
         datasourceService.save(datasource);
-        return ResultInfo.success(datasource.getId());
+        return success(datasource.getId());
     }
 
     @PostMapping(value = "/update")
@@ -61,19 +62,19 @@ public class DatasourceController {
         Datasource datasource = datasourceRequest.getDatasource();
         datasource.setUserId(null);
         datasourceService.updateById(datasource);
-        return ResultInfo.success(datasource.getId());
+        return success(datasource.getId());
     }
 
     @GetMapping(value = "/get/{dsId}")
     public ResultInfo<Datasource> get(@PathVariable Long dsId) {
         Datasource datasource = datasourceService.getById(dsId);
-        return ResultInfo.success(datasource);
+        return success(datasource);
     }
 
     @GetMapping(value = "/delete/{dsId}")
     public ResultInfo<Boolean> delete(@PathVariable Long dsId) {
         boolean bool = datasourceService.removeById(dsId);
-        return ResultInfo.success(bool);
+        return success(bool);
     }
 
     @GetMapping(value = "/page")
@@ -92,7 +93,7 @@ public class DatasourceController {
                                 .eq(Datasource::getUserId, loginUser.getId())
                                 .eq(Objects.nonNull(type), Datasource::getType, type)
                                 .like(Objects.nonNull(name), Datasource::getName, name));
-        return ResultInfo.success(iPage);
+        return success(iPage);
     }
 
     @GetMapping(value = "/list")
@@ -110,6 +111,6 @@ public class DatasourceController {
                                 .lambda()
                                 .eq(Objects.nonNull(dbType), Datasource::getType, dbType)
                                 .eq(Datasource::getUserId, loginUser.getId()));
-        return ResultInfo.success(list);
+        return success(list);
     }
 }
