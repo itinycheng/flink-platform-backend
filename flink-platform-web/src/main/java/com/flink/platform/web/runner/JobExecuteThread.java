@@ -30,6 +30,8 @@ import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import lombok.extern.slf4j.Slf4j;
 
+import javax.annotation.Nonnull;
+
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.concurrent.Callable;
@@ -84,6 +86,7 @@ public class JobExecuteThread implements Callable<JobResponse> {
         this.jobProcessGrpcClient = SpringContext.getBean(JobProcessGrpcClient.class);
     }
 
+    @Nonnull
     @Override
     public JobResponse call() {
         Long jobId = jobVertex.getJobId();

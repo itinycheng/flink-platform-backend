@@ -38,7 +38,7 @@ import static com.flink.platform.common.enums.ExecutionCondition.AND;
 import static com.flink.platform.common.enums.ExecutionCondition.OR;
 import static com.flink.platform.common.enums.ExecutionStatus.FAILURE;
 import static com.flink.platform.common.enums.ExecutionStatus.SUCCESS;
-import static com.flink.platform.common.enums.WorkerStatus.ACTIVE;
+import static com.flink.platform.common.enums.WorkerStatus.INACTIVE;
 import static com.flink.platform.web.entity.response.ResultInfo.success;
 import static java.util.stream.Collectors.toList;
 
@@ -89,7 +89,7 @@ public class AttrsController {
         List<Worker> routingUrls = new ArrayList<>();
         List<Worker> list =
                 workerService.list(
-                        new QueryWrapper<Worker>().lambda().eq(Worker::getStatus, ACTIVE));
+                        new QueryWrapper<Worker>().lambda().ne(Worker::getRole, INACTIVE));
         if (CollectionUtils.isNotEmpty(list)) {
             routingUrls.addAll(list);
         }

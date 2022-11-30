@@ -2,10 +2,14 @@ package com.flink.platform.common.constants;
 
 import com.flink.platform.common.util.OSUtil;
 
+import static com.flink.platform.common.util.DateUtil.MILLIS_PER_MINUTE;
+
 /** constant. */
 public class Constant {
 
-    public static final String LOCALHOST_IP = "127.0.0.1";
+    public static final long HEARTBEAT_TIMEOUT = 5 * MILLIS_PER_MINUTE;
+
+    public static final String LOCALHOST = "127.0.0.1";
 
     public static final String HOST_IP;
 

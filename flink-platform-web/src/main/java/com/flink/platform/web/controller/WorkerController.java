@@ -26,7 +26,6 @@ import java.util.Objects;
 import static com.flink.platform.common.enums.ResponseStatus.ERROR_PARAMETER;
 import static com.flink.platform.common.enums.ResponseStatus.USER_HAVE_NO_PERMISSION;
 import static com.flink.platform.common.enums.UserType.ADMIN;
-import static com.flink.platform.common.enums.WorkerStatus.ACTIVE;
 import static com.flink.platform.web.entity.response.ResultInfo.failure;
 import static com.flink.platform.web.entity.response.ResultInfo.success;
 
@@ -99,8 +98,6 @@ public class WorkerController {
 
     @GetMapping(value = "/list")
     public ResultInfo<List<Worker>> list() {
-        return success(
-                workerService.list(
-                        new QueryWrapper<Worker>().lambda().eq(Worker::getStatus, ACTIVE)));
+        return success(workerService.list());
     }
 }

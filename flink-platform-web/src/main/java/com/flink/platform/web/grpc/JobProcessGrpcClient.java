@@ -35,7 +35,7 @@ public class JobProcessGrpcClient {
     public JobGrpcServiceBlockingStub grpcClient(Worker worker) {
         if (worker == null
                 || StringUtils.isEmpty(worker.getIp())
-                || Constant.LOCALHOST_IP.equals(worker.getIp())
+                || Constant.LOCALHOST.equals(worker.getIp())
                 || Constant.HOST_IP.equals(worker.getIp())) {
             return localGrpcStub;
         }
