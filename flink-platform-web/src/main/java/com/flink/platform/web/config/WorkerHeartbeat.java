@@ -1,6 +1,7 @@
 package com.flink.platform.web.config;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.flink.platform.dao.entity.JobFlowRun;
 import com.flink.platform.dao.entity.Worker;
 import com.flink.platform.dao.service.JobFlowRunService;
@@ -20,6 +21,7 @@ import java.util.concurrent.ScheduledExecutorService;
 
 import static com.flink.platform.common.constants.Constant.HOSTNAME;
 import static com.flink.platform.common.constants.Constant.HOST_IP;
+import static com.flink.platform.common.constants.Constant.LOCALHOST;
 import static com.flink.platform.common.enums.ExecutionStatus.getNonTerminals;
 import static com.flink.platform.common.enums.WorkerStatus.FOLLOWER;
 import static com.flink.platform.common.enums.WorkerStatus.INACTIVE;
@@ -123,6 +125,12 @@ public class WorkerHeartbeat {
             return;
         }
 
+        workerService.update(
+                new UpdateWrapper<Worker>()
+                        .lambda()
+                        .set(Worker::getRole, FOLLOWER)
+                        .eq(Worker::getRole, LEADER));
+
         Worker worker = new Worker();
         worker.setId(workerId);
         worker.setRole(LEADER);
@@ -135,12 +143,18 @@ public class WorkerHeartbeat {
                         new QueryWrapper<Worker>()
                                 .lambda()
                                 .select(Worker::getId, Worker::getHeartbeat)
-                                .eq(Worker::getRole, LEADER));
+                                .eq(Worker::getRole, LEADER)
+                                .ne(Worker::getIp, LOCALHOST));
         return list.size() == 1 && list.get(0).isActive();
     }
 
     public List<Worker> getWorkersWithHeartbeatTimeout() {
-        return workerService.list(new QueryWrapper<Worker>().lambda().ne(Worker::getRole, INACTIVE))
+        return workerService
+                .list(
+                        new QueryWrapper<Worker>()
+                                .lambda()
+                                .ne(Worker::getRole, INACTIVE)
+                                .ne(Worker::getIp, LOCALHOST))
                 .stream()
                 .filter(worker -> !worker.isActive())
                 .collect(toList());
