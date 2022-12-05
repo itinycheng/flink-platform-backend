@@ -1,9 +1,11 @@
 package com.flink.platform.web.controller;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.flink.platform.common.constants.Constant;
+import com.flink.platform.common.enums.WorkerStatus;
 import com.flink.platform.dao.entity.User;
 import com.flink.platform.dao.entity.Worker;
 import com.flink.platform.dao.service.WorkerService;
@@ -26,6 +28,7 @@ import java.util.Objects;
 import static com.flink.platform.common.enums.ResponseStatus.ERROR_PARAMETER;
 import static com.flink.platform.common.enums.ResponseStatus.USER_HAVE_NO_PERMISSION;
 import static com.flink.platform.common.enums.UserType.ADMIN;
+import static com.flink.platform.common.enums.WorkerStatus.INACTIVE;
 import static com.flink.platform.web.entity.response.ResultInfo.failure;
 import static com.flink.platform.web.entity.response.ResultInfo.success;
 
@@ -83,21 +86,45 @@ public class WorkerController {
     public ResultInfo<IPage<Worker>> page(
             @RequestParam(name = "page", required = false, defaultValue = "1") Integer page,
             @RequestParam(name = "size", required = false, defaultValue = "20") Integer size,
+            @RequestParam(name = "role", required = false) WorkerStatus role,
             @RequestParam(name = "name", required = false) String name,
             @RequestParam(name = "ip", required = false) String ip) {
         Page<Worker> pager = new Page<>(page, size);
-        IPage<Worker> iPage =
-                workerService.page(
-                        pager,
-                        new QueryWrapper<Worker>()
-                                .lambda()
-                                .like(Objects.nonNull(name), Worker::getName, name)
-                                .like(Objects.nonNull(ip), Worker::getIp, ip));
+        LambdaQueryWrapper<Worker> queryWrapper =
+                new QueryWrapper<Worker>()
+                        .lambda()
+                        .like(Objects.nonNull(name), Worker::getName, name)
+                        .like(Objects.nonNull(ip), Worker::getIp, ip);
+
+        if (role != null) {
+            queryWrapper.eq(Worker::getRole, role);
+        } else {
+            queryWrapper.ne(Worker::getRole, INACTIVE);
+        }
+
+        IPage<Worker> iPage = workerService.page(pager, queryWrapper);
         return success(iPage);
     }
 
     @GetMapping(value = "/list")
     public ResultInfo<List<Worker>> list() {
         return success(workerService.list());
+    }
+
+    @GetMapping(value = "/purge/{workerId}")
+    public ResultInfo<Long> purge(
+            @RequestAttribute(value = Constant.SESSION_USER) User loginUser,
+            @PathVariable long workerId) {
+        Worker worker = workerService.getById(workerId);
+        if (worker == null) {
+            return failure(ERROR_PARAMETER);
+        }
+
+        if (loginUser.getType() != ADMIN) {
+            return failure(USER_HAVE_NO_PERMISSION);
+        }
+
+        workerService.removeById(workerId);
+        return success(workerId);
     }
 }
