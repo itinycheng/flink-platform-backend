@@ -118,11 +118,11 @@ public class JobFlowController {
             @PathVariable long flowId) {
         JobFlow jobFlow = jobFlowService.getById(flowId);
         if (jobFlow == null) {
-            return ResultInfo.failure(ERROR_PARAMETER);
+            return failure(ERROR_PARAMETER);
         }
 
         if (!loginUser.getId().equals(jobFlow.getUserId())) {
-            return ResultInfo.failure(USER_HAVE_NO_PERMISSION);
+            return failure(USER_HAVE_NO_PERMISSION);
         }
 
         jobFlowService.deleteAllById(flowId, loginUser.getId());
