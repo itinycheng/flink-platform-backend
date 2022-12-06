@@ -9,11 +9,12 @@ import com.flink.platform.dao.service.WorkerService;
 import com.flink.platform.web.service.JobFlowScheduleService;
 import com.flink.platform.web.util.ThreadUtil;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.transaction.annotation.Transactional;
+
+import javax.annotation.PostConstruct;
 
 import java.util.List;
 import java.util.Random;
@@ -58,11 +59,8 @@ public class WorkerHeartbeat {
     @Value("${grpc.server.port}")
     private int grpcPort;
 
-    public WorkerHeartbeat() {
-        if (StringUtils.isBlank(HOST_IP)) {
-            throw new RuntimeException(String.format("Host ip: %s is invalid", HOST_IP));
-        }
-
+    @PostConstruct
+    public void initHeartbeat() {
         EXECUTOR_SERVICE.scheduleWithFixedDelay(
                 this::heartbeat, new Random().nextInt(50) + 10, 60, SECONDS);
     }
@@ -76,47 +74,48 @@ public class WorkerHeartbeat {
                                 .select(Worker::getId)
                                 .eq(Worker::getIp, HOST_IP)
                                 .last("LIMIT 1"));
+        Long workerId = worker != null ? worker.getId() : null;
 
-        Worker instance = new Worker();
-        instance.setId(worker != null ? worker.getId() : null);
-        instance.setHeartbeat(System.currentTimeMillis());
-        if (worker == null) {
-            instance.setName(HOSTNAME);
-            instance.setIp(HOST_IP);
-            instance.setPort(port);
-            instance.setGrpcPort(grpcPort);
-            instance.setRole(FOLLOWER);
+        worker = new Worker();
+        worker.setId(workerId);
+        worker.setHeartbeat(System.currentTimeMillis());
+        if (workerId == null) {
+            worker.setName(HOSTNAME);
+            worker.setIp(HOST_IP);
+            worker.setPort(port);
+            worker.setGrpcPort(grpcPort);
+            worker.setRole(FOLLOWER);
         }
-        workerService.saveOrUpdate(instance);
+        workerService.saveOrUpdate(worker);
 
         // 2. Try to be the leader.
         if (!hasValidLeader()) {
-            try {
-                assignLeaderRoleToWorker(instance.getId());
-            } catch (Throwable e) {
-                log.error("Failed to assign leader role to worker", e);
-            }
+            assignLeaderRoleToWorker(worker.getId());
         }
 
         // 3. Reassign unfinished workflows belonging to offline workers.
         // TODO: dispatch JobFlowRun to other active workers.
-        getWorkersWithHeartbeatTimeout()
-                .forEach(
-                        timeoutWorker ->
-                                jobFlowRunService
-                                        .list(
-                                                new QueryWrapper<JobFlowRun>()
-                                                        .lambda()
-                                                        .eq(
-                                                                JobFlowRun::getHost,
-                                                                timeoutWorker.getIp())
-                                                        .in(
-                                                                JobFlowRun::getStatus,
-                                                                getNonTerminals()))
-                                        .forEach(
-                                                jobFlowRun ->
-                                                        jobFlowScheduleService.rebuildAndSchedule(
-                                                                jobFlowRun)));
+        worker = workerService.getById(worker.getId());
+        if (LEADER.equals(worker.getRole())) {
+            getWorkersWithHeartbeatTimeout()
+                    .forEach(
+                            timeoutWorker ->
+                                    jobFlowRunService
+                                            .list(
+                                                    new QueryWrapper<JobFlowRun>()
+                                                            .lambda()
+                                                            .eq(
+                                                                    JobFlowRun::getHost,
+                                                                    timeoutWorker.getIp())
+                                                            .in(
+                                                                    JobFlowRun::getStatus,
+                                                                    getNonTerminals()))
+                                            .forEach(
+                                                    jobFlowRun ->
+                                                            jobFlowScheduleService
+                                                                    .rebuildAndSchedule(
+                                                                            jobFlowRun)));
+        }
     }
 
     @Transactional(isolation = SERIALIZABLE, rollbackFor = Throwable.class)
