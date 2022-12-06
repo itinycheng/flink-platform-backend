@@ -1,8 +1,10 @@
 package com.flink.platform.common.constants;
 
-import com.flink.platform.common.util.OSUtil;
-
 import static com.flink.platform.common.util.DateUtil.MILLIS_PER_MINUTE;
+import static com.flink.platform.common.util.OSUtil.getFirstNoLoopbackIP4Address;
+import static com.flink.platform.common.util.OSUtil.getHostname;
+import static com.flink.platform.common.util.OSUtil.isWindows;
+import static com.flink.platform.common.util.Preconditions.checkNotNull;
 
 /** constant. */
 public class Constant {
@@ -57,12 +59,12 @@ public class Constant {
 
     public static final String FULL_VERSION = "FULL_VERSION";
 
-    public static final String PID = OSUtil.isWindows() ? "handle" : "pid";
+    public static final String PID = isWindows() ? "handle" : "pid";
 
     static {
         PATH_SEPARATOR = System.getProperty("path.separator");
         ROOT_DIR = System.getProperty("user.dir");
-        HOST_IP = OSUtil.getHostIp();
-        HOSTNAME = OSUtil.getHostname();
+        HOST_IP = checkNotNull(getFirstNoLoopbackIP4Address());
+        HOSTNAME = getHostname();
     }
 }
