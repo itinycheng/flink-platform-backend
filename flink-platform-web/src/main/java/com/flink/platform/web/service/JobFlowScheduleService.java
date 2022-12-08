@@ -102,17 +102,26 @@ public class JobFlowScheduleService {
     }
 
     public synchronized void registerToScheduler(JobFlowRun jobFlowRun) {
+        if (inFlightFlows.stream()
+                .anyMatch(inQueue -> inQueue.getId().equals(jobFlowRun.getId()))) {
+            log.warn("The JobFlowRun already registered, jobFlowRun: {} ", jobFlowRun);
+            return;
+        }
+
         JobFlowDag flow = jobFlowRun.getFlow();
         if (flow == null || CollectionUtils.isEmpty(flow.getVertices())) {
             log.warn(
                     "No JobVertex found, no scheduling required, flow run id: {}",
                     jobFlowRun.getId());
-            return;
-        }
+            JobFlowRun newJobFlowRun = new JobFlowRun();
+            newJobFlowRun.setId(jobFlowRun.getId());
+            newJobFlowRun.setStatus(FAILURE);
+            newJobFlowRun.setEndTime(LocalDateTime.now());
+            jobFlowRunService.updateById(newJobFlowRun);
 
-        if (inFlightFlows.stream()
-                .anyMatch(inQueue -> inQueue.getId().equals(jobFlowRun.getId()))) {
-            log.warn("The JobFlowRun already registered, jobFlowRun: {} ", jobFlowRun);
+            jobFlowRun.setStatus(FAILURE);
+            jobFlowRun.setEndTime(LocalDateTime.now());
+            alertSendingService.sendAlerts(jobFlowRun);
             return;
         }
 
@@ -126,7 +135,7 @@ public class JobFlowScheduleService {
 
             jobFlowRun.setStatus(FAILURE);
             jobFlowRun.setEndTime(LocalDateTime.now());
-            alertSendingService.sendAlert(jobFlowRun);
+            alertSendingService.sendAlerts(jobFlowRun);
             return;
         }
 

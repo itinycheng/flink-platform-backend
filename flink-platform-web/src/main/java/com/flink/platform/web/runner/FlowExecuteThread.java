@@ -85,7 +85,7 @@ public class FlowExecuteThread implements Runnable {
             jobFlowRunService.updateById(newJobFlowRun);
 
             // send notification.
-            alertSendingService.sendAlert(jobFlowRun);
+            alertSendingService.sendAlerts(jobFlowRun);
         }
     }
 

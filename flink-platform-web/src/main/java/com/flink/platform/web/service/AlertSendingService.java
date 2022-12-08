@@ -3,10 +3,12 @@ package com.flink.platform.web.service;
 import com.flink.platform.common.enums.ExecutionStatus;
 import com.flink.platform.common.util.JsonUtil;
 import com.flink.platform.dao.entity.AlertInfo;
+import com.flink.platform.dao.entity.JobFlow;
 import com.flink.platform.dao.entity.JobFlowRun;
 import com.flink.platform.dao.entity.alert.AlertConfig;
 import com.flink.platform.dao.entity.alert.FeiShuAlert;
 import com.flink.platform.dao.service.AlertService;
+import com.flink.platform.dao.service.JobFlowService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,6 +20,8 @@ import org.springframework.web.client.RestTemplate;
 
 import java.util.List;
 
+import static com.flink.platform.common.enums.ExecutionStatus.FAILURE;
+
 /** Alert sending service. */
 @Slf4j
 @Service
@@ -27,7 +31,9 @@ public class AlertSendingService {
 
     @Autowired private RestTemplate restTemplate;
 
-    public void sendAlert(JobFlowRun jobFlowRun) {
+    @Autowired private JobFlowService jobFlowService;
+
+    public void sendAlerts(JobFlowRun jobFlowRun) {
         List<AlertConfig> alerts = jobFlowRun.getAlerts();
         if (CollectionUtils.isEmpty(alerts)) {
             return;
@@ -40,6 +46,12 @@ public class AlertSendingService {
                                 CollectionUtils.isEmpty(alert.getStatuses())
                                         || alert.getStatuses().contains(finalStatus))
                 .forEach(alert -> sendAlert(alert.getAlertId(), jobFlowRun));
+    }
+
+    public void sendErrAlerts(JobFlow jobFlow) {
+        JobFlowRun jobFlowRun = jobFlowService.copyToJobFlowRun(jobFlow);
+        jobFlowRun.setStatus(FAILURE);
+        sendAlerts(jobFlowRun);
     }
 
     public boolean sendAlert(Long alertId, JobFlowRun jobFlowRun) {
@@ -64,7 +76,7 @@ public class AlertSendingService {
         try {
             String content =
                     JsonUtil.toJsonString(alert.getContent())
-                            .replace("${id}", jobFlowRun.getId().toString())
+                            .replace("${id}", String.valueOf(jobFlowRun.getId()))
                             .replace("${name}", jobFlowRun.getName())
                             .replace("${status}", jobFlowRun.getStatus().name());
             FeiShuAlert feiShuAlert = new FeiShuAlert(alert.getWebhook(), JsonUtil.toMap(content));
