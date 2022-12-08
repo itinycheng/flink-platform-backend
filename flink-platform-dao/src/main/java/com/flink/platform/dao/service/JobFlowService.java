@@ -87,4 +87,15 @@ public class JobFlowService extends ServiceImpl<JobFlowMapper, JobFlow> {
         }
         updateById(newJobFlow);
     }
+
+    public JobFlowRun copyToJobFlowRun(JobFlow jobFlow) {
+        JobFlowRun jobFlowRun = new JobFlowRun();
+        jobFlowRun.setName(jobFlow.getName());
+        jobFlowRun.setFlowId(jobFlow.getId());
+        jobFlowRun.setUserId(jobFlow.getUserId());
+        jobFlowRun.setFlow(jobFlow.getFlow());
+        jobFlowRun.setPriority(jobFlow.getPriority());
+        jobFlowRun.setAlerts(jobFlow.getAlerts());
+        return jobFlowRun;
+    }
 }

@@ -10,6 +10,7 @@ import com.flink.platform.dao.entity.JobFlowRun;
 import com.flink.platform.dao.service.JobFlowRunService;
 import com.flink.platform.dao.service.JobFlowService;
 import com.flink.platform.web.common.SpringContext;
+import com.flink.platform.web.service.AlertSendingService;
 import com.flink.platform.web.service.JobFlowScheduleService;
 import lombok.extern.slf4j.Slf4j;
 import org.quartz.Job;
@@ -40,6 +41,9 @@ public class JobFlowRunner implements Job {
     private final JobFlowScheduleService jobFlowScheduleService =
             SpringContext.getBean(JobFlowScheduleService.class);
 
+    private final AlertSendingService alertSendingService =
+            SpringContext.getBean(AlertSendingService.class);
+
     @Override
     public void execute(JobExecutionContext context) {
         JobDetail detail = context.getJobDetail();
@@ -62,7 +66,8 @@ public class JobFlowRunner implements Job {
             // Validate flow json.
             DAG<Long, JobVertex, JobEdge> flow = jobFlow.getFlow();
             if (flow == null || flow.getVertices().isEmpty()) {
-                log.warn("The job flow: {} doesn't contain any vertices", jobFlow.getCode());
+                log.warn("The job flow: {} doesn't contain any vertices", jobFlow.getName());
+                alertSendingService.sendErrAlerts(jobFlow);
                 return;
             }
 
@@ -75,9 +80,10 @@ public class JobFlowRunner implements Job {
                                     .in(JobFlowRun::getStatus, getNonTerminals()));
             if (jobFlowRun != null) {
                 log.warn(
-                        "The job flow:{} is in non-terminal status, run id: {}",
-                        jobFlow.getId(),
+                        "The job flow: {} is in non-terminal status, run id: {}",
+                        jobFlow.getName(),
                         jobFlowRun.getId());
+                alertSendingService.sendErrAlerts(jobFlow);
                 return;
             }
 
