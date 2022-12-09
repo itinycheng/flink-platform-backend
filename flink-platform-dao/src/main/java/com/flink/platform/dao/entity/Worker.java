@@ -13,6 +13,7 @@ import lombok.Setter;
 
 import java.time.LocalDateTime;
 
+import static com.flink.platform.common.constants.Constant.HEARTBEAT_TIMEOUT;
 import static com.flink.platform.common.util.DateUtil.GLOBAL_DATE_TIME_FORMAT;
 import static com.flink.platform.common.util.DateUtil.GLOBAL_TIMEZONE;
 
@@ -36,7 +37,8 @@ public class Worker {
 
     private Integer grpcPort;
 
-    private WorkerStatus status;
+    @TableField("status")
+    private WorkerStatus role;
 
     private Long heartbeat;
 
@@ -47,4 +49,13 @@ public class Worker {
     @Setter(AccessLevel.NONE)
     @JsonFormat(pattern = GLOBAL_DATE_TIME_FORMAT, timezone = GLOBAL_TIMEZONE)
     private LocalDateTime createTime;
+
+    public boolean isActive() {
+        if (this.heartbeat == null) {
+            return false;
+        }
+
+        long timeout = System.currentTimeMillis() - this.heartbeat;
+        return timeout < HEARTBEAT_TIMEOUT;
+    }
 }

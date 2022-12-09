@@ -438,5 +438,5 @@ COMMIT;
 -- Records of t_worker
 -- ----------------------------
 BEGIN;
-INSERT INTO `t_worker` VALUES (0, 'unlimited', 'run locally', '127.0.0.1', '9104', 9898, 'ACTIVE', NULL, now(), now());
+INSERT INTO `t_worker` VALUES (0, 'unlimited', 'run locally', '127.0.0.1', '9104', 9898, 'FOLLOWER', NULL, now(), now());
 COMMIT;
