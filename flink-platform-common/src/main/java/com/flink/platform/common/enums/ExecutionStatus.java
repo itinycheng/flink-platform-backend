@@ -1,7 +1,8 @@
 package com.flink.platform.common.enums;
 
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /** Execution status enums, used for Job and JobFlow. */
 public enum ExecutionStatus {
@@ -23,6 +24,13 @@ public enum ExecutionStatus {
         TERMINAL,
         NON_TERMINAL
     }
+
+    private static final List<ExecutionStatus> NON_TERMINALS =
+            Arrays.stream(values())
+                    .filter(
+                            executionStatus ->
+                                    executionStatus.terminalState == TerminalState.NON_TERMINAL)
+                    .collect(Collectors.toList());
 
     private final int code;
 
@@ -46,13 +54,7 @@ public enum ExecutionStatus {
     }
 
     public static List<ExecutionStatus> getNonTerminals() {
-        List<ExecutionStatus> statusList = new ArrayList<>(values().length);
-        for (ExecutionStatus value : values()) {
-            if (value.terminalState == TerminalState.NON_TERMINAL) {
-                statusList.add(value);
-            }
-        }
-        return statusList;
+        return NON_TERMINALS;
     }
 
     public static ExecutionStatus from(Integer code) {
