@@ -28,7 +28,6 @@ import java.util.List;
 import java.util.regex.Matcher;
 
 import static com.flink.platform.common.constants.Constant.EMPTY;
-import static com.flink.platform.common.constants.Constant.LINE_SEPARATOR;
 import static com.flink.platform.common.constants.JobConstant.APP_ID_PATTERN;
 import static com.flink.platform.common.constants.JobConstant.HADOOP_USER_NAME;
 import static com.flink.platform.common.constants.JobConstant.JOB_ID_PATTERN;
@@ -93,9 +92,7 @@ public class FlinkCommandExecutor implements CommandExecutor {
             }
             return new JobCallback(jobId, appId, trackingUrl, callback, EMPTY, status);
         } else {
-            String message =
-                    String.join(LINE_SEPARATOR, callback.getStdMsg(), callback.getErrMsg());
-            return new JobCallback(jobId, appId, EMPTY, callback, message, FAILURE);
+            return new JobCallback(jobId, appId, EMPTY, callback, EMPTY, FAILURE);
         }
     }
 

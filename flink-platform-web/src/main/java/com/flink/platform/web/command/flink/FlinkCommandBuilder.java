@@ -26,13 +26,14 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import static com.flink.platform.common.constants.Constant.ROOT_DIR;
 import static com.flink.platform.common.constants.Constant.SEMICOLON;
 import static com.flink.platform.common.constants.Constant.SLASH;
 import static com.flink.platform.common.constants.JobConstant.YARN_APPLICATION_NAME;
 import static com.flink.platform.common.constants.JobConstant.YARN_PROVIDED_LIB_DIRS;
+import static java.util.stream.Collectors.joining;
+import static java.util.stream.Collectors.toList;
 
 /** Flink command builder. */
 @Slf4j
@@ -128,7 +129,7 @@ public abstract class FlinkCommandBuilder implements CommandBuilder {
                 extJarList.stream()
                         .map(s -> s.substring(0, s.lastIndexOf(SLASH)))
                         .distinct()
-                        .collect(Collectors.joining(SEMICOLON));
+                        .collect(joining(SEMICOLON));
         return userLibDirs.length() > 0
                 ? String.join(SEMICOLON, flinkConfig.getLibDirs(), userLibDirs)
                 : flinkConfig.getLibDirs();
@@ -167,7 +168,7 @@ public abstract class FlinkCommandBuilder implements CommandBuilder {
                 ListUtils.defaultIfNull(flinkJob.getExtJars(), Collections.emptyList()).stream()
                         .map(resourceId -> resourceService.getById(resourceId))
                         .map(com.flink.platform.dao.entity.Resource::getFullName)
-                        .collect(Collectors.toList());
+                        .collect(toList());
         flinkJob.setExtJarPaths(jarPaths);
     }
 }
