@@ -239,7 +239,7 @@ public class JobExecuteThread implements Callable<JobResponse> {
                 if (statusInfo != null) {
                     log.info(
                             "Job runId: {}, name: {} Status: {}",
-                            jobRunInfo.getJobId(),
+                            jobRunInfo.getId(),
                             jobRunInfo.getName(),
                             statusInfo.getStatus());
                     updateJobRunIfNeeded(jobRunInfo, statusInfo, null);
