@@ -16,18 +16,20 @@ public class JdbcUtil {
     /** create datasource. */
     public static Connection createConnection(DbType dbType, DatasourceParam params)
             throws Exception {
-        Class.forName(params.getDriver());
+        Class.forName(dbType.getDriver());
         Properties properties = new Properties();
 
         switch (dbType) {
             case CLICKHOUSE:
             case MYSQL:
+            case HIVE:
                 properties.setProperty("user", params.getUsername());
                 properties.setProperty("password", params.getPassword());
                 break;
             default:
                 throw new RuntimeException("unsupported db type: " + dbType);
         }
+
         if (MapUtils.isNotEmpty(params.getProperties())) {
             properties.putAll(params.getProperties());
         }
@@ -51,9 +53,9 @@ public class JdbcUtil {
                     return dbObject;
                 }
             case MYSQL:
-                return dbObject;
+            case HIVE:
             default:
-                throw new RuntimeException("unsupported database type:" + dbType);
+                return dbObject;
         }
     }
 }

@@ -60,11 +60,6 @@ public class DatasourceRequest {
             return msg;
         }
 
-        msg = checkNotNull(params.getDriver(), "The params.driver cannot be null");
-        if (msg != null) {
-            return msg;
-        }
-
         return checkNotNull(params.getUsername(), "The params.username cannot be null");
     }
 }
