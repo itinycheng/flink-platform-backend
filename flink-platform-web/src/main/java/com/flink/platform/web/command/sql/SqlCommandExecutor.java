@@ -30,6 +30,7 @@ import static com.flink.platform.common.constants.Constant.LINE_SEPARATOR;
 import static com.flink.platform.common.enums.ExecutionStatus.FAILURE;
 import static com.flink.platform.common.enums.ExecutionStatus.SUCCESS;
 import static com.flink.platform.common.enums.JobType.CLICKHOUSE_SQL;
+import static com.flink.platform.common.enums.JobType.HIVE_SQL;
 import static com.flink.platform.common.enums.JobType.MYSQL_SQL;
 import static com.flink.platform.web.util.JdbcUtil.createConnection;
 import static com.flink.platform.web.util.JdbcUtil.toJavaObject;
@@ -45,7 +46,7 @@ public class SqlCommandExecutor implements CommandExecutor {
 
     @Override
     public boolean isSupported(JobType jobType) {
-        return jobType == CLICKHOUSE_SQL || jobType == MYSQL_SQL;
+        return jobType == CLICKHOUSE_SQL || jobType == MYSQL_SQL || jobType == HIVE_SQL;
     }
 
     @Nonnull
