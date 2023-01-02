@@ -26,17 +26,14 @@
 		<maven.compiler.target>1.8</maven.compiler.target>
 		<spring.boot.version>2.4.4</spring.boot.version>
 		<oshi.version>6.2.2</oshi.version>
-		<commons-pool2.version>2.9.0</commons-pool2.version>
-		<commons-lang3.version>3.5</commons-lang3.version>
-		<commons-io.version>2.7</commons-io.version>
-		<commons.beanutils.version>1.7.0</commons.beanutils.version>
+		<commons-lang3.version>3.11</commons-lang3.version>
 		<commons-collections4.version>4.4</commons-collections4.version>
 		<lombok.version>1.18.22</lombok.version>
 		<log4j2.version>2.17.1</log4j2.version>
 		<slf4j.version>1.7.30</slf4j.version>
 		<mysql.version>5.1.49</mysql.version>
 		<clickhouse-jdbc.version>0.3.1</clickhouse-jdbc.version>
-		<druid.version>1.2.5</druid.version>
+		<druid.version>1.2.15</druid.version>
 		<flink.version>1.12.0</flink.version>
 		<flink.scope>provided</flink.scope>
 		<hadoop.version>3.1.3</hadoop.version>
@@ -45,7 +42,7 @@
 		<dynamic-datasource.version>3.5.2</dynamic-datasource.version>
 		<janino.version>3.1.6</janino.version>
 		<grpc.version>1.51.1</grpc.version>
-		<grpc-spring-boot.version>2.13.1.RELEASE</grpc-spring-boot.version>
+		<grpc-spring-boot.version>2.14.0.RELEASE</grpc-spring-boot.version>
 		<maven-checkstyle-plugin.version>2.17</maven-checkstyle-plugin.version>
 		<spotless-maven-plugin.version>2.4.2</spotless-maven-plugin.version>
 		<maven-shade-plugin.version>3.2.1</maven-shade-plugin.version>
@@ -87,6 +84,12 @@
 				<groupId>com.baomidou</groupId>
 				<artifactId>mybatis-plus-boot-starter</artifactId>
 				<version>${mybatis-plus.version}</version>
+				<exclusions>
+					<exclusion>
+						<artifactId>spring-boot-starter-logging</artifactId>
+						<groupId>org.springframework.boot</groupId>
+					</exclusion>
+				</exclusions>
 			</dependency>
 			<dependency>
 				<groupId>com.baomidou</groupId>
@@ -152,6 +155,14 @@
 						<groupId>org.apache.avro</groupId>
 						<artifactId>avro</artifactId>
 					</exclusion>
+					<exclusion>
+						<artifactId>jersey-servlet</artifactId>
+						<groupId>com.sun.jersey</groupId>
+					</exclusion>
+					<exclusion>
+						<artifactId>jsp-api</artifactId>
+						<groupId>javax.servlet.jsp</groupId>
+					</exclusion>
 				</exclusions>
 			</dependency>
 			<!-- hive -->
@@ -209,6 +220,14 @@
 						<artifactId>zookeeper</artifactId>
 					</exclusion>
 					<exclusion>
+						<artifactId>curator-recipes</artifactId>
+						<groupId>org.apache.curator</groupId>
+					</exclusion>
+					<exclusion>
+						<artifactId>curator-framework</artifactId>
+						<groupId>org.apache.curator</groupId>
+					</exclusion>
+					<exclusion>
 						<groupId>io.dropwizard.metrics</groupId>
 						<artifactId>metrics-jvm</artifactId>
 					</exclusion>
@@ -223,6 +242,26 @@
 					<exclusion>
 						<groupId>com.github.joshelser</groupId>
 						<artifactId>dropwizard-metrics-hadoop-metrics2-reporter</artifactId>
+					</exclusion>
+					<exclusion>
+						<groupId>tomcat</groupId>
+						<artifactId>jasper-compiler</artifactId>
+					</exclusion>
+					<exclusion>
+						<groupId>tomcat</groupId>
+						<artifactId>jasper-runtime</artifactId>
+					</exclusion>
+					<exclusion>
+						<artifactId>stringtemplate</artifactId>
+						<groupId>org.antlr</groupId>
+					</exclusion>
+					<exclusion>
+						<artifactId>antlr-runtime</artifactId>
+						<groupId>org.antlr</groupId>
+					</exclusion>
+					<exclusion>
+						<artifactId>ant</artifactId>
+						<groupId>org.apache.ant</groupId>
 					</exclusion>
 				</exclusions>
 			</dependency>
