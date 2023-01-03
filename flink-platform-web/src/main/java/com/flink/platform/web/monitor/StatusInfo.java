@@ -23,7 +23,7 @@ public class StatusInfo {
     private Long endTime;
 
     public LocalDateTime toEndTime() {
-        if (endTime == null) {
+        if (endTime == null || endTime == 0) {
             return null;
         }
         return toLocalDateTime(endTime);
