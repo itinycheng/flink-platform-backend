@@ -180,7 +180,10 @@ public class JobExecuteThread implements Callable<JobResponse> {
         }
     }
 
-    /** Send request to process remote job. */
+    /**
+     * Send request to process remote job. <br>
+     * TODO: Failed retries should be narrow down to job script submission.
+     */
     private JobRunInfo processRemoteJob(JobGrpcServiceBlockingStub stub, long jobRunId) {
         int retryTimes = 0;
         Exception exception = null;
