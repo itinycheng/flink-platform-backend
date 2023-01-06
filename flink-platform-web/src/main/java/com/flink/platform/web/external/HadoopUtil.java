@@ -42,7 +42,7 @@ public class HadoopUtil {
         if (!foundHadoopConfiguration) {
             throw new RuntimeException(
                     "Could not find Hadoop configuration via any of the supported methods "
-                            + "(Flink configuration, environment variables).");
+                            + "(Hadoop configuration, environment variables).");
         }
 
         return result;

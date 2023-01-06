@@ -108,14 +108,14 @@ public class FlowExecuteThread implements Runnable {
             return;
         }
 
+        jobVertex.setJobRunId(jobResponse.getJobRunId());
+        jobVertex.setJobRunStatus(jobResponse.getStatus());
+
         ExecutionStatus finalStatus = jobResponse.getStatus();
         if (ExecutionStatus.isStopFlowState(finalStatus)) {
             killFlow();
             return;
         }
-
-        jobVertex.setJobRunId(jobResponse.getJobRunId());
-        jobVertex.setJobRunStatus(jobResponse.getStatus());
 
         for (JobVertex nextVertex : flow.getNextVertices(jobVertex)) {
             if (JobFlowDagHelper.isPreconditionSatisfied(nextVertex, flow)) {

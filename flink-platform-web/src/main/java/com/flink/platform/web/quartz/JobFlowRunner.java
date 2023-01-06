@@ -109,7 +109,7 @@ public class JobFlowRunner implements Job {
             jobFlowScheduleService.registerToScheduler(jobFlowRun);
             log.info(
                     "Job flow run: {} is created, job flow: {}, time: {}",
-                    jobFlowRun.getFlowId(),
+                    jobFlowRun.getId(),
                     code,
                     System.currentTimeMillis());
         }

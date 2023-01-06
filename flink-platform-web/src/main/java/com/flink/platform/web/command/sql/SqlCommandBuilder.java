@@ -16,6 +16,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static com.flink.platform.common.enums.JobType.CLICKHOUSE_SQL;
+import static com.flink.platform.common.enums.JobType.HIVE_SQL;
 import static com.flink.platform.common.enums.JobType.MYSQL_SQL;
 import static com.flink.platform.common.util.SqlUtil.convertToSqls;
 
@@ -26,18 +27,18 @@ public class SqlCommandBuilder implements CommandBuilder {
 
     @Override
     public boolean isSupported(JobType jobType, String version) {
-        return jobType == CLICKHOUSE_SQL || jobType == MYSQL_SQL;
+        return jobType == CLICKHOUSE_SQL || jobType == MYSQL_SQL || jobType == HIVE_SQL;
     }
 
     @Override
-    public JobCommand buildCommand(Long flowRunId, @Nonnull JobRunInfo jobRunInfo) {
-        SqlJob sqlJob = jobRunInfo.getConfig().unwrap(SqlJob.class);
+    public JobCommand buildCommand(Long flowRunId, @Nonnull JobRunInfo jobRun) {
+        SqlJob sqlJob = jobRun.getConfig().unwrap(SqlJob.class);
         if (sqlJob == null) {
             throw new CommandUnableGenException("Invalid job config.");
         }
 
         List<String> sqlList = new ArrayList<>();
-        for (Sql sql : convertToSqls(jobRunInfo.getSubject())) {
+        for (Sql sql : convertToSqls(jobRun.getSubject())) {
             sqlList.add(sql.toSqlString());
         }
 
@@ -45,9 +46,9 @@ public class SqlCommandBuilder implements CommandBuilder {
             throw new CommandUnableGenException(
                     String.format(
                             "No available sql or parsing failed, subject: %s",
-                            jobRunInfo.getSubject()));
+                            jobRun.getSubject()));
         }
 
-        return new SqlCommand(jobRunInfo.getId(), sqlJob.getDsId(), sqlList);
+        return new SqlCommand(jobRun.getId(), sqlJob.getDsId(), sqlList);
     }
 }
