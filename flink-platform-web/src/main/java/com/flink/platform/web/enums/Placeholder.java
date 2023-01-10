@@ -51,6 +51,11 @@ public enum Placeholder {
                 Matcher matcher = TIME_PLACEHOLDER_PATTERN.matcher(jobRun.getSubject());
                 Map<String, Object> result = new HashMap<>();
                 while (matcher.find()) {
+                    String variable = matcher.group();
+                    if (result.containsKey(variable)) {
+                        continue;
+                    }
+
                     String format = checkNotNull(matcher.group("format"));
                     String baseTime = checkNotNull(matcher.group("baseTime"));
                     String operator = matcher.group("operator");
@@ -65,7 +70,8 @@ public enum Placeholder {
                         }
                         destTime = destTime.plus(parsedDuration);
                     }
-                    result.put(matcher.group(), DateUtil.format(destTime, format));
+
+                    result.put(variable, DateUtil.format(destTime, format));
                 }
                 return result;
             }),
@@ -203,7 +209,9 @@ public enum Placeholder {
 
     public static void main(String[] args) {
         JobRunInfo jobRunInfo = new JobRunInfo();
-        jobRunInfo.setSubject("select * from t where t.time = '${time:yyyyMMdd[curMonth-3d]}'");
+
+        jobRunInfo.setSubject(
+                "select count() as date_${time:yyyyMMdd[curDay-1d]} from t where time = ${time:yyyyMMdd[curDay-1d]}");
         System.out.println(TIME.provider.apply(jobRunInfo));
 
         jobRunInfo.setSubject(
