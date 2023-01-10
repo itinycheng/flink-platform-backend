@@ -32,6 +32,25 @@ public class DurationUtil {
                             })
                     .get();
 
+    /**
+     * Parse the given string to a java {@link Duration}. The string is in format "{length
+     * value}{time unit label}", e.g. "123ms", "321 s". If no time unit label is specified, it will
+     * be considered as milliseconds.
+     *
+     * <p>Supported time unit labels are:
+     *
+     * <ul>
+     *   <li>DAYS： "d", "day"
+     *   <li>HOURS： "h", "hour"
+     *   <li>MINUTES： "m", "min", "minute"
+     *   <li>SECONDS： "s", "sec", "second"
+     *   <li>MILLISECONDS： "ms", "milli", "millisecond"
+     *   <li>MICROSECONDS： "µs", "micro", "microsecond"
+     *   <li>NANOSECONDS： "ns", "nano", "nanosecond"
+     * </ul>
+     *
+     * @param text string to parse.
+     */
     public static Duration parse(@Nonnull String text) {
         final String trimmed = text.trim();
 
