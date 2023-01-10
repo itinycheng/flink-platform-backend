@@ -59,7 +59,7 @@ public class JobConstant {
     public static final Pattern TIME_PLACEHOLDER_PATTERN =
             Pattern.compile(
                     String.format(
-                            "\\$\\{\\s*time:(?<format>\\S+)\\[(?<baseTime>%s|%s|%s|%s|%s|%s|%s)(?<operator>\\+|-)(?<duration>\\w+)\\]\\s*}",
+                            "\\$\\{\\s*time:(?<format>.+?)\\[(?<baseTime>%s|%s|%s|%s|%s|%s|%s)(?<operator>\\+|-)?(?<duration>\\w+)?\\]\\s*}",
                             CUR_YEAR,
                             CUR_MONTH,
                             CUR_DAY,
