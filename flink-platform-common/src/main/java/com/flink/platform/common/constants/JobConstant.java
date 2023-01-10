@@ -33,6 +33,20 @@ public class JobConstant {
 
     public static final int READ_MAX_ROWS = 1000;
 
+    public static final String CUR_YEAR = "curYear";
+
+    public static final String CUR_MONTH = "curMonth";
+
+    public static final String CUR_DAY = "curDay";
+
+    public static final String CUR_HOUR = "curHour";
+
+    public static final String CUR_MINUTE = "curMinute";
+
+    public static final String CUR_SECOND = "curSecond";
+
+    public static final String CUR_MILLISECOND = "curMillisecond";
+
     public static final int SQL_PATTERN_CONFIGS =
             Pattern.CASE_INSENSITIVE | Pattern.MULTILINE | Pattern.DOTALL;
 
@@ -41,11 +55,27 @@ public class JobConstant {
     public static final Pattern LIMIT_PATTERN =
             Pattern.compile("LIMIT\\s+(?<num1>\\d+)(,\\s*(?<num2>\\d+))?$", SQL_PATTERN_CONFIGS);
 
+    // ${time:yyyyMMdd[curDate-3d]}
+    public static final Pattern TIME_PLACEHOLDER_PATTERN =
+            Pattern.compile(
+                    String.format(
+                            "\\$\\{\\s*time:(?<format>\\S+)\\[(?<baseTime>%s|%s|%s|%s|%s|%s|%s)(?<operator>\\+|-)(?<duration>\\w+)\\]\\s*}",
+                            CUR_YEAR,
+                            CUR_MONTH,
+                            CUR_DAY,
+                            CUR_HOUR,
+                            CUR_MINUTE,
+                            CUR_SECOND,
+                            CUR_MILLISECOND),
+                    Pattern.CASE_INSENSITIVE | Pattern.MULTILINE);
+
+    // ${jobRun:id}
     public static final Pattern JOB_RUN_PLACEHOLDER_PATTERN =
             Pattern.compile(
                     "\\$\\{\\s*jobRun:(?<field>\\S+)\\s*}",
                     Pattern.CASE_INSENSITIVE | Pattern.MULTILINE);
 
+    // ${hdfsResourceDownload:hdfs:/path/file}
     public static final Pattern HDFS_DOWNLOAD_PATTERN =
             Pattern.compile(
                     "\\$\\{\\s*hdfsResourceDownload:(?<file>\\S+)\\s*}",
