@@ -37,6 +37,10 @@ public class DateUtil {
         return formatter.format(Instant.ofEpochMilli(timestamp));
     }
 
+    public static String format(LocalDateTime dateTime, String format) {
+        return dateTime.format(getFormatter(format));
+    }
+
     private static DateTimeFormatter getFormatter(String format) {
         return FORMATTERS.computeIfAbsent(
                 format,

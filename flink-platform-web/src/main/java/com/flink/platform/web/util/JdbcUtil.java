@@ -24,7 +24,9 @@ public class JdbcUtil {
             case MYSQL:
             case HIVE:
                 properties.setProperty("user", params.getUsername());
-                properties.setProperty("password", params.getPassword());
+                if (params.getPassword() != null) {
+                    properties.setProperty("password", params.getPassword());
+                }
                 break;
             default:
                 throw new RuntimeException("unsupported db type: " + dbType);
