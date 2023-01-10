@@ -53,14 +53,18 @@ public enum Placeholder {
                 while (matcher.find()) {
                     String format = checkNotNull(matcher.group("format"));
                     String baseTime = checkNotNull(matcher.group("baseTime"));
-                    String operator = checkNotNull(matcher.group("operator"));
-                    String duration = checkNotNull(matcher.group("duration"));
-                    Duration parsedDuration = DurationUtil.parse(duration);
-                    if ("-".equals(operator)) {
-                        parsedDuration = parsedDuration.negated();
-                    }
+                    String operator = matcher.group("operator");
+                    String duration = matcher.group("duration");
                     BaseTimeUnit baseTimeUnit = BaseTimeUnit.of(baseTime);
-                    LocalDateTime destTime = baseTimeUnit.provider.get().plus(parsedDuration);
+                    LocalDateTime destTime = baseTimeUnit.provider.get();
+                    // dest time plus duration.
+                    if (StringUtils.isNotBlank(duration)) {
+                        Duration parsedDuration = DurationUtil.parse(duration);
+                        if ("-".equals(operator)) {
+                            parsedDuration = parsedDuration.negated();
+                        }
+                        destTime = destTime.plus(parsedDuration);
+                    }
                     result.put(matcher.group(), DateUtil.format(destTime, format));
                 }
                 return result;
@@ -200,7 +204,14 @@ public enum Placeholder {
     public static void main(String[] args) {
         JobRunInfo jobRunInfo = new JobRunInfo();
         jobRunInfo.setSubject("select * from t where t.time = '${time:yyyyMMdd[curMonth-3d]}'");
-        Map<String, Object> apply = TIME.provider.apply(jobRunInfo);
-        System.out.println(apply);
+        System.out.println(TIME.provider.apply(jobRunInfo));
+
+        jobRunInfo.setSubject(
+                "select * from t where t.time = '${time:yyyy-MM-dd HH:mm:ss[curSecond]}'");
+        System.out.println(TIME.provider.apply(jobRunInfo));
+
+        jobRunInfo.setSubject(
+                "select * from t where t.time = '${time:yyyy-MM-dd HH:mm:ss[curYear+12h]}'");
+        System.out.println(TIME.provider.apply(jobRunInfo));
     }
 }
