@@ -96,6 +96,15 @@ public class DurationUtil {
         }
     }
 
+    public static boolean ableToParse(String text) {
+        try {
+            parse(text);
+            return true;
+        } catch (Exception ignored) {
+            return false;
+        }
+    }
+
     @Getter
     private enum TimeUnit {
         DAYS(ChronoUnit.DAYS, singular("d"), plural("day")),

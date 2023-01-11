@@ -1,10 +1,14 @@
 package com.flink.platform.web.entity.request;
 
+import com.flink.platform.common.util.DurationUtil;
 import com.flink.platform.common.util.Preconditions;
 import com.flink.platform.dao.entity.JobInfo;
+import com.flink.platform.dao.entity.task.BaseJob;
+import com.flink.platform.dao.entity.task.ShellJob;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.experimental.Delegate;
+import org.apache.commons.lang3.math.NumberUtils;
 
 import java.util.regex.Pattern;
 
@@ -38,6 +42,11 @@ public class JobInfoRequest {
         }
 
         msg = verifySubject();
+        if (msg != null) {
+            return msg;
+        }
+
+        msg = verifyConfig();
         return msg;
     }
 
@@ -60,6 +69,11 @@ public class JobInfoRequest {
         }
 
         msg = verifyUpdateTime();
+        if (msg != null) {
+            return msg;
+        }
+
+        msg = verifyConfig();
         return msg;
     }
 
@@ -109,6 +123,20 @@ public class JobInfoRequest {
         if (getUpdateTime() != null) {
             errorMsg = "The update time of job must be null";
         }
+        return errorMsg;
+    }
+
+    private String verifyConfig() {
+        String errorMsg = null;
+        BaseJob config = getConfig();
+        ShellJob shellJob = config.unwrap(ShellJob.class);
+        if (shellJob != null) {
+            String timeout = shellJob.getTimeout();
+            if (!NumberUtils.isCreatable(timeout) && !DurationUtil.ableToParse(timeout)) {
+                errorMsg = "The timeout of ShellJob is invalid";
+            }
+        }
+
         return errorMsg;
     }
 }
