@@ -12,9 +12,12 @@ import lombok.AccessLevel;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.apache.commons.lang3.time.DurationFormatUtils;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 
+import static com.flink.platform.common.constants.Constant.EMPTY;
 import static com.flink.platform.common.util.DateUtil.GLOBAL_DATE_TIME_FORMAT;
 import static com.flink.platform.common.util.DateUtil.GLOBAL_TIMEZONE;
 
@@ -54,4 +57,13 @@ public class JobFlowRun {
     @Setter(AccessLevel.NONE)
     @JsonFormat(pattern = GLOBAL_DATE_TIME_FORMAT, timezone = GLOBAL_TIMEZONE)
     private LocalDateTime createTime;
+
+    public String getDuration() {
+        if (startTime == null || endTime == null) {
+            return EMPTY;
+        }
+
+        Duration duration = Duration.between(startTime, endTime);
+        return DurationFormatUtils.formatDuration(duration.toMillis(), "HH:mm:ss");
+    }
 }
