@@ -4,11 +4,11 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
-/** shell job. */
+/** Shell job. */
 @Data
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
 public class ShellJob extends BaseJob {
 
-    private long timeout;
+    private String timeout;
 }

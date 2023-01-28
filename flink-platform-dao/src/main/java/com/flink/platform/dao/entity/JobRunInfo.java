@@ -14,11 +14,14 @@ import com.flink.platform.common.enums.JobType;
 import com.flink.platform.dao.entity.task.BaseJob;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.apache.commons.lang3.time.DurationFormatUtils;
 
 import java.io.Serializable;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.Map;
 
+import static com.flink.platform.common.constants.Constant.EMPTY;
 import static com.flink.platform.common.util.DateUtil.GLOBAL_DATE_TIME_FORMAT;
 import static com.flink.platform.common.util.DateUtil.GLOBAL_TIMEZONE;
 
@@ -81,5 +84,14 @@ public class JobRunInfo implements Serializable {
     @JsonIgnore
     public String getJobCode() {
         return "job_" + jobId;
+    }
+
+    public String getDuration() {
+        if (submitTime == null || stopTime == null) {
+            return EMPTY;
+        }
+
+        Duration duration = Duration.between(submitTime, stopTime);
+        return DurationFormatUtils.formatDuration(duration.toMillis(), "HH:mm:ss");
     }
 }
