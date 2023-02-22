@@ -1,5 +1,6 @@
 package com.flink.platform.sql.submit.helper;
 
+import org.apache.flink.configuration.Configuration;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.table.api.EnvironmentSettings;
 import org.apache.flink.table.api.TableEnvironment;
@@ -11,10 +12,11 @@ import lombok.val;
 
 /** create execution environment. */
 public class ExecutionEnvs {
-    public static TableEnvironment createExecutionEnv(ExecutionMode execMode) {
+    public static TableEnvironment createExecutionEnv(
+            ExecutionMode execMode, Configuration configuration) {
         TableEnvironment tEnv;
         // create table Env
-        val settingBuilder = EnvironmentSettings.newInstance();
+        val settingBuilder = EnvironmentSettings.newInstance().withConfiguration(configuration);
         switch (execMode) {
             case BATCH:
                 settingBuilder.inBatchMode();
