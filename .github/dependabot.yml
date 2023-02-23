@@ -14,7 +14,6 @@ updates:
     open-pull-requests-limit: 10
     labels:
       - "dependencies"
-      - "java"
     ignore:
       - dependency-name: "ru.yandex.clickhouse:clickhouse-jdbc"
       - dependency-name: "org.apache.flink:*"
@@ -23,3 +22,6 @@ updates:
       - dependency-name: "org.springframework.boot:*"
         versions:
           - "< 3.0.0"
+      - dependency-name: "com.diffplug.spotless:*"
+        versions:
+          - "< 2.31.0"
