@@ -18,10 +18,10 @@ import java.nio.file.Paths;
 import java.time.Duration;
 
 import static com.flink.platform.common.constants.Constant.DOT;
-import static com.flink.platform.common.constants.Constant.PATH_SEPARATOR;
+import static com.flink.platform.common.constants.Constant.FILE_SEPARATOR;
 import static com.flink.platform.web.util.CommandUtil.commandType;
 import static com.flink.platform.web.util.CommandUtil.getShellCommand;
-import static com.flink.platform.web.util.EnvPathUtil.getExecJobDirPath;
+import static com.flink.platform.web.util.PathUtil.getExecJobDirPath;
 
 /** shell command builder. */
 @Slf4j
@@ -48,7 +48,7 @@ public class ShellCommandBuilder implements CommandBuilder {
 
         String commandDirPath = getExecJobDirPath(jobRun.getUserId(), jobRun.getJobId());
         String commandFileName = String.join(DOT, jobRun.getJobId().toString(), commandType());
-        String commandFilePath = String.join(PATH_SEPARATOR, commandDirPath, commandFileName);
+        String commandFilePath = String.join(FILE_SEPARATOR, commandDirPath, commandFileName);
         FileUtil.writeToFile(Paths.get(commandFilePath), jobRun.getSubject());
         return new ShellCommand(jobRun.getId(), timeout, null, getShellCommand(commandFilePath));
     }

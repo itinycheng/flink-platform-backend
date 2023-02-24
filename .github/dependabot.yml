@@ -21,7 +21,7 @@ updates:
       - dependency-name: "org.apache.hive:*"
       - dependency-name: "org.springframework.boot:*"
         versions:
-          - "> 3.0.0"
+          - ">= 3.0.0"
       - dependency-name: "com.diffplug.spotless:*"
         versions:
-          - "> 2.31.0"
+          - ">= 2.31.0"

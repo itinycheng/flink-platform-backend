@@ -2,11 +2,11 @@ package com.flink.platform.web.util;
 
 import javax.annotation.Nonnull;
 
-import static com.flink.platform.common.constants.Constant.PATH_SEPARATOR;
+import static com.flink.platform.common.constants.Constant.FILE_SEPARATOR;
 import static com.flink.platform.common.constants.Constant.ROOT_DIR;
 
 /** Env path. */
-public class EnvPathUtil {
+public class PathUtil {
 
     private static final String WORK_DIR_NAME = "platform";
 
@@ -18,12 +18,12 @@ public class EnvPathUtil {
 
     public static String getUserDirPath(@Nonnull Long userId) {
         String userDirName = String.format(USER_DIR_NAME, userId);
-        return String.join(PATH_SEPARATOR, ROOT_DIR, WORK_DIR_NAME, userDirName);
+        return String.join(FILE_SEPARATOR, ROOT_DIR, WORK_DIR_NAME, userDirName);
     }
 
     public static String getExecJobDirPath(@Nonnull Long userId, @Nonnull Long jobId) {
         String userDirPath = getUserDirPath(userId);
         String jobExecDir = String.format(JOB_WORK_DIR_NAME, jobId);
-        return String.join(PATH_SEPARATOR, userDirPath, JOB_ROOT_DIR_NAME, jobExecDir);
+        return String.join(FILE_SEPARATOR, userDirPath, JOB_ROOT_DIR_NAME, jobExecDir);
     }
 }
