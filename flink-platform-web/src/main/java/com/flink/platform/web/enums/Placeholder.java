@@ -4,15 +4,13 @@ import com.flink.platform.common.constants.JobConstant;
 import com.flink.platform.common.util.DateUtil;
 import com.flink.platform.common.util.DurationUtil;
 import com.flink.platform.dao.entity.JobRunInfo;
+import com.flink.platform.web.util.FileUtil;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.annotation.Nonnull;
 
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.nio.file.attribute.PosixFilePermissions;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -122,9 +120,7 @@ public enum Placeholder {
                             // TODO: Should only for executable files.
                             if (SHELL.equals(jobRun.getType())) {
                                 try {
-                                    Files.setPosixFilePermissions(
-                                            Paths.get(localPath),
-                                            PosixFilePermissions.fromString("rwxr-xr-x"));
+                                    FileUtil.setPermissions(localPath, "rwxr--r--");
                                 } catch (Exception e) {
                                     log.error("Failed to set file permissions", e);
                                 }
