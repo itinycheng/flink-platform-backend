@@ -15,6 +15,7 @@ import java.util.List;
 import java.util.function.BiConsumer;
 
 import static com.flink.platform.common.constants.Constant.LINE_SEPARATOR;
+import static com.flink.platform.common.constants.Constant.SPACE;
 import static com.flink.platform.web.util.CollectLogThread.CmdOutType.ERR;
 import static com.flink.platform.web.util.CollectLogThread.CmdOutType.STD;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -150,5 +151,17 @@ public class CommandUtil {
             log.error(e.getMessage(), e);
             return null;
         }
+    }
+
+    public static String commandDriver() {
+        return OSUtil.isWindows() ? "cmd.exe" : "sh";
+    }
+
+    public static String commandType() {
+        return OSUtil.isWindows() ? "bat" : "sh";
+    }
+
+    public static String getShellCommand(String commandFile) {
+        return String.join(SPACE, commandDriver(), commandFile);
     }
 }

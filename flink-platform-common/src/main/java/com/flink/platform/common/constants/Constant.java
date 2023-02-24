@@ -1,5 +1,7 @@
 package com.flink.platform.common.constants;
 
+import java.io.File;
+
 import static com.flink.platform.common.util.DateUtil.MILLIS_PER_MINUTE;
 import static com.flink.platform.common.util.OSUtil.getFirstNoLoopbackIP4Address;
 import static com.flink.platform.common.util.OSUtil.getHostname;
@@ -19,7 +21,7 @@ public class Constant {
 
     public static final String ROOT_DIR;
 
-    public static final String PATH_SEPARATOR;
+    public static final String FILE_SEPARATOR = File.separator;
 
     public static final String COMMA = ",";
 
@@ -62,7 +64,6 @@ public class Constant {
     public static final String PID = isWindows() ? "handle" : "pid";
 
     static {
-        PATH_SEPARATOR = System.getProperty("path.separator");
         ROOT_DIR = System.getProperty("user.dir");
         HOST_IP = checkNotNull(getFirstNoLoopbackIP4Address());
         HOSTNAME = getHostname();
