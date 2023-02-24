@@ -13,6 +13,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Map;
 
+import static com.flink.platform.common.constants.Constant.ROOT_DIR;
 import static com.flink.platform.common.constants.Constant.SLASH;
 
 /** create hdfs instance. */
@@ -48,8 +49,7 @@ public class HadoopConfig {
 
     @Bean("localDataDir")
     public String createDataDir() {
-        String rootDir = System.getProperty("user.dir");
-        String dataDir = rootDir + SLASH + localDirName;
+        String dataDir = ROOT_DIR + SLASH + localDirName;
         Path path = Paths.get(dataDir);
         File file = path.toFile();
         if (!file.exists()) {
