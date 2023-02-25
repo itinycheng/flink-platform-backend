@@ -49,7 +49,7 @@ public class ShellCommandBuilder implements CommandBuilder {
         String commandDirPath = getExecJobDirPath(jobRun.getUserId(), jobRun.getJobId());
         String commandFileName = String.join(DOT, jobRun.getJobId().toString(), commandType());
         String commandFilePath = String.join(FILE_SEPARATOR, commandDirPath, commandFileName);
-        FileUtil.writeToFile(Paths.get(commandFilePath), jobRun.getSubject());
+        FileUtil.rewriteFile(Paths.get(commandFilePath), jobRun.getSubject());
         return new ShellCommand(jobRun.getId(), timeout, null, getShellCommand(commandFilePath));
     }
 }
