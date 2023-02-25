@@ -70,7 +70,8 @@ public class ReactiveService {
 
     public ReactiveExecVo execFlink(String execId, JobInfo jobInfo, String[] envProps)
             throws Exception {
-        JobRunInfo jobRunInfo = jobRunInfoService.createFrom(jobInfo, null, Constant.HOST_IP);
+        JobRunInfo jobRun = jobRunInfoService.createFrom(jobInfo, null, Constant.HOST_IP);
+        jobRun.setId(0L);
         String command =
                 commandBuilders.stream()
                         .filter(
@@ -82,7 +83,7 @@ public class ReactiveService {
                                 () ->
                                         new UnrecoverableException(
                                                 "No available job command builder"))
-                        .buildCommand(null, jobRunInfo)
+                        .buildCommand(null, jobRun)
                         .toCommandString();
 
         CompletableFuture.runAsync(
