@@ -8,7 +8,7 @@
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-dependencies</artifactId>
-		<version>2.5.9</version>
+		<version>2.7.9</version>
 	</parent>
 
 	<groupId>com.flink.platform</groupId>
@@ -31,7 +31,7 @@
 		<lombok.version>1.18.22</lombok.version>
 		<log4j2.version>2.17.1</log4j2.version>
 		<slf4j.version>1.7.30</slf4j.version>
-		<mysql.version>5.1.49</mysql.version>
+		<mysql.version>8.0.32</mysql.version>
 		<clickhouse-jdbc.version>0.3.1</clickhouse-jdbc.version>
 		<druid.version>1.2.16</druid.version>
 		<flink.version>1.12.0</flink.version>
@@ -45,7 +45,7 @@
 		<jsr305.version>3.0.2</jsr305.version>
 		<grpc-spring-boot.version>2.14.0.RELEASE</grpc-spring-boot.version>
 		<maven-checkstyle-plugin.version>3.2.1</maven-checkstyle-plugin.version>
-		<spotless-maven-plugin.version>2.4.2</spotless-maven-plugin.version>
+		<spotless-maven-plugin.version>2.30.0</spotless-maven-plugin.version>
 		<maven-shade-plugin.version>3.4.1</maven-shade-plugin.version>
 		<maven-compiler-plugin.version>3.10.1</maven-compiler-plugin.version>
 	</properties>
