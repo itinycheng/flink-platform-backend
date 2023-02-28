@@ -14,6 +14,7 @@ import org.springframework.stereotype.Component;
 import javax.annotation.Nonnull;
 
 import java.io.IOException;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Duration;
 
@@ -49,7 +50,9 @@ public class ShellCommandBuilder implements CommandBuilder {
         String commandDirPath = getExecJobDirPath(jobRun.getUserId(), jobRun.getJobId());
         String commandFileName = String.join(DOT, jobRun.getJobId().toString(), commandType());
         String commandFilePath = String.join(FILE_SEPARATOR, commandDirPath, commandFileName);
-        FileUtil.rewriteFile(Paths.get(commandFilePath), jobRun.getSubject());
+        Path commandPath = Paths.get(commandFilePath);
+        FileUtil.rewriteFile(commandPath, jobRun.getSubject());
+        FileUtil.setPermissions(commandPath, "rwxr--r--");
         return new ShellCommand(jobRun.getId(), timeout, null, getShellCommand(commandFilePath));
     }
 }
