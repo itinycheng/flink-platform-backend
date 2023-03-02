@@ -14,6 +14,7 @@ import javax.annotation.Nullable;
 import java.io.InputStream;
 import java.util.function.BiConsumer;
 
+import static com.flink.platform.common.constants.Constant.LINE_SEPARATOR;
 import static com.flink.platform.common.enums.ExecutionStatus.FAILURE;
 import static com.flink.platform.common.enums.ExecutionStatus.KILLABLE;
 import static com.flink.platform.common.enums.ExecutionStatus.KILLED;
@@ -142,8 +143,10 @@ public class ShellTask extends AbstractTask {
             // buffer message.
             if (type == STD) {
                 stdMsg.append(line);
+                stdMsg.append(LINE_SEPARATOR);
             } else if (type == ERR) {
                 errMsg.append(line);
+                errMsg.append(LINE_SEPARATOR);
             }
         };
     }
