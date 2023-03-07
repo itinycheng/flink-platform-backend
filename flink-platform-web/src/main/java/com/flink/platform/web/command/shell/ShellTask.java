@@ -88,15 +88,15 @@ public class ShellTask extends AbstractTask {
             this.exitValue = exited ? process.exitValue() : EXIT_CODE_FAILURE;
 
             try {
+                stdThread.join(2000);
                 stdThread.interrupt();
-                stdThread.join();
             } catch (Exception e) {
                 log.error("interrupt std log collection thread failed", e);
             }
 
             try {
+                errThread.join(2000);
                 errThread.interrupt();
-                errThread.join();
             } catch (Exception e) {
                 log.error("interrupt err log collection thread failed", e);
             }
