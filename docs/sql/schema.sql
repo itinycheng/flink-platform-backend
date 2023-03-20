@@ -18,6 +18,12 @@ SET NAMES utf8mb4;
 SET FOREIGN_KEY_CHECKS = 0;
 
 -- ----------------------------
+-- Create an use database
+-- ----------------------------
+CREATE DATABASE IF NOT EXISTS platform;
+USE platform;
+
+-- ----------------------------
 -- Table structure for qrtz_blob_triggers
 -- ----------------------------
 DROP TABLE IF EXISTS `qrtz_blob_triggers`;
