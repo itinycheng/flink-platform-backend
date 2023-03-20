@@ -40,13 +40,6 @@ hs_err_pid*
 *.iml
 .idea
 
-logs/
-data_dir/
-job_jar/
-sql_file/
-
-application-test.yml
-application-prod.yml
 ### macOS template
 # General
 .DS_Store
@@ -75,6 +68,15 @@ Network Trash Folder
 Temporary Items
 .apdisk
 
-.emt4j
+application-test.yml
+application-prod.yml
+
+logs/
+data_dir/
+job_jar/
+sql_file/
+.emt4j/
 flink-platform-web/src/main/resources/static/
-/platform/user_*
+platform/
+docker/
+

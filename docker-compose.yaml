@@ -1,0 +1,26 @@
+version: '3.9'
+services:
+  mysql_db:
+    image: mysql:8.0.32
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./docs/sql/schema.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./docker/mysql:/var/lib/mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: 123456
+  web:
+    build: .
+    ports:
+      - "9104:9104"
+      - "9898:9898"
+    depends_on:
+      - mysql_db
+    environment:
+      DB_HOST: mysql_db:3306
+      DB_USER: root
+      DB_PASSWORD: 123456
+  
+      
+      

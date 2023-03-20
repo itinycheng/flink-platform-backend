@@ -1,0 +1,103 @@
+server:
+  tomcat:
+    uri-encoding: UTF-8
+    threads:
+      max: 1000
+      min-spare: 30
+  port: 9104
+
+spring:
+  application:
+    name: flink-platform-backend
+  datasource:
+    dynamic:
+      # strict: true
+      datasource:
+        master_platform:
+          url: jdbc:mysql://${DB_HOST}/platform?allowMultiQueries=true&useUnicode=true&characterEncoding=UTF-8
+          username: ${DB_USER}
+          password: ${DB_PASSWORD}
+          driver-class-name: com.mysql.jdbc.Driver
+  quartz:
+    job-store-type: jdbc
+    overwrite-existing-jobs: true
+    startup-delay: 5s
+    jdbc:
+      initialize-schema: never
+    properties:
+      org:
+        quartz:
+          scheduler:
+            instanceName: quartzScheduler
+            instanceId: AUTO
+          jobStore:
+            class: org.springframework.scheduling.quartz.LocalDataSourceJobStore
+            driverDelegateClass: org.quartz.impl.jdbcjobstore.StdJDBCDelegate
+            isClustered: true
+            clusterCheckinInterval: 10000
+            useProperties: false
+            misfireThreshold: 5000
+          threadPool:
+            class: org.quartz.simpl.SimpleThreadPool
+            threadCount: 20
+            threadPriority: 5
+            threadsInheritContextClassLoaderOfInitializingThread: true
+
+grpc:
+  server:
+    port: 9898
+  client:
+    local-grpc-server:
+      address: static://127.0.0.1:9898
+      enableKeepAlive: true
+      keepAliveWithoutCalls: true
+      negotiationType: plaintext
+
+flink:
+  local:
+    sql-dir: sql_file
+    jar-dir: job_jar
+  sql112:
+    version: 1.12.0
+    command-path: /data0/app/flink-1.12.0/bin/flink
+    jar-file: hdfs:///flink/jars/job_jar/flink-platform-core.jar
+    class-name: com.flink.platform.core.Sql112Application
+    lib-dirs: hdfs:///flink/jars/flink_1.12.0/lib/
+  sql113:
+    version: 1.13.2
+    command-path: /data0/app/flink-1.13.2/bin/flink
+    jar-file: hdfs:///flink/jars/job_jar/flink-platform-core.jar
+    class-name: com.flink.platform.core.Sql113Application
+    lib-dirs: hdfs:///flink/jars/flink_1.13.2/lib/
+  sql115:
+    version: 1.15.1
+    command-path: /data0/app/flink-1.15.1/bin/flink
+    jar-file: hdfs:///flink/jars/job_jar/flink-sql-submit-1.15.jar
+    class-name: com.flink.platform.sql.submit.Sql115Application
+    lib-dirs: hdfs:///flink/jars/flink_1.15.1/lib/
+
+hadoop:
+  username: admin
+  hdfsFilePath: hdfs:///flink-platform/
+  localDirName: data_dir
+  properties:
+    fs.hdfs.impl: org.apache.hadoop.hdfs.DistributedFileSystem
+    fs.defaultFS: hdfs://nameservice1
+    ha.zookeeper.quorum: 0.0.0.0:2181,0.0.0.0:2181,0.0.0.0:2181
+    dfs.client.failover.proxy.provider.nameservice1: org.apache.hadoop.hdfs.server.namenode.ha.ConfiguredFailoverProxyProvider
+    dfs.ha.automatic-failover.enabled.nameservice1: true
+    dfs.nameservices: nameservice1
+    dfs.ha.namenodes.nameservice1: namenode39,namenode127
+    dfs.namenode.rpc-address.nameservice1.namenode39: 0.0.0.0:8020
+    dfs.namenode.rpc-address.nameservice1.namenode127: 0.0.0.0:8020
+    dfs.namenode.servicerpc-address.nameservice1.namenode39: 0.0.0.0:8022
+    dfs.namenode.servicerpc-address.nameservice1.namenode127: 0.0.0.0:8022
+
+worker:
+  flowExecThreads: 100
+  perFlowExecThreads: 5
+  errorRetries: 3
+  streamingJobToSuccessMills: 300000
+  reactiveExecThreads: 10
+  flinkSubmitTimeoutMills: 300000
+  maxShellExecTimeoutMills: 28800000
