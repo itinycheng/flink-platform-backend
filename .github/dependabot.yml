@@ -25,3 +25,6 @@ updates:
       - dependency-name: "com.diffplug.spotless:*"
         versions:
           - ">= 2.31.0"
+      - dependency-name: "com.puppycrawl.tools:checkstyle"
+        versions:
+          - ">= 8.24"
