@@ -59,6 +59,9 @@ cd flink-platform-backend
 
 # compile
 mvn clean package -DskipTests
+
+# start within docker
+docker-compose up -d --build
 ```
 
 ```bash

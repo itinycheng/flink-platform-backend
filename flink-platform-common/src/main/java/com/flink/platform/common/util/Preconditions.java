@@ -16,6 +16,10 @@ public class Preconditions {
         return reference != null ? null : errorMsg;
     }
 
+    public static <R> R checkState(boolean expression, R errorMsg) {
+        return expression ? null : errorMsg;
+    }
+
     public static <T extends Throwable> void checkThrow(boolean condition, Supplier<T> supplier)
             throws T {
         if (condition) {
