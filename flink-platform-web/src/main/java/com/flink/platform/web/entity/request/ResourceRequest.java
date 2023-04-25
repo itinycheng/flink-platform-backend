@@ -1,6 +1,5 @@
 package com.flink.platform.web.entity.request;
 
-import com.flink.platform.common.util.Preconditions;
 import com.flink.platform.dao.entity.Resource;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -9,6 +8,9 @@ import lombok.experimental.Delegate;
 import java.util.regex.Pattern;
 
 import static com.flink.platform.common.enums.ResourceType.DIR;
+import static com.flink.platform.common.util.Preconditions.checkNotNull;
+import static com.flink.platform.common.util.Preconditions.checkState;
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 /** Alert request info. */
 @NoArgsConstructor
@@ -27,7 +29,7 @@ public class ResourceRequest {
         }
 
         if (getType() != DIR) {
-            msg = fullNameNotNull();
+            msg = fullNameNotBlank();
             if (msg != null) {
                 return msg;
             }
@@ -41,7 +43,7 @@ public class ResourceRequest {
     }
 
     public String idNotNull() {
-        return Preconditions.checkNotNull(getId(), "The id cannot be null");
+        return checkNotNull(getId(), "The id cannot be null");
     }
 
     public String verifyName() {
@@ -54,11 +56,11 @@ public class ResourceRequest {
         return errorMsg;
     }
 
-    public String fullNameNotNull() {
-        return Preconditions.checkNotNull(getFullName(), "The full name cannot be null");
+    public String fullNameNotBlank() {
+        return checkState(isNotBlank(getFullName()), "The full name cannot be null");
     }
 
     public String typeNotNull() {
-        return Preconditions.checkNotNull(getType(), "The type cannot be null");
+        return checkNotNull(getType(), "The type cannot be null");
     }
 }
