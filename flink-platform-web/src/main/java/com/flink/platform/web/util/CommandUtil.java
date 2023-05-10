@@ -3,8 +3,8 @@ package com.flink.platform.web.util;
 import com.flink.platform.common.constants.Constant;
 import com.flink.platform.common.util.OSUtil;
 import com.sun.jna.platform.win32.Kernel32;
+import com.sun.jna.platform.win32.WinNT;
 import lombok.extern.slf4j.Slf4j;
-import oshi.jna.platform.windows.WinNT;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -93,15 +93,15 @@ public class CommandUtil {
             int exitValue = status ? process.exitValue() : EXIT_CODE_FAILURE;
 
             try {
+                stdThread.join(2000);
                 stdThread.interrupt();
-                stdThread.join();
             } catch (Exception e) {
                 log.error("interrupt std log collection thread failed", e);
             }
 
             try {
+                errThread.join(2000);
                 errThread.interrupt();
-                errThread.join();
             } catch (Exception e) {
                 log.error("interrupt err log collection thread failed", e);
             }
