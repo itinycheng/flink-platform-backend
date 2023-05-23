@@ -96,8 +96,8 @@ public class JobFlowRequest {
                 CronExpression cronExpression = new CronExpression(cronExpr);
                 Date validTime1 = cronExpression.getNextValidTimeAfter(new Date());
                 Date validTime2 = cronExpression.getNextValidTimeAfter(validTime1);
-                if (validTime2.getTime() - validTime1.getTime() < 5 * DateUtil.MILLIS_PER_MINUTE) {
-                    return "Quartz schedule interval must bigger than 5 minute";
+                if (validTime2.getTime() - validTime1.getTime() < DateUtil.MILLIS_PER_MINUTE) {
+                    return "Quartz schedule interval must bigger than 1 minute";
                 }
             }
 
