@@ -37,7 +37,7 @@
 		<flink.version>1.12.0</flink.version>
 		<flink.scope>provided</flink.scope>
 		<hadoop.version>3.3.5</hadoop.version>
-		<hive.version>2.3.9</hive.version>
+		<hive.version>2.1.1</hive.version>
 		<mybatis-plus.version>3.5.3.1</mybatis-plus.version>
 		<dynamic-datasource.version>3.6.1</dynamic-datasource.version>
 		<janino.version>3.1.9</janino.version>
@@ -144,6 +144,10 @@
 					<exclusion>
 						<groupId>org.apache.hadoop</groupId>
 						<artifactId>hadoop-mapreduce-client-jobclient</artifactId>
+					</exclusion>
+					<exclusion>
+						<groupId>org.apache.hadoop</groupId>
+						<artifactId>hadoop-mapreduce-client-core</artifactId>
 					</exclusion>
 					<exclusion>
 						<groupId>org.eclipse.jetty</groupId>
@@ -264,6 +268,10 @@
 					<exclusion>
 						<artifactId>ant</artifactId>
 						<groupId>org.apache.ant</groupId>
+					</exclusion>
+					<exclusion>
+						<groupId>org.apache.derby</groupId>
+						<artifactId>derby</artifactId>
 					</exclusion>
 				</exclusions>
 			</dependency>
