@@ -1,6 +1,5 @@
 package com.flink.platform.web.entity.request;
 
-import com.flink.platform.common.util.Preconditions;
 import com.flink.platform.dao.entity.JobInfo;
 import com.flink.platform.dao.entity.LongArrayList;
 import com.flink.platform.dao.entity.task.SqlJob;
@@ -8,6 +7,8 @@ import lombok.Data;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.experimental.Delegate;
+
+import static com.flink.platform.common.util.Preconditions.checkNotNull;
 
 /** user request. */
 @Data
@@ -58,23 +59,23 @@ public class ReactiveRequest {
 
     public String dsIdNotNull() {
         Long dsId = jobInfo.getConfig().unwrap(SqlJob.class).getDsId();
-        return Preconditions.checkNotNull(dsId, "The datasource id cannot be null");
+        return checkNotNull(dsId, "The datasource id cannot be null");
     }
 
     public String subjectNotNull() {
-        return Preconditions.checkNotNull(getSubject(), "The subject cannot be null");
+        return checkNotNull(getSubject(), "The subject cannot be null");
     }
 
     public String deployModeNotNull() {
-        return Preconditions.checkNotNull(getDeployMode(), "The subject cannot be null");
+        return checkNotNull(getDeployMode(), "The subject cannot be null");
     }
 
     public String execModeNotNull() {
-        return Preconditions.checkNotNull(getExecMode(), "The subject cannot be null");
+        return checkNotNull(getExecMode(), "The subject cannot be null");
     }
 
     public String versionNotNull() {
-        return Preconditions.checkNotNull(getVersion(), "The version cannot be null");
+        return checkNotNull(getVersion(), "The version cannot be null");
     }
 
     public String routeUrlSizeEqOne() {

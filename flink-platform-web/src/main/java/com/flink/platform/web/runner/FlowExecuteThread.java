@@ -75,18 +75,16 @@ public class FlowExecuteThread implements Runnable {
 
     /** Update status of jobFlow and send notification. */
     private void completeAndNotify(JobFlowDag flow) {
-        ExecutionStatus finalStatus = JobFlowDagHelper.getDagState(flow);
-        if (finalStatus.isTerminalState()) {
-            jobFlowRun.setStatus(finalStatus);
-            JobFlowRun newJobFlowRun = new JobFlowRun();
-            newJobFlowRun.setId(jobFlowRun.getId());
-            newJobFlowRun.setEndTime(LocalDateTime.now());
-            newJobFlowRun.setStatus(finalStatus);
-            jobFlowRunService.updateById(newJobFlowRun);
+        ExecutionStatus finalStatus = JobFlowDagHelper.getFinalStatus(flow);
+        jobFlowRun.setStatus(finalStatus);
+        JobFlowRun newJobFlowRun = new JobFlowRun();
+        newJobFlowRun.setId(jobFlowRun.getId());
+        newJobFlowRun.setEndTime(LocalDateTime.now());
+        newJobFlowRun.setStatus(finalStatus);
+        jobFlowRunService.updateById(newJobFlowRun);
 
-            // send notification.
-            alertSendingService.sendAlerts(jobFlowRun);
-        }
+        // send notification.
+        alertSendingService.sendAlerts(jobFlowRun);
     }
 
     private synchronized void execVertex(JobVertex jobVertex, JobFlowDag flow) {
