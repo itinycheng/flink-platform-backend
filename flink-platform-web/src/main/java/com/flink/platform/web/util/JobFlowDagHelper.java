@@ -19,10 +19,10 @@ import static com.flink.platform.common.enums.ExecutionCondition.AND;
 import static com.flink.platform.common.enums.ExecutionCondition.OR;
 import static com.flink.platform.common.enums.ExecutionStatus.ABNORMAL;
 import static com.flink.platform.common.enums.ExecutionStatus.ERROR;
+import static com.flink.platform.common.enums.ExecutionStatus.EXPECTED_FAILURE;
 import static com.flink.platform.common.enums.ExecutionStatus.FAILURE;
 import static com.flink.platform.common.enums.ExecutionStatus.KILLED;
 import static com.flink.platform.common.enums.ExecutionStatus.NOT_EXIST;
-import static com.flink.platform.common.enums.ExecutionStatus.RUNNING;
 import static com.flink.platform.common.enums.ExecutionStatus.SUBMITTED;
 import static com.flink.platform.common.enums.ExecutionStatus.SUCCESS;
 import static java.util.stream.Collectors.toSet;
@@ -30,34 +30,37 @@ import static java.util.stream.Collectors.toSet;
 /** Dag helper for job flow. */
 public class JobFlowDagHelper {
 
-    // TODO : dag can not have executable vertices
+    // ! JobFlowDag shouldn't have unfinished/unexecuted jobs.
     @Nonnull
-    public static ExecutionStatus getDagState(DAG<Long, JobVertex, JobEdge> dag) {
-        Set<ExecutionStatus> vertexStatusList =
+    public static ExecutionStatus getFinalStatus(DAG<Long, JobVertex, JobEdge> dag) {
+        Set<ExecutionStatus> statusList =
                 dag.getVertices().stream()
                         .map(JobVertex::getJobRunStatus)
                         .filter(Objects::nonNull)
                         .collect(toSet());
-        ExecutionStatus status;
-        if (vertexStatusList.contains(ERROR)) {
-            status = ERROR;
-        } else if (vertexStatusList.contains(NOT_EXIST)) {
-            status = NOT_EXIST;
-        } else if (vertexStatusList.contains(FAILURE)) {
-            status = FAILURE;
-        } else if (vertexStatusList.contains(ABNORMAL)) {
-            status = ABNORMAL;
-        } else if (vertexStatusList.contains(KILLED)) {
-            status = KILLED;
-        } else if (vertexStatusList.contains(RUNNING)) {
-            status = RUNNING;
-        } else if (vertexStatusList.contains(SUCCESS)) {
-            status = SUCCESS;
-        } else {
-            status = SUBMITTED;
-        }
-
-        return status;
+        return statusList.stream()
+                .filter(executionStatus -> !executionStatus.isTerminalState())
+                .findFirst()
+                .orElseGet(
+                        () -> {
+                            // terminal status, keep the current `if.else` order is very important.
+                            if (statusList.contains(ERROR)) {
+                                return ERROR;
+                            } else if (statusList.contains(NOT_EXIST)) {
+                                return NOT_EXIST;
+                            } else if (statusList.contains(ABNORMAL)) {
+                                return ABNORMAL;
+                            } else if (statusList.contains(KILLED)) {
+                                return KILLED;
+                            } else if (statusList.contains(FAILURE)) {
+                                return determineFailureStatus(dag);
+                            } else if (statusList.contains(SUCCESS)) {
+                                return SUCCESS;
+                            } else {
+                                // unreachable.
+                                return SUBMITTED;
+                            }
+                        });
     }
 
     public static boolean hasUnExecutedVertices(JobFlowDag dag) {
@@ -163,5 +166,21 @@ public class JobFlowDagHelper {
         }
 
         return unExecutedVertices;
+    }
+
+    private static ExecutionStatus determineFailureStatus(DAG<Long, JobVertex, JobEdge> dag) {
+        // Whether each failure job has failure status handling vertex.
+        return dag.getVertices().stream()
+                        .filter(fromVertex -> fromVertex.getJobRunStatus() == FAILURE)
+                        .anyMatch(
+                                fromVertex ->
+                                        dag.getEdgesFromVertex(fromVertex).stream()
+                                                .noneMatch(
+                                                        jobEdge ->
+                                                                jobEdge.getExpectStatus()
+                                                                        == fromVertex
+                                                                                .getJobRunStatus()))
+                ? FAILURE
+                : EXPECTED_FAILURE;
     }
 }

@@ -1,7 +1,6 @@
 package com.flink.platform.web.entity.request;
 
 import com.flink.platform.common.util.DurationUtil;
-import com.flink.platform.common.util.Preconditions;
 import com.flink.platform.dao.entity.JobInfo;
 import com.flink.platform.dao.entity.task.BaseJob;
 import com.flink.platform.dao.entity.task.ShellJob;
@@ -14,6 +13,7 @@ import java.util.regex.Pattern;
 
 import static com.flink.platform.common.enums.JobType.CONDITION;
 import static com.flink.platform.common.enums.JobType.DEPENDENT;
+import static com.flink.platform.common.util.Preconditions.checkNotNull;
 
 /** Job request info. */
 @NoArgsConstructor
@@ -96,18 +96,18 @@ public class JobInfoRequest {
     }
 
     public String verifyType() {
-        return Preconditions.checkNotNull(getType(), "The job type cannot be null");
+        return checkNotNull(getType(), "The job type cannot be null");
     }
 
     public String verifyExecMode() {
-        return Preconditions.checkNotNull(getExecMode(), "The job execution type cannot be null");
+        return checkNotNull(getExecMode(), "The job execution type cannot be null");
     }
 
     public String verifySubject() {
         if (getType() == CONDITION || getType() == DEPENDENT) {
             setSubject("");
         }
-        return Preconditions.checkNotNull(getSubject(), "The job subject cannot be null");
+        return checkNotNull(getSubject(), "The job subject cannot be null");
     }
 
     private String verifyCreateTime() {

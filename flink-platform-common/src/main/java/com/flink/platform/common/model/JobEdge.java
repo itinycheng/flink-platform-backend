@@ -6,6 +6,8 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
+import static com.flink.platform.common.util.Preconditions.checkNotNull;
+
 /** Json edge. */
 @Data
 @NoArgsConstructor
@@ -16,6 +18,6 @@ public class JobEdge extends Edge<Long> {
 
     public JobEdge(Long fromVertex, Long toVertex, ExecutionStatus expectStatus) {
         super(fromVertex, toVertex);
-        this.expectStatus = expectStatus;
+        this.expectStatus = checkNotNull(expectStatus);
     }
 }
