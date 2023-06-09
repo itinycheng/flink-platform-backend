@@ -4,7 +4,10 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
-/** Execution status enums, used for Job and JobFlow. */
+/**
+ * Execution status enums, used for Job and JobFlow. <br>
+ * ! Check if JobFlowDagHelper::getFinalStatus is correct when adding/removing terminal status.
+ */
 public enum ExecutionStatus {
     SUBMITTED(0, TerminalState.NON_TERMINAL),
     RUNNING(1, TerminalState.NON_TERMINAL),
@@ -18,7 +21,9 @@ public enum ExecutionStatus {
     NOT_EXIST(7, TerminalState.TERMINAL),
     CREATED(8, TerminalState.NON_TERMINAL),
     KILLABLE(9, TerminalState.NON_TERMINAL),
-    ;
+
+    /** ! Only for jobFlow final status. */
+    EXPECTED_FAILURE(10, TerminalState.TERMINAL);
 
     private enum TerminalState {
         TERMINAL,

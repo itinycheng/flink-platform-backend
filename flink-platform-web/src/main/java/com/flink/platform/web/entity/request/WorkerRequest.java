@@ -1,10 +1,11 @@
 package com.flink.platform.web.entity.request;
 
-import com.flink.platform.common.util.Preconditions;
 import com.flink.platform.dao.entity.Worker;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.experimental.Delegate;
+
+import static com.flink.platform.common.util.Preconditions.checkNotNull;
 
 /** user request. */
 @NoArgsConstructor
@@ -31,18 +32,18 @@ public class WorkerRequest {
     }
 
     public String idNotNull() {
-        return Preconditions.checkNotNull(getId(), "The worker id cannot be null");
+        return checkNotNull(getId(), "The worker id cannot be null");
     }
 
     public String nameNotNull() {
-        return Preconditions.checkNotNull(getName(), "The name cannot be null");
+        return checkNotNull(getName(), "The name cannot be null");
     }
 
     public String ipNotNull() {
-        return Preconditions.checkNotNull(getIp(), "The ip cannot be null");
+        return checkNotNull(getIp(), "The ip cannot be null");
     }
 
     public String portNotNull() {
-        return Preconditions.checkNotNull(getPort(), "The port cannot be null");
+        return checkNotNull(getPort(), "The port cannot be null");
     }
 }
