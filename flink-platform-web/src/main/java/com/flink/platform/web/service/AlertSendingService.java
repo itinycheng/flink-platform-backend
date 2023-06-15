@@ -48,9 +48,10 @@ public class AlertSendingService {
                 .forEach(alert -> sendAlert(alert.getAlertId(), jobFlowRun));
     }
 
-    public void sendErrAlerts(JobFlow jobFlow) {
+    public void sendErrAlerts(JobFlow jobFlow, String alertMag) {
         JobFlowRun jobFlowRun = jobFlowService.copyToJobFlowRun(jobFlow);
         jobFlowRun.setStatus(FAILURE);
+        jobFlowRun.setAlertMsg(alertMag);
         sendAlerts(jobFlowRun);
     }
 
@@ -78,7 +79,8 @@ public class AlertSendingService {
                     JsonUtil.toJsonString(alert.getContent())
                             .replace("${id}", String.valueOf(jobFlowRun.getId()))
                             .replace("${name}", jobFlowRun.getName())
-                            .replace("${status}", jobFlowRun.getStatus().name());
+                            .replace("${status}", jobFlowRun.getStatus().name())
+                            .replace("${alertMsg}", jobFlowRun.getAlertMsg());
             FeiShuAlert feiShuAlert = new FeiShuAlert(alert.getWebhook(), JsonUtil.toMap(content));
             String message = sendToFeiShu(feiShuAlert);
             log.info(
