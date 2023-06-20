@@ -14,6 +14,8 @@ import com.flink.platform.web.command.JobCommand;
 import com.flink.platform.web.command.flink.FlinkCommand;
 import com.flink.platform.web.enums.Placeholder;
 import com.flink.platform.web.enums.Variable;
+import com.flink.platform.web.util.ExceptionUtil;
+import com.flink.platform.web.util.ThreadUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.MapUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,6 +31,7 @@ import java.util.Map;
 
 import static com.flink.platform.common.constants.Constant.HOST_IP;
 import static com.flink.platform.common.enums.ExecutionStatus.CREATED;
+import static com.flink.platform.common.enums.ExecutionStatus.ERROR;
 
 /** Process job service. */
 @Slf4j
@@ -49,6 +52,31 @@ public class ProcessJobService {
         this.jobRunInfoService = jobRunInfoService;
         this.jobCommandBuilders = jobCommandBuilders;
         this.jobCommandExecutors = jobCommandExecutors;
+    }
+
+    public Long processJob(final long jobRunId, final int retries) {
+        // checkState(retries >= 0, "");
+        for (int i = 0; i <= retries; i++) {
+            try {
+                processJob(jobRunId);
+            } catch (Exception e) {
+                log.error("Process job run: {} failed.", jobRunId, e);
+                if (i == retries || e instanceof UnrecoverableException) {
+                    JobRunInfo jobRun = new JobRunInfo();
+                    jobRun.setId(jobRunId);
+                    jobRun.setStatus(ERROR);
+                    jobRun.setBackInfo(
+                            JsonUtil.toJsonString(
+                                    new JobCallback(ExceptionUtil.stackTrace(e), null)));
+                    jobRunInfoService.updateById(jobRun);
+                    break;
+                }
+
+                ThreadUtil.sleepRetry(i);
+            }
+        }
+
+        return jobRunId;
     }
 
     public JobRunInfo processJob(final long jobRunId) throws Exception {

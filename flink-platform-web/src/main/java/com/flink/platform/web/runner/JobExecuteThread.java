@@ -26,8 +26,6 @@ import com.flink.platform.web.grpc.JobProcessGrpcClient;
 import com.flink.platform.web.monitor.StatusInfo;
 import com.flink.platform.web.service.WorkerApplyService;
 import com.flink.platform.web.util.ThreadUtil;
-import io.grpc.Status;
-import io.grpc.StatusRuntimeException;
 import lombok.extern.slf4j.Slf4j;
 
 import javax.annotation.Nonnull;
@@ -51,10 +49,6 @@ import static java.util.Objects.nonNull;
 /** Execute job in a separate thread. */
 @Slf4j
 public class JobExecuteThread implements Callable<JobResponse> {
-
-    private static final int MIN_SLEEP_TIME_MILLIS = 2000;
-
-    private static final int MAX_SLEEP_TIME_MILLIS = 60_000;
 
     private final Long flowRunId;
 
@@ -185,31 +179,10 @@ public class JobExecuteThread implements Callable<JobResponse> {
      * TODO: Failed retries should be narrow down to job script submission.
      */
     private JobRunInfo processRemoteJob(JobGrpcServiceBlockingStub stub, long jobRunId) {
-        int retryTimes = 0;
-        Exception exception = null;
-        while (retryTimes++ <= errorRetries) {
-            try {
-                ProcessJobRequest.Builder request =
-                        ProcessJobRequest.newBuilder().setJobRunId(jobRunId);
-                ProcessJobReply reply = stub.processJob(request.build());
-                return jobRunInfoService.getById(reply.getJobRunId());
-            } catch (Exception e) {
-                log.error("Process job run: {} failed.", jobRunId, e);
-                exception = e;
-                if (e instanceof StatusRuntimeException) {
-                    Status status = ((StatusRuntimeException) e).getStatus();
-                    // break loop.
-                    if (status != null && Status.Code.UNAVAILABLE.equals(status.getCode())) {
-                        break;
-                    }
-                }
-
-                sleep(retryTimes);
-            }
-        }
-
-        throw new IllegalStateException(
-                "Process remote job failed, retryTimes: " + retryTimes, exception);
+        ProcessJobRequest.Builder request =
+                ProcessJobRequest.newBuilder().setJobRunId(jobRunId).setRetries(errorRetries);
+        ProcessJobReply reply = stub.processJob(request.build());
+        return jobRunInfoService.getById(reply.getJobRunId());
     }
 
     public StatusInfo updateAndWaitForComplete(
@@ -259,7 +232,7 @@ public class JobExecuteThread implements Callable<JobResponse> {
                 }
             }
 
-            sleep(++retryTimes);
+            ThreadUtil.sleepRetry(++retryTimes);
         }
 
         return null;
@@ -310,10 +283,5 @@ public class JobExecuteThread implements Callable<JobResponse> {
         } catch (Exception e) {
             log.error("Update job run status failed", e);
         }
-    }
-
-    private void sleep(int retryTimes) {
-        int mills = Math.min(retryTimes * MIN_SLEEP_TIME_MILLIS, MAX_SLEEP_TIME_MILLIS);
-        ThreadUtil.sleep(mills);
     }
 }
