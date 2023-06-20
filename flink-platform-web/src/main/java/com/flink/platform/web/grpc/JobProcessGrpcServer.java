@@ -1,7 +1,6 @@
 package com.flink.platform.web.grpc;
 
 import com.flink.platform.common.exception.UnrecoverableException;
-import com.flink.platform.dao.entity.JobRunInfo;
 import com.flink.platform.grpc.JobGrpcServiceGrpc;
 import com.flink.platform.grpc.JobStatusReply;
 import com.flink.platform.grpc.JobStatusRequest;
@@ -33,9 +32,9 @@ public class JobProcessGrpcServer extends JobGrpcServiceGrpc.JobGrpcServiceImplB
     public void processJob(
             ProcessJobRequest request, StreamObserver<ProcessJobReply> responseObserver) {
         try {
-            JobRunInfo jobRunInfo = processJobService.processJob(request.getJobRunId());
-            ProcessJobReply reply =
-                    ProcessJobReply.newBuilder().setJobRunId(jobRunInfo.getId()).build();
+            Long jobRunId =
+                    processJobService.processJob(request.getJobRunId(), request.getRetries());
+            ProcessJobReply reply = ProcessJobReply.newBuilder().setJobRunId(jobRunId).build();
             responseObserver.onNext(reply);
         } catch (Exception e) {
             log.error("process job via grpc failed", e);
