@@ -59,8 +59,9 @@ public class ProcessJobService {
         for (int i = 0; i <= retries; i++) {
             try {
                 processJob(jobRunId);
+                break;
             } catch (Exception e) {
-                log.error("Process job run: {} failed.", jobRunId, e);
+                log.error("Process job run: {} failed, retry times: {}.", jobRunId, i, e);
                 if (i == retries || e instanceof UnrecoverableException) {
                     JobRunInfo jobRun = new JobRunInfo();
                     jobRun.setId(jobRunId);
@@ -79,7 +80,7 @@ public class ProcessJobService {
         return jobRunId;
     }
 
-    public JobRunInfo processJob(final long jobRunId) throws Exception {
+    public void processJob(final long jobRunId) throws Exception {
         JobCommand jobCommand = null;
         JobRunInfo jobRunInfo = null;
 
@@ -163,7 +164,6 @@ public class ProcessJobService {
             // step 6: print job command info
             log.info("Job run: {} submitted, time: {}", jobRunId, System.currentTimeMillis());
 
-            return jobRunInfo;
         } finally {
             if (jobRunInfo != null
                     && jobRunInfo.getType() == JobType.FLINK_SQL
