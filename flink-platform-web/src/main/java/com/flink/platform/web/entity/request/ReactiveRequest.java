@@ -8,7 +8,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.experimental.Delegate;
 
-import static com.flink.platform.common.util.Preconditions.checkNotNull;
+import static com.flink.platform.common.util.Preconditions.requireNotNull;
 
 /** user request. */
 @Data
@@ -59,23 +59,23 @@ public class ReactiveRequest {
 
     public String dsIdNotNull() {
         Long dsId = jobInfo.getConfig().unwrap(SqlJob.class).getDsId();
-        return checkNotNull(dsId, "The datasource id cannot be null");
+        return requireNotNull(dsId, "The datasource id cannot be null");
     }
 
     public String subjectNotNull() {
-        return checkNotNull(getSubject(), "The subject cannot be null");
+        return requireNotNull(getSubject(), "The subject cannot be null");
     }
 
     public String deployModeNotNull() {
-        return checkNotNull(getDeployMode(), "The subject cannot be null");
+        return requireNotNull(getDeployMode(), "The subject cannot be null");
     }
 
     public String execModeNotNull() {
-        return checkNotNull(getExecMode(), "The subject cannot be null");
+        return requireNotNull(getExecMode(), "The subject cannot be null");
     }
 
     public String versionNotNull() {
-        return checkNotNull(getVersion(), "The version cannot be null");
+        return requireNotNull(getVersion(), "The version cannot be null");
     }
 
     public String routeUrlSizeEqOne() {

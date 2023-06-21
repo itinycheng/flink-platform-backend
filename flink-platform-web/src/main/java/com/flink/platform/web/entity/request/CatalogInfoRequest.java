@@ -11,7 +11,7 @@ import lombok.experimental.Delegate;
 
 import java.util.List;
 
-import static com.flink.platform.common.util.Preconditions.checkNotNull;
+import static com.flink.platform.common.util.Preconditions.requireNotNull;
 
 /** Catalog info request. */
 @Data
@@ -48,18 +48,18 @@ public class CatalogInfoRequest {
     }
 
     public String idNotNull() {
-        return checkNotNull(getId(), "The catalog id cannot be null");
+        return requireNotNull(getId(), "The catalog id cannot be null");
     }
 
     public String nameNotNull() {
-        return checkNotNull(getName(), "The catalog name cannot be null");
+        return requireNotNull(getName(), "The catalog name cannot be null");
     }
 
     public String typeNotNull() {
-        return checkNotNull(getType(), "The catalog type cannot be null");
+        return requireNotNull(getType(), "The catalog type cannot be null");
     }
 
     public String createSqlNotNull() {
-        return checkNotNull(getCreateSql(), "The create sql cannot be null");
+        return requireNotNull(getCreateSql(), "The create sql cannot be null");
     }
 }

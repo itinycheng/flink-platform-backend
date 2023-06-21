@@ -5,7 +5,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.experimental.Delegate;
 
-import static com.flink.platform.common.util.Preconditions.checkNotNull;
+import static com.flink.platform.common.util.Preconditions.requireNotNull;
 
 /** Alert request info. */
 @NoArgsConstructor
@@ -32,18 +32,18 @@ public class AlertInfoRequest {
     }
 
     public String verifyId() {
-        return checkNotNull(getId(), "The alert id cannot be null");
+        return requireNotNull(getId(), "The alert id cannot be null");
     }
 
     public String verifyName() {
-        return checkNotNull(getName(), "The alert name cannot be null");
+        return requireNotNull(getName(), "The alert name cannot be null");
     }
 
     public String verifyType() {
-        return checkNotNull(getType(), "The alert type cannot be null");
+        return requireNotNull(getType(), "The alert type cannot be null");
     }
 
     public String verifyConfig() {
-        return checkNotNull(getConfig(), "The alert config cannot be null");
+        return requireNotNull(getConfig(), "The alert config cannot be null");
     }
 }
