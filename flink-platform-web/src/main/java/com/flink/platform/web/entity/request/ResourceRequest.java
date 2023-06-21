@@ -8,8 +8,8 @@ import lombok.experimental.Delegate;
 import java.util.regex.Pattern;
 
 import static com.flink.platform.common.enums.ResourceType.DIR;
-import static com.flink.platform.common.util.Preconditions.checkNotNull;
-import static com.flink.platform.common.util.Preconditions.checkState;
+import static com.flink.platform.common.util.Preconditions.requireNotNull;
+import static com.flink.platform.common.util.Preconditions.requireState;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 /** Alert request info. */
@@ -43,7 +43,7 @@ public class ResourceRequest {
     }
 
     public String idNotNull() {
-        return checkNotNull(getId(), "The id cannot be null");
+        return requireNotNull(getId(), "The id cannot be null");
     }
 
     public String verifyName() {
@@ -57,10 +57,10 @@ public class ResourceRequest {
     }
 
     public String fullNameNotBlank() {
-        return checkState(isNotBlank(getFullName()), "The full name cannot be null");
+        return requireState(isNotBlank(getFullName()), "The full name cannot be null");
     }
 
     public String typeNotNull() {
-        return checkNotNull(getType(), "The type cannot be null");
+        return requireNotNull(getType(), "The type cannot be null");
     }
 }

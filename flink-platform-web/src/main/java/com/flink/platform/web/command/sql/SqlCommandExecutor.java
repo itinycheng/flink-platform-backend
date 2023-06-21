@@ -9,14 +9,13 @@ import com.flink.platform.dao.service.JobRunInfoService;
 import com.flink.platform.web.command.CommandExecutor;
 import com.flink.platform.web.command.JobCallback;
 import com.flink.platform.web.command.JobCommand;
+import com.flink.platform.web.util.ExceptionUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.Nonnull;
 
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
@@ -106,9 +105,7 @@ public class SqlCommandExecutor implements CommandExecutor {
 
         String exceptionMsg = null;
         if (exception != null) {
-            StringWriter writer = new StringWriter();
-            exception.printStackTrace(new PrintWriter(writer, true));
-            exceptionMsg = writer.toString();
+            exceptionMsg = ExceptionUtil.stackTrace(exception);
         }
 
         boolean isSucceed = exceptionMsg == null;

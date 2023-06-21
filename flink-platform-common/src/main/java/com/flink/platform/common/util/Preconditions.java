@@ -1,5 +1,7 @@
 package com.flink.platform.common.util;
 
+import javax.annotation.Nullable;
+
 import java.util.function.Supplier;
 
 /** check whether throw exception. */
@@ -12,12 +14,17 @@ public class Preconditions {
         return reference;
     }
 
-    public static <T, R> R checkNotNull(T reference, R errorMsg) {
-        return reference != null ? null : errorMsg;
+    public static <T> T checkState(T reference) {
+        if (reference == null) {
+            throw new NullPointerException();
+        }
+        return reference;
     }
 
-    public static <R> R checkState(boolean expression, R errorMsg) {
-        return expression ? null : errorMsg;
+    public static void checkArgument(boolean expression, @Nullable Object errorMsg) {
+        if (!expression) {
+            throw new IllegalArgumentException(String.valueOf(errorMsg));
+        }
     }
 
     public static <T extends Throwable> void checkThrow(boolean condition, Supplier<T> supplier)
@@ -25,5 +32,13 @@ public class Preconditions {
         if (condition) {
             throw supplier.get();
         }
+    }
+
+    public static <T, R> R requireNotNull(T reference, R errorMsg) {
+        return reference != null ? null : errorMsg;
+    }
+
+    public static <R> R requireState(boolean expression, R errorMsg) {
+        return expression ? null : errorMsg;
     }
 }

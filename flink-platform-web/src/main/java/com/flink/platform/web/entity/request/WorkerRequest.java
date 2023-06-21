@@ -5,7 +5,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.experimental.Delegate;
 
-import static com.flink.platform.common.util.Preconditions.checkNotNull;
+import static com.flink.platform.common.util.Preconditions.requireNotNull;
 
 /** user request. */
 @NoArgsConstructor
@@ -32,18 +32,18 @@ public class WorkerRequest {
     }
 
     public String idNotNull() {
-        return checkNotNull(getId(), "The worker id cannot be null");
+        return requireNotNull(getId(), "The worker id cannot be null");
     }
 
     public String nameNotNull() {
-        return checkNotNull(getName(), "The name cannot be null");
+        return requireNotNull(getName(), "The name cannot be null");
     }
 
     public String ipNotNull() {
-        return checkNotNull(getIp(), "The ip cannot be null");
+        return requireNotNull(getIp(), "The ip cannot be null");
     }
 
     public String portNotNull() {
-        return checkNotNull(getPort(), "The port cannot be null");
+        return requireNotNull(getPort(), "The port cannot be null");
     }
 }

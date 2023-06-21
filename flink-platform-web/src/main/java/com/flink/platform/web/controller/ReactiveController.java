@@ -12,6 +12,7 @@ import com.flink.platform.web.entity.vo.ReactiveDataVo;
 import com.flink.platform.web.entity.vo.ReactiveExecVo;
 import com.flink.platform.web.service.ReactiveService;
 import com.flink.platform.web.service.WorkerApplyService;
+import com.flink.platform.web.util.ExceptionUtil;
 import com.flink.platform.web.util.HttpUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
@@ -26,8 +27,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.RestTemplate;
 
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -113,10 +112,9 @@ public class ReactiveController {
 
             throw new RuntimeException("unsupported job type: " + reactiveRequest.getType());
         } catch (Exception e) {
-            StringWriter writer = new StringWriter();
-            e.printStackTrace(new PrintWriter(writer, true));
             ReactiveDataVo reactiveDataVo =
-                    new ReactiveDataVo(execId, new String[] {"exception"}, null, writer.toString());
+                    new ReactiveDataVo(
+                            execId, new String[] {"exception"}, null, ExceptionUtil.stackTrace(e));
             return success(reactiveDataVo);
         }
     }

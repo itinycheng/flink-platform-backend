@@ -6,7 +6,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.experimental.Delegate;
 
-import static com.flink.platform.common.util.Preconditions.checkNotNull;
+import static com.flink.platform.common.util.Preconditions.requireNotNull;
 
 /** Alert request info. */
 @NoArgsConstructor
@@ -37,29 +37,29 @@ public class DatasourceRequest {
     }
 
     public String idNotNull() {
-        return checkNotNull(getId(), "The datasource id cannot be null");
+        return requireNotNull(getId(), "The datasource id cannot be null");
     }
 
     public String nameNotNull() {
-        return checkNotNull(getName(), "The datasource name cannot be null");
+        return requireNotNull(getName(), "The datasource name cannot be null");
     }
 
     public String typeNotNull() {
-        return checkNotNull(getType(), "The datasource type cannot be null");
+        return requireNotNull(getType(), "The datasource type cannot be null");
     }
 
     public String paramFieldsNotNull() {
         DatasourceParam params = getParams();
-        String msg = checkNotNull(getParams(), "The params cannot be null");
+        String msg = requireNotNull(getParams(), "The params cannot be null");
         if (msg != null) {
             return msg;
         }
 
-        msg = checkNotNull(params.getUrl(), "The params.url cannot be null");
+        msg = requireNotNull(params.getUrl(), "The params.url cannot be null");
         if (msg != null) {
             return msg;
         }
 
-        return checkNotNull(params.getUsername(), "The params.username cannot be null");
+        return requireNotNull(params.getUsername(), "The params.username cannot be null");
     }
 }

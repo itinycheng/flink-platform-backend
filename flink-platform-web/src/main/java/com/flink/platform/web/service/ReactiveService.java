@@ -15,13 +15,12 @@ import com.flink.platform.web.entity.vo.ReactiveDataVo;
 import com.flink.platform.web.entity.vo.ReactiveExecVo;
 import com.flink.platform.web.util.CollectLogThread;
 import com.flink.platform.web.util.CommandUtil;
+import com.flink.platform.web.util.ExceptionUtil;
 import com.flink.platform.web.util.ThreadUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.sql.Array;
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -95,9 +94,7 @@ public class ReactiveService {
                                         workerConfig.getFlinkSubmitTimeoutMills(),
                                         collectCmdResult(execId));
                             } catch (Exception e) {
-                                StringWriter writer = new StringWriter();
-                                e.printStackTrace(new PrintWriter(writer, true));
-                                cmdOutputBufferMap.get(execId).add(writer.toString());
+                                cmdOutputBufferMap.get(execId).add(ExceptionUtil.stackTrace(e));
                             }
                         },
                         executor)
