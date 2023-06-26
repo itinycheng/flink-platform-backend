@@ -124,7 +124,8 @@ public class FlowExecuteThread implements Runnable {
 
     private void killFlow() {
         isRunning = false;
-        // TODO：kill unfinished jobs.
+        // TODO：Better to cancel the running jobs?
+        // Seems different scenarios have different results.
         runningJobs.values().forEach(future -> future.complete(null));
     }
 }

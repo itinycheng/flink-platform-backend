@@ -2,7 +2,9 @@ package com.flink.platform.web.config;
 
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileSystem;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -12,11 +14,12 @@ import java.io.File;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Map;
+import java.util.UUID;
 
 import static com.flink.platform.common.constants.Constant.ROOT_DIR;
 import static com.flink.platform.common.constants.Constant.SLASH;
 
-/** create hdfs instance. */
+/** create hdfs instance where to store upload resources. */
 @Slf4j
 @Setter
 @Configuration
@@ -78,5 +81,34 @@ public class HadoopConfig {
             log.info("hdfs file dir: {} already exists", hdfsFilePath);
         }
         return path.toString();
+    }
+
+    @Lazy
+    @Bean("hdfsClusterIdPath")
+    public String createHdfsClusterId(
+            @Qualifier("hdfsFileSystem") FileSystem hdfsFileSystem,
+            @Qualifier("projectHdfsPath") String projectHdfsPath)
+            throws Exception {
+        org.apache.hadoop.fs.Path parent = new org.apache.hadoop.fs.Path(projectHdfsPath);
+        org.apache.hadoop.fs.Path clusterIdFile =
+                new org.apache.hadoop.fs.Path(parent, ".main_cluster_id");
+
+        if (!hdfsFileSystem.exists(clusterIdFile)) {
+            String clusterId = UUID.randomUUID().toString();
+            org.apache.hadoop.fs.Path tmpClusterIdFile =
+                    new org.apache.hadoop.fs.Path(parent, ".main_cluster_id." + clusterId);
+
+            try (FSDataOutputStream out = hdfsFileSystem.create(tmpClusterIdFile, true)) {
+                out.writeBytes(UUID.randomUUID().toString());
+            } catch (Exception e) {
+                throw new RuntimeException("create cluster id file failed.");
+            }
+
+            if (!hdfsFileSystem.exists(clusterIdFile)) {
+                hdfsFileSystem.rename(tmpClusterIdFile, clusterIdFile);
+            }
+        }
+
+        return clusterIdFile.toString();
     }
 }

@@ -1,28 +1,59 @@
 package com.flink.platform.web.external;
 
 import lombok.extern.slf4j.Slf4j;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileStatus;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.LocalFileSystem;
+import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.yarn.api.records.ApplicationId;
 import org.apache.hadoop.yarn.api.records.ApplicationReport;
 import org.apache.hadoop.yarn.client.api.YarnClient;
+import org.apache.hadoop.yarn.conf.YarnConfiguration;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 
-/** Yarn client service. */
+import java.io.IOException;
+
+/**
+ * Yarn client service. <br>
+ * It is difficult to determine whether two hdfs clients correspond to the same cluster.
+ */
 @Slf4j
 @Lazy
 @Component
 public class YarnClientService {
 
+    @Autowired
+    @Qualifier("hdfsClusterIdPath")
+    private String hdfsClusterIdPath;
+
     private YarnClient yarnClient;
+
+    private FileSystem fileSystem;
+
+    private boolean isMainCluster = true;
 
     @PostConstruct
     public void initYarnClient() {
+        log.info(
+                "Init Yarn and FileSystem clients of hadoop corresponding to the current running instance.");
+        Configuration conf = HadoopUtil.getHadoopConfiguration();
         yarnClient = YarnClient.createYarnClient();
-        yarnClient.init(HadoopUtil.getHadoopConfiguration());
+        yarnClient.init(new YarnConfiguration(conf));
         yarnClient.start();
+
+        try {
+            fileSystem = FileSystem.newInstance(conf);
+            isMainCluster = fileSystem.exists(new Path(hdfsClusterIdPath));
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public ApplicationReport getApplicationReport(String applicationName) throws Exception {
@@ -35,8 +66,37 @@ public class YarnClientService {
         yarnClient.killApplication(applicationId);
     }
 
+    public void copyIfNewHdfsAndChanged(String localFile, String hdfsFile) throws IOException {
+        if (isMainCluster) {
+            return;
+        }
+
+        Path localPath = new Path(localFile);
+        Path hdfsPath = new Path(hdfsFile);
+
+        boolean isCopy = true;
+        if (fileSystem.exists(hdfsPath)) {
+            LocalFileSystem local = FileSystem.getLocal(fileSystem.getConf());
+            FileStatus localFileStatus = local.getFileStatus(localPath);
+            FileStatus hdfsFileStatus = fileSystem.getFileStatus(hdfsPath);
+            isCopy = localFileStatus.getLen() != hdfsFileStatus.getLen();
+        }
+
+        if (isCopy) {
+            fileSystem.copyFromLocalFile(false, true, localPath, hdfsPath);
+        }
+    }
+
     @PreDestroy
     public void destroy() {
-        yarnClient.stop();
+        try {
+            yarnClient.stop();
+        } catch (Exception ignored) {
+        }
+
+        try {
+            fileSystem.close();
+        } catch (Exception ignored) {
+        }
     }
 }
