@@ -10,11 +10,13 @@ import com.flink.platform.web.command.CommandBuilder;
 import com.flink.platform.web.command.JobCommand;
 import com.flink.platform.web.command.SqlContextHelper;
 import com.flink.platform.web.config.FlinkConfig;
+import com.flink.platform.web.external.YarnClientService;
 import com.flink.platform.web.service.HdfsService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.ListUtils;
 import org.apache.hadoop.fs.Path;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Lazy;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Resource;
@@ -54,6 +56,8 @@ public abstract class FlinkCommandBuilder implements CommandBuilder {
 
     @Resource private ResourceService resourceService;
 
+    @Lazy @Resource private YarnClientService yarnClientService;
+
     private final FlinkConfig flinkConfig;
 
     public FlinkCommandBuilder(FlinkConfig flinkConfig) {
@@ -69,7 +73,7 @@ public abstract class FlinkCommandBuilder implements CommandBuilder {
     public JobCommand buildCommand(Long flowRunId, @Nonnull JobRunInfo jobRunInfo)
             throws Exception {
         FlinkJob flinkJob = jobRunInfo.getConfig().unwrap(FlinkJob.class);
-        initResources(flinkJob);
+        initExtJarPaths(flinkJob);
         DeployMode deployMode = jobRunInfo.getDeployMode();
         FlinkCommand command = new FlinkCommand(jobRunInfo.getId(), deployMode);
         String execMode = String.format(EXEC_MODE, deployMode.mode, deployMode.target);
@@ -142,6 +146,7 @@ public abstract class FlinkCommandBuilder implements CommandBuilder {
             String extJarName = new Path(hdfsExtJar).getName();
             String localPath = String.join(SLASH, ROOT_DIR, jobJarDir, jobCode, extJarName);
             copyToLocalIfChanged(hdfsExtJar, localPath);
+            copyToRemoteIfChanged(localPath, hdfsExtJar);
             classpaths.add(Paths.get(localPath).toUri().toURL());
         }
         return classpaths;
@@ -154,6 +159,15 @@ public abstract class FlinkCommandBuilder implements CommandBuilder {
         return localFile;
     }
 
+    private void copyToRemoteIfChanged(String localFile, String hdfsFile) {
+        try {
+            yarnClientService.copyIfNewHdfsAndChanged(localFile, hdfsFile);
+        } catch (Exception e) {
+            throw new RuntimeException(
+                    String.format("Copy %s from local to remote hdfs failed", localFile), e);
+        }
+    }
+
     private void copyToLocalIfChanged(String hdfsFile, String localFile) {
         try {
             hdfsService.copyFileToLocalIfChanged(new Path(hdfsFile), new Path(localFile));
@@ -163,7 +177,7 @@ public abstract class FlinkCommandBuilder implements CommandBuilder {
         }
     }
 
-    private void initResources(FlinkJob flinkJob) {
+    private void initExtJarPaths(FlinkJob flinkJob) {
         List<String> jarPaths =
                 ListUtils.defaultIfNull(flinkJob.getExtJars(), Collections.emptyList()).stream()
                         .map(resourceId -> resourceService.getById(resourceId))

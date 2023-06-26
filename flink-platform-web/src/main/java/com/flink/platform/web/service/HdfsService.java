@@ -20,7 +20,7 @@ import java.util.stream.Collectors;
 
 import static com.flink.platform.common.constants.Constant.DOT;
 
-/** service for upload/download hdfs. */
+/** service for uploading/downloading resources. */
 @Slf4j
 @Service
 public class HdfsService {
