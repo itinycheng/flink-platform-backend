@@ -304,6 +304,7 @@ CREATE TABLE `t_job_flow_run` (
   `name` varchar(255) NOT NULL,
   `user_id` bigint(11) NOT NULL,
   `flow_id` int(11) NOT NULL,
+  `cron_expr` varchar(64) DEFAULT NULL,
   `flow` text NOT NULL,
   `host` varchar(255) NOT NULL,
   `priority` tinyint(2) DEFAULT NULL,

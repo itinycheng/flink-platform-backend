@@ -37,6 +37,8 @@ public class JobFlowRun {
 
     private Long userId;
 
+    private String cronExpr;
+
     @TableField(typeHandler = JacksonTypeHandler.class)
     private JobFlowDag flow;
 
