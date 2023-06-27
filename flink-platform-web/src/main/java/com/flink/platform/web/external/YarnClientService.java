@@ -52,7 +52,7 @@ public class YarnClientService {
             fileSystem = FileSystem.newInstance(conf);
             isMainCluster = fileSystem.exists(new Path(hdfsClusterIdPath));
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            throw new RuntimeException("create FileSystem failed", e);
         }
     }
 
@@ -66,7 +66,7 @@ public class YarnClientService {
         yarnClient.killApplication(applicationId);
     }
 
-    public void copyIfNewHdfsAndChanged(String localFile, String hdfsFile) throws IOException {
+    public void copyIfNewHdfsAndFileChanged(String localFile, String hdfsFile) throws IOException {
         if (isMainCluster) {
             return;
         }
@@ -79,7 +79,10 @@ public class YarnClientService {
             LocalFileSystem local = FileSystem.getLocal(fileSystem.getConf());
             FileStatus localFileStatus = local.getFileStatus(localPath);
             FileStatus hdfsFileStatus = fileSystem.getFileStatus(hdfsPath);
-            isCopy = localFileStatus.getLen() != hdfsFileStatus.getLen();
+            isCopy =
+                    localFileStatus.getLen() != hdfsFileStatus.getLen()
+                            || localFileStatus.getModificationTime()
+                                    > hdfsFileStatus.getModificationTime();
         }
 
         if (isCopy) {

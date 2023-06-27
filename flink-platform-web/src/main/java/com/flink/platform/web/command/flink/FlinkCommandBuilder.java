@@ -161,7 +161,7 @@ public abstract class FlinkCommandBuilder implements CommandBuilder {
 
     private void copyToRemoteIfChanged(String localFile, String hdfsFile) {
         try {
-            yarnClientService.copyIfNewHdfsAndChanged(localFile, hdfsFile);
+            yarnClientService.copyIfNewHdfsAndFileChanged(localFile, hdfsFile);
         } catch (Exception e) {
             throw new RuntimeException(
                     String.format("Copy %s from local to remote hdfs failed", localFile), e);
