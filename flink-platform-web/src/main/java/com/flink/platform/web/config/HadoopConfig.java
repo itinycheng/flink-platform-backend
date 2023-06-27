@@ -101,7 +101,7 @@ public class HadoopConfig {
             try (FSDataOutputStream out = hdfsFileSystem.create(tmpClusterIdFile, true)) {
                 out.writeBytes(UUID.randomUUID().toString());
             } catch (Exception e) {
-                throw new RuntimeException("create cluster id file failed.");
+                throw new RuntimeException("create cluster id file failed.", e);
             }
 
             if (!hdfsFileSystem.exists(clusterIdFile)) {
