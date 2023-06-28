@@ -12,6 +12,7 @@ import com.flink.platform.web.command.CommandExecutor;
 import com.flink.platform.web.command.JobCallback;
 import com.flink.platform.web.command.JobCommand;
 import com.flink.platform.web.command.flink.FlinkCommand;
+import com.flink.platform.web.config.AppRunner;
 import com.flink.platform.web.enums.Placeholder;
 import com.flink.platform.web.enums.Variable;
 import com.flink.platform.web.util.ExceptionUtil;
@@ -55,14 +56,16 @@ public class ProcessJobService {
     }
 
     public Long processJob(final long jobRunId, final int retries) {
-        // checkState(retries >= 0, "");
-        for (int i = 0; i <= retries; i++) {
+        int loopTimes = 0;
+        while (AppRunner.isRunning()) {
             try {
+                loopTimes++;
                 processJob(jobRunId);
                 break;
             } catch (Exception e) {
-                log.error("Process job run: {} failed, retry times: {}.", jobRunId, i, e);
-                if (i == retries || e instanceof UnrecoverableException) {
+                log.error(
+                        "Process job run: {} failed, retry times: {}.", jobRunId, loopTimes - 1, e);
+                if (loopTimes > retries || e instanceof UnrecoverableException) {
                     JobRunInfo jobRun = new JobRunInfo();
                     jobRun.setId(jobRunId);
                     jobRun.setStatus(ERROR);
@@ -73,7 +76,7 @@ public class ProcessJobService {
                     break;
                 }
 
-                ThreadUtil.sleepRetry(i);
+                ThreadUtil.sleepRetry(loopTimes);
             }
         }
 

@@ -6,6 +6,7 @@ import com.flink.platform.dao.entity.JobFlowDag;
 import com.flink.platform.dao.entity.JobFlowRun;
 import com.flink.platform.dao.service.JobFlowRunService;
 import com.flink.platform.web.common.SpringContext;
+import com.flink.platform.web.config.AppRunner;
 import com.flink.platform.web.config.WorkerConfig;
 import com.flink.platform.web.service.AlertSendingService;
 import com.flink.platform.web.util.JobFlowDagHelper;
@@ -64,6 +65,10 @@ public class FlowExecuteThread implements Runnable {
 
         // Wait until all vertices are executed.
         while (isRunning && JobFlowDagHelper.hasUnExecutedVertices(flow)) {
+            if (AppRunner.isStopped()) {
+                return;
+            }
+
             ThreadUtil.sleep(5000);
         }
 
@@ -88,6 +93,10 @@ public class FlowExecuteThread implements Runnable {
     }
 
     private synchronized void execVertex(JobVertex jobVertex, JobFlowDag flow) {
+        if (!isRunning || AppRunner.isStopped()) {
+            return;
+        }
+
         if (runningJobs.containsKey(jobVertex.getId())) {
             log.warn("JobVertex: {} already executed", jobVertex.getId());
             return;
@@ -102,10 +111,6 @@ public class FlowExecuteThread implements Runnable {
     }
 
     private void handleResponse(JobResponse jobResponse, JobVertex jobVertex, JobFlowDag flow) {
-        if (!isRunning) {
-            return;
-        }
-
         jobVertex.setJobRunId(jobResponse.getJobRunId());
         jobVertex.setJobRunStatus(jobResponse.getStatus());
 
