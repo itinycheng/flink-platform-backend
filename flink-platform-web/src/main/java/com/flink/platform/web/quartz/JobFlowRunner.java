@@ -67,7 +67,7 @@ public class JobFlowRunner implements Job {
             DAG<Long, JobVertex, JobEdge> flow = jobFlow.getFlow();
             if (flow == null || flow.getVertices().isEmpty()) {
                 log.warn("The job flow: {} doesn't contain any vertices", jobFlow.getName());
-                alertSendingService.sendErrAlerts(jobFlow);
+                alertSendingService.sendErrAlerts(jobFlow, "No executable job found");
                 return;
             }
 
@@ -83,7 +83,8 @@ public class JobFlowRunner implements Job {
                         "The job flow: {} is in non-terminal status, run id: {}",
                         jobFlow.getName(),
                         jobFlowRun.getId());
-                alertSendingService.sendErrAlerts(jobFlow);
+                alertSendingService.sendErrAlerts(
+                        jobFlow, "There is already a running jobFlowRun: " + jobFlowRun.getId());
                 return;
             }
 
@@ -99,6 +100,7 @@ public class JobFlowRunner implements Job {
             jobFlowRun.setFlow(jobFlow.getFlow());
             jobFlowRun.setUserId(jobFlow.getUserId());
             jobFlowRun.setHost(Constant.HOST_IP);
+            jobFlowRun.setCronExpr(jobFlow.getCronExpr());
             jobFlowRun.setPriority(jobFlow.getPriority());
             jobFlowRun.setAlerts(jobFlow.getAlerts());
             jobFlowRun.setStartTime(LocalDateTime.now());

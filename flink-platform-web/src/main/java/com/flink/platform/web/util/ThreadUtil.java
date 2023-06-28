@@ -10,6 +10,10 @@ import java.util.concurrent.ThreadPoolExecutor;
 /** Thread utils. */
 public class ThreadUtil {
 
+    private static final int MIN_SLEEP_TIME_MILLIS = 2000;
+
+    private static final int MAX_SLEEP_TIME_MILLIS = 60_000;
+
     public static ThreadPoolExecutor newFixedThreadExecutor(String namePrefix, int threadsNum) {
         ThreadFactory threadFactory = namedThreadFactory(namePrefix, false);
         return (ThreadPoolExecutor) Executors.newFixedThreadPool(threadsNum, threadFactory);
@@ -28,6 +32,11 @@ public class ThreadUtil {
 
     public static ThreadFactory namedThreadFactory(String prefix, boolean isDaemon) {
         return new ThreadFactoryBuilder().setDaemon(isDaemon).setNameFormat(prefix + "-%d").build();
+    }
+
+    public static void sleepRetry(int retryTimes) {
+        int mills = Math.min(retryTimes * MIN_SLEEP_TIME_MILLIS, MAX_SLEEP_TIME_MILLIS);
+        sleep(mills);
     }
 
     public static void sleep(final long millis) {

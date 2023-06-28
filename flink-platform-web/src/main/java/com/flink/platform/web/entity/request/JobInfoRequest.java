@@ -13,7 +13,7 @@ import java.util.regex.Pattern;
 
 import static com.flink.platform.common.enums.JobType.CONDITION;
 import static com.flink.platform.common.enums.JobType.DEPENDENT;
-import static com.flink.platform.common.util.Preconditions.checkNotNull;
+import static com.flink.platform.common.util.Preconditions.requireNotNull;
 
 /** Job request info. */
 @NoArgsConstructor
@@ -96,18 +96,18 @@ public class JobInfoRequest {
     }
 
     public String verifyType() {
-        return checkNotNull(getType(), "The job type cannot be null");
+        return requireNotNull(getType(), "The job type cannot be null");
     }
 
     public String verifyExecMode() {
-        return checkNotNull(getExecMode(), "The job execution type cannot be null");
+        return requireNotNull(getExecMode(), "The job execution type cannot be null");
     }
 
     public String verifySubject() {
         if (getType() == CONDITION || getType() == DEPENDENT) {
             setSubject("");
         }
-        return checkNotNull(getSubject(), "The job subject cannot be null");
+        return requireNotNull(getSubject(), "The job subject cannot be null");
     }
 
     private String verifyCreateTime() {
