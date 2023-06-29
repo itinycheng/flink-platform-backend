@@ -188,8 +188,6 @@ public class JobExecuteThread implements Callable<JobResponse> {
     public StatusInfo updateAndWaitForComplete(
             JobGrpcServiceBlockingStub stub, JobRunInfo jobRunInfo) {
         int retryTimes = 0;
-        int errorTimes = 0;
-
         while (AppRunner.isRunning()) {
             try {
                 JobStatusRequest request =
@@ -197,6 +195,7 @@ public class JobExecuteThread implements Callable<JobResponse> {
                                 .setJobRunId(jobRunInfo.getId())
                                 .setBackInfo(jobRunInfo.getBackInfo())
                                 .setDeployMode(jobRunInfo.getDeployMode().name())
+                                .setRetries(errorRetries)
                                 .build();
                 JobStatusReply jobStatusReply = stub.getJobStatus(request);
                 StatusInfo statusInfo = StatusInfo.fromReplay(jobStatusReply);
@@ -226,10 +225,6 @@ public class JobExecuteThread implements Callable<JobResponse> {
 
             } catch (Exception e) {
                 log.error("Fetch job status failed", e);
-                if (errorTimes++ > errorRetries) {
-                    long currentTimeMillis = System.currentTimeMillis();
-                    return new StatusInfo(ERROR, currentTimeMillis, currentTimeMillis);
-                }
             }
 
             ThreadUtil.sleepRetry(++retryTimes);

@@ -56,16 +56,14 @@ public class ProcessJobService {
     }
 
     public Long processJob(final long jobRunId, final int retries) {
-        int loopTimes = 0;
+        int errorTimes = 0;
         while (AppRunner.isRunning()) {
             try {
-                loopTimes++;
                 processJob(jobRunId);
                 break;
             } catch (Exception e) {
-                log.error(
-                        "Process job run: {} failed, retry times: {}.", jobRunId, loopTimes - 1, e);
-                if (loopTimes > retries || e instanceof UnrecoverableException) {
+                log.error("Process job run: {} failed, retry times: {}.", jobRunId, errorTimes, e);
+                if (++errorTimes > retries || e instanceof UnrecoverableException) {
                     JobRunInfo jobRun = new JobRunInfo();
                     jobRun.setId(jobRunId);
                     jobRun.setStatus(ERROR);
@@ -76,7 +74,7 @@ public class ProcessJobService {
                     break;
                 }
 
-                ThreadUtil.sleepRetry(loopTimes);
+                ThreadUtil.sleepRetry(errorTimes);
             }
         }
 
