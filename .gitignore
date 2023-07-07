@@ -79,4 +79,5 @@ sql_file/
 flink-platform-web/src/main/resources/static/
 platform/
 docker/
+flink-platform-ui/frontend
 
