@@ -1,0 +1,4 @@
+[submodule "flink-platform-ui/frontend"]
+	path = flink-platform-ui/frontend
+	url = https://github.com/itinycheng/flink-platform-frontend.git
+	branch = master

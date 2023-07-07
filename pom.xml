@@ -20,6 +20,31 @@
 	<!-- FIXME change it to the project's website -->
 	<url>http://www.example.com</url>
 
+	<profiles>
+		<profile>
+			<id>dev</id>
+			<properties>
+				<env>dev</env>
+			</properties>
+			<activation>
+				<!-- set default env -->
+				<activeByDefault>true</activeByDefault>
+			</activation>
+		</profile>
+		<profile>
+			<id>test</id>
+			<properties>
+				<env>test</env>
+			</properties>
+		</profile>
+		<profile>
+			<id>prod</id>
+			<properties>
+				<env>prod</env>
+			</properties>
+		</profile>
+	</profiles>
+	
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<maven.compiler.source>1.8</maven.compiler.source>
@@ -383,12 +408,13 @@
 	</build>
 
 	<modules>
-		<module>flink-platform-web</module>
 		<module>flink-platform-common</module>
 		<module>flink-platform-udf</module>
 		<module>flink-platform-monitor</module>
 		<module>flink-platform-dao</module>
 		<module>flink-platform-grpc</module>
 		<module>flink-sql-submit</module>
+		<module>flink-platform-ui</module>
+		<module>flink-platform-web</module>
 	</modules>
 </project>
