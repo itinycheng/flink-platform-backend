@@ -16,6 +16,7 @@ public class AppConfiguration implements WebMvcConfigurer {
         return new LoginInterceptor();
     }
 
+    
     @Override
     public void addCorsMappings(CorsRegistry registry) {
         registry.addMapping("/**")
@@ -39,6 +40,7 @@ public class AppConfiguration implements WebMvcConfigurer {
                         "/worker/**",
                         "/datasource/**",
                         "/catalog/**",
-                        "/dashboard/**");
+                        "/dashboard/**",
+                        "/jobParam/**");
     }
 }
