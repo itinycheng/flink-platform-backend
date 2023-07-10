@@ -3,10 +3,14 @@ package com.flink.platform.web.enums;
 import com.flink.platform.common.constants.JobConstant;
 import com.flink.platform.common.util.DateUtil;
 import com.flink.platform.common.util.DurationUtil;
+import com.flink.platform.dao.entity.JobParam;
 import com.flink.platform.dao.entity.JobRunInfo;
+import com.flink.platform.dao.service.JobParamService;
+import com.flink.platform.web.common.SpringContext;
 import com.flink.platform.web.util.FileUtil;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.annotation.Nonnull;
@@ -18,7 +22,9 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -130,6 +136,28 @@ public enum Placeholder {
                         return result;
                     })),
 
+    PARAM(
+            "${param",
+            (Object obj) -> {
+                JobRunInfo jobRun = (JobRunInfo) obj;
+                JobParamService jobParamService = SpringContext.getBean(JobParamService.class);
+                List<JobParam> jobParams = jobParamService.getJobParams(jobRun.getJobId());
+                if (CollectionUtils.isEmpty(jobParams)) {
+                    return Collections.emptyMap();
+                }
+
+                Map<String, Object> result = new HashMap<>();
+                String subject = jobRun.getSubject();
+                jobParams.forEach(
+                        jobParam -> {
+                            String param = String.format("${param:%s}", jobParam.getParamName());
+                            if (subject.contains(param)) {
+                                result.put(param, jobParam.getParamValue());
+                            }
+                        });
+                return result;
+            }),
+
     @Deprecated
     JOB_CODE(
             JOB_CODE_VAR,
@@ -164,7 +192,7 @@ public enum Placeholder {
 
     public final Function<Object, Map<String, Object>> provider;
 
-    Placeholder(String wildcard, Function<Object, Map<String, Object>> provider) {
+    Placeholder(@Nonnull String wildcard, @Nonnull Function<Object, Map<String, Object>> provider) {
         this.wildcard = wildcard;
         this.provider = provider;
     }

@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.flink.platform.common.constants.Constant;
+import com.flink.platform.common.enums.Status;
 import com.flink.platform.dao.entity.JobParam;
 import com.flink.platform.dao.entity.User;
 import com.flink.platform.dao.service.JobParamService;
@@ -21,11 +22,11 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
-import java.util.Objects;
 
 import static com.flink.platform.common.enums.ResponseStatus.ERROR_PARAMETER;
 import static com.flink.platform.web.entity.response.ResultInfo.failure;
 import static com.flink.platform.web.entity.response.ResultInfo.success;
+import static java.util.Objects.nonNull;
 
 /** Alert controller. */
 @RestController
@@ -43,9 +44,20 @@ public class JobParamController {
             return failure(ERROR_PARAMETER, errorMsg);
         }
 
+        JobParam existed =
+                jobParamService.getOne(
+                        new QueryWrapper<JobParam>()
+                                .lambda()
+                                .eq(JobParam::getParamName, jobParamRequest.getParamName())
+                                .eq(JobParam::getUserId, loginUser.getId()));
+        if (existed != null) {
+            return failure(ERROR_PARAMETER, "param name already exists");
+        }
+
         JobParam jobParam = jobParamRequest.getJobParam();
         jobParam.setId(null);
         jobParam.setUserId(loginUser.getId());
+        jobParam.setStatus(Status.ENABLE);
         jobParamService.save(jobParam);
         return success(jobParam.getId());
     }
@@ -88,19 +100,23 @@ public class JobParamController {
                         new QueryWrapper<JobParam>()
                                 .lambda()
                                 .eq(JobParam::getUserId, loginUser.getId())
-                                .like(Objects.nonNull(name), JobParam::getParamName, name));
+                                .like(nonNull(name), JobParam::getParamName, name));
 
         return success(iPage);
     }
 
     @GetMapping(value = "/list")
     public ResultInfo<List<JobParam>> list(
-            @RequestAttribute(value = Constant.SESSION_USER) User loginUser) {
+            @RequestAttribute(value = Constant.SESSION_USER) User loginUser,
+            @RequestParam(name = "flowId", required = false) Long flowId,
+            @RequestParam(name = "status", required = false) Status status) {
         List<JobParam> list =
                 jobParamService.list(
                         new QueryWrapper<JobParam>()
                                 .lambda()
-                                .eq(JobParam::getUserId, loginUser.getId()));
+                                .eq(JobParam::getUserId, loginUser.getId())
+                                .eq(nonNull(flowId), JobParam::getFlowId, flowId)
+                                .eq(nonNull(status), JobParam::getStatus, status));
         return success(list);
     }
 }

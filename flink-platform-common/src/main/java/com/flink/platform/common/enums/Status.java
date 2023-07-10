@@ -6,5 +6,5 @@ public enum Status {
 
     DISABLE,
 
-    DELETE
+    DELETED
 }
