@@ -77,6 +77,5 @@ job_jar/
 sql_file/
 .emt4j/
 flink-platform-web/src/main/resources/static/
-platform/
 docker/
 
