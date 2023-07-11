@@ -100,8 +100,8 @@ public enum Placeholder {
                 return result;
             }),
 
-    HDFS_RESOURCE_DOWNLOAD(
-            "${hdfsResourceDownload",
+    RESOURCE(
+            "${resource",
             uncheckedFunction(
                     obj -> {
                         JobRunInfo jobRun = (JobRunInfo) obj;

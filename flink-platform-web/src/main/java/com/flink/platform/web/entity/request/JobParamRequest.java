@@ -7,7 +7,7 @@ import lombok.experimental.Delegate;
 
 import static com.flink.platform.common.util.Preconditions.requireNotNull;
 
-/** Alert request info. */
+/** job param request info. */
 @NoArgsConstructor
 public class JobParamRequest {
 
@@ -40,7 +40,7 @@ public class JobParamRequest {
     }
 
     public String verifyName() {
-        return requireNotNull(getParamName(), "The  paramName cannot be null");
+        return requireNotNull(getParamName(), "The paramName cannot be null");
     }
 
     public String verifyValue() {
