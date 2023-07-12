@@ -75,9 +75,9 @@ public class JobConstant {
                     "\\$\\{\\s*jobRun:(?<field>\\S+)\\s*}",
                     Pattern.CASE_INSENSITIVE | Pattern.MULTILINE);
 
-    // ${hdfsResourceDownload:hdfs:/path/file}
+    // ${resource:hdfs:/path/file}
     public static final Pattern HDFS_DOWNLOAD_PATTERN =
             Pattern.compile(
-                    "\\$\\{\\s*hdfsResourceDownload:(?<file>\\S+)\\s*}",
+                    "\\$\\{\\s*resource:(?<file>\\S+)\\s*}",
                     Pattern.CASE_INSENSITIVE | Pattern.MULTILINE);
 }

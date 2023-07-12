@@ -12,6 +12,7 @@ import com.flink.platform.web.command.CommandExecutor;
 import com.flink.platform.web.command.JobCallback;
 import com.flink.platform.web.command.JobCommand;
 import com.flink.platform.web.command.flink.FlinkCommand;
+import com.flink.platform.web.config.AppRunner;
 import com.flink.platform.web.enums.Placeholder;
 import com.flink.platform.web.enums.Variable;
 import com.flink.platform.web.util.ExceptionUtil;
@@ -55,14 +56,14 @@ public class ProcessJobService {
     }
 
     public Long processJob(final long jobRunId, final int retries) {
-        // checkState(retries >= 0, "");
-        for (int i = 0; i <= retries; i++) {
+        int errorTimes = 0;
+        while (AppRunner.isRunning()) {
             try {
                 processJob(jobRunId);
                 break;
             } catch (Exception e) {
-                log.error("Process job run: {} failed, retry times: {}.", jobRunId, i, e);
-                if (i == retries || e instanceof UnrecoverableException) {
+                log.error("Process job run: {} failed, retry times: {}.", jobRunId, errorTimes, e);
+                if (++errorTimes > retries || e instanceof UnrecoverableException) {
                     JobRunInfo jobRun = new JobRunInfo();
                     jobRun.setId(jobRunId);
                     jobRun.setStatus(ERROR);
@@ -73,7 +74,7 @@ public class ProcessJobService {
                     break;
                 }
 
-                ThreadUtil.sleepRetry(i);
+                ThreadUtil.sleepRetry(errorTimes);
             }
         }
 
@@ -97,7 +98,7 @@ public class ProcessJobService {
                         String.format("The job run: %s is no longer exists.", jobRunId));
             }
 
-            // step 2: replace variables in the sql statement
+            // step 2: replace variables in subject and persist.
             JobRunInfo finalJobRun = jobRunInfo;
             Map<String, Object> variableMap = new HashMap<>();
             Arrays.stream(Placeholder.values())
@@ -118,6 +119,14 @@ public class ProcessJobService {
                         originSubject.replace(entry.getKey(), entry.getValue().toString());
                 jobRunInfo.setSubject(distSubject);
             }
+
+            // Update jobRun info before execution.
+            JobRunInfo newJobRun = new JobRunInfo();
+            newJobRun.setId(jobRunInfo.getId());
+            newJobRun.setSubject(jobRunInfo.getSubject());
+            newJobRun.setVariables(variableMap);
+            newJobRun.setHost(HOST_IP);
+            jobRunInfoService.updateById(newJobRun);
 
             JobType jobType = jobRunInfo.getType();
             String version = jobRunInfo.getVersion();
@@ -148,14 +157,11 @@ public class ProcessJobService {
 
             // step 5: write job run info to db
             ExecutionStatus executionStatus = callback.getStatus();
-            JobRunInfo newJobRun = new JobRunInfo();
+            newJobRun = new JobRunInfo();
             newJobRun.setId(jobRunInfo.getId());
-            newJobRun.setSubject(jobRunInfo.getSubject());
             newJobRun.setStatus(executionStatus);
-            newJobRun.setVariables(variableMap);
             newJobRun.setBackInfo(JsonUtil.toJsonString(callback));
             newJobRun.setSubmitTime(submitTime);
-            newJobRun.setHost(HOST_IP);
             if (executionStatus.isTerminalState()) {
                 newJobRun.setStopTime(LocalDateTime.now());
             }

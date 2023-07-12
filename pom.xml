@@ -20,12 +20,37 @@
 	<!-- FIXME change it to the project's website -->
 	<url>http://www.example.com</url>
 
+	<profiles>
+		<profile>
+			<id>dev</id>
+			<properties>
+				<env>dev</env>
+			</properties>
+			<activation>
+				<!-- set default env -->
+				<activeByDefault>true</activeByDefault>
+			</activation>
+		</profile>
+		<profile>
+			<id>test</id>
+			<properties>
+				<env>test</env>
+			</properties>
+		</profile>
+		<profile>
+			<id>prod</id>
+			<properties>
+				<env>prod</env>
+			</properties>
+		</profile>
+	</profiles>
+	
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<maven.compiler.source>1.8</maven.compiler.source>
 		<maven.compiler.target>1.8</maven.compiler.target>
 		<spring.boot.version>2.4.4</spring.boot.version>
-		<oshi.version>6.4.3</oshi.version>
+		<oshi.version>6.4.4</oshi.version>
 		<commons-lang3.version>3.11</commons-lang3.version>
 		<commons-collections4.version>4.4</commons-collections4.version>
 		<lombok.version>1.18.22</lombok.version>
@@ -39,9 +64,9 @@
 		<hadoop.version>3.3.5</hadoop.version>
 		<hive.version>2.1.1</hive.version>
 		<mybatis-plus.version>3.5.3.1</mybatis-plus.version>
-		<dynamic-datasource.version>3.6.1</dynamic-datasource.version>
-		<janino.version>3.1.9</janino.version>
-		<grpc.version>1.55.1</grpc.version>
+		<dynamic-datasource.version>4.1.0</dynamic-datasource.version>
+		<janino.version>3.1.10</janino.version>
+		<grpc.version>1.56.1</grpc.version>
 		<jsr305.version>3.0.2</jsr305.version>
 		<grpc-spring-boot.version>2.14.0.RELEASE</grpc-spring-boot.version>
 		<maven-checkstyle-plugin.version>3.3.0</maven-checkstyle-plugin.version>
@@ -387,12 +412,13 @@
 	</build>
 
 	<modules>
-		<module>flink-platform-web</module>
 		<module>flink-platform-common</module>
 		<module>flink-platform-udf</module>
 		<module>flink-platform-monitor</module>
 		<module>flink-platform-dao</module>
 		<module>flink-platform-grpc</module>
 		<module>flink-sql-submit</module>
+		<module>flink-platform-ui</module>
+		<module>flink-platform-web</module>
 	</modules>
 </project>
