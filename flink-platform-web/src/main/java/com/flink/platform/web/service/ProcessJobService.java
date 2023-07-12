@@ -98,7 +98,7 @@ public class ProcessJobService {
                         String.format("The job run: %s is no longer exists.", jobRunId));
             }
 
-            // step 2: replace variables in the sql statement
+            // step 2: replace variables in subject and persist.
             JobRunInfo finalJobRun = jobRunInfo;
             Map<String, Object> variableMap = new HashMap<>();
             Arrays.stream(Placeholder.values())
@@ -119,6 +119,14 @@ public class ProcessJobService {
                         originSubject.replace(entry.getKey(), entry.getValue().toString());
                 jobRunInfo.setSubject(distSubject);
             }
+
+            // Update jobRun info before execution.
+            JobRunInfo newJobRun = new JobRunInfo();
+            newJobRun.setId(jobRunInfo.getId());
+            newJobRun.setSubject(jobRunInfo.getSubject());
+            newJobRun.setVariables(variableMap);
+            newJobRun.setHost(HOST_IP);
+            jobRunInfoService.updateById(newJobRun);
 
             JobType jobType = jobRunInfo.getType();
             String version = jobRunInfo.getVersion();
@@ -149,14 +157,11 @@ public class ProcessJobService {
 
             // step 5: write job run info to db
             ExecutionStatus executionStatus = callback.getStatus();
-            JobRunInfo newJobRun = new JobRunInfo();
+            newJobRun = new JobRunInfo();
             newJobRun.setId(jobRunInfo.getId());
-            newJobRun.setSubject(jobRunInfo.getSubject());
             newJobRun.setStatus(executionStatus);
-            newJobRun.setVariables(variableMap);
             newJobRun.setBackInfo(JsonUtil.toJsonString(callback));
             newJobRun.setSubmitTime(submitTime);
-            newJobRun.setHost(HOST_IP);
             if (executionStatus.isTerminalState()) {
                 newJobRun.setStopTime(LocalDateTime.now());
             }
