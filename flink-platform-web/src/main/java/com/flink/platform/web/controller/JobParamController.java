@@ -4,9 +4,12 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.flink.platform.common.constants.Constant;
+import com.flink.platform.common.enums.JobParamType;
 import com.flink.platform.common.enums.Status;
+import com.flink.platform.dao.entity.JobInfo;
 import com.flink.platform.dao.entity.JobParam;
 import com.flink.platform.dao.entity.User;
+import com.flink.platform.dao.service.JobInfoService;
 import com.flink.platform.dao.service.JobParamService;
 import com.flink.platform.web.entity.request.JobParamRequest;
 import com.flink.platform.web.entity.response.ResultInfo;
@@ -23,9 +26,12 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
+import static com.flink.platform.common.constants.JobConstant.PARAM_FORMAT;
 import static com.flink.platform.common.enums.ResponseStatus.ERROR_PARAMETER;
+import static com.flink.platform.common.enums.ResponseStatus.OPERATION_NOT_ALLOWED;
 import static com.flink.platform.web.entity.response.ResultInfo.failure;
 import static com.flink.platform.web.entity.response.ResultInfo.success;
+import static java.lang.String.format;
 import static java.util.Objects.nonNull;
 
 /** Alert controller. */
@@ -34,6 +40,8 @@ import static java.util.Objects.nonNull;
 public class JobParamController {
 
     @Autowired private JobParamService jobParamService;
+
+    @Autowired private JobInfoService jobService;
 
     @PostMapping(value = "/create")
     public ResultInfo<Long> create(
@@ -83,6 +91,28 @@ public class JobParamController {
 
     @GetMapping(value = "/delete/{paramId}")
     public ResultInfo<Boolean> delete(@PathVariable Long paramId) {
+        JobParam jobParam = jobParamService.getById(paramId);
+
+        // JobParamType.JOB_FLOW unhandled.
+        if (JobParamType.GLOBAL == jobParam.getType()) {
+            JobInfo jobInfo =
+                    jobService.getOne(
+                            new QueryWrapper<JobInfo>()
+                                    .lambda()
+                                    .eq(JobInfo::getUserId, jobParam.getUserId())
+                                    .like(
+                                            JobInfo::getSubject,
+                                            format(PARAM_FORMAT, jobParam.getParamName()))
+                                    .last("LIMIT 1"));
+            if (jobInfo != null) {
+                return failure(
+                        OPERATION_NOT_ALLOWED,
+                        format(
+                                "The param is being used in job: %s, cannot be removed",
+                                jobInfo.getName()));
+            }
+        }
+
         boolean bool = jobParamService.removeById(paramId);
         return success(bool);
     }
