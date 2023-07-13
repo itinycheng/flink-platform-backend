@@ -31,9 +31,10 @@ import java.util.function.Supplier;
 import java.util.regex.Matcher;
 
 import static com.flink.platform.common.constants.JobConstant.CURRENT_TIMESTAMP_VAR;
-import static com.flink.platform.common.constants.JobConstant.HDFS_DOWNLOAD_PATTERN;
 import static com.flink.platform.common.constants.JobConstant.JOB_CODE_VAR;
 import static com.flink.platform.common.constants.JobConstant.JOB_RUN_PLACEHOLDER_PATTERN;
+import static com.flink.platform.common.constants.JobConstant.PARAM_FORMAT;
+import static com.flink.platform.common.constants.JobConstant.RESOURCE_PATTERN;
 import static com.flink.platform.common.constants.JobConstant.TIME_PLACEHOLDER_PATTERN;
 import static com.flink.platform.common.constants.JobConstant.TODAY_YYYY_MM_DD_VAR;
 import static com.flink.platform.common.enums.JobType.SHELL;
@@ -106,7 +107,7 @@ public enum Placeholder {
                     obj -> {
                         JobRunInfo jobRun = (JobRunInfo) obj;
                         Map<String, Object> result = new HashMap<>();
-                        Matcher matcher = HDFS_DOWNLOAD_PATTERN.matcher(jobRun.getSubject());
+                        Matcher matcher = RESOURCE_PATTERN.matcher(jobRun.getSubject());
                         while (matcher.find()) {
                             String variable = matcher.group();
                             String filePath = matcher.group("file");
@@ -150,7 +151,7 @@ public enum Placeholder {
                 String subject = jobRun.getSubject();
                 jobParams.forEach(
                         jobParam -> {
-                            String param = String.format("${param:%s}", jobParam.getParamName());
+                            String param = String.format(PARAM_FORMAT, jobParam.getParamName());
                             if (subject.contains(param)) {
                                 result.put(param, jobParam.getParamValue());
                             }
