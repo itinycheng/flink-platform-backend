@@ -2,6 +2,7 @@ package com.flink.platform.web.entity.request;
 
 import com.flink.platform.common.util.DurationUtil;
 import com.flink.platform.dao.entity.JobInfo;
+import com.flink.platform.dao.entity.LongArrayList;
 import com.flink.platform.dao.entity.task.BaseJob;
 import com.flink.platform.dao.entity.task.ShellJob;
 import lombok.Getter;
@@ -46,6 +47,11 @@ public class JobInfoRequest {
             return msg;
         }
 
+        msg = verifyWorker();
+        if (msg != null) {
+            return msg;
+        }
+
         msg = verifyConfig();
         return msg;
     }
@@ -63,12 +69,7 @@ public class JobInfoRequest {
             }
         }
 
-        msg = verifyCreateTime();
-        if (msg != null) {
-            return msg;
-        }
-
-        msg = verifyUpdateTime();
+        msg = verifyWorker();
         if (msg != null) {
             return msg;
         }
@@ -110,22 +111,6 @@ public class JobInfoRequest {
         return requireNotNull(getSubject(), "The job subject cannot be null");
     }
 
-    private String verifyCreateTime() {
-        String errorMsg = null;
-        if (getCreateTime() != null) {
-            errorMsg = "The create time of job must be null";
-        }
-        return errorMsg;
-    }
-
-    private String verifyUpdateTime() {
-        String errorMsg = null;
-        if (getUpdateTime() != null) {
-            errorMsg = "The update time of job must be null";
-        }
-        return errorMsg;
-    }
-
     private String verifyConfig() {
         String errorMsg = null;
         BaseJob config = getConfig();
@@ -137,6 +122,15 @@ public class JobInfoRequest {
             }
         }
 
+        return errorMsg;
+    }
+
+    private String verifyWorker() {
+        String errorMsg = null;
+        LongArrayList routeUrl = getRouteUrl();
+        if (routeUrl == null || routeUrl.size() == 0) {
+            errorMsg = "The worker of job cannot be null";
+        }
         return errorMsg;
     }
 }
