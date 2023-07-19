@@ -31,15 +31,16 @@ public class AppConfiguration implements WebMvcConfigurer {
                 .addPathPatterns(
                         "/jobInfo/**",
                         "/jobRun/**",
+                        "/jobParam/**",
                         "/jobFlow/**",
                         "/jobFlowRun/**",
+                        "/tag/**",
                         "/alert/**",
                         "/resource/**",
                         "/user/**",
                         "/worker/**",
                         "/datasource/**",
                         "/catalog/**",
-                        "/dashboard/**",
-                        "/jobParam/**");
+                        "/dashboard/**");
     }
 }
