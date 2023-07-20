@@ -46,8 +46,8 @@ import static com.flink.platform.common.enums.ResponseStatus.UNABLE_SCHEDULE_STR
 import static com.flink.platform.common.enums.ResponseStatus.USER_HAVE_NO_PERMISSION;
 import static com.flink.platform.web.entity.response.ResultInfo.failure;
 import static com.flink.platform.web.entity.response.ResultInfo.success;
-import static java.util.Objects.nonNull;
 import static java.util.stream.Collectors.toList;
+import static org.apache.commons.lang3.StringUtils.isNotEmpty;
 
 /** crud job flow. */
 @RestController
@@ -136,6 +136,7 @@ public class JobFlowController {
             @RequestParam(name = "size", required = false, defaultValue = "20") Integer size,
             @RequestParam(name = "name", required = false) String name,
             @RequestParam(name = "status", required = false) JobFlowStatus status,
+            @RequestParam(name = "tag", required = false) String tagCode,
             @RequestParam(name = "sort", required = false) String sort) {
         Page<JobFlow> pager = new Page<>(page, size);
 
@@ -143,7 +144,8 @@ public class JobFlowController {
                 new QueryWrapper<JobFlow>()
                         .lambda()
                         .eq(JobFlow::getUserId, loginUser.getId())
-                        .like(nonNull(name), JobFlow::getName, name);
+                        .like(isNotEmpty(name), JobFlow::getName, name)
+                        .like(isNotEmpty(tagCode), JobFlow::getTags, tagCode);
 
         if (status != null) {
             queryWrapper.eq(JobFlow::getStatus, status);
@@ -168,7 +170,7 @@ public class JobFlowController {
                                 new QueryWrapper<JobFlow>()
                                         .lambda()
                                         .select(JobFlow::getId, JobFlow::getName)
-                                        .like(nonNull(name), JobFlow::getName, name))
+                                        .like(isNotEmpty(name), JobFlow::getName, name))
                         .stream()
                         .map(
                                 jobFlow -> {

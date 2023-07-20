@@ -49,6 +49,9 @@ public class JobFlow {
 
     private Integer priority;
 
+    @TableField(typeHandler = JacksonTypeHandler.class)
+    private StringArrayList tags;
+
     /** alert strategy. */
     @TableField(typeHandler = JacksonTypeHandler.class)
     private AlertConfigList alerts;
