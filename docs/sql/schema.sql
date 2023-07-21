@@ -287,6 +287,7 @@ CREATE TABLE `t_job_flow` (
   `cron_expr` varchar(64) DEFAULT NULL COMMENT 'crontab expression',
   `flow` text COMMENT 'flow definition',
   `priority` tinyint(2) DEFAULT NULL COMMENT 'execution priority',
+  `tags` VARCHAR(255) DEFAULT NULL COMMENT 'tag list',
   `alerts` varchar(255) DEFAULT NULL COMMENT 'alert strategy',
   `status` varchar(32) NOT NULL COMMENT 'flow status',
   `create_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT 'create time',
@@ -441,6 +442,21 @@ CREATE TABLE `t_datasource` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COMMENT='datasource info';
 
+-- ----------------------------
+-- Table structure for t_tag
+-- ----------------------------
+CREATE TABLE `t_tag` (
+  `id` bigint(11) unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
+  `code` varchar(32) NOT NULL COMMENT 'code',
+  `name` varchar(255) DEFAULT NULL COMMENT 'name',
+  `user_id` bigint(11) DEFAULT NULL COMMENT 'user id',
+  `type` varchar(100) DEFAULT NULL COMMENT 'type',
+  `status` varchar(100) DEFAULT NULL COMMENT 'status',
+  `create_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT 'create time',
+  `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'update time',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `t_tag_un` (`code`)
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COMMENT='tag info';
 
 -- ----------------------------
 -- Records of t_user
