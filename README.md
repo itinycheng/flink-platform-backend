@@ -24,27 +24,28 @@
 
 - Flink sql/jar, deployment mode: YARN-Per-Job(tested), Other(untested).
 - Shell (tested).
-- ClickHouse sql(tested).
+- SQL(ClickHouse/Mysql/Hive/TiDB tested).
 - Condition(tested, support: AND, OR).
+- Dependent(tested).
 
 - More: I don't have enough time to develop multi type task support, but implementing a new task
   type is easy, sometimes you can do it yourself or tell me your needs.
 
 ## Metadata
 
-| Table Name      | Description                                                    |
-|:----------------|:---------------------------------------------------------------|
-| t_alert         | Alert configuration                                            |
-| t_catalog_info  | Flink catalog configuration for FlinkSQL, modify in the future |
-| t_job           | Job info                                                       |
-| t_job_flow      | Job flow info, workflow definition                             |
-| t_job_flow_run  | Job flow execution instance                                    |
-| t_job_run       | Job execution instance                                         |
-| t_resource      | Resources info, such as: jar, file, etc.                       |
-| t_user          | login user info                                                |
-| t_user_session  | login user session info.                                       |
-| t_worker        | Worker node instance info.                                     |
-| t_datasource    | Store datasource info, such as: clickhouse, mysql, etc.        |
+| Table Name     | Description                                                    |
+|:---------------|:---------------------------------------------------------------|
+| t_alert        | Alert configuration                                            |
+| t_catalog_info | Flink catalog configuration for FlinkSQL, modify in the future |
+| t_job          | Job info                                                       |
+| t_job_flow     | Job flow info, workflow definition                             |
+| t_job_flow_run | Job flow execution instance                                    |
+| t_job_run      | Job execution instance                                         |
+| t_resource     | Resources info, such as: jar, file, etc.                       |
+| t_user         | login user info                                                |
+| t_user_session | login user session info.                                       |
+| t_worker       | Worker node instance info.                                     |
+| t_datasource   | Store datasource info, such as: clickhouse, mysql, etc.        |
 
 Refer to: [create table statements](docs/sql/schema.sql)
 
@@ -58,7 +59,7 @@ git clone git@github.com:itinycheng/flink-platform-backend.git
 cd flink-platform-backend
 
 # compile
-mvn clean package -DskipTests
+./mvnw clean package -DskipTests
 
 # start within docker
 docker-compose up -d --build
