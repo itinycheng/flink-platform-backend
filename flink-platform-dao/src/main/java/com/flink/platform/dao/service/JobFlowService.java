@@ -95,6 +95,7 @@ public class JobFlowService extends ServiceImpl<JobFlowMapper, JobFlow> {
         jobFlowRun.setUserId(jobFlow.getUserId());
         jobFlowRun.setFlow(jobFlow.getFlow());
         jobFlowRun.setPriority(jobFlow.getPriority());
+        jobFlowRun.setTags(jobFlow.getTags());
         jobFlowRun.setAlerts(jobFlow.getAlerts());
         return jobFlowRun;
     }

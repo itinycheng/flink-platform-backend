@@ -36,6 +36,7 @@ import static com.flink.platform.common.util.DateUtil.GLOBAL_DATE_TIME_FORMAT;
 import static com.flink.platform.web.entity.response.ResultInfo.failure;
 import static com.flink.platform.web.entity.response.ResultInfo.success;
 import static java.util.Objects.nonNull;
+import static org.apache.commons.lang3.ObjectUtils.isNotEmpty;
 
 /** crud job flow. */
 @Slf4j
@@ -62,6 +63,7 @@ public class JobFlowRunController {
             @RequestParam(name = "size", required = false, defaultValue = "20") Integer size,
             @RequestParam(name = "name", required = false) String name,
             @RequestParam(name = "status", required = false) ExecutionStatus status,
+            @RequestParam(name = "tag", required = false) String tagCode,
             @DateTimeFormat(pattern = GLOBAL_DATE_TIME_FORMAT)
                     @RequestParam(name = "startTime", required = false)
                     LocalDateTime startTime,
@@ -76,7 +78,8 @@ public class JobFlowRunController {
                         .lambda()
                         .eq(JobFlowRun::getUserId, loginUser.getId())
                         .eq(nonNull(status), JobFlowRun::getStatus, status)
-                        .like(nonNull(name), JobFlowRun::getName, name)
+                        .like(isNotEmpty(name), JobFlowRun::getName, name)
+                        .like(isNotEmpty(tagCode), JobFlowRun::getTags, tagCode)
                         .between(
                                 nonNull(startTime) && nonNull(endTime),
                                 JobFlowRun::getCreateTime,

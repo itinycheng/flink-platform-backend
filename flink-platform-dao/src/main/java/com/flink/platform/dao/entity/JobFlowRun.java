@@ -47,6 +47,9 @@ public class JobFlowRun {
     private Integer priority;
 
     @TableField(typeHandler = JacksonTypeHandler.class)
+    private StringArrayList tags;
+
+    @TableField(typeHandler = JacksonTypeHandler.class)
     private AlertConfigList alerts;
 
     private ExecutionStatus status;

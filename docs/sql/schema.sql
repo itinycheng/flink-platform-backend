@@ -327,6 +327,7 @@ CREATE TABLE `t_job_flow_run` (
   `flow` text NOT NULL,
   `host` varchar(255) NOT NULL,
   `priority` tinyint(2) DEFAULT NULL,
+  `tags` VARCHAR(255) DEFAULT NULL,
   `alerts` varchar(255) DEFAULT NULL,
   `status` varchar(32) NOT NULL,
   `start_time` datetime DEFAULT NULL,
