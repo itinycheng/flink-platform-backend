@@ -83,7 +83,7 @@ public class JobRunInfo implements Serializable {
 
     @JsonIgnore
     public String getJobCode() {
-        return "job_" + jobId;
+        return "job_" + jobId + "_" + flowRunId;
     }
 
     public String getDuration() {
