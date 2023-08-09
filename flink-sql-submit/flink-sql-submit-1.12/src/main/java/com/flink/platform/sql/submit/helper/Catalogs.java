@@ -29,7 +29,7 @@ public class Catalogs {
     private static void addCatalog(TableEnvironment tEnv, Catalog catalog) {
         if (catalog.getType() == CatalogType.MEMORY) {
             GenericInMemoryCatalog memoryCatalog =
-                    new GenericInMemoryCatalog(catalog.getName(), catalog.getDefaultDatabase());
+                    new GenericInMemoryCatalog(catalog.getName(), "default");
             tEnv.registerCatalog(catalog.getName(), memoryCatalog);
         } else {
             throw new FlinkJobGenException(

@@ -3,7 +3,6 @@ package com.flink.platform.common.test;
 import com.fasterxml.jackson.databind.type.CollectionLikeType;
 import com.flink.platform.common.enums.ExecutionMode;
 import com.flink.platform.common.enums.SqlType;
-import com.flink.platform.common.job.Catalog;
 import com.flink.platform.common.job.Sql;
 import com.flink.platform.common.job.SqlContext;
 import com.flink.platform.common.util.JsonUtil;
@@ -11,7 +10,6 @@ import lombok.Data;
 import org.junit.Test;
 
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -35,17 +33,6 @@ public class JsonUtilTest {
 
         SqlContext sqlContext1 = JsonUtil.toBean(jsonString, SqlContext.class);
         System.out.println(sqlContext1);
-    }
-
-    @Test
-    public void string() {
-        Map<String, String> map = new HashMap<>();
-        map.put("a", "true");
-        map.put("b", null);
-        Catalog catalog = new Catalog();
-        catalog.setConfigs(map);
-        String str = JsonUtil.toJsonString(catalog);
-        System.out.println(str);
     }
 
     @Test

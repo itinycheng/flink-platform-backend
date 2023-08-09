@@ -20,7 +20,6 @@ import javax.annotation.Resource;
 
 import java.io.File;
 import java.nio.charset.StandardCharsets;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -30,6 +29,8 @@ import static com.flink.platform.common.constants.Constant.ROOT_DIR;
 import static com.flink.platform.common.constants.Constant.SLASH;
 import static com.flink.platform.common.constants.JobConstant.JSON_FILE_SUFFIX;
 import static com.flink.platform.common.constants.JobConstant.SQL_PATTERN;
+import static java.util.Collections.emptyList;
+import static java.util.Collections.emptyMap;
 import static java.util.stream.Collectors.toList;
 
 /** Sql context helper. */
@@ -58,38 +59,41 @@ public class SqlContextHelper {
         sqlContext.setExecMode(jobRun.getExecMode());
         sqlContext.setExtJars(flinkJob.getExtJarPaths());
         sqlContext.setConfigs(toConfigs(flinkJob.getConfigs()));
-        sqlContext.setCatalogs(toCatalogs(flinkJob.getCatalogs()));
+        sqlContext.setCatalogs(toCatalogs(flinkJob.getCatalogs(), jobRun.getVariables()));
         sqlContext.setFunctions(toFunctions());
         return sqlContext;
     }
 
     /** no use. */
     private List<Function> toFunctions() {
-        return Collections.emptyList();
+        return emptyList();
     }
 
-    private List<Catalog> toCatalogs(List<Long> catalogs) {
-        return ListUtils.defaultIfNull(catalogs, Collections.emptyList()).stream()
+    private List<Catalog> toCatalogs(List<Long> catalogs, Map<String, Object> variables) {
+        return ListUtils.defaultIfNull(catalogs, emptyList()).stream()
                 .map(id -> catalogInfoService.getById(id))
                 .map(
-                        catalogInfo ->
-                                new Catalog(
-                                        catalogInfo.getName(),
-                                        catalogInfo.getType(),
-                                        catalogInfo.getDefaultDatabase(),
-                                        catalogInfo.getConfigPath(),
-                                        JsonUtil.toStrMap(catalogInfo.getConfigs()),
-                                        catalogInfo.getCreateSql()))
+                        catalogInfo -> {
+                            String createSql = catalogInfo.getCreateSql();
+                            for (Map.Entry<String, Object> variable : variables.entrySet()) {
+                                createSql =
+                                        createSql.replace(
+                                                variable.getKey(), variable.getValue().toString());
+                            }
+
+                            return new Catalog(
+                                    catalogInfo.getName(), catalogInfo.getType(), createSql);
+                        })
                 .collect(toList());
     }
 
     private Map<String, String> toConfigs(Map<String, String> configs) {
-        return configs != null ? configs : Collections.emptyMap();
+        return configs != null ? configs : emptyMap();
     }
 
     public List<Sql> toSqls(String subject) {
         List<Sql> sqlList = SqlUtil.convertToSqls(subject);
-        if (sqlList.size() == 0) {
+        if (sqlList.isEmpty()) {
             throw new CommandUnableGenException(
                     String.format("no sql found or parsing failed, subject: %s", subject));
         }
