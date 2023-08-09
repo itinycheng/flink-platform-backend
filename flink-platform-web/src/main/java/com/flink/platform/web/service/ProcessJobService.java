@@ -113,6 +113,7 @@ public class ProcessJobService {
                                 variableMap.put(name, sqlVar.provider.apply(value));
                             });
             // replace variable with actual value
+            jobRunInfo.setVariables(variableMap);
             for (Map.Entry<String, Object> entry : variableMap.entrySet()) {
                 String originSubject = jobRunInfo.getSubject();
                 String distSubject =
