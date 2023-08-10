@@ -153,6 +153,11 @@
 				<artifactId>grpc-protobuf</artifactId>
 				<version>${grpc.version}</version>
 			</dependency>
+			<dependency>
+				<groupId>io.grpc</groupId>
+				<artifactId>grpc-api</artifactId>
+				<version>${grpc.version}</version>
+			</dependency>
 			<!-- flink -->
 			<dependency>
 				<groupId>org.apache.flink</groupId>
