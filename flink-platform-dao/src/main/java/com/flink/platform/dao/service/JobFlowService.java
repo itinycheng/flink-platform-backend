@@ -4,6 +4,7 @@ import com.baomidou.dynamic.datasource.annotation.DS;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.flink.platform.common.model.JobVertex;
+import com.flink.platform.common.util.UuidGenerator;
 import com.flink.platform.dao.entity.JobFlow;
 import com.flink.platform.dao.entity.JobFlowDag;
 import com.flink.platform.dao.entity.JobFlowRun;
@@ -18,6 +19,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 
 import static com.flink.platform.common.enums.ExecutionMode.STREAMING;
+import static com.flink.platform.common.enums.JobFlowStatus.OFFLINE;
+import static java.lang.String.format;
 import static java.util.stream.Collectors.toList;
 
 /** job config info. */
@@ -30,6 +33,27 @@ public class JobFlowService extends ServiceImpl<JobFlowMapper, JobFlow> {
     @Autowired private JobFlowRunService jobFlowRunService;
 
     @Autowired private JobRunInfoService jobRunInfoService;
+
+    @Transactional
+    public JobFlow cloneJobFlow(long flowId) {
+        // clone jobFlow.
+        JobFlow jobFlow = getById(flowId);
+        jobFlow.setId(null);
+        jobFlow.setName(format("%s-copy_%d", jobFlow.getName(), System.currentTimeMillis()));
+        jobFlow.setCode(UuidGenerator.generateShortUuid());
+        jobFlow.setStatus(OFFLINE);
+        save(jobFlow);
+
+        // clone jobs.
+        JobFlowDag flow = jobFlow.getFlow();
+        for (JobVertex vertex : flow.getVertices()) {
+            JobInfo jobInfo = jobInfoService.getById(vertex.getJobId());
+            jobInfo.setId(null);
+            jobInfoService.save(jobInfo);
+        }
+
+        return jobFlow;
+    }
 
     @Transactional(rollbackFor = Exception.class)
     public void deleteAllById(long flowId, long userId) {
