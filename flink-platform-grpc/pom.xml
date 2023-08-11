@@ -28,6 +28,10 @@
 			<groupId>io.grpc</groupId>
 			<artifactId>grpc-protobuf</artifactId>
 		</dependency>
+		<dependency>
+			<groupId>io.grpc</groupId>
+			<artifactId>grpc-api</artifactId>
+		</dependency>
 	</dependencies>
 
 	<build>

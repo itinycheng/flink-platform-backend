@@ -112,6 +112,12 @@ public class JobFlowController {
         return success(jobFlow);
     }
 
+    @GetMapping(value = "/copy/{flowId}")
+    public ResultInfo<Long> copy(@PathVariable Long flowId) {
+        JobFlow jobFlow = jobFlowService.cloneJobFlow(flowId);
+        return success(jobFlow.getId());
+    }
+
     @GetMapping(value = "/purge/{flowId}")
     public ResultInfo<Long> purge(
             @RequestAttribute(value = Constant.SESSION_USER) User loginUser,
