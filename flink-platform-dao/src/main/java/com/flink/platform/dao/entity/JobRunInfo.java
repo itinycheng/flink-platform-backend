@@ -19,11 +19,13 @@ import org.apache.commons.lang3.time.DurationFormatUtils;
 import java.io.Serializable;
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.Map;
 
 import static com.flink.platform.common.constants.Constant.EMPTY;
 import static com.flink.platform.common.util.DateUtil.GLOBAL_DATE_TIME_FORMAT;
 import static com.flink.platform.common.util.DateUtil.GLOBAL_TIMEZONE;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /** Job run info. */
 @Data
@@ -93,5 +95,21 @@ public class JobRunInfo implements Serializable {
 
         Duration duration = Duration.between(submitTime, stopTime);
         return DurationFormatUtils.formatDuration(duration.toMillis(), "HH:mm:ss");
+    }
+
+    /** The type of back_info column is TEXT and max size of TEXT is 64K. */
+    public String getBackInfo() {
+        if (backInfo == null) {
+            return null;
+        }
+
+        int maxLen = 65530;
+        byte[] bytes = backInfo.getBytes(UTF_8);
+        if (bytes.length <= maxLen) {
+            return backInfo;
+        }
+
+        byte[] newBytes = Arrays.copyOf(bytes, maxLen);
+        return new String(newBytes, UTF_8);
     }
 }
