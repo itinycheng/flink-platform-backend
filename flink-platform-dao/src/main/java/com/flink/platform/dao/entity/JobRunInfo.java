@@ -99,6 +99,10 @@ public class JobRunInfo implements Serializable {
 
     /** The type of back_info column is TEXT and max size of TEXT is 64K. */
     public String getBackInfo() {
+        if (backInfo == null) {
+            return null;
+        }
+
         int maxLen = 65530;
         byte[] bytes = backInfo.getBytes(UTF_8);
         if (bytes.length <= maxLen) {
