@@ -1,6 +1,5 @@
 package com.flink.platform.web.entity.request;
 
-import com.flink.platform.common.util.DurationUtil;
 import com.flink.platform.dao.entity.JobInfo;
 import com.flink.platform.dao.entity.LongArrayList;
 import com.flink.platform.dao.entity.task.BaseJob;
@@ -8,8 +7,8 @@ import com.flink.platform.dao.entity.task.ShellJob;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.experimental.Delegate;
-import org.apache.commons.lang3.math.NumberUtils;
 
+import java.time.Duration;
 import java.util.regex.Pattern;
 
 import static com.flink.platform.common.enums.JobType.CONDITION;
@@ -116,8 +115,8 @@ public class JobInfoRequest {
         BaseJob config = getConfig();
         ShellJob shellJob = config.unwrap(ShellJob.class);
         if (shellJob != null) {
-            String timeout = shellJob.getTimeout();
-            if (!NumberUtils.isCreatable(timeout) && !DurationUtil.ableToParse(timeout)) {
+            Duration timeout = shellJob.parseTimeout();
+            if (timeout == null || timeout.isZero() || timeout.isNegative()) {
                 errorMsg = "The timeout of ShellJob is invalid";
             }
         }
@@ -128,7 +127,7 @@ public class JobInfoRequest {
     private String verifyWorker() {
         String errorMsg = null;
         LongArrayList routeUrl = getRouteUrl();
-        if (routeUrl == null || routeUrl.size() == 0) {
+        if (routeUrl == null || routeUrl.isEmpty()) {
             errorMsg = "The worker of job cannot be null";
         }
         return errorMsg;

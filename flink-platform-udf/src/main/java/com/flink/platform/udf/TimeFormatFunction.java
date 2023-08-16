@@ -11,14 +11,14 @@ import static com.flink.platform.udf.util.DateUtil.getFormatter;
 public class TimeFormatFunction extends ScalarFunction {
 
     public String eval(Long timestamp, String format) {
-        if (timestamp == null || format == null || format.length() == 0) {
+        if (timestamp == null || format == null || format.isEmpty()) {
             return null;
         }
         return getFormatter(format).format(Instant.ofEpochMilli(timestamp));
     }
 
     public String eval(LocalDateTime time, String format) {
-        if (time == null || format == null || format.length() == 0) {
+        if (time == null || format == null || format.isEmpty()) {
             return null;
         }
         return getFormatter(format).format(time);

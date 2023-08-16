@@ -4,8 +4,12 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.flink.platform.common.enums.JobType;
+import com.flink.platform.common.util.DurationUtil;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
+
+import java.time.Duration;
 
 import static com.fasterxml.jackson.annotation.JsonTypeInfo.As;
 import static com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
@@ -28,6 +32,21 @@ import static com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 public class BaseJob {
 
     private JobType type;
+
+    private int retryTimes;
+
+    private String retryInterval;
+
+    public Duration parseRetryInterval() {
+        if (StringUtils.isNotEmpty(retryInterval)) {
+            try {
+                return DurationUtil.parse(retryInterval);
+            } catch (Exception ignored) {
+            }
+        }
+
+        return null;
+    }
 
     @JsonIgnore
     public <T> T unwrap(Class<T> clazz) {

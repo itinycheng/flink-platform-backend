@@ -42,7 +42,7 @@ public class SqlCommandBuilder implements CommandBuilder {
             sqlList.add(sql.toSqlString());
         }
 
-        if (sqlList.size() == 0) {
+        if (sqlList.isEmpty()) {
             throw new CommandUnableGenException(
                     String.format(
                             "No available sql or parsing failed, subject: %s",
