@@ -34,8 +34,8 @@ public class ThreadUtil {
         return new ThreadFactoryBuilder().setDaemon(isDaemon).setNameFormat(prefix + "-%d").build();
     }
 
-    public static void sleepRetry(int retryTimes) {
-        int mills = Math.min(retryTimes * MIN_SLEEP_TIME_MILLIS, MAX_SLEEP_TIME_MILLIS);
+    public static void sleepRetry(int retryAttempt) {
+        int mills = Math.min(retryAttempt * MIN_SLEEP_TIME_MILLIS, MAX_SLEEP_TIME_MILLIS);
         sleep(mills);
     }
 

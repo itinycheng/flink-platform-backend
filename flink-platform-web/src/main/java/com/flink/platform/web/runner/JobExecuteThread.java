@@ -187,7 +187,7 @@ public class JobExecuteThread implements Callable<JobResponse> {
 
     public StatusInfo updateAndWaitForComplete(
             JobGrpcServiceBlockingStub stub, JobRunInfo jobRunInfo) {
-        int retryTimes = 0;
+        int retryCount = 0;
         while (AppRunner.isRunning()) {
             try {
                 JobStatusRequest request =
@@ -227,7 +227,7 @@ public class JobExecuteThread implements Callable<JobResponse> {
                 log.error("Fetch job status failed", e);
             }
 
-            ThreadUtil.sleepRetry(++retryTimes);
+            ThreadUtil.sleepRetry(++retryCount);
         }
 
         return null;
