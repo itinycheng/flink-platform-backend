@@ -1,5 +1,6 @@
 package com.flink.platform.dao.entity;
 
+import com.baomidou.mybatisplus.annotation.FieldStrategy;
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
@@ -44,6 +45,7 @@ public class Worker {
 
     @Setter(AccessLevel.NONE)
     @JsonFormat(pattern = GLOBAL_DATE_TIME_FORMAT, timezone = GLOBAL_TIMEZONE)
+    @TableField(update = "now()", updateStrategy = FieldStrategy.ALWAYS)
     private LocalDateTime updateTime;
 
     @Setter(AccessLevel.NONE)

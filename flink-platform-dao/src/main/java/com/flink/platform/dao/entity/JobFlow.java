@@ -65,6 +65,6 @@ public class JobFlow {
 
     /** update time. */
     @JsonFormat(pattern = GLOBAL_DATE_TIME_FORMAT, timezone = GLOBAL_TIMEZONE)
-    @TableField(update = "now()", updateStrategy = FieldStrategy.IGNORED)
+    @TableField(update = "now()", updateStrategy = FieldStrategy.ALWAYS)
     private LocalDateTime updateTime;
 }
