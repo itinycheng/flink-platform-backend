@@ -2,6 +2,7 @@ package com.flink.platform.web.util;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
+import java.time.Duration;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
@@ -43,6 +44,14 @@ public class ThreadUtil {
         try {
             Thread.sleep(millis);
         } catch (final Exception ignored) {
+        }
+    }
+
+    public static void sleepDuration(int retryAttempt, final Duration duration) {
+        if (duration == null) {
+            sleepRetry(retryAttempt);
+        } else {
+            sleep(duration.toMillis());
         }
     }
 }
