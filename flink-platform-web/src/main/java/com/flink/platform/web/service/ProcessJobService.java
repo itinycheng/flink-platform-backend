@@ -1,6 +1,5 @@
 package com.flink.platform.web.service;
 
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.flink.platform.common.enums.ExecutionStatus;
 import com.flink.platform.common.enums.JobType;
 import com.flink.platform.common.exception.UnrecoverableException;
@@ -31,7 +30,6 @@ import java.util.List;
 import java.util.Map;
 
 import static com.flink.platform.common.constants.Constant.HOST_IP;
-import static com.flink.platform.common.enums.ExecutionStatus.CREATED;
 import static com.flink.platform.common.enums.ExecutionStatus.ERROR;
 
 /** Process job service. */
@@ -87,12 +85,7 @@ public class ProcessJobService {
 
         try {
             // step 1: get job info
-            jobRunInfo =
-                    jobRunInfoService.getOne(
-                            new QueryWrapper<JobRunInfo>()
-                                    .lambda()
-                                    .eq(JobRunInfo::getId, jobRunId)
-                                    .eq(JobRunInfo::getStatus, CREATED));
+            jobRunInfo = jobRunInfoService.getById(jobRunId);
             if (jobRunInfo == null) {
                 throw new UnrecoverableException(
                         String.format("The job run: %s is no longer exists.", jobRunId));
