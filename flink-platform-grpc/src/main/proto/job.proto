@@ -24,7 +24,6 @@ service JobGrpcService {
 
 message ProcessJobRequest {
   int64 jobRunId = 1;
-  int32 retries = 2;
 }
 
 message ProcessJobReply {
