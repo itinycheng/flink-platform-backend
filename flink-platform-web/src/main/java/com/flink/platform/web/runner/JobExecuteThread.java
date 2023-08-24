@@ -256,8 +256,7 @@ public class JobExecuteThread implements Callable<JobResponse> {
 
     /** process job. */
     private JobRunInfo processRemoteJob(JobGrpcServiceBlockingStub stub, long jobRunId) {
-        ProcessJobRequest.Builder request =
-                ProcessJobRequest.newBuilder().setJobRunId(jobRunId).setRetries(errorRetries);
+        ProcessJobRequest.Builder request = ProcessJobRequest.newBuilder().setJobRunId(jobRunId);
         ProcessJobReply reply = stub.processJob(request.build());
         return jobRunInfoService.getById(reply.getJobRunId());
     }

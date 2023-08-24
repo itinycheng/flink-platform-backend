@@ -11,11 +11,8 @@ import com.flink.platform.web.command.CommandExecutor;
 import com.flink.platform.web.command.JobCallback;
 import com.flink.platform.web.command.JobCommand;
 import com.flink.platform.web.command.flink.FlinkCommand;
-import com.flink.platform.web.config.AppRunner;
 import com.flink.platform.web.enums.Placeholder;
 import com.flink.platform.web.enums.Variable;
-import com.flink.platform.web.util.ExceptionUtil;
-import com.flink.platform.web.util.ThreadUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.MapUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,7 +27,6 @@ import java.util.List;
 import java.util.Map;
 
 import static com.flink.platform.common.constants.Constant.HOST_IP;
-import static com.flink.platform.common.enums.ExecutionStatus.ERROR;
 
 /** Process job service. */
 @Slf4j
@@ -51,32 +47,6 @@ public class ProcessJobService {
         this.jobRunInfoService = jobRunInfoService;
         this.jobCommandBuilders = jobCommandBuilders;
         this.jobCommandExecutors = jobCommandExecutors;
-    }
-
-    public Long processJob(final long jobRunId, final int retries) {
-        int errorTimes = 0;
-        while (AppRunner.isRunning()) {
-            try {
-                processJob(jobRunId);
-                break;
-            } catch (Exception e) {
-                log.error("Process job run: {} failed, retry times: {}.", jobRunId, errorTimes, e);
-                if (++errorTimes > retries || e instanceof UnrecoverableException) {
-                    JobRunInfo jobRun = new JobRunInfo();
-                    jobRun.setId(jobRunId);
-                    jobRun.setStatus(ERROR);
-                    jobRun.setBackInfo(
-                            JsonUtil.toJsonString(
-                                    new JobCallback(ExceptionUtil.stackTrace(e), null)));
-                    jobRunInfoService.updateById(jobRun);
-                    break;
-                }
-
-                ThreadUtil.sleepRetry(errorTimes);
-            }
-        }
-
-        return jobRunId;
     }
 
     public void processJob(final long jobRunId) throws Exception {

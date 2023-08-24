@@ -32,8 +32,8 @@ public class JobProcessGrpcServer extends JobGrpcServiceGrpc.JobGrpcServiceImplB
     public void processJob(
             ProcessJobRequest request, StreamObserver<ProcessJobReply> responseObserver) {
         try {
-            Long jobRunId =
-                    processJobService.processJob(request.getJobRunId(), request.getRetries());
+            long jobRunId = request.getJobRunId();
+            processJobService.processJob(jobRunId);
             ProcessJobReply reply = ProcessJobReply.newBuilder().setJobRunId(jobRunId).build();
             responseObserver.onNext(reply);
         } catch (Exception e) {
