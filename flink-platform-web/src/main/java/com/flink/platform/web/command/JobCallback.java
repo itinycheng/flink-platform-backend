@@ -5,12 +5,14 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.flink.platform.common.enums.ExecutionStatus;
 import com.flink.platform.web.util.ShellCallback;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import lombok.experimental.Delegate;
 
 import javax.annotation.Nonnull;
 
 /** call back info from the command line. */
 @Data
+@NoArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class JobCallback {
 
@@ -27,11 +29,6 @@ public class JobCallback {
     @JsonIgnore private ExecutionStatus status;
 
     @Nonnull @Delegate @JsonIgnore private ShellCallback cmdCallback;
-
-    /** Only for deSeral. */
-    public JobCallback() {
-        this(null, null);
-    }
 
     public JobCallback(String message, ExecutionStatus status) {
         this(null, message, status);

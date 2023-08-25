@@ -111,17 +111,27 @@ public class JobInfoRequest {
     }
 
     private String verifyConfig() {
-        String errorMsg = null;
         BaseJob config = getConfig();
+        if (config.getRetryTimes() < 0) {
+            return "The retry times cannot be negative";
+        }
+
+        if (config.getRetryTimes() > 0) {
+            Duration interval = config.parseRetryInterval();
+            if (interval == null || interval.isZero() || interval.isNegative()) {
+                return "The retry interval is invalid";
+            }
+        }
+
         ShellJob shellJob = config.unwrap(ShellJob.class);
         if (shellJob != null) {
             Duration timeout = shellJob.parseTimeout();
             if (timeout == null || timeout.isZero() || timeout.isNegative()) {
-                errorMsg = "The timeout of ShellJob is invalid";
+                return "The timeout of ShellJob is invalid";
             }
         }
 
-        return errorMsg;
+        return null;
     }
 
     private String verifyWorker() {

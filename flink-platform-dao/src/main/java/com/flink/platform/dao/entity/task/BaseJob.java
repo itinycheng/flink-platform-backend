@@ -33,9 +33,9 @@ public class BaseJob {
 
     private JobType type;
 
-    private int retryTimes;
+    private int retryTimes = 1;
 
-    private String retryInterval;
+    private String retryInterval = "5s";
 
     public Duration parseRetryInterval() {
         if (StringUtils.isNotEmpty(retryInterval)) {
