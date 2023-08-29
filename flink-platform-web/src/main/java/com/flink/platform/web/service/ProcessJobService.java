@@ -3,7 +3,6 @@ package com.flink.platform.web.service;
 import com.flink.platform.common.enums.ExecutionStatus;
 import com.flink.platform.common.enums.JobType;
 import com.flink.platform.common.exception.UnrecoverableException;
-import com.flink.platform.common.util.JsonUtil;
 import com.flink.platform.dao.entity.JobRunInfo;
 import com.flink.platform.dao.entity.result.JobCallback;
 import com.flink.platform.dao.service.JobRunInfoService;
@@ -124,7 +123,7 @@ public class ProcessJobService {
             newJobRun = new JobRunInfo();
             newJobRun.setId(jobRunInfo.getId());
             newJobRun.setStatus(executionStatus);
-            newJobRun.setBackInfo(JsonUtil.toJsonString(callback));
+            newJobRun.setBackInfo(callback);
             newJobRun.setSubmitTime(submitTime);
             if (executionStatus.isTerminalState()) {
                 newJobRun.setStopTime(LocalDateTime.now());
