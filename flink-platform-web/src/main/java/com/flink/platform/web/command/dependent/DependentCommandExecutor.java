@@ -1,8 +1,8 @@
 package com.flink.platform.web.command.dependent;
 
 import com.flink.platform.common.enums.JobType;
+import com.flink.platform.dao.entity.result.JobCallback;
 import com.flink.platform.web.command.CommandExecutor;
-import com.flink.platform.web.command.JobCallback;
 import com.flink.platform.web.command.JobCommand;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;

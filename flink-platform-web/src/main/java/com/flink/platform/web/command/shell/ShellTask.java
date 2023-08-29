@@ -1,10 +1,10 @@
 package com.flink.platform.web.command.shell;
 
 import com.flink.platform.common.enums.ExecutionStatus;
+import com.flink.platform.dao.entity.result.ShellCallback;
 import com.flink.platform.web.command.AbstractTask;
 import com.flink.platform.web.util.CollectLogThread;
 import com.flink.platform.web.util.CommandUtil;
-import com.flink.platform.web.util.ShellCallback;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;

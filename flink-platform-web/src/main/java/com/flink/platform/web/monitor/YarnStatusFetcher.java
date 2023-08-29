@@ -2,9 +2,9 @@ package com.flink.platform.web.monitor;
 
 import com.flink.platform.common.enums.DeployMode;
 import com.flink.platform.common.util.JsonUtil;
+import com.flink.platform.dao.entity.result.JobCallback;
 import com.flink.platform.grpc.JobStatusReply;
 import com.flink.platform.grpc.JobStatusRequest;
-import com.flink.platform.web.command.JobCallback;
 import com.flink.platform.web.external.YarnClientService;
 import com.flink.platform.web.util.YarnHelper;
 import lombok.extern.slf4j.Slf4j;
