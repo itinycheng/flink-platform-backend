@@ -11,6 +11,7 @@ import com.flink.platform.common.enums.DeployMode;
 import com.flink.platform.common.enums.ExecutionMode;
 import com.flink.platform.common.enums.ExecutionStatus;
 import com.flink.platform.common.enums.JobType;
+import com.flink.platform.dao.entity.result.JobCallback;
 import com.flink.platform.dao.entity.task.BaseJob;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -19,13 +20,12 @@ import org.apache.commons.lang3.time.DurationFormatUtils;
 import java.io.Serializable;
 import java.time.Duration;
 import java.time.LocalDateTime;
-import java.util.Arrays;
 import java.util.Map;
 
 import static com.flink.platform.common.constants.Constant.EMPTY;
 import static com.flink.platform.common.util.DateUtil.GLOBAL_DATE_TIME_FORMAT;
 import static com.flink.platform.common.util.DateUtil.GLOBAL_TIMEZONE;
-import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.apache.commons.lang3.StringUtils.defaultString;
 
 /** Job run info. */
 @Data
@@ -70,7 +70,8 @@ public class JobRunInfo implements Serializable {
     private ExecutionStatus status;
 
     /** store json data of JobStatistics. */
-    private String backInfo;
+    @TableField(typeHandler = JacksonTypeHandler.class)
+    private JobCallback backInfo;
 
     /** submit time. */
     @JsonFormat(pattern = GLOBAL_DATE_TIME_FORMAT, timezone = GLOBAL_TIMEZONE)
@@ -97,19 +98,47 @@ public class JobRunInfo implements Serializable {
         return DurationFormatUtils.formatDuration(duration.toMillis(), "HH:mm:ss");
     }
 
-    /** The type of back_info column is TEXT and max size of TEXT is 64K. */
-    public String getBackInfo() {
+    /**
+     * Estimated data length. <br>
+     * The type of back_info column is TEXT and max size of TEXT is 64K.<br>
+     * Storing data in HDFS is a better solution.
+     */
+    public JobCallback getBackInfo() {
         if (backInfo == null) {
             return null;
         }
 
-        int maxLen = 65530;
-        byte[] bytes = backInfo.getBytes(UTF_8);
-        if (bytes.length <= maxLen) {
-            return backInfo;
+        int maxLen = 60_000;
+        int total = 0;
+
+        // error msg.
+        String errMsg = defaultString(backInfo.getErrMsg());
+        total = total + errMsg.length();
+        if (total >= maxLen) {
+            backInfo.setErrMsg(errMsg.substring(0, maxLen));
+            backInfo.setMessage(null);
+            backInfo.setStdMsg(null);
         }
 
-        byte[] newBytes = Arrays.copyOf(bytes, maxLen);
-        return new String(newBytes, UTF_8);
+        // message.
+        if (total < maxLen) {
+            String message = defaultString(backInfo.getMessage());
+            total = total + message.length();
+            if (total >= maxLen) {
+                backInfo.setMessage(message.substring(0, maxLen));
+                backInfo.setStdMsg(null);
+            }
+        }
+
+        // message.
+        if (total < maxLen) {
+            String stdMsg = defaultString(backInfo.getStdMsg());
+            total = total + stdMsg.length();
+            if (total >= maxLen) {
+                backInfo.setStdMsg(stdMsg.substring(0, maxLen));
+            }
+        }
+
+        return backInfo;
     }
 }

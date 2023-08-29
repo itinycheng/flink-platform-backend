@@ -266,10 +266,15 @@ public class JobExecuteThread implements Callable<JobResponse> {
         int retryTimes = 0;
         while (AppRunner.isRunning()) {
             try {
+                JobCallback callback = jobRunInfo.getBackInfo();
+                if (callback != null) {
+                    callback = callback.cloneWithoutMsg();
+                }
+
                 JobStatusRequest request =
                         JobStatusRequest.newBuilder()
                                 .setJobRunId(jobRunInfo.getId())
-                                .setBackInfo(jobRunInfo.getBackInfo())
+                                .setBackInfo(JsonUtil.toJsonString(callback))
                                 .setDeployMode(jobRunInfo.getDeployMode().name())
                                 .setRetries(errorRetries)
                                 .build();
@@ -345,8 +350,7 @@ public class JobExecuteThread implements Callable<JobResponse> {
                 newJobRun.setStopTime(endTime);
             }
             if (exception != null) {
-                newJobRun.setBackInfo(
-                        JsonUtil.toJsonString(new JobCallback(exception.getMessage(), null)));
+                newJobRun.setBackInfo(new JobCallback(exception.getMessage(), null));
             }
 
             jobRunInfoService.updateById(newJobRun);
