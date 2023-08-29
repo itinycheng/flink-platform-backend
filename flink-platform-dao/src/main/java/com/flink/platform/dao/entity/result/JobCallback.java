@@ -1,9 +1,8 @@
-package com.flink.platform.web.command;
+package com.flink.platform.dao.entity.result;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.flink.platform.common.enums.ExecutionStatus;
-import com.flink.platform.web.util.ShellCallback;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.Delegate;

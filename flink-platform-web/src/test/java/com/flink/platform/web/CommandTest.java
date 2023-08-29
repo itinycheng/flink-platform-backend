@@ -1,8 +1,8 @@
 package com.flink.platform.web;
 
+import com.flink.platform.dao.entity.result.ShellCallback;
 import com.flink.platform.web.command.flink.FlinkCommandExecutor;
 import com.flink.platform.web.util.CommandUtil;
-import com.flink.platform.web.util.ShellCallback;
 import org.junit.Assert;
 import org.junit.Test;
 
