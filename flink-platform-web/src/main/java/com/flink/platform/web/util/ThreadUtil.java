@@ -37,6 +37,7 @@ public class ThreadUtil {
 
     public static void sleepRetry(int retryAttempt) {
         int mills = Math.min(retryAttempt * MIN_SLEEP_TIME_MILLIS, MAX_SLEEP_TIME_MILLIS);
+        mills = Math.max(mills, MIN_SLEEP_TIME_MILLIS);
         sleep(mills);
     }
 
@@ -48,7 +49,7 @@ public class ThreadUtil {
     }
 
     public static void sleepDuration(int retryAttempt, final Duration duration) {
-        if (duration == null) {
+        if (duration == null || duration.isZero()) {
             sleepRetry(retryAttempt);
         } else {
             sleep(duration.toMillis());

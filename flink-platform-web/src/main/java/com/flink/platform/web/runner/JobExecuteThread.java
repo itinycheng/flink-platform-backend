@@ -31,8 +31,6 @@ import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import lombok.extern.slf4j.Slf4j;
 
-import javax.annotation.Nonnull;
-
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
@@ -93,6 +91,7 @@ public class JobExecuteThread implements Callable<JobResponse> {
     @Override
     public JobResponse call() {
         // Terminated job doesn't need to be executed again.
+        // TODO: Is retryTimes exhausted?
         if (jobRunStatus != null && jobRunStatus.isTerminalState()) {
             return new JobResponse(jobId, jobRunId, jobRunStatus);
         }
@@ -109,35 +108,37 @@ public class JobExecuteThread implements Callable<JobResponse> {
         }
 
         // 2. execute job.
-        int retryAttempt = 0;
-        while (AppRunner.isRunning()) {
+        int retryAttempt = -1;
+        while (AppRunner.isRunning() && ++retryAttempt <= retryTimes) {
             try {
                 // execute job once time.
-                return callOnce(retryAttempt);
-            } catch (Exception e) {
-                log.error(
-                        "Execute jobRun: {} and wait for complete failed, retry attempt: {}.",
-                        jobRunId,
-                        retryAttempt,
-                        e);
-                boolean disableRetry = false;
-                if (e instanceof StatusRuntimeException) {
-                    disableRetry = ((StatusRuntimeException) e).getStatus() == Status.UNAVAILABLE;
-                }
-                if (disableRetry || ++retryAttempt > retryTimes) {
+                callOnce(retryAttempt);
+                if (SUCCESS.equals(jobRunStatus)) {
                     break;
                 }
-
-                // sleep if exception found.
-                ThreadUtil.sleepDuration(retryAttempt, retryInterval);
+            } catch (Exception e) {
+                log.error(
+                        "Exception found when executing jobRun: {} and wait for complete",
+                        jobRunId,
+                        e);
+                if (e instanceof StatusRuntimeException
+                        && ((StatusRuntimeException) e).getStatus() == Status.UNAVAILABLE) {
+                    break;
+                }
             }
+
+            log.warn(
+                    "Execute jobRun: {} and wait for complete failed, retry attempt: {}.",
+                    jobRunId,
+                    retryAttempt);
+            // sleep and retry if exception found or status isn't success.
+            ThreadUtil.sleepDuration(retryAttempt, retryInterval);
         }
 
         return new JobResponse(jobId, jobRunId, jobRunStatus);
     }
 
-    @Nonnull
-    public JobResponse callOnce(int retryAttempt) {
+    public void callOnce(int retryAttempt) {
         JobRunInfo jobRunInfo = null;
 
         try {
@@ -151,7 +152,8 @@ public class JobExecuteThread implements Callable<JobResponse> {
                                         .eq(JobFlowRun::getId, flowRunId));
                 ExecutionStatus flowStatus = jobFlowRun.getStatus();
                 if (KILLABLE.equals(flowStatus) || flowStatus.isTerminalState()) {
-                    return new JobResponse(jobId, jobRunId, KILLED);
+                    jobRunStatus = KILLED;
+                    return;
                 }
             }
 
@@ -164,7 +166,8 @@ public class JobExecuteThread implements Callable<JobResponse> {
                                     .eq(JobInfo::getStatus, JobStatus.ONLINE));
             if (jobInfo == null) {
                 log.warn("The job:{} is no longer exists or not in ready/scheduled status.", jobId);
-                return new JobResponse(jobId, jobRunId, NOT_EXIST);
+                jobRunStatus = NOT_EXIST;
+                return;
             }
 
             // Step 2: random a grpc client.
@@ -185,7 +188,8 @@ public class JobExecuteThread implements Callable<JobResponse> {
 
             if (jobRunInfo == null) {
                 log.warn("The jobRun:{} is no longer exists.", jobRunId);
-                return new JobResponse(jobId, jobRunId, NOT_EXIST);
+                jobRunStatus = NOT_EXIST;
+                return;
             }
 
             // Step 4: Update jobRunId and jobRunStatus in memory.
@@ -204,8 +208,6 @@ public class JobExecuteThread implements Callable<JobResponse> {
                     jobRunStatus = statusInfo.getStatus();
                 }
             }
-
-            return new JobResponse(jobId, jobRunId, jobRunStatus);
         } catch (Exception e) {
             jobRunStatus = ERROR;
             updateJobRunIfNeeded(
