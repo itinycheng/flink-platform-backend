@@ -33,7 +33,7 @@ public class BaseJob {
 
     private JobType type;
 
-    private int retryTimes = 1;
+    private int retryTimes = 0;
 
     private String retryInterval = "5s";
 
