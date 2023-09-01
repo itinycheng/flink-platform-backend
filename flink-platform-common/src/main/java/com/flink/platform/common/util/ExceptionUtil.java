@@ -1,4 +1,4 @@
-package com.flink.platform.web.util;
+package com.flink.platform.common.util;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;

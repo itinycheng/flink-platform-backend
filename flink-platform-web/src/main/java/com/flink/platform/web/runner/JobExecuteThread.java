@@ -25,6 +25,7 @@ import com.flink.platform.web.config.AppRunner;
 import com.flink.platform.web.config.WorkerConfig;
 import com.flink.platform.web.grpc.JobProcessGrpcClient;
 import com.flink.platform.web.monitor.StatusInfo;
+import com.flink.platform.web.service.JobRunExtraService;
 import com.flink.platform.web.service.WorkerApplyService;
 import com.flink.platform.web.util.ThreadUtil;
 import io.grpc.Status;
@@ -64,6 +65,8 @@ public class JobExecuteThread implements Callable<JobResponse> {
 
     private final JobRunInfoService jobRunInfoService;
 
+    private final JobRunExtraService jobRunExtraService;
+
     private final JobFlowRunService jobFlowRunService;
 
     private final WorkerApplyService workerApplyService;
@@ -83,6 +86,7 @@ public class JobExecuteThread implements Callable<JobResponse> {
         this.streamingJobToSuccessMills = workerConfig.getStreamingJobToSuccessMills();
         this.jobInfoService = SpringContext.getBean(JobInfoService.class);
         this.jobRunInfoService = SpringContext.getBean(JobRunInfoService.class);
+        this.jobRunExtraService = SpringContext.getBean(JobRunExtraService.class);
         this.jobFlowRunService = SpringContext.getBean(JobFlowRunService.class);
         this.workerApplyService = SpringContext.getBean(WorkerApplyService.class);
         this.jobProcessGrpcClient = SpringContext.getBean(JobProcessGrpcClient.class);
@@ -250,8 +254,7 @@ public class JobExecuteThread implements Callable<JobResponse> {
                                 .last("LIMIT 1"));
         if (jobRun == null) {
             String workerIp = worker != null ? worker.getIp() : Constant.HOST_IP;
-            jobRun = jobRunInfoService.createFrom(jobInfo, flowRunId, workerIp);
-            jobRunInfoService.save(jobRun);
+            jobRun = jobRunExtraService.parseVarsAndSave(jobInfo, flowRunId, workerIp);
         }
         return jobRun;
     }
