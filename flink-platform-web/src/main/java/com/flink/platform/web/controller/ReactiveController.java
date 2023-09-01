@@ -2,6 +2,7 @@ package com.flink.platform.web.controller;
 
 import com.flink.platform.common.enums.DbType;
 import com.flink.platform.common.enums.JobType;
+import com.flink.platform.common.util.ExceptionUtil;
 import com.flink.platform.dao.entity.Datasource;
 import com.flink.platform.dao.entity.task.FlinkJob;
 import com.flink.platform.dao.entity.task.SqlJob;
@@ -12,7 +13,6 @@ import com.flink.platform.web.entity.vo.ReactiveDataVo;
 import com.flink.platform.web.entity.vo.ReactiveExecVo;
 import com.flink.platform.web.service.ReactiveService;
 import com.flink.platform.web.service.WorkerApplyService;
-import com.flink.platform.web.util.ExceptionUtil;
 import com.flink.platform.web.util.HttpUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;

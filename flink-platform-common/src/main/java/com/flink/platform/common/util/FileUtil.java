@@ -1,4 +1,4 @@
-package com.flink.platform.web.util;
+package com.flink.platform.common.util;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;

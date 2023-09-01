@@ -4,18 +4,17 @@ import com.flink.platform.common.constants.Constant;
 import com.flink.platform.common.enums.DbType;
 import com.flink.platform.common.exception.UnrecoverableException;
 import com.flink.platform.common.job.Sql;
+import com.flink.platform.common.util.ExceptionUtil;
 import com.flink.platform.common.util.SqlUtil;
 import com.flink.platform.dao.entity.Datasource;
 import com.flink.platform.dao.entity.JobInfo;
 import com.flink.platform.dao.entity.JobRunInfo;
-import com.flink.platform.dao.service.JobRunInfoService;
 import com.flink.platform.web.command.CommandBuilder;
 import com.flink.platform.web.config.WorkerConfig;
 import com.flink.platform.web.entity.vo.ReactiveDataVo;
 import com.flink.platform.web.entity.vo.ReactiveExecVo;
 import com.flink.platform.web.util.CollectLogThread;
 import com.flink.platform.web.util.CommandUtil;
-import com.flink.platform.web.util.ExceptionUtil;
 import com.flink.platform.web.util.ThreadUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -51,16 +50,16 @@ public class ReactiveService {
 
     private final List<CommandBuilder> commandBuilders;
 
-    private final JobRunInfoService jobRunInfoService;
+    private final JobRunExtraService jobRunExtraService;
 
     @Autowired
     public ReactiveService(
             WorkerConfig workerConfig,
             List<CommandBuilder> commandBuilders,
-            JobRunInfoService jobRunInfoService) {
+            JobRunExtraService jobRunExtraService) {
         this.workerConfig = workerConfig;
         this.commandBuilders = commandBuilders;
-        this.jobRunInfoService = jobRunInfoService;
+        this.jobRunExtraService = jobRunExtraService;
         this.executor =
                 ThreadUtil.newDaemonFixedThreadExecutor(
                         "Reactive-job", workerConfig.getReactiveExecThreads());
@@ -69,7 +68,7 @@ public class ReactiveService {
 
     public ReactiveExecVo execFlink(String execId, JobInfo jobInfo, String[] envProps)
             throws Exception {
-        JobRunInfo jobRun = jobRunInfoService.createFrom(jobInfo, null, Constant.HOST_IP);
+        JobRunInfo jobRun = jobRunExtraService.createFrom(jobInfo, null, Constant.HOST_IP);
         jobRun.setId(0L);
         String command =
                 commandBuilders.stream()

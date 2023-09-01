@@ -10,20 +10,14 @@ import com.flink.platform.web.command.CommandBuilder;
 import com.flink.platform.web.command.CommandExecutor;
 import com.flink.platform.web.command.JobCommand;
 import com.flink.platform.web.command.flink.FlinkCommand;
-import com.flink.platform.web.enums.Placeholder;
-import com.flink.platform.web.enums.Variable;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.collections4.MapUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
-import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import static com.flink.platform.common.constants.Constant.HOST_IP;
 
@@ -60,34 +54,9 @@ public class ProcessJobService {
                         String.format("The job run: %s is no longer exists.", jobRunId));
             }
 
-            // step 2: replace variables in subject and persist.
-            JobRunInfo finalJobRun = jobRunInfo;
-            Map<String, Object> variableMap = new HashMap<>();
-            Arrays.stream(Placeholder.values())
-                    .filter(placeholder -> finalJobRun.getSubject().contains(placeholder.wildcard))
-                    .map(placeholder -> placeholder.provider.apply(finalJobRun))
-                    .forEach(variableMap::putAll);
-
-            MapUtils.emptyIfNull(jobRunInfo.getVariables())
-                    .forEach(
-                            (name, value) -> {
-                                Variable sqlVar = Variable.matchPrefix(name);
-                                variableMap.put(name, sqlVar.provider.apply(value));
-                            });
-            // replace variable with actual value
-            jobRunInfo.setVariables(variableMap);
-            for (Map.Entry<String, Object> entry : variableMap.entrySet()) {
-                String originSubject = jobRunInfo.getSubject();
-                String distSubject =
-                        originSubject.replace(entry.getKey(), entry.getValue().toString());
-                jobRunInfo.setSubject(distSubject);
-            }
-
-            // Update jobRun info before execution.
+            // step 2: Update jobRun info before execution.
             JobRunInfo newJobRun = new JobRunInfo();
             newJobRun.setId(jobRunInfo.getId());
-            newJobRun.setSubject(jobRunInfo.getSubject());
-            newJobRun.setVariables(variableMap);
             newJobRun.setHost(HOST_IP);
             jobRunInfoService.updateById(newJobRun);
 
