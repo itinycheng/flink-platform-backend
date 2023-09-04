@@ -112,8 +112,8 @@ public class JobExecuteThread implements Callable<JobResponse> {
         }
 
         // 2. execute job.
-        int retryAttempt = -1;
-        while (AppRunner.isRunning() && ++retryAttempt <= retryTimes) {
+        int retryAttempt = 0;
+        while (AppRunner.isRunning()) {
             try {
                 // execute job once time.
                 callOnce(retryAttempt);
@@ -125,9 +125,11 @@ public class JobExecuteThread implements Callable<JobResponse> {
                         "Exception found when executing jobRun: {} and wait for complete",
                         jobRunId,
                         e);
-                if (e instanceof StatusRuntimeException
-                        && ((StatusRuntimeException) e).getStatus() == Status.UNAVAILABLE) {
-                    break;
+                if (e instanceof StatusRuntimeException) {
+                    Status status = ((StatusRuntimeException) e).getStatus();
+                    if (status != null && Status.UNAVAILABLE.getCode() == status.getCode()) {
+                        break;
+                    }
                 }
             }
 
@@ -135,6 +137,12 @@ public class JobExecuteThread implements Callable<JobResponse> {
                     "Execute jobRun: {} and wait for complete failed, retry attempt: {}.",
                     jobRunId,
                     retryAttempt);
+
+            // break if retry exhausted.
+            if (++retryAttempt > retryTimes) {
+                break;
+            }
+
             // sleep and retry if exception found or status isn't success.
             ThreadUtil.sleepDuration(retryAttempt, retryInterval);
         }
