@@ -114,7 +114,11 @@ public abstract class FlinkCommandBuilder implements CommandBuilder {
 
     private String createAppName(JobRunInfo jobRun) {
         String jobName = jobRun.getName().replaceAll("\\s+", "");
-        return String.join("-", jobRun.getExecMode().name(), jobRun.getJobCode(), jobName);
+        return String.join(
+                "-",
+                jobRun.getExecMode().name(),
+                jobRun.getJobCode() + "_" + jobRun.getFlowRunId(),
+                jobName);
     }
 
     private String getLocalPathOfMainJar(String jobCode, String jarPath) {
