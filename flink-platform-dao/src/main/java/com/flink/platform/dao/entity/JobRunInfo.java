@@ -109,33 +109,35 @@ public class JobRunInfo implements Serializable {
         }
 
         int maxLen = 60_000;
-        int total = 0;
+        int count = 0;
 
         // error msg.
         String errMsg = defaultString(backInfo.getErrMsg());
-        total = total + errMsg.length();
-        if (total >= maxLen) {
+        count = count + errMsg.length();
+        if (count >= maxLen) {
             backInfo.setErrMsg(errMsg.substring(0, maxLen));
             backInfo.setMessage(null);
             backInfo.setStdMsg(null);
         }
 
         // message.
-        if (total < maxLen) {
+        if (count < maxLen) {
             String message = defaultString(backInfo.getMessage());
-            total = total + message.length();
-            if (total >= maxLen) {
-                backInfo.setMessage(message.substring(0, maxLen));
+            int prevCount = count;
+            count = count + message.length();
+            if (count >= maxLen) {
+                backInfo.setMessage(message.substring(0, maxLen - prevCount));
                 backInfo.setStdMsg(null);
             }
         }
 
-        // message.
-        if (total < maxLen) {
+        // std msg.
+        if (count < maxLen) {
             String stdMsg = defaultString(backInfo.getStdMsg());
-            total = total + stdMsg.length();
-            if (total >= maxLen) {
-                backInfo.setStdMsg(stdMsg.substring(0, maxLen));
+            int prevCount = count;
+            count = count + stdMsg.length();
+            if (count >= maxLen) {
+                backInfo.setStdMsg(stdMsg.substring(0, maxLen - prevCount));
             }
         }
 
