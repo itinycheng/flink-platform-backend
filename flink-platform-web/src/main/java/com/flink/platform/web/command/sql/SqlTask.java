@@ -38,8 +38,6 @@ public class SqlTask extends AbstractTask {
 
     private final List<String> sqlList;
 
-    private Connection connection;
-
     private Statement statement;
 
     private boolean isSucceed;
@@ -61,7 +59,6 @@ public class SqlTask extends AbstractTask {
         try (Connection connection =
                         createConnection(datasource.getType(), datasource.getParams());
                 Statement stmt = connection.createStatement()) {
-            this.connection = connection;
             this.statement = stmt;
 
             String executingSql = null;
@@ -125,22 +122,6 @@ public class SqlTask extends AbstractTask {
                 statement.cancel();
             } catch (Exception e) {
                 log.error("Cancel jdbc statement failed", e);
-            }
-
-            try {
-                if (!statement.isClosed()) {
-                    statement.close();
-                }
-            } catch (Exception e) {
-                log.error("Close jdbc statement failed", e);
-            }
-        }
-
-        if (connection != null) {
-            try {
-                connection.close();
-            } catch (Exception e) {
-                log.error("Close jdbc connection failed", e);
             }
         }
     }
