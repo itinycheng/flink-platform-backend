@@ -333,7 +333,8 @@ CREATE TABLE `t_job_flow_run` (
   `start_time` datetime DEFAULT NULL,
   `end_time` datetime DEFAULT NULL,
   `create_time` datetime DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  KEY `t_job_flow_run_create_time_idx` (`create_time`) USING BTREE
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4;
 
 -- ----------------------------
@@ -360,7 +361,8 @@ CREATE TABLE `t_job_run` (
   `submit_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT 'submit time',
   `stop_time` datetime DEFAULT NULL COMMENT 'stop time',
   `create_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT 'create time',
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  KEY `t_job_run_create_time_idx` (`create_time`) USING BTREE
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COMMENT='job run info';
 
 -- ----------------------------
