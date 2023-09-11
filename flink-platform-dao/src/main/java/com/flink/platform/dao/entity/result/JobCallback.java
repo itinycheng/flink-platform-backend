@@ -1,9 +1,8 @@
-package com.flink.platform.web.command;
+package com.flink.platform.dao.entity.result;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.flink.platform.common.enums.ExecutionStatus;
-import com.flink.platform.web.util.ShellCallback;
 import lombok.Data;
 import lombok.experimental.Delegate;
 
@@ -54,5 +53,17 @@ public class JobCallback {
         this.cmdCallback = cmdCallback != null ? cmdCallback : new ShellCallback();
         this.message = message;
         this.status = status;
+    }
+
+    public JobCallback cloneWithoutMsg() {
+        JobCallback callback = new JobCallback();
+        callback.setJobId(this.getJobId());
+        callback.setAppId(this.getAppId());
+        callback.setTrackingUrl(this.getTrackingUrl());
+        callback.setStatus(this.getStatus());
+        callback.setExited(this.getExited());
+        callback.setExitCode(this.getExitCode());
+        callback.setProcessId(this.getProcessId());
+        return callback;
     }
 }

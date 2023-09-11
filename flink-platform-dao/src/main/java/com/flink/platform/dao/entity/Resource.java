@@ -1,6 +1,8 @@
 package com.flink.platform.dao.entity;
 
+import com.baomidou.mybatisplus.annotation.FieldStrategy;
 import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.fasterxml.jackson.annotation.JsonFormat;
@@ -55,5 +57,6 @@ public class Resource implements Serializable {
     /** update time. */
     @Setter(AccessLevel.NONE)
     @JsonFormat(pattern = GLOBAL_DATE_TIME_FORMAT, timezone = GLOBAL_TIMEZONE)
+    @TableField(update = "now()", updateStrategy = FieldStrategy.ALWAYS)
     private LocalDateTime updateTime;
 }

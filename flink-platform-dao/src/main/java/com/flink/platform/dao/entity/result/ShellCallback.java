@@ -1,4 +1,4 @@
-package com.flink.platform.web.util;
+package com.flink.platform.dao.entity.result;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Data;

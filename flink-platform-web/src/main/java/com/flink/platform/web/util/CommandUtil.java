@@ -2,6 +2,7 @@ package com.flink.platform.web.util;
 
 import com.flink.platform.common.constants.Constant;
 import com.flink.platform.common.util.OSUtil;
+import com.flink.platform.dao.entity.result.ShellCallback;
 import com.sun.jna.platform.win32.Kernel32;
 import com.sun.jna.platform.win32.WinNT;
 import lombok.extern.slf4j.Slf4j;

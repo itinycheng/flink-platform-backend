@@ -2,16 +2,15 @@ package com.flink.platform.web.command.flink;
 
 import com.flink.platform.common.enums.ExecutionStatus;
 import com.flink.platform.common.enums.JobType;
-import com.flink.platform.common.util.JsonUtil;
 import com.flink.platform.dao.entity.JobRunInfo;
+import com.flink.platform.dao.entity.result.JobCallback;
+import com.flink.platform.dao.entity.result.ShellCallback;
 import com.flink.platform.dao.service.JobRunInfoService;
 import com.flink.platform.web.command.AbstractTask;
 import com.flink.platform.web.command.CommandExecutor;
-import com.flink.platform.web.command.JobCallback;
 import com.flink.platform.web.command.JobCommand;
 import com.flink.platform.web.config.WorkerConfig;
 import com.flink.platform.web.external.YarnClientService;
-import com.flink.platform.web.util.ShellCallback;
 import com.flink.platform.web.util.YarnHelper;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -102,7 +101,7 @@ public class FlinkCommandExecutor implements CommandExecutor {
         AbstractTask task = command.getTask();
         if (task == null) {
             JobRunInfo jobRun = jobRunInfoService.getById(command.getJobRunId());
-            JobCallback jobCallback = JsonUtil.toBean(jobRun.getBackInfo(), JobCallback.class);
+            JobCallback jobCallback = jobRun.getBackInfo();
             if (!jobRun.getStatus().isTerminalState() && jobCallback != null) {
                 FlinkYarnTask newTask = new FlinkYarnTask(jobRun.getId(), jobRun.getDeployMode());
                 newTask.setProcessId(jobCallback.getProcessId());

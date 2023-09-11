@@ -14,9 +14,9 @@ spring:
       # strict: true
       datasource:
         master_platform:
-          url: jdbc:mysql://0.0.0.0:3306/platform?allowMultiQueries=true&useUnicode=true&characterEncoding=UTF-8
-          username: root
-          password: 123456
+          url: jdbc:mysql://172.30.75.250:3306/platform?allowMultiQueries=true&useUnicode=true&characterEncoding=UTF-8
+          username: admin
+          password: JLKDSJAASJGIHIQ23CVGF
           driver-class-name: com.mysql.jdbc.Driver
   quartz:
     job-store-type: jdbc
@@ -28,7 +28,7 @@ spring:
       org:
         quartz:
           scheduler:
-            instanceName: quartzScheduler
+            instanceName: quartz_scheduler_v2
             instanceId: AUTO
           jobStore:
             class: org.springframework.scheduling.quartz.LocalDataSourceJobStore
@@ -77,25 +77,25 @@ flink:
     lib-dirs: hdfs:///flink/jars/flink_1.15.1/lib/
 
 hadoop:
-  username: admin
+  username: hdfs
   hdfsFilePath: hdfs:///flink-platform/
   localDirName: data_dir
   properties:
     fs.hdfs.impl: org.apache.hadoop.hdfs.DistributedFileSystem
     fs.defaultFS: hdfs://nameservice1
-    ha.zookeeper.quorum: 0.0.0.0:2181,0.0.0.0:2181,0.0.0.0:2181
+    ha.zookeeper.quorum: 172.30.73.155:2181,172.30.73.156:2181,172.30.73.157:2181
     dfs.client.failover.proxy.provider.nameservice1: org.apache.hadoop.hdfs.server.namenode.ha.ConfiguredFailoverProxyProvider
     dfs.ha.automatic-failover.enabled.nameservice1: true
     dfs.nameservices: nameservice1
-    dfs.ha.namenodes.nameservice1: namenode39,namenode127
-    dfs.namenode.rpc-address.nameservice1.namenode39: 0.0.0.0:8020
-    dfs.namenode.rpc-address.nameservice1.namenode127: 0.0.0.0:8020
-    dfs.namenode.servicerpc-address.nameservice1.namenode39: 0.0.0.0:8022
-    dfs.namenode.servicerpc-address.nameservice1.namenode127: 0.0.0.0:8022
+    dfs.ha.namenodes.nameservice1: namenode84,namenode102
+    dfs.namenode.rpc-address.nameservice1.namenode84: 172.30.73.157:8020
+    dfs.namenode.rpc-address.nameservice1.namenode102: 172.30.73.159:8020
+    dfs.namenode.servicerpc-address.nameservice1.namenode84: 172.30.73.157:8022
+    dfs.namenode.servicerpc-address.nameservice1.namenode102: 172.30.73.159:8022
 
 worker:
   flowExecThreads: 100
-  perFlowExecThreads: 5
+  perFlowExecThreads: 2
   errorRetries: 3
   streamingJobToSuccessMills: 300000
   reactiveExecThreads: 10

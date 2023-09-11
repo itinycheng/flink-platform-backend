@@ -1,38 +1,25 @@
 package com.flink.platform.web.service;
 
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.flink.platform.common.enums.ExecutionStatus;
 import com.flink.platform.common.enums.JobType;
 import com.flink.platform.common.exception.UnrecoverableException;
-import com.flink.platform.common.util.JsonUtil;
 import com.flink.platform.dao.entity.JobRunInfo;
+import com.flink.platform.dao.entity.result.JobCallback;
 import com.flink.platform.dao.service.JobRunInfoService;
 import com.flink.platform.web.command.CommandBuilder;
 import com.flink.platform.web.command.CommandExecutor;
-import com.flink.platform.web.command.JobCallback;
 import com.flink.platform.web.command.JobCommand;
 import com.flink.platform.web.command.flink.FlinkCommand;
-import com.flink.platform.web.config.AppRunner;
-import com.flink.platform.web.enums.Placeholder;
-import com.flink.platform.web.enums.Variable;
-import com.flink.platform.web.util.ExceptionUtil;
-import com.flink.platform.web.util.ThreadUtil;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.collections4.MapUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
-import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import static com.flink.platform.common.constants.Constant.HOST_IP;
-import static com.flink.platform.common.enums.ExecutionStatus.CREATED;
-import static com.flink.platform.common.enums.ExecutionStatus.ERROR;
 
 /** Process job service. */
 @Slf4j
@@ -55,77 +42,21 @@ public class ProcessJobService {
         this.jobCommandExecutors = jobCommandExecutors;
     }
 
-    public Long processJob(final long jobRunId, final int retries) {
-        int errorTimes = 0;
-        while (AppRunner.isRunning()) {
-            try {
-                processJob(jobRunId);
-                break;
-            } catch (Exception e) {
-                log.error("Process job run: {} failed, retry times: {}.", jobRunId, errorTimes, e);
-                if (++errorTimes > retries || e instanceof UnrecoverableException) {
-                    JobRunInfo jobRun = new JobRunInfo();
-                    jobRun.setId(jobRunId);
-                    jobRun.setStatus(ERROR);
-                    jobRun.setBackInfo(
-                            JsonUtil.toJsonString(
-                                    new JobCallback(ExceptionUtil.stackTrace(e), null)));
-                    jobRunInfoService.updateById(jobRun);
-                    break;
-                }
-
-                ThreadUtil.sleepRetry(errorTimes);
-            }
-        }
-
-        return jobRunId;
-    }
-
     public void processJob(final long jobRunId) throws Exception {
         JobCommand jobCommand = null;
         JobRunInfo jobRunInfo = null;
 
         try {
             // step 1: get job info
-            jobRunInfo =
-                    jobRunInfoService.getOne(
-                            new QueryWrapper<JobRunInfo>()
-                                    .lambda()
-                                    .eq(JobRunInfo::getId, jobRunId)
-                                    .eq(JobRunInfo::getStatus, CREATED));
+            jobRunInfo = jobRunInfoService.getById(jobRunId);
             if (jobRunInfo == null) {
                 throw new UnrecoverableException(
                         String.format("The job run: %s is no longer exists.", jobRunId));
             }
 
-            // step 2: replace variables in subject and persist.
-            JobRunInfo finalJobRun = jobRunInfo;
-            Map<String, Object> variableMap = new HashMap<>();
-            Arrays.stream(Placeholder.values())
-                    .filter(placeholder -> finalJobRun.getSubject().contains(placeholder.wildcard))
-                    .map(placeholder -> placeholder.provider.apply(finalJobRun))
-                    .forEach(variableMap::putAll);
-
-            MapUtils.emptyIfNull(jobRunInfo.getVariables())
-                    .forEach(
-                            (name, value) -> {
-                                Variable sqlVar = Variable.matchPrefix(name);
-                                variableMap.put(name, sqlVar.provider.apply(value));
-                            });
-            // replace variable with actual value
-            jobRunInfo.setVariables(variableMap);
-            for (Map.Entry<String, Object> entry : variableMap.entrySet()) {
-                String originSubject = jobRunInfo.getSubject();
-                String distSubject =
-                        originSubject.replace(entry.getKey(), entry.getValue().toString());
-                jobRunInfo.setSubject(distSubject);
-            }
-
-            // Update jobRun info before execution.
+            // step 2: Update jobRun info before execution.
             JobRunInfo newJobRun = new JobRunInfo();
             newJobRun.setId(jobRunInfo.getId());
-            newJobRun.setSubject(jobRunInfo.getSubject());
-            newJobRun.setVariables(variableMap);
             newJobRun.setHost(HOST_IP);
             jobRunInfoService.updateById(newJobRun);
 
@@ -161,7 +92,7 @@ public class ProcessJobService {
             newJobRun = new JobRunInfo();
             newJobRun.setId(jobRunInfo.getId());
             newJobRun.setStatus(executionStatus);
-            newJobRun.setBackInfo(JsonUtil.toJsonString(callback));
+            newJobRun.setBackInfo(callback);
             newJobRun.setSubmitTime(submitTime);
             if (executionStatus.isTerminalState()) {
                 newJobRun.setStopTime(LocalDateTime.now());

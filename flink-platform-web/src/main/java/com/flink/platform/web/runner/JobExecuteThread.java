@@ -10,6 +10,8 @@ import com.flink.platform.dao.entity.JobFlowRun;
 import com.flink.platform.dao.entity.JobInfo;
 import com.flink.platform.dao.entity.JobRunInfo;
 import com.flink.platform.dao.entity.Worker;
+import com.flink.platform.dao.entity.result.JobCallback;
+import com.flink.platform.dao.entity.task.BaseJob;
 import com.flink.platform.dao.entity.task.FlinkJob;
 import com.flink.platform.dao.service.JobFlowRunService;
 import com.flink.platform.dao.service.JobInfoService;
@@ -18,18 +20,19 @@ import com.flink.platform.grpc.JobStatusReply;
 import com.flink.platform.grpc.JobStatusRequest;
 import com.flink.platform.grpc.ProcessJobReply;
 import com.flink.platform.grpc.ProcessJobRequest;
-import com.flink.platform.web.command.JobCallback;
 import com.flink.platform.web.common.SpringContext;
 import com.flink.platform.web.config.AppRunner;
 import com.flink.platform.web.config.WorkerConfig;
 import com.flink.platform.web.grpc.JobProcessGrpcClient;
 import com.flink.platform.web.monitor.StatusInfo;
+import com.flink.platform.web.service.JobRunExtraService;
 import com.flink.platform.web.service.WorkerApplyService;
 import com.flink.platform.web.util.ThreadUtil;
+import io.grpc.Status;
+import io.grpc.StatusRuntimeException;
 import lombok.extern.slf4j.Slf4j;
 
-import javax.annotation.Nonnull;
-
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.concurrent.Callable;
@@ -52,7 +55,7 @@ public class JobExecuteThread implements Callable<JobResponse> {
 
     private final Long flowRunId;
 
-    private final JobVertex jobVertex;
+    private final Long jobId;
 
     private final int errorRetries;
 
@@ -62,39 +65,96 @@ public class JobExecuteThread implements Callable<JobResponse> {
 
     private final JobRunInfoService jobRunInfoService;
 
+    private final JobRunExtraService jobRunExtraService;
+
     private final JobFlowRunService jobFlowRunService;
 
     private final WorkerApplyService workerApplyService;
 
     private final JobProcessGrpcClient jobProcessGrpcClient;
 
+    private Long jobRunId;
+
+    private ExecutionStatus jobRunStatus;
+
     public JobExecuteThread(Long flowRunId, JobVertex jobVertex, WorkerConfig workerConfig) {
         this.flowRunId = flowRunId;
-        this.jobVertex = jobVertex;
+        this.jobId = jobVertex.getJobId();
+        this.jobRunId = jobVertex.getJobRunId();
+        this.jobRunStatus = jobVertex.getJobRunStatus();
         this.errorRetries = workerConfig.getErrorRetries();
         this.streamingJobToSuccessMills = workerConfig.getStreamingJobToSuccessMills();
         this.jobInfoService = SpringContext.getBean(JobInfoService.class);
         this.jobRunInfoService = SpringContext.getBean(JobRunInfoService.class);
+        this.jobRunExtraService = SpringContext.getBean(JobRunExtraService.class);
         this.jobFlowRunService = SpringContext.getBean(JobFlowRunService.class);
         this.workerApplyService = SpringContext.getBean(WorkerApplyService.class);
         this.jobProcessGrpcClient = SpringContext.getBean(JobProcessGrpcClient.class);
     }
 
-    @Nonnull
     @Override
     public JobResponse call() {
-        Long jobId = jobVertex.getJobId();
-        Long jobRunId = jobVertex.getJobRunId();
+        // Terminated job doesn't need to be executed again.
+        // TODO: Is retryTimes exhausted?
+        if (jobRunStatus != null && jobRunStatus.isTerminalState()) {
+            return new JobResponse(jobId, jobRunId, jobRunStatus);
+        }
+
+        // 1. get retry info.
+        int retryTimes;
+        Duration retryInterval;
+        try {
+            BaseJob baseJob = getRetryConfig();
+            retryTimes = baseJob.getRetryTimes();
+            retryInterval = baseJob.parseRetryInterval();
+        } catch (Exception e) {
+            return new JobResponse(jobId, jobRunId, ERROR);
+        }
+
+        // 2. execute job.
+        int retryAttempt = 0;
+        while (AppRunner.isRunning()) {
+            try {
+                // execute job once time.
+                callOnce(retryAttempt);
+                if (SUCCESS.equals(jobRunStatus)) {
+                    break;
+                }
+            } catch (Exception e) {
+                log.error(
+                        "Exception found when executing jobRun: {} and wait for complete",
+                        jobRunId,
+                        e);
+                if (e instanceof StatusRuntimeException) {
+                    Status status = ((StatusRuntimeException) e).getStatus();
+                    if (status != null && Status.UNAVAILABLE.getCode() == status.getCode()) {
+                        break;
+                    }
+                }
+            }
+
+            log.warn(
+                    "Execute jobRun: {} and wait for complete failed, retry attempt: {}.",
+                    jobRunId,
+                    retryAttempt);
+
+            // break if retry exhausted.
+            if (++retryAttempt > retryTimes) {
+                break;
+            }
+
+            // sleep and retry if exception found or status isn't success.
+            ThreadUtil.sleepDuration(retryAttempt, retryInterval);
+        }
+
+        return new JobResponse(jobId, jobRunId, jobRunStatus);
+    }
+
+    public void callOnce(int retryAttempt) {
         JobRunInfo jobRunInfo = null;
 
         try {
-            // Terminated job don't need to be processed again.
-            ExecutionStatus jobRunStatus = jobVertex.getJobRunStatus();
-            if (jobRunStatus != null && jobRunStatus.isTerminalState()) {
-                return new JobResponse(jobId, jobRunId, jobRunStatus);
-            }
-
-            // Check workflow status and return if KILLABLE.
+            // Check whether workflow status is terminated or in KILLABLE status.
             if (flowRunId != null) {
                 JobFlowRun jobFlowRun =
                         jobFlowRunService.getOne(
@@ -102,9 +162,10 @@ public class JobExecuteThread implements Callable<JobResponse> {
                                         .lambda()
                                         .select(JobFlowRun::getStatus)
                                         .eq(JobFlowRun::getId, flowRunId));
-                ExecutionStatus status = jobFlowRun.getStatus();
-                if (KILLABLE.equals(status) || status.isTerminalState()) {
-                    return new JobResponse(jobId, jobRunId, KILLED);
+                ExecutionStatus flowStatus = jobFlowRun.getStatus();
+                if (KILLABLE.equals(flowStatus) || flowStatus.isTerminalState()) {
+                    jobRunStatus = KILLED;
+                    return;
                 }
             }
 
@@ -117,70 +178,98 @@ public class JobExecuteThread implements Callable<JobResponse> {
                                     .eq(JobInfo::getStatus, JobStatus.ONLINE));
             if (jobInfo == null) {
                 log.warn("The job:{} is no longer exists or not in ready/scheduled status.", jobId);
-                return new JobResponse(jobId, jobRunId, NOT_EXIST);
+                jobRunStatus = NOT_EXIST;
+                return;
             }
 
             // Step 2: random a grpc client.
             Worker worker = workerApplyService.randomWorker(jobInfo.getRouteUrl());
             JobGrpcServiceBlockingStub stub = jobProcessGrpcClient.grpcClient(worker);
 
-            // Step 3: process job and get jobRun.
+            // Step 3: get or create new jobRun.
+            boolean isNewJob = false;
             if (jobRunId != null) {
+                // Get processed jobRun.
                 jobRunInfo = jobRunInfoService.getById(jobRunId);
                 log.info("Job:{} already submitted, runId = {}.", jobId, jobRunId);
             } else {
-                // Create a job run record if needed.
-                jobRunInfo =
-                        jobRunInfoService.getOne(
-                                new QueryWrapper<JobRunInfo>()
-                                        .lambda()
-                                        .eq(JobRunInfo::getJobId, jobId)
-                                        .eq(nonNull(flowRunId), JobRunInfo::getFlowRunId, flowRunId)
-                                        .eq(JobRunInfo::getStatus, CREATED)
-                                        .last("LIMIT 1"));
-                if (jobRunInfo == null) {
-                    String workerIp = worker != null ? worker.getIp() : Constant.HOST_IP;
-                    jobRunInfo = jobRunInfoService.createFrom(jobInfo, flowRunId, workerIp);
-                    jobRunInfoService.save(jobRunInfo);
-                }
-
-                // Process job run.
-                jobRunInfo = processRemoteJob(stub, jobRunInfo.getId());
+                // create a new jobRun.
+                jobRunInfo = getOrCreateJobRun(jobInfo, worker);
+                isNewJob = true;
             }
 
             if (jobRunInfo == null) {
                 log.warn("The jobRun:{} is no longer exists.", jobRunId);
-                return new JobResponse(jobId, jobRunId, NOT_EXIST);
+                jobRunStatus = NOT_EXIST;
+                return;
             }
 
-            // Step 4: Update jobRunId in Memory.
+            // Step 4: Update jobRunId and jobRunStatus in memory.
             jobRunId = jobRunInfo.getId();
+            jobRunStatus = jobRunInfo.getStatus();
 
-            // Step 5: Wait for job complete and get final status.
-            ExecutionStatus status = jobRunInfo.getStatus();
-            if (status == null || !status.isTerminalState()) {
+            // Step 5: Process job, wait for job completion and get status.
+            if (isNewJob || retryAttempt > 0) {
+                jobRunInfo = processRemoteJob(stub, jobRunId);
+            }
+
+            jobRunStatus = jobRunInfo.getStatus();
+            if (jobRunStatus == null || !jobRunStatus.isTerminalState()) {
                 StatusInfo statusInfo = updateAndWaitForComplete(stub, jobRunInfo);
                 if (statusInfo != null) {
-                    status = statusInfo.getStatus();
+                    jobRunStatus = statusInfo.getStatus();
                 }
             }
-
-            return new JobResponse(jobId, jobRunId, status);
         } catch (Exception e) {
-            log.error("Submit job and wait for complete failed.", e);
+            jobRunStatus = ERROR;
             updateJobRunIfNeeded(
                     jobRunInfo, new StatusInfo(ERROR, null, System.currentTimeMillis()), e);
-            return new JobResponse(jobId, jobRunId, ERROR);
+            throw e;
         }
     }
 
-    /**
-     * Send request to process remote job. <br>
-     * TODO: Failed retries should be narrow down to job script submission.
-     */
+    private BaseJob getRetryConfig() {
+        int retryAttempt = 0;
+        while (AppRunner.isRunning()) {
+            try {
+                if (jobRunId != null) {
+                    JobRunInfo jobRun = jobRunInfoService.getById(jobRunId);
+                    return jobRun.getConfig();
+                } else {
+                    JobInfo jobInfo = jobInfoService.getById(jobId);
+                    return jobInfo.getConfig();
+                }
+            } catch (Throwable t) {
+                log.error("Get base job info failed", t);
+                if (++retryAttempt > 3) {
+                    break;
+                }
+                ThreadUtil.sleep(1000);
+            }
+        }
+
+        throw new RuntimeException("Get job config failed");
+    }
+
+    private JobRunInfo getOrCreateJobRun(JobInfo jobInfo, Worker worker) {
+        JobRunInfo jobRun =
+                jobRunInfoService.getOne(
+                        new QueryWrapper<JobRunInfo>()
+                                .lambda()
+                                .eq(JobRunInfo::getJobId, jobInfo.getId())
+                                .eq(nonNull(flowRunId), JobRunInfo::getFlowRunId, flowRunId)
+                                .eq(JobRunInfo::getStatus, CREATED)
+                                .last("LIMIT 1"));
+        if (jobRun == null) {
+            String workerIp = worker != null ? worker.getIp() : Constant.HOST_IP;
+            jobRun = jobRunExtraService.parseVarsAndSave(jobInfo, flowRunId, workerIp);
+        }
+        return jobRun;
+    }
+
+    /** process job. */
     private JobRunInfo processRemoteJob(JobGrpcServiceBlockingStub stub, long jobRunId) {
-        ProcessJobRequest.Builder request =
-                ProcessJobRequest.newBuilder().setJobRunId(jobRunId).setRetries(errorRetries);
+        ProcessJobRequest.Builder request = ProcessJobRequest.newBuilder().setJobRunId(jobRunId);
         ProcessJobReply reply = stub.processJob(request.build());
         return jobRunInfoService.getById(reply.getJobRunId());
     }
@@ -190,10 +279,15 @@ public class JobExecuteThread implements Callable<JobResponse> {
         int retryTimes = 0;
         while (AppRunner.isRunning()) {
             try {
+                JobCallback callback = jobRunInfo.getBackInfo();
+                if (callback != null) {
+                    callback = callback.cloneWithoutMsg();
+                }
+
                 JobStatusRequest request =
                         JobStatusRequest.newBuilder()
                                 .setJobRunId(jobRunInfo.getId())
-                                .setBackInfo(jobRunInfo.getBackInfo())
+                                .setBackInfo(JsonUtil.toJsonString(callback))
                                 .setDeployMode(jobRunInfo.getDeployMode().name())
                                 .setRetries(errorRetries)
                                 .build();
@@ -269,8 +363,7 @@ public class JobExecuteThread implements Callable<JobResponse> {
                 newJobRun.setStopTime(endTime);
             }
             if (exception != null) {
-                newJobRun.setBackInfo(
-                        JsonUtil.toJsonString(new JobCallback(exception.getMessage(), null)));
+                newJobRun.setBackInfo(new JobCallback(exception.getMessage(), null));
             }
 
             jobRunInfoService.updateById(newJobRun);
