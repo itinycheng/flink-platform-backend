@@ -4,7 +4,6 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.flink.platform.common.constants.Constant;
-import com.flink.platform.common.enums.JobParamType;
 import com.flink.platform.common.enums.Status;
 import com.flink.platform.dao.entity.JobInfo;
 import com.flink.platform.dao.entity.JobParam;
@@ -27,6 +26,8 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 
 import static com.flink.platform.common.constants.JobConstant.PARAM_FORMAT;
+import static com.flink.platform.common.enums.JobParamType.GLOBAL;
+import static com.flink.platform.common.enums.JobParamType.JOB_FLOW;
 import static com.flink.platform.common.enums.ResponseStatus.ERROR_PARAMETER;
 import static com.flink.platform.common.enums.ResponseStatus.OPERATION_NOT_ALLOWED;
 import static com.flink.platform.web.entity.response.ResultInfo.failure;
@@ -57,7 +58,13 @@ public class JobParamController {
                         new QueryWrapper<JobParam>()
                                 .lambda()
                                 .eq(JobParam::getParamName, jobParamRequest.getParamName())
-                                .eq(JobParam::getUserId, loginUser.getId()));
+                                .eq(JobParam::getType, jobParamRequest.getType())
+                                .eq(
+                                        JOB_FLOW.equals(jobParamRequest.getType()),
+                                        JobParam::getFlowId,
+                                        jobParamRequest.getFlowId())
+                                .eq(JobParam::getUserId, loginUser.getId())
+                                .last("limit 1"));
         if (existed != null) {
             return failure(ERROR_PARAMETER, "param name already exists");
         }
@@ -94,7 +101,7 @@ public class JobParamController {
         JobParam jobParam = jobParamService.getById(paramId);
 
         // JobParamType.JOB_FLOW unhandled.
-        if (JobParamType.GLOBAL == jobParam.getType()) {
+        if (GLOBAL == jobParam.getType()) {
             JobInfo jobInfo =
                     jobService.getOne(
                             new QueryWrapper<JobInfo>()
