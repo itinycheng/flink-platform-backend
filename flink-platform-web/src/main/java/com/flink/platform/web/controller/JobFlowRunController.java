@@ -29,9 +29,11 @@ import java.util.List;
 
 import static com.flink.platform.common.enums.ExecutionStatus.KILLABLE;
 import static com.flink.platform.common.enums.ExecutionStatus.getNonTerminals;
+import static com.flink.platform.common.enums.ResponseStatus.ERROR_PARAMETER;
 import static com.flink.platform.common.enums.ResponseStatus.FLOW_ALREADY_TERMINATED;
 import static com.flink.platform.common.enums.ResponseStatus.KILL_FLOW_EXCEPTION_FOUND;
 import static com.flink.platform.common.enums.ResponseStatus.NO_RUNNING_JOB_FOUND;
+import static com.flink.platform.common.enums.ResponseStatus.USER_HAVE_NO_PERMISSION;
 import static com.flink.platform.common.util.DateUtil.GLOBAL_DATE_TIME_FORMAT;
 import static com.flink.platform.web.entity.response.ResultInfo.failure;
 import static com.flink.platform.web.entity.response.ResultInfo.success;
@@ -137,5 +139,22 @@ public class JobFlowRunController {
                         .orElse(false);
 
         return isSuccess ? success(flowRunId) : failure(KILL_FLOW_EXCEPTION_FOUND);
+    }
+
+    @GetMapping(value = "/purge/{flowRunId}")
+    public ResultInfo<Long> purge(
+            @RequestAttribute(value = Constant.SESSION_USER) User loginUser,
+            @PathVariable long flowRunId) {
+        JobFlowRun jobFlowRun = jobFlowRunService.getById(flowRunId);
+        if (jobFlowRun == null) {
+            return failure(ERROR_PARAMETER);
+        }
+
+        if (!loginUser.getId().equals(jobFlowRun.getUserId())) {
+            return failure(USER_HAVE_NO_PERMISSION);
+        }
+
+        jobFlowRunService.deleteAllById(flowRunId, loginUser.getId());
+        return success(flowRunId);
     }
 }
