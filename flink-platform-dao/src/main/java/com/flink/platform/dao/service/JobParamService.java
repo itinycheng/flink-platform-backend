@@ -11,6 +11,7 @@ import com.flink.platform.dao.mapper.JobParamMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -36,6 +37,7 @@ public class JobParamService extends ServiceImpl<JobParamMapper, JobParam> {
                                                 .or()
                                                 .eq(JobParam::getType, JobParamType.GLOBAL))
                         .eq(JobParam::getStatus, Status.ENABLE)
-                        .eq(JobParam::getUserId, jobInfo.getUserId()));
+                        .eq(JobParam::getUserId, jobInfo.getUserId())
+                        .orderByAsc(Arrays.asList(JobParam::getType, JobParam::getId)));
     }
 }

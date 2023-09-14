@@ -208,9 +208,7 @@ public class JobFlowController {
         }
 
         JobFlowDag flow = jobFlow.getFlow();
-        if (flow == null
-                || CollectionUtils.isEmpty(flow.getVertices())
-                || jobFlowService.allStreamingJobs(flow)) {
+        if (flow == null || CollectionUtils.isEmpty(flow.getVertices())) {
             return failure(UNABLE_SCHEDULE_STREAMING_JOB_FLOW);
         }
 
