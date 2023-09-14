@@ -18,7 +18,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
-import static com.flink.platform.common.enums.ExecutionMode.STREAMING;
 import static com.flink.platform.common.enums.JobFlowStatus.OFFLINE;
 import static java.lang.String.format;
 import static java.util.stream.Collectors.toList;
@@ -79,21 +78,6 @@ public class JobFlowService extends ServiceImpl<JobFlowMapper, JobFlow> {
                         .lambda()
                         .eq(JobFlow::getId, flowId)
                         .eq(JobFlow::getUserId, userId));
-    }
-
-    public boolean allStreamingJobs(JobFlowDag jobFlowDag) {
-        List<Long> jobIds =
-                jobFlowDag.getVertices().stream().map(JobVertex::getJobId).collect(toList());
-
-        return jobInfoService
-                .list(
-                        new QueryWrapper<JobInfo>()
-                                .lambda()
-                                .select(JobInfo::getExecMode)
-                                .in(JobInfo::getId, jobIds))
-                .stream()
-                .distinct()
-                .allMatch(jobInfo -> jobInfo.getExecMode() == STREAMING);
     }
 
     @Transactional(rollbackFor = Exception.class)
