@@ -124,8 +124,7 @@ public class JobFlowRunController {
         }
 
         boolean isSuccess =
-                unfinishedJobs
-                        .parallelStream()
+                unfinishedJobs.parallelStream()
                         .map(
                                 jobRun -> {
                                     try {

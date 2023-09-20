@@ -6,15 +6,14 @@ import com.flink.platform.dao.entity.Session;
 import com.flink.platform.dao.entity.User;
 import com.flink.platform.dao.service.SessionService;
 import com.flink.platform.dao.service.UserService;
+import jakarta.annotation.Nonnull;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpStatus;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.servlet.HandlerInterceptor;
-
-import javax.annotation.Nonnull;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 
 /** Login interceptor. */
 @Slf4j
@@ -26,7 +25,7 @@ public class LoginInterceptor implements HandlerInterceptor {
 
     @Override
     public boolean preHandle(
-            HttpServletRequest request,
+            @Nonnull HttpServletRequest request,
             @Nonnull HttpServletResponse response,
             @Nonnull Object handler) {
 

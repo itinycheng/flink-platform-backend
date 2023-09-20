@@ -5,11 +5,10 @@ import com.flink.platform.dao.entity.result.ShellCallback;
 import com.flink.platform.web.command.AbstractTask;
 import com.flink.platform.web.util.CollectLogThread;
 import com.flink.platform.web.util.CommandUtil;
+import jakarta.annotation.Nullable;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
-
-import javax.annotation.Nullable;
 
 import java.io.InputStream;
 import java.util.function.BiConsumer;

@@ -1,7 +1,5 @@
 package com.flink.platform.common.util;
 
-import javax.annotation.Nullable;
-
 import java.util.function.Supplier;
 
 /** check whether throw exception. */
@@ -21,7 +19,7 @@ public class Preconditions {
         return reference;
     }
 
-    public static void checkArgument(boolean expression, @Nullable Object errorMsg) {
+    public static void checkArgument(boolean expression, Object errorMsg) {
         if (!expression) {
             throw new IllegalArgumentException(String.valueOf(errorMsg));
         }

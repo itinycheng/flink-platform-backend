@@ -2,8 +2,7 @@ package com.flink.platform.web.command;
 
 import com.flink.platform.common.enums.JobType;
 import com.flink.platform.dao.entity.result.JobCallback;
-
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;

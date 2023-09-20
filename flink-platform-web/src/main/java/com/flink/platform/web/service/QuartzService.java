@@ -4,6 +4,7 @@ import com.flink.platform.common.util.DateUtil;
 import com.flink.platform.web.common.QuartzException;
 import com.flink.platform.web.config.AppRunner;
 import com.flink.platform.web.entity.IQuartzInfo;
+import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.quartz.CronExpression;
 import org.quartz.CronTrigger;
@@ -16,8 +17,6 @@ import org.quartz.Trigger;
 import org.quartz.TriggerBuilder;
 import org.quartz.TriggerKey;
 import org.springframework.stereotype.Service;
-
-import javax.annotation.Resource;
 
 import java.text.ParseException;
 import java.util.Date;

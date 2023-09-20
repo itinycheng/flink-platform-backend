@@ -2,8 +2,7 @@ package com.flink.platform.web.command;
 
 import com.flink.platform.common.enums.JobType;
 import com.flink.platform.dao.entity.JobRunInfo;
-
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 /** Command builder. */
 public interface CommandBuilder {

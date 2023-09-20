@@ -2,8 +2,6 @@ package com.flink.platform.common.util;
 
 import lombok.Getter;
 
-import javax.annotation.Nonnull;
-
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
@@ -51,7 +49,7 @@ public class DurationUtil {
      *
      * @param text string to parse.
      */
-    public static Duration parse(@Nonnull String text) {
+    public static Duration parse(String text) {
         final String trimmed = text.trim();
 
         final int len = trimmed.length();
@@ -93,15 +91,6 @@ public class DurationUtil {
                             + unitLabel
                             + "' does not match any of the recognized units: "
                             + TimeUnit.getAllUnits());
-        }
-    }
-
-    public static boolean ableToParse(String text) {
-        try {
-            parse(text);
-            return true;
-        } catch (Exception ignored) {
-            return false;
         }
     }
 

@@ -8,11 +8,10 @@ import com.flink.platform.web.config.AppRunner;
 import com.flink.platform.web.monitor.DefaultStatusFetcher;
 import com.flink.platform.web.monitor.StatusFetcher;
 import com.flink.platform.web.util.ThreadUtil;
+import jakarta.annotation.Nonnull;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
-import javax.annotation.Nonnull;
 
 import java.util.List;
 

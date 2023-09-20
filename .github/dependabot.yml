@@ -19,12 +19,6 @@ updates:
       - dependency-name: "org.apache.flink:*"
       - dependency-name: "org.apache.hadoop:*"
       - dependency-name: "org.apache.hive:*"
-      - dependency-name: "org.springframework.boot:*"
-        versions:
-          - ">= 3.0.0"
-      - dependency-name: "com.diffplug.spotless:*"
-        versions:
-          - ">= 2.31.0"
       - dependency-name: "com.puppycrawl.tools:checkstyle"
         versions:
           - ">= 8.24"

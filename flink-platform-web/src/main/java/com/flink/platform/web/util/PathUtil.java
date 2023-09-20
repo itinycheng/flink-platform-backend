@@ -1,6 +1,6 @@
 package com.flink.platform.web.util;
 
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 import static com.flink.platform.common.constants.Constant.FILE_SEPARATOR;
 import static com.flink.platform.common.constants.Constant.ROOT_DIR;

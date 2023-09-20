@@ -7,10 +7,9 @@ import com.flink.platform.dao.entity.JobRunInfo;
 import com.flink.platform.dao.entity.task.SqlJob;
 import com.flink.platform.web.command.CommandBuilder;
 import com.flink.platform.web.command.JobCommand;
+import jakarta.annotation.Nonnull;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
-
-import javax.annotation.Nonnull;
 
 import java.util.ArrayList;
 import java.util.List;

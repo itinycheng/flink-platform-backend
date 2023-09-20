@@ -12,14 +12,13 @@ import com.flink.platform.web.command.SqlContextHelper;
 import com.flink.platform.web.config.FlinkConfig;
 import com.flink.platform.web.external.YarnClientService;
 import com.flink.platform.web.service.HdfsService;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.ListUtils;
 import org.apache.hadoop.fs.Path;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Lazy;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Resource;
 
 import java.net.URL;
 import java.nio.file.Paths;

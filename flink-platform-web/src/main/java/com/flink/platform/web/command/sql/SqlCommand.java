@@ -2,9 +2,8 @@ package com.flink.platform.web.command.sql;
 
 import com.flink.platform.common.util.JsonUtil;
 import com.flink.platform.web.command.JobCommand;
+import jakarta.annotation.Nonnull;
 import lombok.Getter;
-
-import javax.annotation.Nonnull;
 
 import java.util.List;
 
