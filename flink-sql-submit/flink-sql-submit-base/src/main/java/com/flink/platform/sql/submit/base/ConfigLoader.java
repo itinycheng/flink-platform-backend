@@ -21,8 +21,10 @@ public class ConfigLoader {
             InputStream resourceAsStream =
                     ConfigLoader.class.getClassLoader().getResourceAsStream(DEFAULT_CONFIG);
             Map<String, Map<String, Object>> configMap = new Yaml().load(resourceAsStream);
-            return configMap.getOrDefault(execMode.name().toLowerCase(), Collections.emptyMap())
-                    .entrySet().stream()
+            return configMap
+                    .getOrDefault(execMode.name().toLowerCase(), Collections.emptyMap())
+                    .entrySet()
+                    .stream()
                     .filter(
                             entry ->
                                     Objects.nonNull(entry.getKey())

@@ -8,12 +8,11 @@ import com.flink.platform.dao.entity.JobParam;
 import com.flink.platform.dao.entity.JobRunInfo;
 import com.flink.platform.dao.service.JobParamService;
 import com.flink.platform.web.common.SpringContext;
+import jakarta.annotation.Nonnull;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-
-import javax.annotation.Nonnull;
 
 import java.nio.file.Paths;
 import java.time.Duration;

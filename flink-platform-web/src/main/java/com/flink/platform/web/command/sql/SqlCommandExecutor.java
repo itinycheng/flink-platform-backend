@@ -7,11 +7,10 @@ import com.flink.platform.dao.service.DatasourceService;
 import com.flink.platform.web.command.AbstractTask;
 import com.flink.platform.web.command.CommandExecutor;
 import com.flink.platform.web.command.JobCommand;
+import jakarta.annotation.Nonnull;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-
-import javax.annotation.Nonnull;
 
 import static com.flink.platform.common.enums.JobType.CLICKHOUSE_SQL;
 import static com.flink.platform.common.enums.JobType.HIVE_SQL;

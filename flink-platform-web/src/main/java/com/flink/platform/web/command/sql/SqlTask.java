@@ -6,11 +6,10 @@ import com.flink.platform.common.util.JsonUtil;
 import com.flink.platform.dao.entity.Datasource;
 import com.flink.platform.dao.entity.result.JobCallback;
 import com.flink.platform.web.command.AbstractTask;
+import jakarta.annotation.Nonnull;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
-
-import javax.annotation.Nonnull;
 
 import java.sql.Connection;
 import java.sql.ResultSet;

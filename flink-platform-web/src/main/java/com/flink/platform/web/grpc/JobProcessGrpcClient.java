@@ -5,12 +5,11 @@ import com.flink.platform.dao.entity.Worker;
 import com.flink.platform.grpc.JobGrpcServiceGrpc;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
+import jakarta.annotation.PreDestroy;
 import lombok.extern.slf4j.Slf4j;
 import net.devh.boot.grpc.client.inject.GrpcClient;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
-
-import javax.annotation.PreDestroy;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;

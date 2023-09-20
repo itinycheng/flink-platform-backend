@@ -6,9 +6,8 @@ import com.flink.platform.common.graph.DAG;
 import com.flink.platform.common.model.JobEdge;
 import com.flink.platform.common.model.JobVertex;
 import com.flink.platform.dao.entity.JobFlowDag;
+import jakarta.annotation.Nonnull;
 import org.apache.commons.collections4.CollectionUtils;
-
-import javax.annotation.Nonnull;
 
 import java.util.Collection;
 import java.util.HashSet;
