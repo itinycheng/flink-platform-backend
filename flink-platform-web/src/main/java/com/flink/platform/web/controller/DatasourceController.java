@@ -34,7 +34,8 @@ import static com.flink.platform.web.entity.response.ResultInfo.success;
 @RequestMapping("/datasource")
 public class DatasourceController {
 
-    @Autowired private DatasourceService datasourceService;
+    @Autowired
+    private DatasourceService datasourceService;
 
     @PostMapping(value = "/create")
     public ResultInfo<Long> create(
@@ -85,14 +86,13 @@ public class DatasourceController {
             @RequestParam(name = "name", required = false) String name,
             @RequestParam(name = "type", required = false) DbType type) {
         Page<Datasource> pager = new Page<>(page, size);
-        IPage<Datasource> iPage =
-                datasourceService.page(
-                        pager,
-                        new QueryWrapper<Datasource>()
-                                .lambda()
-                                .eq(Datasource::getUserId, loginUser.getId())
-                                .eq(Objects.nonNull(type), Datasource::getType, type)
-                                .like(Objects.nonNull(name), Datasource::getName, name));
+        IPage<Datasource> iPage = datasourceService.page(
+                pager,
+                new QueryWrapper<Datasource>()
+                        .lambda()
+                        .eq(Datasource::getUserId, loginUser.getId())
+                        .eq(Objects.nonNull(type), Datasource::getType, type)
+                        .like(Objects.nonNull(name), Datasource::getName, name));
         return success(iPage);
     }
 
@@ -105,12 +105,10 @@ public class DatasourceController {
             dbType = jobtype.getDbType();
         }
 
-        List<Datasource> list =
-                datasourceService.list(
-                        new QueryWrapper<Datasource>()
-                                .lambda()
-                                .eq(Objects.nonNull(dbType), Datasource::getType, dbType)
-                                .eq(Datasource::getUserId, loginUser.getId()));
+        List<Datasource> list = datasourceService.list(new QueryWrapper<Datasource>()
+                .lambda()
+                .eq(Objects.nonNull(dbType), Datasource::getType, dbType)
+                .eq(Datasource::getUserId, loginUser.getId()));
         return success(list);
     }
 }

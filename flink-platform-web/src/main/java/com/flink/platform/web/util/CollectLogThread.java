@@ -21,10 +21,7 @@ public class CollectLogThread extends Thread {
 
     private final BiConsumer<CmdOutType, String> consumer;
 
-    public CollectLogThread(
-            InputStream inputStream,
-            CmdOutType inputType,
-            BiConsumer<CmdOutType, String> consumer) {
+    public CollectLogThread(InputStream inputStream, CmdOutType inputType, BiConsumer<CmdOutType, String> consumer) {
         super("collect-stream-log-" + COUNTER.incrementAndGet());
         this.inputStream = inputStream;
         this.inputType = inputType;
@@ -33,8 +30,7 @@ public class CollectLogThread extends Thread {
 
     @Override
     public void run() {
-        try (BufferedReader reader =
-                new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8))) {
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8))) {
             String line;
             while ((line = reader.readLine()) != null) {
                 consumer.accept(inputType, line);

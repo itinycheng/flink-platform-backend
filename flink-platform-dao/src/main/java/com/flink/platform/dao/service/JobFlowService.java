@@ -27,11 +27,14 @@ import static java.util.stream.Collectors.toList;
 @DS("master_platform")
 public class JobFlowService extends ServiceImpl<JobFlowMapper, JobFlow> {
 
-    @Autowired private JobInfoService jobInfoService;
+    @Autowired
+    private JobInfoService jobInfoService;
 
-    @Autowired private JobFlowRunService jobFlowRunService;
+    @Autowired
+    private JobFlowRunService jobFlowRunService;
 
-    @Autowired private JobRunInfoService jobRunInfoService;
+    @Autowired
+    private JobRunInfoService jobRunInfoService;
 
     @Transactional
     public JobFlow cloneJobFlow(long flowId) {
@@ -56,28 +59,20 @@ public class JobFlowService extends ServiceImpl<JobFlowMapper, JobFlow> {
 
     @Transactional(rollbackFor = Exception.class)
     public void deleteAllById(long flowId, long userId) {
-        List<JobInfo> jobInfoList =
-                jobInfoService.list(
-                        new QueryWrapper<JobInfo>()
-                                .lambda()
-                                .eq(JobInfo::getFlowId, flowId)
-                                .eq(JobInfo::getUserId, userId));
+        List<JobInfo> jobInfoList = jobInfoService.list(new QueryWrapper<JobInfo>()
+                .lambda()
+                .eq(JobInfo::getFlowId, flowId)
+                .eq(JobInfo::getUserId, userId));
         if (CollectionUtils.isNotEmpty(jobInfoList)) {
             List<Long> jobIds = jobInfoList.stream().map(JobInfo::getId).collect(toList());
-            jobRunInfoService.remove(
-                    new QueryWrapper<JobRunInfo>().lambda().in(JobRunInfo::getJobId, jobIds));
+            jobRunInfoService.remove(new QueryWrapper<JobRunInfo>().lambda().in(JobRunInfo::getJobId, jobIds));
             jobInfoService.remove(new QueryWrapper<JobInfo>().lambda().in(JobInfo::getId, jobIds));
         }
-        jobFlowRunService.remove(
-                new QueryWrapper<JobFlowRun>()
-                        .lambda()
-                        .eq(JobFlowRun::getFlowId, flowId)
-                        .eq(JobFlowRun::getUserId, userId));
-        remove(
-                new QueryWrapper<JobFlow>()
-                        .lambda()
-                        .eq(JobFlow::getId, flowId)
-                        .eq(JobFlow::getUserId, userId));
+        jobFlowRunService.remove(new QueryWrapper<JobFlowRun>()
+                .lambda()
+                .eq(JobFlowRun::getFlowId, flowId)
+                .eq(JobFlowRun::getUserId, userId));
+        remove(new QueryWrapper<JobFlow>().lambda().eq(JobFlow::getId, flowId).eq(JobFlow::getUserId, userId));
     }
 
     @Transactional(rollbackFor = Exception.class)

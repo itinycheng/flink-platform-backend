@@ -41,27 +41,22 @@ public class CommandUtil {
         List<String> stdList = Collections.synchronizedList(new ArrayList<>());
         List<String> errList = Collections.synchronizedList(new ArrayList<>());
 
-        ShellCallback callback =
-                exec(
-                        command,
-                        envProps,
-                        timeoutMills,
-                        (inputType, value) -> {
-                            switch (inputType) {
-                                case STD:
-                                    if (stdList.size() <= MAX_LOG_ROWS) {
-                                        stdList.add(value);
-                                    }
-                                    break;
-                                case ERR:
-                                    if (errList.size() <= MAX_LOG_ROWS) {
-                                        errList.add(value);
-                                    }
-                                    break;
-                                default:
-                                    log.error("unknown command log type: {}", inputType);
-                            }
-                        });
+        ShellCallback callback = exec(command, envProps, timeoutMills, (inputType, value) -> {
+            switch (inputType) {
+                case STD:
+                    if (stdList.size() <= MAX_LOG_ROWS) {
+                        stdList.add(value);
+                    }
+                    break;
+                case ERR:
+                    if (errList.size() <= MAX_LOG_ROWS) {
+                        errList.add(value);
+                    }
+                    break;
+                default:
+                    log.error("unknown command log type: {}", inputType);
+            }
+        });
 
         callback.setStdMsg(String.join(LINE_SEPARATOR, stdList));
         callback.setErrMsg(String.join(LINE_SEPARATOR, errList));

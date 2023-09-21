@@ -14,7 +14,8 @@ import org.springframework.stereotype.Component;
 @Component
 public class DefaultStatusFetcher implements StatusFetcher {
 
-    @Autowired private JobRunInfoService jobRunInfoService;
+    @Autowired
+    private JobRunInfoService jobRunInfoService;
 
     public boolean isSupported(DeployMode deployMode) {
         return true;
@@ -22,6 +23,8 @@ public class DefaultStatusFetcher implements StatusFetcher {
 
     public JobStatusReply getStatus(JobStatusRequest request) {
         JobRunInfo current = jobRunInfoService.getById(request.getJobRunId());
-        return JobStatusReply.newBuilder().setStatus(current.getStatus().getCode()).build();
+        return JobStatusReply.newBuilder()
+                .setStatus(current.getStatus().getCode())
+                .build();
     }
 }

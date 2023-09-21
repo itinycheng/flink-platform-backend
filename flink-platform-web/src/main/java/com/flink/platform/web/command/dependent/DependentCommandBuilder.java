@@ -24,9 +24,11 @@ import static java.util.Objects.nonNull;
 @Component("dependentCommandBuilder")
 public class DependentCommandBuilder implements CommandBuilder {
 
-    @Autowired private JobFlowRunService jobFlowRunService;
+    @Autowired
+    private JobFlowRunService jobFlowRunService;
 
-    @Autowired private JobRunInfoService jobRunInfoService;
+    @Autowired
+    private JobRunInfoService jobRunInfoService;
 
     @Override
     public boolean isSupported(JobType jobType, String version) {
@@ -42,12 +44,9 @@ public class DependentCommandBuilder implements CommandBuilder {
                 return new DependentCommand(jobRunId, true);
             }
 
-            boolean matched =
-                    dependentJob.getRelation() == DependentJob.DependentRelation.OR
-                            ? dependentJob.getDependentItems().stream()
-                                    .anyMatch(this::validateDependentItem)
-                            : dependentJob.getDependentItems().stream()
-                                    .allMatch(this::validateDependentItem);
+            boolean matched = dependentJob.getRelation() == DependentJob.DependentRelation.OR
+                    ? dependentJob.getDependentItems().stream().anyMatch(this::validateDependentItem)
+                    : dependentJob.getDependentItems().stream().allMatch(this::validateDependentItem);
 
             return new DependentCommand(jobRunId, matched);
         } catch (Exception e) {
@@ -57,49 +56,32 @@ public class DependentCommandBuilder implements CommandBuilder {
     }
 
     private boolean validateDependentItem(DependentJob.DependentItem dependentItem) {
-        if (dependentItem.getFlowId() == null
-                || CollectionUtils.isEmpty(dependentItem.getStatuses())) {
+        if (dependentItem.getFlowId() == null || CollectionUtils.isEmpty(dependentItem.getStatuses())) {
             return true;
         }
 
         ExecutionStatus latestStatus = null;
         if (dependentItem.getJobId() != null) {
-            JobRunInfo jobRunInfo =
-                    jobRunInfoService.getOne(
-                            new QueryWrapper<JobRunInfo>()
-                                    .lambda()
-                                    .select(JobRunInfo::getStatus)
-                                    .eq(JobRunInfo::getJobId, dependentItem.getJobId())
-                                    .ge(
-                                            nonNull(dependentItem.getStartTime()),
-                                            JobRunInfo::getCreateTime,
-                                            dependentItem.getStartTime())
-                                    .le(
-                                            nonNull(dependentItem.getEndTime()),
-                                            JobRunInfo::getCreateTime,
-                                            dependentItem.getEndTime())
-                                    .orderByDesc(JobRunInfo::getId)
-                                    .last("limit 1"));
+            JobRunInfo jobRunInfo = jobRunInfoService.getOne(new QueryWrapper<JobRunInfo>()
+                    .lambda()
+                    .select(JobRunInfo::getStatus)
+                    .eq(JobRunInfo::getJobId, dependentItem.getJobId())
+                    .ge(nonNull(dependentItem.getStartTime()), JobRunInfo::getCreateTime, dependentItem.getStartTime())
+                    .le(nonNull(dependentItem.getEndTime()), JobRunInfo::getCreateTime, dependentItem.getEndTime())
+                    .orderByDesc(JobRunInfo::getId)
+                    .last("limit 1"));
             if (jobRunInfo != null) {
                 latestStatus = jobRunInfo.getStatus();
             }
         } else {
-            JobFlowRun jobFlowRun =
-                    jobFlowRunService.getOne(
-                            new QueryWrapper<JobFlowRun>()
-                                    .lambda()
-                                    .select(JobFlowRun::getStatus)
-                                    .eq(JobFlowRun::getFlowId, dependentItem.getFlowId())
-                                    .ge(
-                                            nonNull(dependentItem.getStartTime()),
-                                            JobFlowRun::getCreateTime,
-                                            dependentItem.getStartTime())
-                                    .le(
-                                            nonNull(dependentItem.getEndTime()),
-                                            JobFlowRun::getCreateTime,
-                                            dependentItem.getEndTime())
-                                    .orderByDesc(JobFlowRun::getId)
-                                    .last("limit 1"));
+            JobFlowRun jobFlowRun = jobFlowRunService.getOne(new QueryWrapper<JobFlowRun>()
+                    .lambda()
+                    .select(JobFlowRun::getStatus)
+                    .eq(JobFlowRun::getFlowId, dependentItem.getFlowId())
+                    .ge(nonNull(dependentItem.getStartTime()), JobFlowRun::getCreateTime, dependentItem.getStartTime())
+                    .le(nonNull(dependentItem.getEndTime()), JobFlowRun::getCreateTime, dependentItem.getEndTime())
+                    .orderByDesc(JobFlowRun::getId)
+                    .last("limit 1"));
             if (jobFlowRun != null) {
                 latestStatus = jobFlowRun.getStatus();
             }

@@ -54,13 +54,17 @@ import static org.apache.commons.lang3.StringUtils.isNotEmpty;
 @RequestMapping("/jobFlow")
 public class JobFlowController {
 
-    @Autowired private JobFlowService jobFlowService;
+    @Autowired
+    private JobFlowService jobFlowService;
 
-    @Autowired private JobFlowRunService jobFlowRunService;
+    @Autowired
+    private JobFlowRunService jobFlowRunService;
 
-    @Autowired private JobFlowQuartzService jobFlowQuartzService;
+    @Autowired
+    private JobFlowQuartzService jobFlowQuartzService;
 
-    @Autowired private QuartzService quartzService;
+    @Autowired
+    private QuartzService quartzService;
 
     @ApiException
     @PostMapping(value = "/create")
@@ -120,8 +124,7 @@ public class JobFlowController {
 
     @GetMapping(value = "/purge/{flowId}")
     public ResultInfo<Long> purge(
-            @RequestAttribute(value = Constant.SESSION_USER) User loginUser,
-            @PathVariable long flowId) {
+            @RequestAttribute(value = Constant.SESSION_USER) User loginUser, @PathVariable long flowId) {
         JobFlow jobFlow = jobFlowService.getById(flowId);
         if (jobFlow == null) {
             return failure(ERROR_PARAMETER);
@@ -146,12 +149,11 @@ public class JobFlowController {
             @RequestParam(name = "sort", required = false) String sort) {
         Page<JobFlow> pager = new Page<>(page, size);
 
-        LambdaQueryWrapper<JobFlow> queryWrapper =
-                new QueryWrapper<JobFlow>()
-                        .lambda()
-                        .eq(JobFlow::getUserId, loginUser.getId())
-                        .like(isNotEmpty(name), JobFlow::getName, name)
-                        .like(isNotEmpty(tagCode), JobFlow::getTags, tagCode);
+        LambdaQueryWrapper<JobFlow> queryWrapper = new QueryWrapper<JobFlow>()
+                .lambda()
+                .eq(JobFlow::getUserId, loginUser.getId())
+                .like(isNotEmpty(name), JobFlow::getName, name)
+                .like(isNotEmpty(tagCode), JobFlow::getTags, tagCode);
 
         if (status != null) {
             queryWrapper.eq(JobFlow::getStatus, status);
@@ -168,24 +170,20 @@ public class JobFlowController {
     }
 
     @GetMapping(value = "/idNameMapList")
-    public ResultInfo<List<Map<String, Object>>> idNameMap(
-            @RequestParam(name = "name", required = false) String name) {
-        List<Map<String, Object>> listMap =
-                jobFlowService
-                        .list(
-                                new QueryWrapper<JobFlow>()
-                                        .lambda()
-                                        .select(JobFlow::getId, JobFlow::getName)
-                                        .like(isNotEmpty(name), JobFlow::getName, name))
-                        .stream()
-                        .map(
-                                jobFlow -> {
-                                    Map<String, Object> map = new HashMap<>(2);
-                                    map.put("id", jobFlow.getId());
-                                    map.put("name", jobFlow.getName());
-                                    return map;
-                                })
-                        .collect(toList());
+    public ResultInfo<List<Map<String, Object>>> idNameMap(@RequestParam(name = "name", required = false) String name) {
+        List<Map<String, Object>> listMap = jobFlowService
+                .list(new QueryWrapper<JobFlow>()
+                        .lambda()
+                        .select(JobFlow::getId, JobFlow::getName)
+                        .like(isNotEmpty(name), JobFlow::getName, name))
+                .stream()
+                .map(jobFlow -> {
+                    Map<String, Object> map = new HashMap<>(2);
+                    map.put("id", jobFlow.getId());
+                    map.put("name", jobFlow.getName());
+                    return map;
+                })
+                .collect(toList());
         return success(listMap);
     }
 
@@ -243,13 +241,11 @@ public class JobFlowController {
         }
 
         // TODO better in sync lock.
-        List<JobFlowRun> notFinishedList =
-                jobFlowRunService.list(
-                        new QueryWrapper<JobFlowRun>()
-                                .lambda()
-                                .eq(JobFlowRun::getFlowId, flowId)
-                                .in(JobFlowRun::getStatus, ExecutionStatus.getNonTerminals())
-                                .gt(JobFlowRun::getCreateTime, LocalDateTime.now().minusDays(1)));
+        List<JobFlowRun> notFinishedList = jobFlowRunService.list(new QueryWrapper<JobFlowRun>()
+                .lambda()
+                .eq(JobFlowRun::getFlowId, flowId)
+                .in(JobFlowRun::getStatus, ExecutionStatus.getNonTerminals())
+                .gt(JobFlowRun::getCreateTime, LocalDateTime.now().minusDays(1)));
         if (CollectionUtils.isNotEmpty(notFinishedList)) {
             return failure(EXIST_UNFINISHED_PROCESS);
         }

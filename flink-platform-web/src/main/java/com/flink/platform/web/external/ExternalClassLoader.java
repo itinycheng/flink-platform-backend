@@ -33,8 +33,7 @@ public class ExternalClassLoader extends URLClassLoader {
     }
 
     @Override
-    protected Class<?> loadClass(final String name, final boolean resolve)
-            throws ClassNotFoundException {
+    protected Class<?> loadClass(final String name, final boolean resolve) throws ClassNotFoundException {
         synchronized (getClassLoadingLock(name)) {
             Class<?> c = findLoadedClass(name);
             if (c == null && isAllowedPackages(name)) {
@@ -65,9 +64,8 @@ public class ExternalClassLoader extends URLClassLoader {
     static {
         ClassLoader platformLoader = null;
         try {
-            platformLoader =
-                    (ClassLoader)
-                            ClassLoader.class.getMethod("getPlatformClassLoader").invoke(null);
+            platformLoader = (ClassLoader)
+                    ClassLoader.class.getMethod("getPlatformClassLoader").invoke(null);
         } catch (NoSuchMethodException e) {
             // on Java 8 and before
         } catch (Exception e) {

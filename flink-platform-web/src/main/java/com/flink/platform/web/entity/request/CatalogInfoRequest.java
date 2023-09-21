@@ -21,7 +21,9 @@ import static com.flink.platform.common.util.Preconditions.requireNotNull;
 @NoArgsConstructor
 public class CatalogInfoRequest {
 
-    @Getter @Delegate private final CatalogInfo catalogInfo = new CatalogInfo();
+    @Getter
+    @Delegate
+    private final CatalogInfo catalogInfo = new CatalogInfo();
 
     private List<String> catalogIds;
 

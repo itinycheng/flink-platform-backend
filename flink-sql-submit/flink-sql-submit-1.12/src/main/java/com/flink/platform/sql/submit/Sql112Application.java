@@ -35,11 +35,10 @@ public class Sql112Application {
         TableEnvironment tEnv = ExecutionEnvs.createExecutionEnv(sqlContext.getExecMode());
         Map<String, String> configMap = ConfigLoader.loadDefault(sqlContext.getExecMode());
         configMap.putAll(sqlContext.getConfigs());
-        configMap.putAll(
-                sqlContext.getSqls().stream()
-                        .filter(sql -> SqlType.SET.equals(sql.getType()))
-                        .map(Sql::getOperands)
-                        .collect(toMap(operands -> operands[0], operands -> operands[1])));
+        configMap.putAll(sqlContext.getSqls().stream()
+                .filter(sql -> SqlType.SET.equals(sql.getType()))
+                .map(Sql::getOperands)
+                .collect(toMap(operands -> operands[0], operands -> operands[1])));
         configMap.forEach((key, value) -> Configurations.setConfig(tEnv, key, value));
 
         // step 2: add catalog
@@ -51,10 +50,9 @@ public class Sql112Application {
         Functions.registerFunctionsToTableEnv(tEnv, functions);
 
         // step 4: exec sql
-        List<Sql> executableSqls =
-                sqlContext.getSqls().stream()
-                        .filter(sql -> !SqlType.SET.equals(sql.getType()))
-                        .collect(toList());
+        List<Sql> executableSqls = sqlContext.getSqls().stream()
+                .filter(sql -> !SqlType.SET.equals(sql.getType()))
+                .collect(toList());
         ExecuteSqls.execSqls(tEnv, executableSqls);
     }
 }

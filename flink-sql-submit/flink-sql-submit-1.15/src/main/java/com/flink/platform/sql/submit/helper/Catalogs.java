@@ -12,13 +12,11 @@ import java.util.List;
 public class Catalogs {
 
     public static void registerCatalogsToTableEnv(TableEnvironment tEnv, List<Catalog> catalogs) {
-        catalogs.forEach(
-                catalog -> {
-                    if (StringUtils.isBlank(catalog.getCreateSql())) {
-                        throw new FlinkJobGenException(
-                                String.format("Create sql is empty, catalog: %s", catalog));
-                    }
-                    tEnv.executeSql(catalog.getCreateSql());
-                });
+        catalogs.forEach(catalog -> {
+            if (StringUtils.isBlank(catalog.getCreateSql())) {
+                throw new FlinkJobGenException(String.format("Create sql is empty, catalog: %s", catalog));
+            }
+            tEnv.executeSql(catalog.getCreateSql());
+        });
     }
 }

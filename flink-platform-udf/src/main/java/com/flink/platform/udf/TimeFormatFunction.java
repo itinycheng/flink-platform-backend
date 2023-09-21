@@ -27,7 +27,6 @@ public class TimeFormatFunction extends ScalarFunction {
     public static void main(String[] args) {
         System.out.println(new TimeFormatFunction().eval(1671700767810L, "yyyy-MM-dd HH:mm:ss"));
 
-        System.out.println(
-                new TimeFormatFunction().eval(LocalDateTime.now(), "yyyy-MM-dd HH:mm:ss"));
+        System.out.println(new TimeFormatFunction().eval(LocalDateTime.now(), "yyyy-MM-dd HH:mm:ss"));
     }
 }

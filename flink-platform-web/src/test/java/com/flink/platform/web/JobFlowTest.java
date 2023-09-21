@@ -45,8 +45,7 @@ public class JobFlowTest {
 
     @Test
     public void test2() {
-        PriorityBlockingQueue<Integer> queue =
-                new PriorityBlockingQueue<>(5, (o1, o2) -> ObjectUtils.compare(o2, o1));
+        PriorityBlockingQueue<Integer> queue = new PriorityBlockingQueue<>(5, (o1, o2) -> ObjectUtils.compare(o2, o1));
         queue.offer(3);
         queue.offer(2);
         queue.offer(1);

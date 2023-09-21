@@ -40,13 +40,13 @@ public class SqlContextHelper {
     @Value("${flink.local.sql-dir}")
     private String sqlDir;
 
-    @Resource private CatalogInfoService catalogInfoService;
+    @Resource
+    private CatalogInfoService catalogInfoService;
 
     public String convertFromAndSaveToFile(JobRunInfo jobRun) {
         SqlContext sqlContext = convertFrom(jobRun);
         long timestamp = System.currentTimeMillis();
-        String fileName =
-                String.join(DOT, jobRun.getJobCode(), String.valueOf(timestamp), JSON_FILE_SUFFIX);
+        String fileName = String.join(DOT, jobRun.getJobCode(), String.valueOf(timestamp), JSON_FILE_SUFFIX);
         return saveToFile(fileName, sqlContext);
     }
 
@@ -71,18 +71,15 @@ public class SqlContextHelper {
     private List<Catalog> toCatalogs(List<Long> catalogs, Map<String, Object> variables) {
         return ListUtils.defaultIfNull(catalogs, emptyList()).stream()
                 .map(id -> catalogInfoService.getById(id))
-                .map(
-                        catalogInfo -> {
-                            String createSql = catalogInfo.getCreateSql();
-                            for (Map.Entry<String, Object> variable : variables.entrySet()) {
-                                createSql =
-                                        createSql.replace(
-                                                variable.getKey(), variable.getValue().toString());
-                            }
+                .map(catalogInfo -> {
+                    String createSql = catalogInfo.getCreateSql();
+                    for (Map.Entry<String, Object> variable : variables.entrySet()) {
+                        createSql = createSql.replace(
+                                variable.getKey(), variable.getValue().toString());
+                    }
 
-                            return new Catalog(
-                                    catalogInfo.getName(), catalogInfo.getType(), createSql);
-                        })
+                    return new Catalog(catalogInfo.getName(), catalogInfo.getType(), createSql);
+                })
                 .collect(toList());
     }
 
@@ -93,8 +90,7 @@ public class SqlContextHelper {
     public List<Sql> toSqls(String subject) {
         List<Sql> sqlList = SqlUtil.convertToSqls(subject);
         if (sqlList.isEmpty()) {
-            throw new CommandUnableGenException(
-                    String.format("no sql found or parsing failed, subject: %s", subject));
+            throw new CommandUnableGenException(String.format("no sql found or parsing failed, subject: %s", subject));
         }
         return sqlList;
     }
@@ -104,10 +100,7 @@ public class SqlContextHelper {
             String json = JsonUtil.toJsonString(sqlContext);
             String sqlFilePath = String.join(SLASH, ROOT_DIR, sqlDir, fileName);
             FileUtils.write(new File(sqlFilePath), json, StandardCharsets.UTF_8);
-            log.info(
-                    "serial sql context to local disk successfully, path: {}, data: {}",
-                    sqlFilePath,
-                    json);
+            log.info("serial sql context to local disk successfully, path: {}, data: {}", sqlFilePath, json);
             return sqlFilePath;
         } catch (Exception e) {
             throw new RuntimeException("serde sql context to local disk failed", e);
@@ -115,9 +108,7 @@ public class SqlContextHelper {
     }
 
     public static void main(String[] args) {
-        Matcher matcher =
-                SQL_PATTERN.matcher(
-                        "set a =\n b;\nset c = d;\n select * from a where  name = ';';");
+        Matcher matcher = SQL_PATTERN.matcher("set a =\n b;\nset c = d;\n select * from a where  name = ';';");
         while (matcher.find()) {
             System.out.println("item: " + matcher.group());
         }

@@ -10,8 +10,7 @@ import lombok.val;
 
 /** create execution environment. */
 public class ExecutionEnvs {
-    public static TableEnvironment createExecutionEnv(
-            ExecutionMode execMode, Configuration configuration) {
+    public static TableEnvironment createExecutionEnv(ExecutionMode execMode, Configuration configuration) {
         val settingBuilder = EnvironmentSettings.newInstance().withConfiguration(configuration);
         switch (execMode) {
             case BATCH:

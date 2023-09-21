@@ -35,9 +35,7 @@ public class ListContainsValueFunction extends ScalarFunction {
         } else {
             inputItems = inputValue.split(AND);
         }
-        return orOperator
-                ? isAnyContained(columnValues, inputItems)
-                : isAllContained(columnValues, inputItems);
+        return orOperator ? isAnyContained(columnValues, inputItems) : isAllContained(columnValues, inputItems);
     }
 
     private int isAllContained(List<?> columnValues, String[] inputItems) {

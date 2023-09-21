@@ -48,28 +48,22 @@ public class KillJobService {
 
     public boolean killRemoteJob(JobRunInfo jobRun) {
         String host = jobRun.getHost();
-        Worker worker =
-                workerService.getOne(
-                        new QueryWrapper<Worker>()
-                                .lambda()
-                                .eq(Worker::getIp, host)
-                                .last("LIMIT 1"));
+        Worker worker = workerService.getOne(
+                new QueryWrapper<Worker>().lambda().eq(Worker::getIp, host).last("LIMIT 1"));
 
-        JobGrpcServiceGrpc.JobGrpcServiceBlockingStub stub =
-                jobProcessGrpcClient.grpcClient(worker);
-        KillJobRequest request = KillJobRequest.newBuilder().setJobRunId(jobRun.getId()).build();
+        JobGrpcServiceGrpc.JobGrpcServiceBlockingStub stub = jobProcessGrpcClient.grpcClient(worker);
+        KillJobRequest request =
+                KillJobRequest.newBuilder().setJobRunId(jobRun.getId()).build();
         stub.killJob(request);
         return true;
     }
 
     public void killJob(final long jobRunId) {
-        JobRunInfo latestJobRun =
-                jobRunInfoService.getOne(
-                        new QueryWrapper<JobRunInfo>()
-                                .lambda()
-                                .select(JobRunInfo::getType)
-                                .eq(JobRunInfo::getId, jobRunId)
-                                .in(JobRunInfo::getStatus, getNonTerminals()));
+        JobRunInfo latestJobRun = jobRunInfoService.getOne(new QueryWrapper<JobRunInfo>()
+                .lambda()
+                .select(JobRunInfo::getType)
+                .eq(JobRunInfo::getId, jobRunId)
+                .in(JobRunInfo::getStatus, getNonTerminals()));
         if (latestJobRun == null) {
             return;
         }
@@ -82,12 +76,10 @@ public class KillJobService {
                 .orElseThrow(() -> new UnrecoverableException("No available job command executor"))
                 .kill(jobRunId);
 
-        latestJobRun =
-                jobRunInfoService.getOne(
-                        new QueryWrapper<JobRunInfo>()
-                                .lambda()
-                                .select(JobRunInfo::getStatus)
-                                .eq(JobRunInfo::getId, jobRunId));
+        latestJobRun = jobRunInfoService.getOne(new QueryWrapper<JobRunInfo>()
+                .lambda()
+                .select(JobRunInfo::getStatus)
+                .eq(JobRunInfo::getId, jobRunId));
 
         // set status to KILLED
         // Better in a transaction with serializable isolation level.

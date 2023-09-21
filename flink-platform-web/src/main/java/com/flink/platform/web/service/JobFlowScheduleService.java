@@ -53,13 +53,9 @@ public class JobFlowScheduleService {
         this.jobRunInfoService = jobRunInfoService;
         this.jobFlowRunService = jobFlowRunService;
         this.alertSendingService = alertSendingService;
-        this.flowExecService =
-                ThreadUtil.newFixedThreadExecutor(
-                        "FlowExecThread", workerConfig.getFlowExecThreads());
-        this.inFlightFlows =
-                new PriorityBlockingQueue<>(
-                        workerConfig.getFlowExecThreads(),
-                        (o1, o2) -> ObjectUtils.compare(o2.getPriority(), o1.getPriority()));
+        this.flowExecService = ThreadUtil.newFixedThreadExecutor("FlowExecThread", workerConfig.getFlowExecThreads());
+        this.inFlightFlows = new PriorityBlockingQueue<>(
+                workerConfig.getFlowExecThreads(), (o1, o2) -> ObjectUtils.compare(o2.getPriority(), o1.getPriority()));
     }
 
     @Scheduled(fixedDelay = 1000)
@@ -87,32 +83,25 @@ public class JobFlowScheduleService {
 
         // Update status of JobVertex in flow.
         jobRunInfoService
-                .list(
-                        new QueryWrapper<JobRunInfo>()
-                                .lambda()
-                                .eq(JobRunInfo::getFlowRunId, jobFlowRun.getId()))
-                .forEach(
-                        jobRunInfo -> {
-                            JobVertex vertex = flow.getVertex(jobRunInfo.getJobId());
-                            vertex.setJobRunId(jobRunInfo.getId());
-                            vertex.setJobRunStatus(jobRunInfo.getStatus());
-                        });
+                .list(new QueryWrapper<JobRunInfo>().lambda().eq(JobRunInfo::getFlowRunId, jobFlowRun.getId()))
+                .forEach(jobRunInfo -> {
+                    JobVertex vertex = flow.getVertex(jobRunInfo.getJobId());
+                    vertex.setJobRunId(jobRunInfo.getId());
+                    vertex.setJobRunStatus(jobRunInfo.getStatus());
+                });
 
         registerToScheduler(jobFlowRun);
     }
 
     public synchronized void registerToScheduler(JobFlowRun jobFlowRun) {
-        if (inFlightFlows.stream()
-                .anyMatch(inQueue -> inQueue.getId().equals(jobFlowRun.getId()))) {
+        if (inFlightFlows.stream().anyMatch(inQueue -> inQueue.getId().equals(jobFlowRun.getId()))) {
             log.warn("The JobFlowRun already registered, jobFlowRun: {} ", jobFlowRun);
             return;
         }
 
         JobFlowDag flow = jobFlowRun.getFlow();
         if (flow == null || CollectionUtils.isEmpty(flow.getVertices())) {
-            log.warn(
-                    "No JobVertex found, no scheduling required, flow run id: {}",
-                    jobFlowRun.getId());
+            log.warn("No JobVertex found, no scheduling required, flow run id: {}", jobFlowRun.getId());
             JobFlowRun newJobFlowRun = new JobFlowRun();
             newJobFlowRun.setId(jobFlowRun.getId());
             newJobFlowRun.setStatus(FAILURE);

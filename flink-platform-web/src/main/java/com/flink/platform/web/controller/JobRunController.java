@@ -44,11 +44,14 @@ import static java.util.stream.Collectors.toList;
 @RequestMapping("/jobRun")
 public class JobRunController {
 
-    @Autowired private JobRunInfoService jobRunInfoService;
+    @Autowired
+    private JobRunInfoService jobRunInfoService;
 
-    @Autowired private JobInfoService jobInfoService;
+    @Autowired
+    private JobInfoService jobInfoService;
 
-    @Autowired private KillJobService killJobService;
+    @Autowired
+    private KillJobService killJobService;
 
     @GetMapping(value = "/get/{runId}")
     public ResultInfo<JobRunInfo> get(@PathVariable Long runId) {
@@ -65,26 +68,19 @@ public class JobRunController {
             @RequestParam(name = "jobId", required = false) Long jobId,
             @RequestParam(name = "status", required = false) ExecutionStatus status,
             @RequestParam(name = "name", required = false) String name,
-            @DateTimeFormat(pattern = GLOBAL_DATE_TIME_FORMAT)
-                    @RequestParam(name = "startTime", required = false)
+            @DateTimeFormat(pattern = GLOBAL_DATE_TIME_FORMAT) @RequestParam(name = "startTime", required = false)
                     LocalDateTime startTime,
-            @DateTimeFormat(pattern = GLOBAL_DATE_TIME_FORMAT)
-                    @RequestParam(name = "endTime", required = false)
+            @DateTimeFormat(pattern = GLOBAL_DATE_TIME_FORMAT) @RequestParam(name = "endTime", required = false)
                     LocalDateTime endTime,
             @RequestParam(name = "sort", required = false) String sort) {
-        LambdaQueryWrapper<JobRunInfo> queryWrapper =
-                new QueryWrapper<JobRunInfo>()
-                        .lambda()
-                        .eq(JobRunInfo::getUserId, loginUser.getId())
-                        .eq(nonNull(flowRunId), JobRunInfo::getFlowRunId, flowRunId)
-                        .eq(nonNull(jobId), JobRunInfo::getJobId, jobId)
-                        .eq(nonNull(status), JobRunInfo::getStatus, status)
-                        .like(nonNull(name), JobRunInfo::getName, name)
-                        .between(
-                                nonNull(startTime) && nonNull(endTime),
-                                JobRunInfo::getCreateTime,
-                                startTime,
-                                endTime);
+        LambdaQueryWrapper<JobRunInfo> queryWrapper = new QueryWrapper<JobRunInfo>()
+                .lambda()
+                .eq(JobRunInfo::getUserId, loginUser.getId())
+                .eq(nonNull(flowRunId), JobRunInfo::getFlowRunId, flowRunId)
+                .eq(nonNull(jobId), JobRunInfo::getJobId, jobId)
+                .eq(nonNull(status), JobRunInfo::getStatus, status)
+                .like(nonNull(name), JobRunInfo::getName, name)
+                .between(nonNull(startTime) && nonNull(endTime), JobRunInfo::getCreateTime, startTime, endTime);
         if ("-id".equals(sort)) {
             queryWrapper.orderByDesc(JobRunInfo::getId);
         }
@@ -96,48 +92,38 @@ public class JobRunController {
 
     @PostMapping(value = "/getJobOrRunByJobIds")
     public ResultInfo<Collection<Object>> list(@RequestBody JobRunRequest jobRunRequest) {
-        if (CollectionUtils.isEmpty(jobRunRequest.getJobIds())
-                || jobRunRequest.getFlowRunId() == null) {
+        if (CollectionUtils.isEmpty(jobRunRequest.getJobIds()) || jobRunRequest.getFlowRunId() == null) {
             return success(Collections.emptyList());
         }
 
-        List<JobRunInfo> jobRunList =
-                jobRunInfoService.list(
-                        new QueryWrapper<JobRunInfo>()
-                                .lambda()
-                                .eq(JobRunInfo::getFlowRunId, jobRunRequest.getFlowRunId())
-                                .in(JobRunInfo::getJobId, jobRunRequest.getJobIds()));
+        List<JobRunInfo> jobRunList = jobRunInfoService.list(new QueryWrapper<JobRunInfo>()
+                .lambda()
+                .eq(JobRunInfo::getFlowRunId, jobRunRequest.getFlowRunId())
+                .in(JobRunInfo::getJobId, jobRunRequest.getJobIds()));
 
-        List<Long> existedJobs =
-                CollectionUtils.emptyIfNull(jobRunList).stream()
-                        .map(JobRunInfo::getJobId)
-                        .collect(toList());
+        List<Long> existedJobs = CollectionUtils.emptyIfNull(jobRunList).stream()
+                .map(JobRunInfo::getJobId)
+                .collect(toList());
 
-        Collection<Long> unRunJobIds =
-                CollectionUtils.subtract(jobRunRequest.getJobIds(), existedJobs);
+        Collection<Long> unRunJobIds = CollectionUtils.subtract(jobRunRequest.getJobIds(), existedJobs);
 
         List<JobInfo> jobList = null;
         if (CollectionUtils.isNotEmpty(unRunJobIds)) {
             jobList = jobInfoService.listByIds(unRunJobIds);
         }
         Collection<Object> jobAndJobRunList =
-                CollectionUtils.union(
-                        CollectionUtils.emptyIfNull(jobRunList),
-                        CollectionUtils.emptyIfNull(jobList));
+                CollectionUtils.union(CollectionUtils.emptyIfNull(jobRunList), CollectionUtils.emptyIfNull(jobList));
         return success(jobAndJobRunList);
     }
 
     @GetMapping(value = "/kill/{runId}")
     public ResultInfo<Boolean> kill(
-            @RequestAttribute(value = Constant.SESSION_USER) User loginUser,
-            @PathVariable Long runId) {
-        JobRunInfo jobRun =
-                jobRunInfoService.getOne(
-                        new QueryWrapper<JobRunInfo>()
-                                .lambda()
-                                .eq(JobRunInfo::getId, runId)
-                                .eq(JobRunInfo::getUserId, loginUser.getId())
-                                .in(JobRunInfo::getStatus, getNonTerminals()));
+            @RequestAttribute(value = Constant.SESSION_USER) User loginUser, @PathVariable Long runId) {
+        JobRunInfo jobRun = jobRunInfoService.getOne(new QueryWrapper<JobRunInfo>()
+                .lambda()
+                .eq(JobRunInfo::getId, runId)
+                .eq(JobRunInfo::getUserId, loginUser.getId())
+                .in(JobRunInfo::getStatus, getNonTerminals()));
 
         if (jobRun == null) {
             return failure(NO_RUNNING_JOB_FOUND);

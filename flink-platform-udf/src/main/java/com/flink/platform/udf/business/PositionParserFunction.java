@@ -48,9 +48,7 @@ import java.util.List;
 public class PositionParserFunction extends AbstractTableFunction<PositionLabel, Row> {
 
     private static final CollectionLikeType positionListType =
-            JsonUtil.MAPPER
-                    .getTypeFactory()
-                    .constructCollectionLikeType(List.class, PositionLabel.class);
+            JsonUtil.MAPPER.getTypeFactory().constructCollectionLikeType(List.class, PositionLabel.class);
 
     public void eval(String str) {
         List<PositionLabel> positionLabelList = JsonUtil.toList(str, positionListType);
@@ -70,15 +68,14 @@ public class PositionParserFunction extends AbstractTableFunction<PositionLabel,
         if (position == null) {
             return;
         }
-        collect(
-                Row.of(
-                        position.getSymbol(),
-                        position.getExpiry(),
-                        position.getStrike(),
-                        position.getRight(),
-                        position.getCurrency(),
-                        position.getCostLevel(),
-                        position.getStatus(),
-                        position.getTimestamp()));
+        collect(Row.of(
+                position.getSymbol(),
+                position.getExpiry(),
+                position.getStrike(),
+                position.getRight(),
+                position.getCurrency(),
+                position.getCostLevel(),
+                position.getStatus(),
+                position.getTimestamp()));
     }
 }

@@ -20,8 +20,7 @@ public enum SqlType {
 
     INSERT_INTO("INSERT\\s+INTO.*", (operands) -> Optional.of(new String[] {operands[0]})),
 
-    INSERT_OVERWRITE(
-            "INSERT\\s+OVERWRITE.*", (operands) -> Optional.of(new String[] {operands[0]})),
+    INSERT_OVERWRITE("INSERT\\s+OVERWRITE.*", (operands) -> Optional.of(new String[] {operands[0]})),
 
     USE("USE\\s+(?!CATALOG)(.*)", (operands) -> Optional.of(new String[] {operands[0]})),
 
@@ -31,13 +30,9 @@ public enum SqlType {
 
     CREATE_DATABASE("CREATE\\s+DATABASE.*", (operands) -> Optional.of(new String[] {operands[0]})),
 
-    CREATE_TABLE(
-            "CREATE(\\s+TEMPORARY)?\\s+TABLE.*",
-            (operands) -> Optional.of(new String[] {operands[0]})),
+    CREATE_TABLE("CREATE(\\s+TEMPORARY)?\\s+TABLE.*", (operands) -> Optional.of(new String[] {operands[0]})),
 
-    CREATE_VIEW(
-            "CREATE(\\s+TEMPORARY)?\\s+VIEW.*",
-            (operands) -> Optional.of(new String[] {operands[0]})),
+    CREATE_VIEW("CREATE(\\s+TEMPORARY)?\\s+VIEW.*", (operands) -> Optional.of(new String[] {operands[0]})),
 
     CREATE_FUNCTION(
             "CREATE(\\s+TEMPORARY|\\s+TEMPORARY\\s+SYSTEM)?\\s+FUNCTION.*",
@@ -47,9 +42,7 @@ public enum SqlType {
 
     DROP_TABLE("DROP\\s+TABLE.*", (operands) -> Optional.of(new String[] {operands[0]})),
 
-    DROP_VIEW(
-            "DROP(\\s+TEMPORARY)?\\s+VIEW.*",
-            (operands) -> Optional.of(new String[] {operands[0]})),
+    DROP_VIEW("DROP(\\s+TEMPORARY)?\\s+VIEW.*", (operands) -> Optional.of(new String[] {operands[0]})),
 
     DROP_FUNCTION(
             "DROP(\\s+TEMPORARY|\\s+TEMPORARY\\s+SYSTEM)?\\s+FUNCTION.*",
@@ -80,36 +73,28 @@ public enum SqlType {
     SHOW_JARS("SHOW\\s+JARS", (operands) -> Optional.of(new String[] {"SHOW JARS"})),
 
     SHOW_CURRENT_CATALOG(
-            "SHOW\\s+CURRENT\\s+CATALOG",
-            (operands) -> Optional.of(new String[] {"SHOW CURRENT CATALOG"})),
+            "SHOW\\s+CURRENT\\s+CATALOG", (operands) -> Optional.of(new String[] {"SHOW CURRENT CATALOG"})),
 
     SHOW_CURRENT_DATABASE(
-            "SHOW\\s+CURRENT\\s+DATABASE",
-            (operands) -> Optional.of(new String[] {"SHOW CURRENT DATABASE"})),
+            "SHOW\\s+CURRENT\\s+DATABASE", (operands) -> Optional.of(new String[] {"SHOW CURRENT DATABASE"})),
 
-    SHOW_CREATE_TABLE(
-            "SHOW\\s+CREATE\\s+TABLE.*", (operands) -> Optional.of(new String[] {operands[0]})),
+    SHOW_CREATE_TABLE("SHOW\\s+CREATE\\s+TABLE.*", (operands) -> Optional.of(new String[] {operands[0]})),
 
-    SHOW_CREATE_VIEW(
-            "SHOW\\s+CREATE\\s+VIEW.*", (operands) -> Optional.of(new String[] {operands[0]})),
+    SHOW_CREATE_VIEW("SHOW\\s+CREATE\\s+VIEW.*", (operands) -> Optional.of(new String[] {operands[0]})),
 
     DESCRIBE("DESCRIBE.*", (operands) -> Optional.of(new String[] {operands[0]})),
 
     EXPLAIN("EXPLAIN\\s+PLAN\\s+FOR.*", (operands) -> Optional.of(new String[] {operands[0]})),
 
-    SET(
-            "SET\\s+(\\S+)\\s*=\\s*(.*)",
-            (operands) -> {
-                final int len = 3;
-                if (operands.length == len) {
-                    return Optional.of(new String[] {operands[1], operands[2]});
-                } else {
-                    throw new FlinkJobGenException(
-                            String.format(
-                                    "parse set statement failed, operands: %s",
-                                    Arrays.toString(operands)));
-                }
-            }),
+    SET("SET\\s+(\\S+)\\s*=\\s*(.*)", (operands) -> {
+        final int len = 3;
+        if (operands.length == len) {
+            return Optional.of(new String[] {operands[1], operands[2]});
+        } else {
+            throw new FlinkJobGenException(
+                    String.format("parse set statement failed, operands: %s", Arrays.toString(operands)));
+        }
+    }),
 
     OPTIMIZE("OPTIMIZE\\s+TABLE.*", (operands) -> Optional.of(new String[] {operands[0]})),
 
@@ -133,27 +118,20 @@ public enum SqlType {
             if (matcher.matches()) {
                 int matchedNum = matcher.groupCount() + 1;
                 return type.operandConverter
-                        .apply(
-                                Stream.iterate(0, i -> i + 1)
-                                        .limit(matchedNum)
-                                        .map(matcher::group)
-                                        .toArray(String[]::new))
-                        .map(
-                                (operands) -> {
-                                    if (SqlType.SELECT.equals(type)) {
-                                        operands =
-                                                Arrays.stream(operands)
-                                                        .map(SqlUtil::limitRowNum)
-                                                        .toArray(String[]::new);
-                                    }
-                                    return new Sql(type, operands);
-                                })
-                        .orElseThrow(
-                                () ->
-                                        new FlinkJobGenException(
-                                                String.format(
-                                                        "cannot match a correct sql statement: %s",
-                                                        stmt)));
+                        .apply(Stream.iterate(0, i -> i + 1)
+                                .limit(matchedNum)
+                                .map(matcher::group)
+                                .toArray(String[]::new))
+                        .map((operands) -> {
+                            if (SqlType.SELECT.equals(type)) {
+                                operands = Arrays.stream(operands)
+                                        .map(SqlUtil::limitRowNum)
+                                        .toArray(String[]::new);
+                            }
+                            return new Sql(type, operands);
+                        })
+                        .orElseThrow(() -> new FlinkJobGenException(
+                                String.format("cannot match a correct sql statement: %s", stmt)));
             }
         }
         throw new FlinkJobGenException(String.format("cannot parse statement: %s", stmt));

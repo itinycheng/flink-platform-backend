@@ -40,9 +40,11 @@ import static java.util.Objects.nonNull;
 @RequestMapping("/jobParam")
 public class JobParamController {
 
-    @Autowired private JobParamService jobParamService;
+    @Autowired
+    private JobParamService jobParamService;
 
-    @Autowired private JobInfoService jobService;
+    @Autowired
+    private JobInfoService jobService;
 
     @PostMapping(value = "/create")
     public ResultInfo<Long> create(
@@ -53,18 +55,13 @@ public class JobParamController {
             return failure(ERROR_PARAMETER, errorMsg);
         }
 
-        JobParam existed =
-                jobParamService.getOne(
-                        new QueryWrapper<JobParam>()
-                                .lambda()
-                                .eq(JobParam::getParamName, jobParamRequest.getParamName())
-                                .eq(JobParam::getType, jobParamRequest.getType())
-                                .eq(
-                                        JOB_FLOW.equals(jobParamRequest.getType()),
-                                        JobParam::getFlowId,
-                                        jobParamRequest.getFlowId())
-                                .eq(JobParam::getUserId, loginUser.getId())
-                                .last("limit 1"));
+        JobParam existed = jobParamService.getOne(new QueryWrapper<JobParam>()
+                .lambda()
+                .eq(JobParam::getParamName, jobParamRequest.getParamName())
+                .eq(JobParam::getType, jobParamRequest.getType())
+                .eq(JOB_FLOW.equals(jobParamRequest.getType()), JobParam::getFlowId, jobParamRequest.getFlowId())
+                .eq(JobParam::getUserId, loginUser.getId())
+                .last("limit 1"));
         if (existed != null) {
             return failure(ERROR_PARAMETER, "param name already exists");
         }
@@ -102,21 +99,15 @@ public class JobParamController {
 
         // JobParamType.JOB_FLOW unhandled.
         if (GLOBAL == jobParam.getType()) {
-            JobInfo jobInfo =
-                    jobService.getOne(
-                            new QueryWrapper<JobInfo>()
-                                    .lambda()
-                                    .eq(JobInfo::getUserId, jobParam.getUserId())
-                                    .like(
-                                            JobInfo::getSubject,
-                                            format(PARAM_FORMAT, jobParam.getParamName()))
-                                    .last("LIMIT 1"));
+            JobInfo jobInfo = jobService.getOne(new QueryWrapper<JobInfo>()
+                    .lambda()
+                    .eq(JobInfo::getUserId, jobParam.getUserId())
+                    .like(JobInfo::getSubject, format(PARAM_FORMAT, jobParam.getParamName()))
+                    .last("LIMIT 1"));
             if (jobInfo != null) {
                 return failure(
                         OPERATION_NOT_ALLOWED,
-                        format(
-                                "The param is being used in job: %s, cannot be removed",
-                                jobInfo.getName()));
+                        format("The param is being used in job: %s, cannot be removed", jobInfo.getName()));
             }
         }
 
@@ -131,13 +122,12 @@ public class JobParamController {
             @RequestParam(name = "size", required = false, defaultValue = "20") Integer size,
             @RequestParam(name = "name", required = false) String name) {
         Page<JobParam> pager = new Page<>(page, size);
-        IPage<JobParam> iPage =
-                jobParamService.page(
-                        pager,
-                        new QueryWrapper<JobParam>()
-                                .lambda()
-                                .eq(JobParam::getUserId, loginUser.getId())
-                                .like(nonNull(name), JobParam::getParamName, name));
+        IPage<JobParam> iPage = jobParamService.page(
+                pager,
+                new QueryWrapper<JobParam>()
+                        .lambda()
+                        .eq(JobParam::getUserId, loginUser.getId())
+                        .like(nonNull(name), JobParam::getParamName, name));
 
         return success(iPage);
     }
@@ -147,13 +137,11 @@ public class JobParamController {
             @RequestAttribute(value = Constant.SESSION_USER) User loginUser,
             @RequestParam(name = "flowId", required = false) Long flowId,
             @RequestParam(name = "status", required = false) Status status) {
-        List<JobParam> list =
-                jobParamService.list(
-                        new QueryWrapper<JobParam>()
-                                .lambda()
-                                .eq(JobParam::getUserId, loginUser.getId())
-                                .eq(nonNull(flowId), JobParam::getFlowId, flowId)
-                                .eq(nonNull(status), JobParam::getStatus, status));
+        List<JobParam> list = jobParamService.list(new QueryWrapper<JobParam>()
+                .lambda()
+                .eq(JobParam::getUserId, loginUser.getId())
+                .eq(nonNull(flowId), JobParam::getFlowId, flowId)
+                .eq(nonNull(status), JobParam::getStatus, status));
         return success(list);
     }
 }

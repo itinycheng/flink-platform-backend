@@ -40,9 +40,7 @@ public class JsonUtilTest {
         String listString =
                 "[{\"symbol\":\"BILI\",\"costLevel\":1,\"strike\":\"\",\"currency\":\"USD\",\"expiry\":\"\",\"right\":\"\",\"status\":\"LONG\",\"timestamp\":1621990862104},{\"symbol\":\"BIDU\",\"costLevel\":1,\"strike\":\"\",\"currency\":\"USD\",\"expiry\":\"\",\"right\":\"\",\"status\":\"LONG\",\"timestamp\":1621990862101}]";
         CollectionLikeType positionListType =
-                JsonUtil.MAPPER
-                        .getTypeFactory()
-                        .constructCollectionLikeType(List.class, PositionLabel.class);
+                JsonUtil.MAPPER.getTypeFactory().constructCollectionLikeType(List.class, PositionLabel.class);
         List<PositionLabel> objList = JsonUtil.toList(listString, positionListType);
         System.out.println(objList);
 

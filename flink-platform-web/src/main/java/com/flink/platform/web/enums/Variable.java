@@ -13,20 +13,15 @@ public enum Variable {
 
     /** variables. */
     // TODO optimize code in the future.
-    SCRIPT(
-            "${script",
-            uncheckedFunction(
-                    (methodBody) -> {
-                        ClassLoader contextClassLoader =
-                                Thread.currentThread().getContextClassLoader();
-                        IScriptEvaluator evaluator =
-                                CompilerFactoryFactory.getDefaultCompilerFactory(contextClassLoader)
-                                        .newScriptEvaluator();
-                        evaluator.setReturnType(String.class);
-                        evaluator.cook((String) methodBody);
-                        Object evaluate = evaluator.evaluate(null);
-                        return String.valueOf(evaluate);
-                    }));
+    SCRIPT("${script", uncheckedFunction((methodBody) -> {
+        ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
+        IScriptEvaluator evaluator = CompilerFactoryFactory.getDefaultCompilerFactory(contextClassLoader)
+                .newScriptEvaluator();
+        evaluator.setReturnType(String.class);
+        evaluator.cook((String) methodBody);
+        Object evaluate = evaluator.evaluate(null);
+        return String.valueOf(evaluate);
+    }));
 
     public final String wildcard;
 

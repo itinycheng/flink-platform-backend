@@ -15,7 +15,9 @@ import static com.flink.platform.common.util.Preconditions.requireNotNull;
 @NoArgsConstructor
 public class ReactiveRequest {
 
-    @Getter @Delegate private final JobInfo jobInfo = new JobInfo();
+    @Getter
+    @Delegate
+    private final JobInfo jobInfo = new JobInfo();
 
     private String[] envProps;
 

@@ -44,11 +44,14 @@ import static java.util.Objects.nonNull;
 @RequestMapping("/jobInfo")
 public class JobInfoController {
 
-    @Autowired private JobInfoService jobInfoService;
+    @Autowired
+    private JobInfoService jobInfoService;
 
-    @Autowired private JobRunInfoService jobRunService;
+    @Autowired
+    private JobRunInfoService jobRunService;
 
-    @Autowired private QuartzService quartzService;
+    @Autowired
+    private QuartzService quartzService;
 
     @PostMapping(value = "/create")
     public ResultInfo<JobInfo> create(
@@ -97,23 +100,16 @@ public class JobInfoController {
             @RequestParam(name = "size", required = false, defaultValue = "20") Integer size,
             @RequestParam(name = "name", required = false) String name) {
         Page<JobInfo> pager = new Page<>(page, size);
-        IPage<JobInfo> iPage =
-                jobInfoService.page(
-                        pager,
-                        new QueryWrapper<JobInfo>()
-                                .lambda()
-                                .like(nonNull(name), JobInfo::getName, name));
+        IPage<JobInfo> iPage = jobInfoService.page(
+                pager, new QueryWrapper<JobInfo>().lambda().like(nonNull(name), JobInfo::getName, name));
 
         return success(iPage);
     }
 
     @GetMapping(value = "/list")
     public ResultInfo<List<JobInfo>> list(@RequestParam(name = "flowId") Long flowId) {
-        List<JobInfo> list =
-                jobInfoService.list(
-                        new QueryWrapper<JobInfo>()
-                                .lambda()
-                                .like(nonNull(flowId), JobInfo::getFlowId, flowId));
+        List<JobInfo> list = jobInfoService.list(
+                new QueryWrapper<JobInfo>().lambda().like(nonNull(flowId), JobInfo::getFlowId, flowId));
         return success(list);
     }
 
@@ -134,13 +130,11 @@ public class JobInfoController {
             return failure(NOT_RUNNABLE_STATUS);
         }
 
-        List<JobRunInfo> notFinishedList =
-                jobRunService.list(
-                        new QueryWrapper<JobRunInfo>()
-                                .lambda()
-                                .eq(JobRunInfo::getJobId, jobId)
-                                .in(JobRunInfo::getStatus, ExecutionStatus.getNonTerminals())
-                                .gt(JobRunInfo::getCreateTime, LocalDateTime.now().minusDays(1)));
+        List<JobRunInfo> notFinishedList = jobRunService.list(new QueryWrapper<JobRunInfo>()
+                .lambda()
+                .eq(JobRunInfo::getJobId, jobId)
+                .in(JobRunInfo::getStatus, ExecutionStatus.getNonTerminals())
+                .gt(JobRunInfo::getCreateTime, LocalDateTime.now().minusDays(1)));
         if (CollectionUtils.isNotEmpty(notFinishedList)) {
             return failure(EXIST_UNFINISHED_PROCESS);
         }

@@ -14,9 +14,11 @@ import java.util.Map;
 /** Job flow dag. */
 public class JobFlowDag extends DAG<Long, JobVertex, JobEdge> {
 
-    @Getter private final Map<Long, NodeLayout> nodeLayouts;
+    @Getter
+    private final Map<Long, NodeLayout> nodeLayouts;
 
-    @Getter private final Map<Long, EdgeLayout> edgeLayouts;
+    @Getter
+    private final Map<Long, EdgeLayout> edgeLayouts;
 
     public JobFlowDag() {
         this.nodeLayouts = new HashMap<>();
@@ -26,20 +28,12 @@ public class JobFlowDag extends DAG<Long, JobVertex, JobEdge> {
     @JsonIgnore
     @Override
     public boolean isValid() {
-        boolean isValidVertices =
-                this.getVertices().stream()
-                        .allMatch(
-                                vertex ->
-                                        vertex.getId() != null
-                                                && vertex.getJobId() != null
-                                                && vertex.getPrecondition() != null);
-        boolean isValidEdges =
-                this.getEdges().stream()
-                        .allMatch(
-                                edge ->
-                                        edge.getFromVId() != null
-                                                && edge.getToVId() != null
-                                                && edge.getExpectStatus() != null);
+        boolean isValidVertices = this.getVertices().stream()
+                .allMatch(vertex ->
+                        vertex.getId() != null && vertex.getJobId() != null && vertex.getPrecondition() != null);
+        boolean isValidEdges = this.getEdges().stream()
+                .allMatch(
+                        edge -> edge.getFromVId() != null && edge.getToVId() != null && edge.getExpectStatus() != null);
 
         return isValidVertices && isValidEdges && super.isValid();
     }

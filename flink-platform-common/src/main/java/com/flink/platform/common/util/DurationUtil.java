@@ -16,19 +16,17 @@ import static java.util.Locale.US;
 /** Duration utils, copy from flink. */
 public class DurationUtil {
 
-    private static final Map<String, ChronoUnit> LABEL_TO_UNIT_MAP =
-            Optional.of(TimeUnit.values())
-                    .map(
-                            timeUnits -> {
-                                Map<String, ChronoUnit> labelToUnit = new HashMap<>();
-                                for (TimeUnit timeUnit : timeUnits) {
-                                    for (String label : timeUnit.getLabels()) {
-                                        labelToUnit.put(label, timeUnit.getUnit());
-                                    }
-                                }
-                                return labelToUnit;
-                            })
-                    .get();
+    private static final Map<String, ChronoUnit> LABEL_TO_UNIT_MAP = Optional.of(TimeUnit.values())
+            .map(timeUnits -> {
+                Map<String, ChronoUnit> labelToUnit = new HashMap<>();
+                for (TimeUnit timeUnit : timeUnits) {
+                    for (String label : timeUnit.getLabels()) {
+                        labelToUnit.put(label, timeUnit.getUnit());
+                    }
+                }
+                return labelToUnit;
+            })
+            .get();
 
     /**
      * Parse the given string to a java {@link Duration}. The string is in format "{length
@@ -73,9 +71,7 @@ public class DurationUtil {
             value = Long.parseLong(number);
         } catch (NumberFormatException e) {
             throw new IllegalArgumentException(
-                    "The value '"
-                            + number
-                            + "' cannot be re represented as 64bit number (numeric overflow).");
+                    "The value '" + number + "' cannot be re represented as 64bit number (numeric overflow).");
         }
 
         if (unitLabel.isEmpty()) {
@@ -86,11 +82,10 @@ public class DurationUtil {
         if (unit != null) {
             return Duration.of(value, unit);
         } else {
-            throw new IllegalArgumentException(
-                    "Time interval unit label '"
-                            + unitLabel
-                            + "' does not match any of the recognized units: "
-                            + TimeUnit.getAllUnits());
+            throw new IllegalArgumentException("Time interval unit label '"
+                    + unitLabel
+                    + "' does not match any of the recognized units: "
+                    + TimeUnit.getAllUnits());
         }
     }
 
@@ -112,8 +107,7 @@ public class DurationUtil {
 
         TimeUnit(ChronoUnit unit, String[]... labels) {
             this.unit = unit;
-            this.labels =
-                    Arrays.stream(labels).flatMap(Arrays::stream).collect(Collectors.toList());
+            this.labels = Arrays.stream(labels).flatMap(Arrays::stream).collect(Collectors.toList());
         }
 
         private static String[] singular(String label) {

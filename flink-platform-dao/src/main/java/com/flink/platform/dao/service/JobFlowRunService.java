@@ -15,15 +15,15 @@ import org.springframework.transaction.annotation.Transactional;
 @DS("master_platform")
 public class JobFlowRunService extends ServiceImpl<JobFlowRunMapper, JobFlowRun> {
 
-    @Autowired private JobRunInfoService jobRunService;
+    @Autowired
+    private JobRunInfoService jobRunService;
 
     @Transactional
     public void deleteAllById(long flowRunId, long userId) {
-        jobRunService.remove(
-                new QueryWrapper<JobRunInfo>()
-                        .lambda()
-                        .eq(JobRunInfo::getFlowRunId, flowRunId)
-                        .eq(JobRunInfo::getUserId, userId));
+        jobRunService.remove(new QueryWrapper<JobRunInfo>()
+                .lambda()
+                .eq(JobRunInfo::getFlowRunId, flowRunId)
+                .eq(JobRunInfo::getUserId, userId));
         removeById(flowRunId);
     }
 }

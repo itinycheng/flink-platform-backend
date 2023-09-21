@@ -18,9 +18,11 @@ import org.springframework.stereotype.Component;
 @Component("shellCommandExecutor")
 public class ShellCommandExecutor implements CommandExecutor {
 
-    @Autowired private WorkerConfig workerConfig;
+    @Autowired
+    private WorkerConfig workerConfig;
 
-    @Autowired private JobRunInfoService jobRunInfoService;
+    @Autowired
+    private JobRunInfoService jobRunInfoService;
 
     @Override
     public boolean isSupported(JobType jobType) {
@@ -31,14 +33,11 @@ public class ShellCommandExecutor implements CommandExecutor {
     @Override
     public JobCallback execCommand(@Nonnull JobCommand command) throws Exception {
         ShellCommand shellCommand = (ShellCommand) command;
-        ShellTask task =
-                new ShellTask(
-                        shellCommand.getJobRunId(),
-                        shellCommand.getScript(),
-                        shellCommand.getEnvs(),
-                        Math.min(
-                                workerConfig.getMaxShellExecTimeoutMills(),
-                                shellCommand.getTimeout()));
+        ShellTask task = new ShellTask(
+                shellCommand.getJobRunId(),
+                shellCommand.getScript(),
+                shellCommand.getEnvs(),
+                Math.min(workerConfig.getMaxShellExecTimeoutMills(), shellCommand.getTimeout()));
         shellCommand.setTask(task);
         task.run();
 

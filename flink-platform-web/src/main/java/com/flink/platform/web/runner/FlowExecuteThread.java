@@ -34,21 +34,17 @@ public class FlowExecuteThread implements Runnable {
 
     private final Map<Long, CompletableFuture<Void>> runningJobs = new ConcurrentHashMap<>();
 
-    private final JobFlowRunService jobFlowRunService =
-            SpringContext.getBean(JobFlowRunService.class);
+    private final JobFlowRunService jobFlowRunService = SpringContext.getBean(JobFlowRunService.class);
 
-    private final AlertSendingService alertSendingService =
-            SpringContext.getBean(AlertSendingService.class);
+    private final AlertSendingService alertSendingService = SpringContext.getBean(AlertSendingService.class);
 
     private volatile boolean isRunning = true;
 
     public FlowExecuteThread(JobFlowRun jobFlowRun, WorkerConfig workerConfig) {
         this.jobFlowRun = jobFlowRun;
         this.workerConfig = workerConfig;
-        this.jobExecService =
-                ThreadUtil.newFixedThreadExecutor(
-                        String.format("FlowExecThread-flowRunId_%d", jobFlowRun.getId()),
-                        workerConfig.getPerFlowExecThreads());
+        this.jobExecService = ThreadUtil.newFixedThreadExecutor(
+                String.format("FlowExecThread-flowRunId_%d", jobFlowRun.getId()), workerConfig.getPerFlowExecThreads());
     }
 
     @Override
@@ -102,11 +98,9 @@ public class FlowExecuteThread implements Runnable {
             return;
         }
 
-        Supplier<JobResponse> runnable =
-                () -> new JobExecuteThread(jobFlowRun.getId(), jobVertex, workerConfig).call();
-        CompletableFuture<Void> jobVertexFuture =
-                CompletableFuture.supplyAsync(runnable, jobExecService)
-                        .thenAccept(response -> handleResponse(response, jobVertex, flow));
+        Supplier<JobResponse> runnable = () -> new JobExecuteThread(jobFlowRun.getId(), jobVertex, workerConfig).call();
+        CompletableFuture<Void> jobVertexFuture = CompletableFuture.supplyAsync(runnable, jobExecService)
+                .thenAccept(response -> handleResponse(response, jobVertex, flow));
         runningJobs.put(jobVertex.getId(), jobVertexFuture);
     }
 

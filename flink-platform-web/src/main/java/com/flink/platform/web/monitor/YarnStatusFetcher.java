@@ -24,7 +24,9 @@ import static com.flink.platform.common.enums.ExecutionStatus.NOT_EXIST;
 @Component
 public class YarnStatusFetcher implements StatusFetcher {
 
-    @Lazy @Autowired private YarnClientService yarnClientService;
+    @Lazy
+    @Autowired
+    private YarnClientService yarnClientService;
 
     @Override
     public boolean isSupported(DeployMode deployMode) {
@@ -48,8 +50,7 @@ public class YarnStatusFetcher implements StatusFetcher {
 
         String applicationId = jobCallback.getAppId();
         try {
-            ApplicationReport applicationReport =
-                    yarnClientService.getApplicationReport(jobCallback.getAppId());
+            ApplicationReport applicationReport = yarnClientService.getApplicationReport(jobCallback.getAppId());
             return newJobStatusReply(
                     YarnHelper.getStatus(applicationReport).getCode(),
                     applicationReport.getStartTime(),
@@ -58,10 +59,7 @@ public class YarnStatusFetcher implements StatusFetcher {
             log.warn("Application: {} not found.", applicationId, e);
             return newJobStatusReply(NOT_EXIST.getCode(), currentTimeMillis, currentTimeMillis);
         } catch (Exception e) {
-            log.error(
-                    "Use yarn client to get ApplicationReport failed, application: {}",
-                    applicationId,
-                    e);
+            log.error("Use yarn client to get ApplicationReport failed, application: {}", applicationId, e);
             throw new RuntimeException(e);
         }
     }

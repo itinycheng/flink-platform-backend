@@ -20,8 +20,7 @@ public class ThreadUtil {
         return (ThreadPoolExecutor) Executors.newFixedThreadPool(threadsNum, threadFactory);
     }
 
-    public static ThreadPoolExecutor newDaemonFixedThreadExecutor(
-            String namePrefix, int threadsNum) {
+    public static ThreadPoolExecutor newDaemonFixedThreadExecutor(String namePrefix, int threadsNum) {
         ThreadFactory threadFactory = namedThreadFactory(namePrefix, true);
         return (ThreadPoolExecutor) Executors.newFixedThreadPool(threadsNum, threadFactory);
     }
@@ -32,7 +31,10 @@ public class ThreadUtil {
     }
 
     public static ThreadFactory namedThreadFactory(String prefix, boolean isDaemon) {
-        return new ThreadFactoryBuilder().setDaemon(isDaemon).setNameFormat(prefix + "-%d").build();
+        return new ThreadFactoryBuilder()
+                .setDaemon(isDaemon)
+                .setNameFormat(prefix + "-%d")
+                .build();
     }
 
     public static void sleepRetry(int retryAttempt) {

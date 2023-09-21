@@ -19,14 +19,10 @@ public class JobRunnerTest {
 
     @Test
     public void testEnumJsonSerde() {
-        Map<Placeholder, String> sqlVarValueMap =
-                Arrays.stream(new Placeholder[] {CURRENT_TIMESTAMP})
-                        .map(
-                                placeholder ->
-                                        Pair.of(
-                                                placeholder,
-                                                placeholder.provider.apply(null).toString()))
-                        .collect(toMap(Pair::getLeft, Pair::getRight));
+        Map<Placeholder, String> sqlVarValueMap = Arrays.stream(new Placeholder[] {CURRENT_TIMESTAMP})
+                .map(placeholder ->
+                        Pair.of(placeholder, placeholder.provider.apply(null).toString()))
+                .collect(toMap(Pair::getLeft, Pair::getRight));
         System.out.println(JsonUtil.toJsonString(sqlVarValueMap));
     }
 

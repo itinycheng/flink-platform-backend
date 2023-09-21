@@ -26,19 +26,13 @@ public class AbstractTableFunction<I, O> extends TableFunction<O> {
         super();
         // validate columns' definition
         Class<I> tableClass =
-                (Class<I>)
-                        ((ParameterizedType) this.getClass().getGenericSuperclass())
-                                .getActualTypeArguments()[0];
+                (Class<I>) ((ParameterizedType) this.getClass().getGenericSuperclass()).getActualTypeArguments()[0];
         List<SqlColumn> sqlColumns = ClassUtil.extractSqlColumnAnnotation(tableClass);
         String tableDescription =
                 this.getClass().getAnnotation(FunctionHint.class).output().value();
-        String expectDescription =
-                sqlColumns.stream()
-                        .map(
-                                sqlColumn ->
-                                        String.join(
-                                                " ", sqlColumn.name(), sqlColumn.type().sqlType))
-                        .collect(Collectors.joining(", ", "ROW<", ">"));
+        String expectDescription = sqlColumns.stream()
+                .map(sqlColumn -> String.join(" ", sqlColumn.name(), sqlColumn.type().sqlType))
+                .collect(Collectors.joining(", ", "ROW<", ">"));
         Preconditions.checkThrow(
                 !tableDescription.equalsIgnoreCase(expectDescription),
                 () -> new RuntimeException("value of @DataTypeHint isn't correct"));

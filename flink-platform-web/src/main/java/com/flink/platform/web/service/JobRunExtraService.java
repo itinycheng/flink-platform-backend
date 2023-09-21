@@ -20,7 +20,8 @@ import static com.flink.platform.common.enums.ExecutionStatus.CREATED;
 @Service
 public class JobRunExtraService {
 
-    @Autowired private JobRunInfoService jobRunService;
+    @Autowired
+    private JobRunInfoService jobRunService;
 
     @Transactional
     public JobRunInfo parseVarsAndSave(JobInfo jobInfo, Long flowRunId, String host) {
@@ -67,12 +68,10 @@ public class JobRunExtraService {
                 .map(placeholder -> placeholder.provider.apply(jobRun))
                 .forEach(variableMap::putAll);
 
-        MapUtils.emptyIfNull(jobRun.getVariables())
-                .forEach(
-                        (name, value) -> {
-                            Variable sqlVar = Variable.matchPrefix(name);
-                            variableMap.put(name, sqlVar.provider.apply(value));
-                        });
+        MapUtils.emptyIfNull(jobRun.getVariables()).forEach((name, value) -> {
+            Variable sqlVar = Variable.matchPrefix(name);
+            variableMap.put(name, sqlVar.provider.apply(value));
+        });
         return variableMap;
     }
 

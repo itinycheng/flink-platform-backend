@@ -32,8 +32,7 @@ public class FlinkYarnTask extends ShellTask {
 
     private String jobId;
 
-    public FlinkYarnTask(
-            long jobRunId, DeployMode mode, String command, String[] envs, long timeoutMills) {
+    public FlinkYarnTask(long jobRunId, DeployMode mode, String command, String[] envs, long timeoutMills) {
         super(jobRunId, command, envs, timeoutMills);
         this.mode = mode;
         setLogConsumer(this.extractAppIdAndJobId());

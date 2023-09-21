@@ -37,9 +37,11 @@ import static com.flink.platform.web.entity.response.ResultInfo.success;
 @RequestMapping("/user")
 public class UserController {
 
-    @Autowired private UserService userService;
+    @Autowired
+    private UserService userService;
 
-    @Autowired private SessionService sessionService;
+    @Autowired
+    private SessionService sessionService;
 
     @GetMapping(value = "/get/{userId}")
     public ResultInfo<User> get(@PathVariable Long userId) {
@@ -87,9 +89,7 @@ public class UserController {
             @RequestParam(name = "size", required = false, defaultValue = "20") Integer size,
             @RequestParam(name = "name", required = false) String name) {
         LambdaQueryWrapper<User> queryWrapper =
-                new QueryWrapper<User>()
-                        .lambda()
-                        .like(Objects.nonNull(name), User::getUsername, name);
+                new QueryWrapper<User>().lambda().like(Objects.nonNull(name), User::getUsername, name);
 
         if (loginUser.getType() != ADMIN) {
             queryWrapper.eq(User::getId, loginUser.getId());
@@ -101,8 +101,7 @@ public class UserController {
     }
 
     @GetMapping(value = "/info")
-    public ResultInfo<Map<String, Object>> info(
-            @RequestAttribute(value = Constant.SESSION_USER) User loginUser) {
+    public ResultInfo<Map<String, Object>> info(@RequestAttribute(value = Constant.SESSION_USER) User loginUser) {
 
         Map<String, Object> result = new HashMap<>();
         result.put("roles", Arrays.asList("admin", "common"));

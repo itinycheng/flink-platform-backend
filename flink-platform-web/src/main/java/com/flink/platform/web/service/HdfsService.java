@@ -25,7 +25,9 @@ import static com.flink.platform.common.constants.Constant.DOT;
 @Service
 public class HdfsService {
 
-    @Lazy @Autowired private FileSystem fileSystem;
+    @Lazy
+    @Autowired
+    private FileSystem fileSystem;
 
     public void copyFileToLocalIfChanged(Path hdfsFile, Path localFile) throws IOException {
         boolean isCopy = true;
@@ -33,10 +35,8 @@ public class HdfsService {
         if (local.exists(localFile)) {
             FileStatus localFileStatus = local.getFileStatus(localFile);
             FileStatus hdfsFileStatus = fileSystem.getFileStatus(hdfsFile);
-            isCopy =
-                    localFileStatus.getLen() != hdfsFileStatus.getLen()
-                            || localFileStatus.getModificationTime()
-                                    < hdfsFileStatus.getModificationTime();
+            isCopy = localFileStatus.getLen() != hdfsFileStatus.getLen()
+                    || localFileStatus.getModificationTime() < hdfsFileStatus.getModificationTime();
         }
         if (isCopy) {
             fileSystem.copyToLocalFile(hdfsFile, localFile);
@@ -48,8 +48,7 @@ public class HdfsService {
         return fileSystem.delete(dstPath, recursive);
     }
 
-    public boolean copyFromLocal(
-            String srcFile, String dstFile, boolean deleteSrc, boolean overwrite)
+    public boolean copyFromLocal(String srcFile, String dstFile, boolean deleteSrc, boolean overwrite)
             throws IOException {
         Path srcPath = new Path(srcFile);
         Path dstPath = new Path(dstFile);
@@ -63,9 +62,8 @@ public class HdfsService {
     }
 
     public List<Path> listVisibleFiles(String dir) throws IOException {
-        return Arrays.stream(
-                        fileSystem.listStatus(
-                                new Path(dir), path -> !path.getName().startsWith(DOT)))
+        return Arrays.stream(fileSystem.listStatus(
+                        new Path(dir), path -> !path.getName().startsWith(DOT)))
                 .map(FileStatus::getPath)
                 .collect(Collectors.toList());
     }
@@ -80,13 +78,11 @@ public class HdfsService {
 
     public int lineNumber(Path file) {
         try (InputStream inputStream = inputStream(file).getRight();
-                LineNumberReader lineNumberReader =
-                        new LineNumberReader(new InputStreamReader(inputStream))) {
+                LineNumberReader lineNumberReader = new LineNumberReader(new InputStreamReader(inputStream))) {
             lineNumberReader.skip(Long.MAX_VALUE);
             return lineNumberReader.getLineNumber();
         } catch (Exception e) {
-            throw new RuntimeException(
-                    String.format("calc line number of File: %s failed", file.toString()));
+            throw new RuntimeException(String.format("calc line number of File: %s failed", file.toString()));
         }
     }
 }
