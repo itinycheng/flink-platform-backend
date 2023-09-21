@@ -18,7 +18,8 @@ public class DateUtil {
 
     public static final String GLOBAL_TIMEZONE = "Asia/Shanghai";
 
-    public static final ZoneId DEFAULT_ZONE_ID = TimeZone.getTimeZone(GLOBAL_TIMEZONE).toZoneId();
+    public static final ZoneId DEFAULT_ZONE_ID =
+            TimeZone.getTimeZone(GLOBAL_TIMEZONE).toZoneId();
 
     public static final long MILLIS_PER_MINUTE = DateUtils.MILLIS_PER_MINUTE;
 
@@ -42,12 +43,9 @@ public class DateUtil {
     }
 
     private static DateTimeFormatter getFormatter(String format) {
-        return FORMATTERS.computeIfAbsent(
-                format,
-                s ->
-                        new DateTimeFormatterBuilder()
-                                .appendPattern(s)
-                                .toFormatter()
-                                .withZone(DEFAULT_ZONE_ID));
+        return FORMATTERS.computeIfAbsent(format, s -> new DateTimeFormatterBuilder()
+                .appendPattern(s)
+                .toFormatter()
+                .withZone(DEFAULT_ZONE_ID));
     }
 }

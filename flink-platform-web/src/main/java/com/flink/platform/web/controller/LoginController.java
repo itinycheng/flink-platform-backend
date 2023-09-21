@@ -32,30 +32,27 @@ import static com.flink.platform.web.entity.response.ResultInfo.success;
 @RequestMapping
 public class LoginController {
 
-    @Autowired private UserService userService;
+    @Autowired
+    private UserService userService;
 
-    @Autowired private SessionService sessionService;
+    @Autowired
+    private SessionService sessionService;
 
     @PostMapping(value = "/login")
-    public ResultInfo<Map<String, String>> login(
-            @RequestBody User user, HttpServletRequest request) {
-        User loginUser =
-                userService.getOne(
-                        new QueryWrapper<User>()
-                                .lambda()
-                                .eq(User::getUsername, user.getUsername())
-                                .eq(User::getPassword, user.getPassword()));
+    public ResultInfo<Map<String, String>> login(@RequestBody User user, HttpServletRequest request) {
+        User loginUser = userService.getOne(new QueryWrapper<User>()
+                .lambda()
+                .eq(User::getUsername, user.getUsername())
+                .eq(User::getPassword, user.getPassword()));
         if (loginUser == null) {
             return failure(ResponseStatus.USER_NAME_PASSWD_ERROR);
         }
 
         String clientIp = HttpUtil.getClientIpAddress(request);
-        Session session =
-                sessionService.getOne(
-                        new QueryWrapper<Session>()
-                                .lambda()
-                                .eq(Session::getUserId, loginUser.getId())
-                                .eq(Session::getIp, clientIp));
+        Session session = sessionService.getOne(new QueryWrapper<Session>()
+                .lambda()
+                .eq(Session::getUserId, loginUser.getId())
+                .eq(Session::getIp, clientIp));
 
         if (session == null) {
             session = new Session();
@@ -77,8 +74,7 @@ public class LoginController {
             return failure(USER_NOT_FOUNT);
         }
 
-        sessionService.remove(
-                new QueryWrapper<Session>().lambda().eq(Session::getToken, userRequest.getToken()));
+        sessionService.remove(new QueryWrapper<Session>().lambda().eq(Session::getToken, userRequest.getToken()));
         return success(userRequest.getToken());
     }
 }

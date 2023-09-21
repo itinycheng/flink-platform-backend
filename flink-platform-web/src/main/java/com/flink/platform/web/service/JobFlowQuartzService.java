@@ -16,9 +16,11 @@ import static com.flink.platform.common.enums.JobFlowStatus.SCHEDULING;
 @DS("master_platform")
 public class JobFlowQuartzService {
 
-    @Autowired private JobFlowService jobFlowService;
+    @Autowired
+    private JobFlowService jobFlowService;
 
-    @Autowired private QuartzService quartzService;
+    @Autowired
+    private QuartzService quartzService;
 
     @Transactional(rollbackFor = Exception.class)
     public boolean scheduleJob(JobFlow jobFlow) {

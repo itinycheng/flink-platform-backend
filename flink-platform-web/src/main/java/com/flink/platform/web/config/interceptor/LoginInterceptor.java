@@ -19,15 +19,15 @@ import org.springframework.web.servlet.HandlerInterceptor;
 @Slf4j
 public class LoginInterceptor implements HandlerInterceptor {
 
-    @Autowired private UserService userService;
+    @Autowired
+    private UserService userService;
 
-    @Autowired private SessionService sessionService;
+    @Autowired
+    private SessionService sessionService;
 
     @Override
     public boolean preHandle(
-            @Nonnull HttpServletRequest request,
-            @Nonnull HttpServletResponse response,
-            @Nonnull Object handler) {
+            @Nonnull HttpServletRequest request, @Nonnull HttpServletResponse response, @Nonnull Object handler) {
 
         // get token
         String token = request.getHeader("X-Token");
@@ -36,8 +36,7 @@ public class LoginInterceptor implements HandlerInterceptor {
         }
 
         Session session =
-                sessionService.getOne(
-                        new QueryWrapper<Session>().lambda().eq(Session::getToken, token));
+                sessionService.getOne(new QueryWrapper<Session>().lambda().eq(Session::getToken, token));
         if (session == null) {
             response.setStatus(HttpStatus.SC_UNAUTHORIZED);
             log.info("session: {} does not exist.", token);

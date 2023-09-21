@@ -46,34 +46,30 @@ public class UserLabelValueFunction extends ScalarFunction {
     public TypeInference getTypeInference(DataTypeFactory typeFactory) {
         return TypeInference.newBuilder()
                 .typedArguments(DataTypes.STRING(), DataTypes.STRING())
-                .outputTypeStrategy(
-                        callContext -> {
-                            if (!callContext.isArgumentLiteral(1)
-                                    || callContext.isArgumentNull(1)) {
-                                throw callContext.newValidationError(
-                                        "Literal expected for second argument.");
-                            }
-                            DataType dataType =
-                                    callContext
-                                            .getArgumentValue(1, String.class)
-                                            .map(DataType::of)
-                                            .orElse(DataType.STRING);
-                            switch (dataType) {
-                                case INT:
-                                    return Optional.of(DataTypes.INT().nullable());
-                                case LONG:
-                                    return Optional.of(DataTypes.BIGINT().nullable());
-                                case FLOAT:
-                                    return Optional.of(DataTypes.FLOAT().nullable());
-                                case DOUBLE:
-                                    return Optional.of(DataTypes.DOUBLE().nullable());
-                                case BOOL:
-                                    return Optional.of(DataTypes.BOOLEAN().nullable());
-                                case STRING:
-                                default:
-                                    return Optional.of(DataTypes.STRING().nullable());
-                            }
-                        })
+                .outputTypeStrategy(callContext -> {
+                    if (!callContext.isArgumentLiteral(1) || callContext.isArgumentNull(1)) {
+                        throw callContext.newValidationError("Literal expected for second argument.");
+                    }
+                    DataType dataType = callContext
+                            .getArgumentValue(1, String.class)
+                            .map(DataType::of)
+                            .orElse(DataType.STRING);
+                    switch (dataType) {
+                        case INT:
+                            return Optional.of(DataTypes.INT().nullable());
+                        case LONG:
+                            return Optional.of(DataTypes.BIGINT().nullable());
+                        case FLOAT:
+                            return Optional.of(DataTypes.FLOAT().nullable());
+                        case DOUBLE:
+                            return Optional.of(DataTypes.DOUBLE().nullable());
+                        case BOOL:
+                            return Optional.of(DataTypes.BOOLEAN().nullable());
+                        case STRING:
+                        default:
+                            return Optional.of(DataTypes.STRING().nullable());
+                    }
+                })
                 .build();
     }
 }

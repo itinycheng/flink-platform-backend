@@ -40,8 +40,7 @@ public class YarnClientService {
 
     @PostConstruct
     public void initYarnClient() {
-        log.info(
-                "Init Yarn and FileSystem clients of hadoop corresponding to the current running instance.");
+        log.info("Init Yarn and FileSystem clients of hadoop corresponding to the current running instance.");
         Configuration conf = HadoopUtil.getHadoopConfiguration();
         yarnClient = YarnClient.createYarnClient();
         yarnClient.init(new YarnConfiguration(conf));
@@ -78,10 +77,8 @@ public class YarnClientService {
             LocalFileSystem local = FileSystem.getLocal(fileSystem.getConf());
             FileStatus localFileStatus = local.getFileStatus(localPath);
             FileStatus hdfsFileStatus = fileSystem.getFileStatus(hdfsPath);
-            isCopy =
-                    localFileStatus.getLen() != hdfsFileStatus.getLen()
-                            || localFileStatus.getModificationTime()
-                                    > hdfsFileStatus.getModificationTime();
+            isCopy = localFileStatus.getLen() != hdfsFileStatus.getLen()
+                    || localFileStatus.getModificationTime() > hdfsFileStatus.getModificationTime();
         }
 
         if (isCopy) {

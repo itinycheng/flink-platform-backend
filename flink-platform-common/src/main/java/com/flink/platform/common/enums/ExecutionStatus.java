@@ -30,12 +30,9 @@ public enum ExecutionStatus {
         NON_TERMINAL
     }
 
-    private static final List<ExecutionStatus> NON_TERMINALS =
-            Arrays.stream(values())
-                    .filter(
-                            executionStatus ->
-                                    executionStatus.terminalState == TerminalState.NON_TERMINAL)
-                    .collect(Collectors.toList());
+    private static final List<ExecutionStatus> NON_TERMINALS = Arrays.stream(values())
+            .filter(executionStatus -> executionStatus.terminalState == TerminalState.NON_TERMINAL)
+            .collect(Collectors.toList());
 
     private final int code;
 

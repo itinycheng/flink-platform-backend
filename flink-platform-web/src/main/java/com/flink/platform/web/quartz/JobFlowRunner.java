@@ -35,14 +35,11 @@ public class JobFlowRunner implements Job {
 
     private final JobFlowService jobFlowService = SpringContext.getBean(JobFlowService.class);
 
-    private final JobFlowRunService jobFlowRunService =
-            SpringContext.getBean(JobFlowRunService.class);
+    private final JobFlowRunService jobFlowRunService = SpringContext.getBean(JobFlowRunService.class);
 
-    private final JobFlowScheduleService jobFlowScheduleService =
-            SpringContext.getBean(JobFlowScheduleService.class);
+    private final JobFlowScheduleService jobFlowScheduleService = SpringContext.getBean(JobFlowScheduleService.class);
 
-    private final AlertSendingService alertSendingService =
-            SpringContext.getBean(AlertSendingService.class);
+    private final AlertSendingService alertSendingService = SpringContext.getBean(AlertSendingService.class);
 
     @Override
     public void execute(JobExecutionContext context) {
@@ -52,12 +49,10 @@ public class JobFlowRunner implements Job {
 
         synchronized (getProcessLock(code)) {
             // Get job flow info.
-            JobFlow jobFlow =
-                    jobFlowService.getOne(
-                            new QueryWrapper<JobFlow>()
-                                    .lambda()
-                                    .eq(JobFlow::getCode, code)
-                                    .in(JobFlow::getStatus, ONLINE, SCHEDULING));
+            JobFlow jobFlow = jobFlowService.getOne(new QueryWrapper<JobFlow>()
+                    .lambda()
+                    .eq(JobFlow::getCode, code)
+                    .in(JobFlow::getStatus, ONLINE, SCHEDULING));
             if (jobFlow == null) {
                 log.warn("The job flow: {} isn't exists or not in scheduling status", code);
                 return;
@@ -72,12 +67,10 @@ public class JobFlowRunner implements Job {
             }
 
             // Avoid preforming the same job flow multiple times at the same time.
-            JobFlowRun jobFlowRun =
-                    jobFlowRunService.getOne(
-                            new QueryWrapper<JobFlowRun>()
-                                    .lambda()
-                                    .eq(JobFlowRun::getFlowId, jobFlow.getId())
-                                    .in(JobFlowRun::getStatus, getNonTerminals()));
+            JobFlowRun jobFlowRun = jobFlowRunService.getOne(new QueryWrapper<JobFlowRun>()
+                    .lambda()
+                    .eq(JobFlowRun::getFlowId, jobFlow.getId())
+                    .in(JobFlowRun::getStatus, getNonTerminals()));
             if (jobFlowRun != null) {
                 log.warn(
                         "The job flow: {} is in non-terminal status, run id: {}",
@@ -92,11 +85,7 @@ public class JobFlowRunner implements Job {
             jobFlowRun = new JobFlowRun();
             jobFlowRun.setFlowId(jobFlow.getId());
             jobFlowRun.setName(
-                    String.join(
-                            "-",
-                            jobFlow.getName(),
-                            jobFlow.getCode(),
-                            String.valueOf(System.currentTimeMillis())));
+                    String.join("-", jobFlow.getName(), jobFlow.getCode(), String.valueOf(System.currentTimeMillis())));
             jobFlowRun.setFlow(jobFlow.getFlow());
             jobFlowRun.setUserId(jobFlow.getUserId());
             jobFlowRun.setHost(Constant.HOST_IP);

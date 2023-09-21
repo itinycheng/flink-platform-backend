@@ -22,9 +22,13 @@ public class JobCallback {
 
     private String message;
 
-    @JsonIgnore private ExecutionStatus status;
+    @JsonIgnore
+    private ExecutionStatus status;
 
-    @Nonnull @Delegate @JsonIgnore private ShellCallback cmdCallback;
+    @Nonnull
+    @Delegate
+    @JsonIgnore
+    private ShellCallback cmdCallback;
 
     /** Only for deSeral. */
     public JobCallback() {

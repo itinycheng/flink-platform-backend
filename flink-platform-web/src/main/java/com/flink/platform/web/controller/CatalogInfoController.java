@@ -34,7 +34,8 @@ import static com.flink.platform.web.entity.response.ResultInfo.success;
 @RequestMapping("/catalog")
 public class CatalogInfoController {
 
-    @Autowired private CatalogInfoService catalogService;
+    @Autowired
+    private CatalogInfoService catalogService;
 
     @PostMapping(value = "/create")
     public ResultInfo<Long> create(
@@ -74,14 +75,11 @@ public class CatalogInfoController {
 
     @GetMapping(value = "/delete/{catalogId}")
     public ResultInfo<Boolean> delete(
-            @RequestAttribute(value = Constant.SESSION_USER) User loginUser,
-            @PathVariable Long catalogId) {
-        boolean bool =
-                catalogService.remove(
-                        new QueryWrapper<CatalogInfo>()
-                                .lambda()
-                                .eq(CatalogInfo::getId, catalogId)
-                                .eq(CatalogInfo::getUserId, loginUser.getId()));
+            @RequestAttribute(value = Constant.SESSION_USER) User loginUser, @PathVariable Long catalogId) {
+        boolean bool = catalogService.remove(new QueryWrapper<CatalogInfo>()
+                .lambda()
+                .eq(CatalogInfo::getId, catalogId)
+                .eq(CatalogInfo::getUserId, loginUser.getId()));
         return success(bool);
     }
 
@@ -93,25 +91,20 @@ public class CatalogInfoController {
             @RequestParam(name = "name", required = false) String name,
             @RequestParam(name = "type", required = false) CatalogType type) {
         Page<CatalogInfo> pager = new Page<>(page, size);
-        IPage<CatalogInfo> iPage =
-                catalogService.page(
-                        pager,
-                        new QueryWrapper<CatalogInfo>()
-                                .lambda()
-                                .eq(CatalogInfo::getUserId, loginUser.getId())
-                                .eq(Objects.nonNull(type), CatalogInfo::getType, type)
-                                .like(Objects.nonNull(name), CatalogInfo::getName, name));
+        IPage<CatalogInfo> iPage = catalogService.page(
+                pager,
+                new QueryWrapper<CatalogInfo>()
+                        .lambda()
+                        .eq(CatalogInfo::getUserId, loginUser.getId())
+                        .eq(Objects.nonNull(type), CatalogInfo::getType, type)
+                        .like(Objects.nonNull(name), CatalogInfo::getName, name));
         return success(iPage);
     }
 
     @GetMapping(value = "/list")
-    public ResultInfo<List<CatalogInfo>> list(
-            @RequestAttribute(value = Constant.SESSION_USER) User loginUser) {
-        List<CatalogInfo> list =
-                catalogService.list(
-                        new QueryWrapper<CatalogInfo>()
-                                .lambda()
-                                .eq(CatalogInfo::getUserId, loginUser.getId()));
+    public ResultInfo<List<CatalogInfo>> list(@RequestAttribute(value = Constant.SESSION_USER) User loginUser) {
+        List<CatalogInfo> list = catalogService.list(
+                new QueryWrapper<CatalogInfo>().lambda().eq(CatalogInfo::getUserId, loginUser.getId()));
         return success(list);
     }
 }

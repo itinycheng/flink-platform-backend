@@ -11,7 +11,9 @@ import static com.flink.platform.common.util.Preconditions.requireNotNull;
 @NoArgsConstructor
 public class AlertInfoRequest {
 
-    @Getter @Delegate private final AlertInfo alertInfo = new AlertInfo();
+    @Getter
+    @Delegate
+    private final AlertInfo alertInfo = new AlertInfo();
 
     public String validateOnCreate() {
         String msg = verifyName();

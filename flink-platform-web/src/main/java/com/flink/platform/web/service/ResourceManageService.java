@@ -10,9 +10,11 @@ import org.springframework.stereotype.Service;
 @Service
 public class ResourceManageService {
 
-    @Autowired private ResourceService resourceService;
+    @Autowired
+    private ResourceService resourceService;
 
-    @Autowired private HdfsService hdfsService;
+    @Autowired
+    private HdfsService hdfsService;
 
     public boolean save(Resource entity) throws Exception {
         switch (entity.getType()) {
@@ -26,8 +28,7 @@ public class ResourceManageService {
                     parentPath = parentResource.getFullName();
                 }
                 String hdfsAbsolutePath =
-                        ResourceUtil.getFullHdfsFilePath(
-                                entity.getUserId(), parentPath, entity.getName());
+                        ResourceUtil.getFullHdfsFilePath(entity.getUserId(), parentPath, entity.getName());
                 if (!hdfsService.exists(hdfsAbsolutePath)) {
                     hdfsService.mkDirs(hdfsAbsolutePath);
                     entity.setFullName(hdfsAbsolutePath);

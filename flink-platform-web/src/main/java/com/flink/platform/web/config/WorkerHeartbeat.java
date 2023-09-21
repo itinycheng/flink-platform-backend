@@ -46,11 +46,14 @@ public class WorkerHeartbeat {
     private static final ScheduledExecutorService EXECUTOR_SERVICE =
             ThreadUtil.newDaemonSingleScheduledExecutor("WorkerHeartbeat");
 
-    @Autowired WorkerService workerService;
+    @Autowired
+    WorkerService workerService;
 
-    @Autowired JobFlowRunService jobFlowRunService;
+    @Autowired
+    JobFlowRunService jobFlowRunService;
 
-    @Autowired JobFlowScheduleService jobFlowScheduleService;
+    @Autowired
+    JobFlowScheduleService jobFlowScheduleService;
 
     @Value("${server.port}")
     private String port;
@@ -60,19 +63,16 @@ public class WorkerHeartbeat {
 
     @PostConstruct
     public void initHeartbeat() {
-        EXECUTOR_SERVICE.scheduleWithFixedDelay(
-                this::heartbeat, new Random().nextInt(50) + 10, 60, SECONDS);
+        EXECUTOR_SERVICE.scheduleWithFixedDelay(this::heartbeat, new Random().nextInt(50) + 10, 60, SECONDS);
     }
 
     public synchronized void heartbeat() {
         // 1. Update worker heartbeat info.
-        Worker worker =
-                workerService.getOne(
-                        new QueryWrapper<Worker>()
-                                .lambda()
-                                .select(Worker::getId)
-                                .eq(Worker::getIp, HOST_IP)
-                                .last("LIMIT 1"));
+        Worker worker = workerService.getOne(new QueryWrapper<Worker>()
+                .lambda()
+                .select(Worker::getId)
+                .eq(Worker::getIp, HOST_IP)
+                .last("LIMIT 1"));
         Long workerId = worker != null ? worker.getId() : null;
 
         worker = new Worker();
@@ -96,24 +96,12 @@ public class WorkerHeartbeat {
         // TODO: dispatch JobFlowRun to other active workers.
         worker = workerService.getById(worker.getId());
         if (LEADER.equals(worker.getRole())) {
-            getWorkersWithHeartbeatTimeout()
-                    .forEach(
-                            timeoutWorker ->
-                                    jobFlowRunService
-                                            .list(
-                                                    new QueryWrapper<JobFlowRun>()
-                                                            .lambda()
-                                                            .eq(
-                                                                    JobFlowRun::getHost,
-                                                                    timeoutWorker.getIp())
-                                                            .in(
-                                                                    JobFlowRun::getStatus,
-                                                                    getNonTerminals()))
-                                            .forEach(
-                                                    jobFlowRun ->
-                                                            jobFlowScheduleService
-                                                                    .rebuildAndSchedule(
-                                                                            jobFlowRun)));
+            getWorkersWithHeartbeatTimeout().forEach(timeoutWorker -> jobFlowRunService
+                    .list(new QueryWrapper<JobFlowRun>()
+                            .lambda()
+                            .eq(JobFlowRun::getHost, timeoutWorker.getIp())
+                            .in(JobFlowRun::getStatus, getNonTerminals()))
+                    .forEach(jobFlowRun -> jobFlowScheduleService.rebuildAndSchedule(jobFlowRun)));
         }
     }
 
@@ -123,11 +111,10 @@ public class WorkerHeartbeat {
             return;
         }
 
-        workerService.update(
-                new UpdateWrapper<Worker>()
-                        .lambda()
-                        .set(Worker::getRole, FOLLOWER)
-                        .eq(Worker::getRole, LEADER));
+        workerService.update(new UpdateWrapper<Worker>()
+                .lambda()
+                .set(Worker::getRole, FOLLOWER)
+                .eq(Worker::getRole, LEADER));
 
         Worker worker = new Worker();
         worker.setId(workerId);
@@ -136,23 +123,20 @@ public class WorkerHeartbeat {
     }
 
     public boolean hasValidLeader() {
-        List<Worker> list =
-                workerService.list(
-                        new QueryWrapper<Worker>()
-                                .lambda()
-                                .select(Worker::getId, Worker::getHeartbeat)
-                                .eq(Worker::getRole, LEADER)
-                                .ne(Worker::getIp, LOCALHOST));
+        List<Worker> list = workerService.list(new QueryWrapper<Worker>()
+                .lambda()
+                .select(Worker::getId, Worker::getHeartbeat)
+                .eq(Worker::getRole, LEADER)
+                .ne(Worker::getIp, LOCALHOST));
         return list.size() == 1 && list.get(0).isActive();
     }
 
     public List<Worker> getWorkersWithHeartbeatTimeout() {
         return workerService
-                .list(
-                        new QueryWrapper<Worker>()
-                                .lambda()
-                                .ne(Worker::getRole, INACTIVE)
-                                .ne(Worker::getIp, LOCALHOST))
+                .list(new QueryWrapper<Worker>()
+                        .lambda()
+                        .ne(Worker::getRole, INACTIVE)
+                        .ne(Worker::getIp, LOCALHOST))
                 .stream()
                 .filter(worker -> !worker.isActive())
                 .collect(toList());

@@ -21,8 +21,7 @@ public class ZipUtil {
 
     private static final int BUFFER_SIZE = 1024 * 1024;
 
-    public static void writeToZip(String filename, InputStream in, ZipOutputStream zos)
-            throws IOException {
+    public static void writeToZip(String filename, InputStream in, ZipOutputStream zos) throws IOException {
         byte[] buf = new byte[BUFFER_SIZE];
         zos.putNextEntry(new ZipEntry(filename));
         int len;
@@ -86,8 +85,7 @@ public class ZipUtil {
         }
     }
 
-    private static void compress(
-            File sourceFile, ZipOutputStream zos, String name, boolean keepDirStructure)
+    private static void compress(File sourceFile, ZipOutputStream zos, String name, boolean keepDirStructure)
             throws Exception {
         byte[] buf = new byte[BUFFER_SIZE];
         if (sourceFile.isFile()) {
@@ -123,8 +121,7 @@ public class ZipUtil {
         List<File> fileList = new ArrayList<>();
         fileList.add(new File("/Users/tiny/Downloads/hive-exec-2.1.1.jar"));
         fileList.add(new File("/Users/tiny/Downloads/hive-hcatalog-core-2.1.1.jar"));
-        FileOutputStream fos2 =
-                new FileOutputStream(new File("/Users/tiny/Downloads/mytest02.zip"));
+        FileOutputStream fos2 = new FileOutputStream(new File("/Users/tiny/Downloads/mytest02.zip"));
         ZipUtil.toZip(fileList, fos2);
     }
 }

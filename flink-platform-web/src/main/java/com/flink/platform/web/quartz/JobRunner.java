@@ -23,8 +23,7 @@ import static com.flink.platform.common.enums.ExecutionCondition.AND;
 @Slf4j
 public class JobRunner implements Job {
 
-    public static final ThreadPoolExecutor EXECUTOR =
-            ThreadUtil.newFixedThreadExecutor("JobRunnerExecutor", 100);
+    public static final ThreadPoolExecutor EXECUTOR = ThreadUtil.newFixedThreadExecutor("JobRunnerExecutor", 100);
 
     private final WorkerConfig workerConfig = SpringContext.getBean(WorkerConfig.class);
 
@@ -36,11 +35,10 @@ public class JobRunner implements Job {
 
         JobVertex jobVertex = new JobVertex(jobId, jobId);
         jobVertex.setPrecondition(AND);
-        EXECUTOR.execute(
-                () -> {
-                    JobExecuteThread callable = new JobExecuteThread(null, jobVertex, workerConfig);
-                    JobResponse response = callable.call();
-                    log.info("The job: {} is processed, result: {}", jobId, response);
-                });
+        EXECUTOR.execute(() -> {
+            JobExecuteThread callable = new JobExecuteThread(null, jobVertex, workerConfig);
+            JobResponse response = callable.call();
+            log.info("The job: {} is processed, result: {}", jobId, response);
+        });
     }
 }

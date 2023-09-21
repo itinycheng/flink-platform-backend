@@ -17,31 +17,33 @@ import static com.flink.platform.common.enums.ExecutionStatus.getNonTerminals;
 @Component
 public class InitJobFlowScheduler {
 
-    @Autowired private JobFlowRunService jobFlowRunService;
+    @Autowired
+    private JobFlowRunService jobFlowRunService;
 
-    @Autowired private JobFlowScheduleService jobFlowScheduleService;
+    @Autowired
+    private JobFlowScheduleService jobFlowScheduleService;
 
-    @Autowired private JobRunInfoService jobRunInfoService;
+    @Autowired
+    private JobRunInfoService jobRunInfoService;
 
-    @Autowired private QuartzService quartzService;
+    @Autowired
+    private QuartzService quartzService;
 
     @Autowired
     @PostConstruct
     public void init() {
-        CompletableFuture.runAsync(
-                () -> {
-                    quartzService.waitForStarted();
-                    appendOwnedJobFlowRunToScheduler();
-                });
+        CompletableFuture.runAsync(() -> {
+            quartzService.waitForStarted();
+            appendOwnedJobFlowRunToScheduler();
+        });
     }
 
     public void appendOwnedJobFlowRunToScheduler() {
         jobFlowRunService
-                .list(
-                        new QueryWrapper<JobFlowRun>()
-                                .lambda()
-                                .eq(JobFlowRun::getHost, HOST_IP)
-                                .in(JobFlowRun::getStatus, getNonTerminals()))
+                .list(new QueryWrapper<JobFlowRun>()
+                        .lambda()
+                        .eq(JobFlowRun::getHost, HOST_IP)
+                        .in(JobFlowRun::getStatus, getNonTerminals()))
                 .forEach(jobFlowRun -> jobFlowScheduleService.rebuildAndSchedule(jobFlowRun));
     }
 }

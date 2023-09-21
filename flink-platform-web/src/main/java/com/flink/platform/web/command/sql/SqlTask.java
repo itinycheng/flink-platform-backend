@@ -55,8 +55,7 @@ public class SqlTask extends AbstractTask {
     public void run() throws Exception {
         Exception exception = null;
         List<Map<String, Object>> dataList = new ArrayList<>();
-        try (Connection connection =
-                        createConnection(datasource.getType(), datasource.getParams());
+        try (Connection connection = createConnection(datasource.getType(), datasource.getParams());
                 Statement stmt = connection.createStatement()) {
             this.statement = stmt;
 
@@ -88,9 +87,7 @@ public class SqlTask extends AbstractTask {
                         while (resultSet.next() && count++ < 2000) {
                             Map<String, Object> itemMap = new HashMap<>(num);
                             for (int i = 1; i <= num; i++) {
-                                itemMap.put(
-                                        columnNames[i - 1],
-                                        toJavaObject(resultSet.getObject(i), dbType));
+                                itemMap.put(columnNames[i - 1], toJavaObject(resultSet.getObject(i), dbType));
                             }
                             dataList.add(itemMap);
                         }

@@ -34,21 +34,18 @@ public class HadoopUtil {
         String hadoopConfDir = System.getenv("HADOOP_CONF_DIR");
         if (hadoopConfDir != null) {
             log.info("Searching Hadoop configuration files in HADOOP_CONF_DIR: {}", hadoopConfDir);
-            foundHadoopConfiguration =
-                    addHadoopConfIfFound(result, hadoopConfDir) || foundHadoopConfiguration;
+            foundHadoopConfiguration = addHadoopConfIfFound(result, hadoopConfDir) || foundHadoopConfiguration;
         }
 
         if (!foundHadoopConfiguration) {
-            throw new RuntimeException(
-                    "Could not find Hadoop configuration via any of the supported methods "
-                            + "(Hadoop configuration, environment variables).");
+            throw new RuntimeException("Could not find Hadoop configuration via any of the supported methods "
+                    + "(Hadoop configuration, environment variables).");
         }
 
         return result;
     }
 
-    private static boolean addHadoopConfIfFound(
-            Configuration configuration, String possibleHadoopConfPath) {
+    private static boolean addHadoopConfIfFound(Configuration configuration, String possibleHadoopConfPath) {
         boolean foundHadoopConfiguration = false;
         if (new File(possibleHadoopConfPath).exists()) {
             String coreSitePath = possibleHadoopConfPath + "/core-site.xml";

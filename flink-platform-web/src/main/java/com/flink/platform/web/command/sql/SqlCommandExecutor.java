@@ -21,7 +21,8 @@ import static com.flink.platform.common.enums.JobType.MYSQL_SQL;
 @Component("sqlCommandExecutor")
 public class SqlCommandExecutor implements CommandExecutor {
 
-    @Autowired private DatasourceService datasourceService;
+    @Autowired
+    private DatasourceService datasourceService;
 
     @Override
     public boolean isSupported(JobType jobType) {

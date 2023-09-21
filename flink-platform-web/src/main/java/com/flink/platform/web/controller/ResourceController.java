@@ -41,11 +41,14 @@ import static com.flink.platform.web.entity.response.ResultInfo.success;
 @RequestMapping("/resource")
 public class ResourceController {
 
-    @Autowired private ResourceManageService resourceManageService;
+    @Autowired
+    private ResourceManageService resourceManageService;
 
-    @Autowired private ResourceService resourceService;
+    @Autowired
+    private ResourceService resourceService;
 
-    @Autowired private HdfsService hdfsService;
+    @Autowired
+    private HdfsService hdfsService;
 
     @PostMapping(value = "/create")
     public ResultInfo<Long> create(
@@ -97,11 +100,10 @@ public class ResourceController {
             @RequestParam(name = "name", required = false) String name,
             @RequestParam(name = "pid", required = false) Long pid) {
         Page<Resource> pager = new Page<>(page, size);
-        LambdaQueryWrapper<Resource> queryWrapper =
-                new QueryWrapper<Resource>()
-                        .lambda()
-                        .eq(Resource::getUserId, loginUser.getId())
-                        .like(Objects.nonNull(name), Resource::getName, name);
+        LambdaQueryWrapper<Resource> queryWrapper = new QueryWrapper<Resource>()
+                .lambda()
+                .eq(Resource::getUserId, loginUser.getId())
+                .like(Objects.nonNull(name), Resource::getName, name);
         if (pid != null) {
             queryWrapper.eq(Resource::getPid, pid);
         } else {
@@ -116,12 +118,10 @@ public class ResourceController {
     public ResultInfo<List<Resource>> list(
             @RequestAttribute(value = Constant.SESSION_USER) User loginUser,
             @RequestParam(name = "type", required = false) ResourceType type) {
-        List<Resource> list =
-                resourceService.list(
-                        new QueryWrapper<Resource>()
-                                .lambda()
-                                .eq(Resource::getUserId, loginUser.getId())
-                                .eq(Objects.nonNull(type), Resource::getType, type));
+        List<Resource> list = resourceService.list(new QueryWrapper<Resource>()
+                .lambda()
+                .eq(Resource::getUserId, loginUser.getId())
+                .eq(Objects.nonNull(type), Resource::getType, type));
         return ResultInfo.success(list);
     }
 
@@ -140,8 +140,7 @@ public class ResourceController {
             }
             localFileName = ResourceUtil.randomLocalTmpFile();
             String fullHdfsFileName =
-                    ResourceUtil.getFullHdfsFilePath(
-                            loginUser.getId(), parentDir, file.getOriginalFilename());
+                    ResourceUtil.getFullHdfsFilePath(loginUser.getId(), parentDir, file.getOriginalFilename());
             ResourceUtil.copyToLocal(file, localFileName);
             hdfsService.copyFromLocal(localFileName, fullHdfsFileName, true, true);
 

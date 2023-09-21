@@ -90,8 +90,7 @@ public class HadoopConfig {
             @Qualifier("projectHdfsPath") String projectHdfsPath)
             throws Exception {
         org.apache.hadoop.fs.Path parent = new org.apache.hadoop.fs.Path(projectHdfsPath);
-        org.apache.hadoop.fs.Path clusterIdFile =
-                new org.apache.hadoop.fs.Path(parent, ".main_cluster_id");
+        org.apache.hadoop.fs.Path clusterIdFile = new org.apache.hadoop.fs.Path(parent, ".main_cluster_id");
 
         if (!hdfsFileSystem.exists(clusterIdFile)) {
             String clusterId = UUID.randomUUID().toString();

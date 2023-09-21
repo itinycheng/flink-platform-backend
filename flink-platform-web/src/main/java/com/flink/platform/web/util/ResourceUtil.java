@@ -22,8 +22,7 @@ public class ResourceUtil {
 
     private static final String localRootPath = SpringContext.getBean("localDataDir", String.class);
 
-    private static final String hdfsRootPath =
-            SpringContext.getBean("projectHdfsPath", String.class);
+    private static final String hdfsRootPath = SpringContext.getBean("projectHdfsPath", String.class);
 
     private static final HdfsService hdfsService = SpringContext.getBean(HdfsService.class);
 

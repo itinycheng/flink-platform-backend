@@ -20,9 +20,11 @@ import static com.flink.platform.common.enums.ExecutionStatus.FAILURE;
 @Service
 public class AlertSendingService {
 
-    @Autowired private AlertSender alertSender;
+    @Autowired
+    private AlertSender alertSender;
 
-    @Autowired private JobFlowService jobFlowService;
+    @Autowired
+    private JobFlowService jobFlowService;
 
     public void sendAlerts(JobFlowRun jobFlowRun) {
         List<AlertConfig> alerts = jobFlowRun.getAlerts();
@@ -32,10 +34,8 @@ public class AlertSendingService {
 
         ExecutionStatus finalStatus = jobFlowRun.getStatus();
         alerts.stream()
-                .filter(
-                        alert ->
-                                CollectionUtils.isEmpty(alert.getStatuses())
-                                        || alert.getStatuses().contains(finalStatus))
+                .filter(alert -> CollectionUtils.isEmpty(alert.getStatuses())
+                        || alert.getStatuses().contains(finalStatus))
                 .forEach(alert -> alertSender.sendAlert(alert.getAlertId(), jobFlowRun));
     }
 

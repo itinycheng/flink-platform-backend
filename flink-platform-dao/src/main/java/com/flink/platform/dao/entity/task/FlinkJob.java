@@ -26,7 +26,8 @@ public class FlinkJob extends BaseJob {
     /** external jars, such as udf jar. */
     private List<Long> extJars;
 
-    @JsonIgnore private transient List<String> extJarPaths;
+    @JsonIgnore
+    private transient List<String> extJarPaths;
 
     /** main args. */
     private String mainArgs;

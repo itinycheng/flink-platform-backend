@@ -12,57 +12,41 @@ import java.util.function.Function;
 /** time range. */
 @Getter
 public enum TimeRange {
-    LAST_N_HOUR(
-            "lastNHour",
-            TimeGranularity.HOUR,
-            (lastN) -> {
-                LocalDate today = LocalDate.now();
-                LocalTime nowTime = LocalTime.now();
-                return new LocalDateTime[] {
-                    LocalDateTime.of(
-                            today, LocalTime.of(nowTime.minusHours(lastN).getHour(), 0, 0)),
-                    LocalDateTime.of(today, LocalTime.MAX)
-                };
-            }),
+    LAST_N_HOUR("lastNHour", TimeGranularity.HOUR, (lastN) -> {
+        LocalDate today = LocalDate.now();
+        LocalTime nowTime = LocalTime.now();
+        return new LocalDateTime[] {
+            LocalDateTime.of(today, LocalTime.of(nowTime.minusHours(lastN).getHour(), 0, 0)),
+            LocalDateTime.of(today, LocalTime.MAX)
+        };
+    }),
 
-    LAST_N_DAY(
-            "lastNDay",
-            TimeGranularity.DAY,
-            (lastN) -> {
-                LocalDate today = LocalDate.now();
-                return new LocalDateTime[] {
-                    LocalDateTime.of(today.minusDays(lastN), LocalTime.MIN),
-                    LocalDateTime.of(today, LocalTime.MAX)
-                };
-            }),
+    LAST_N_DAY("lastNDay", TimeGranularity.DAY, (lastN) -> {
+        LocalDate today = LocalDate.now();
+        return new LocalDateTime[] {
+            LocalDateTime.of(today.minusDays(lastN), LocalTime.MIN), LocalDateTime.of(today, LocalTime.MAX)
+        };
+    }),
 
-    LAST_N_WEEK(
-            "lastNWeek",
-            TimeGranularity.WEEK,
-            (lastN) -> {
-                LocalDate today = LocalDate.now();
-                return new LocalDateTime[] {
-                    LocalDateTime.of(
-                            today.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
-                                    .minusWeeks(lastN),
-                            LocalTime.MIN),
-                    LocalDateTime.of(
-                            today.with(TemporalAdjusters.nextOrSame(DayOfWeek.SUNDAY)),
-                            LocalTime.MAX)
-                };
-            }),
+    LAST_N_WEEK("lastNWeek", TimeGranularity.WEEK, (lastN) -> {
+        LocalDate today = LocalDate.now();
+        return new LocalDateTime[] {
+            LocalDateTime.of(
+                    today.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
+                            .minusWeeks(lastN),
+                    LocalTime.MIN),
+            LocalDateTime.of(today.with(TemporalAdjusters.nextOrSame(DayOfWeek.SUNDAY)), LocalTime.MAX)
+        };
+    }),
 
-    LAST_N_MONTH(
-            "lastNMonth",
-            TimeGranularity.MONTH,
-            (lastN) -> {
-                LocalDate today = LocalDate.now();
-                LocalDate monthStart = LocalDate.of(today.getYear(), today.getMonth(), 1);
-                return new LocalDateTime[] {
-                    LocalDateTime.of(monthStart.minusMonths(lastN), LocalTime.MIN),
-                    LocalDateTime.of(today.with(TemporalAdjusters.lastDayOfMonth()), LocalTime.MAX)
-                };
-            }),
+    LAST_N_MONTH("lastNMonth", TimeGranularity.MONTH, (lastN) -> {
+        LocalDate today = LocalDate.now();
+        LocalDate monthStart = LocalDate.of(today.getYear(), today.getMonth(), 1);
+        return new LocalDateTime[] {
+            LocalDateTime.of(monthStart.minusMonths(lastN), LocalTime.MIN),
+            LocalDateTime.of(today.with(TemporalAdjusters.lastDayOfMonth()), LocalTime.MAX)
+        };
+    }),
     ;
 
     private final String name;

@@ -9,7 +9,9 @@ import lombok.experimental.Delegate;
 @NoArgsConstructor
 public class TagInfoRequest {
 
-    @Getter @Delegate private final TagInfo tagInfo = new TagInfo();
+    @Getter
+    @Delegate
+    private final TagInfo tagInfo = new TagInfo();
 
     public String validateOnCreate() {
         return verifyName();

@@ -51,15 +51,11 @@ public class JobProcessGrpcClient {
                 return stub;
             }
 
-            ManagedChannel channel =
-                    channelMap.computeIfAbsent(
-                            key,
-                            s ->
-                                    ManagedChannelBuilder.forAddress(
-                                                    worker.getIp(), worker.getGrpcPort())
-                                            .keepAliveWithoutCalls(true)
-                                            .usePlaintext()
-                                            .build());
+            ManagedChannel channel = channelMap.computeIfAbsent(
+                    key, s -> ManagedChannelBuilder.forAddress(worker.getIp(), worker.getGrpcPort())
+                            .keepAliveWithoutCalls(true)
+                            .usePlaintext()
+                            .build());
             stub = JobGrpcServiceGrpc.newBlockingStub(channel);
             grpcStubMap.put(key, stub);
         }
@@ -73,14 +69,13 @@ public class JobProcessGrpcClient {
     @PreDestroy
     public void destroy() {
         log.debug("Initiating manually created grpc ManagedChannel shutdown.");
-        channelMap.forEach(
-                (key, channel) -> {
-                    try {
-                        channel.shutdown().awaitTermination(2, TimeUnit.SECONDS);
-                    } catch (Exception e) {
-                        log.error("Shutdown grpc ManagedChannel failed, host: {}", key, e);
-                    }
-                });
+        channelMap.forEach((key, channel) -> {
+            try {
+                channel.shutdown().awaitTermination(2, TimeUnit.SECONDS);
+            } catch (Exception e) {
+                log.error("Shutdown grpc ManagedChannel failed, host: {}", key, e);
+            }
+        });
 
         grpcStubMap.clear();
         channelMap.clear();

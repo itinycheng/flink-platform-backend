@@ -23,12 +23,9 @@ public class MapperInitializer {
         ObjectMapper objectMapper = new ObjectMapper();
         JavaTimeModule javaTimeModule = new JavaTimeModule();
         javaTimeModule
-                .addSerializer(
-                        LocalDateTime.class,
-                        new LocalDateTimeSerializer(ofPattern(GLOBAL_DATE_TIME_FORMAT)))
+                .addSerializer(LocalDateTime.class, new LocalDateTimeSerializer(ofPattern(GLOBAL_DATE_TIME_FORMAT)))
                 .addDeserializer(
-                        LocalDateTime.class,
-                        new LocalDateTimeDeserializer(ofPattern(GLOBAL_DATE_TIME_FORMAT)));
+                        LocalDateTime.class, new LocalDateTimeDeserializer(ofPattern(GLOBAL_DATE_TIME_FORMAT)));
         objectMapper.registerModule(javaTimeModule);
 
         objectMapper.disable(FAIL_ON_UNKNOWN_PROPERTIES);

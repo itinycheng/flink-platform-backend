@@ -16,7 +16,8 @@ import java.util.Random;
 @Service
 public class WorkerApplyService {
 
-    @Autowired private WorkerService workerService;
+    @Autowired
+    private WorkerService workerService;
 
     public String chooseWorker(List<Long> workerIds) {
         if (CollectionUtils.isEmpty(workerIds)) {

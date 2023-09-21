@@ -42,13 +42,12 @@ public interface CommandExecutor {
     default void kill(long jobRunId) {
         JobCommand jobCommand = JOB_RUNNING_MAP.get(jobRunId);
         if (jobCommand == null) {
-            jobCommand =
-                    new JobCommand(jobRunId) {
-                        @Override
-                        public String toCommandString() {
-                            return "no class matched";
-                        }
-                    };
+            jobCommand = new JobCommand(jobRunId) {
+                @Override
+                public String toCommandString() {
+                    return "no class matched";
+                }
+            };
         }
         killCommand(jobCommand);
     }

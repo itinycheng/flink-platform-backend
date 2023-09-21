@@ -21,8 +21,7 @@ public class PlatformWebApplication {
 
     public static void main(String[] args) {
         SpringApplication application = new SpringApplication(PlatformWebApplication.class);
-        application.addListeners(
-                (ApplicationListener<ContextClosedEvent>) event -> AppRunner.stop());
+        application.addListeners((ApplicationListener<ContextClosedEvent>) event -> AppRunner.stop());
         application.run(args);
     }
 }

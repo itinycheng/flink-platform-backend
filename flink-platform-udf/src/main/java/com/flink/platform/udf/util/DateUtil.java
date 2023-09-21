@@ -17,12 +17,9 @@ public class DateUtil {
     private static final Map<String, DateTimeFormatter> FORMATTERS = new ConcurrentHashMap<>();
 
     public static DateTimeFormatter getFormatter(String format) {
-        return FORMATTERS.computeIfAbsent(
-                format,
-                s ->
-                        new DateTimeFormatterBuilder()
-                                .appendPattern(s)
-                                .toFormatter()
-                                .withZone(UDF_ZONE_ID));
+        return FORMATTERS.computeIfAbsent(format, s -> new DateTimeFormatterBuilder()
+                .appendPattern(s)
+                .toFormatter()
+                .withZone(UDF_ZONE_ID));
     }
 }

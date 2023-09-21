@@ -37,7 +37,8 @@ import static com.flink.platform.web.entity.response.ResultInfo.success;
 @RequestMapping("/worker")
 public class WorkerController {
 
-    @Autowired private WorkerService workerService;
+    @Autowired
+    private WorkerService workerService;
 
     @GetMapping(value = "/get/{workerId}")
     public ResultInfo<Worker> get(@PathVariable Long workerId) {
@@ -47,8 +48,7 @@ public class WorkerController {
 
     @PostMapping(value = "/create")
     public ResultInfo<Long> create(
-            @RequestAttribute(value = Constant.SESSION_USER) User loginUser,
-            @RequestBody WorkerRequest workerRequest) {
+            @RequestAttribute(value = Constant.SESSION_USER) User loginUser, @RequestBody WorkerRequest workerRequest) {
         String errorMsg = workerRequest.validateOnCreate();
         if (StringUtils.isNotBlank(errorMsg)) {
             return failure(ERROR_PARAMETER, errorMsg);
@@ -66,8 +66,7 @@ public class WorkerController {
 
     @PostMapping(value = "/update")
     public ResultInfo<Long> update(
-            @RequestAttribute(value = Constant.SESSION_USER) User loginUser,
-            @RequestBody WorkerRequest workerRequest) {
+            @RequestAttribute(value = Constant.SESSION_USER) User loginUser, @RequestBody WorkerRequest workerRequest) {
         String errorMsg = workerRequest.validateOnUpdate();
         if (StringUtils.isNotBlank(errorMsg)) {
             return failure(ERROR_PARAMETER, errorMsg);
@@ -90,11 +89,10 @@ public class WorkerController {
             @RequestParam(name = "name", required = false) String name,
             @RequestParam(name = "ip", required = false) String ip) {
         Page<Worker> pager = new Page<>(page, size);
-        LambdaQueryWrapper<Worker> queryWrapper =
-                new QueryWrapper<Worker>()
-                        .lambda()
-                        .like(Objects.nonNull(name), Worker::getName, name)
-                        .like(Objects.nonNull(ip), Worker::getIp, ip);
+        LambdaQueryWrapper<Worker> queryWrapper = new QueryWrapper<Worker>()
+                .lambda()
+                .like(Objects.nonNull(name), Worker::getName, name)
+                .like(Objects.nonNull(ip), Worker::getIp, ip);
 
         if (role != null) {
             queryWrapper.eq(Worker::getRole, role);
@@ -113,8 +111,7 @@ public class WorkerController {
 
     @GetMapping(value = "/purge/{workerId}")
     public ResultInfo<Long> purge(
-            @RequestAttribute(value = Constant.SESSION_USER) User loginUser,
-            @PathVariable long workerId) {
+            @RequestAttribute(value = Constant.SESSION_USER) User loginUser, @PathVariable long workerId) {
         Worker worker = workerService.getById(workerId);
         if (worker == null) {
             return failure(ERROR_PARAMETER);

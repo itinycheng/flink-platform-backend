@@ -29,53 +29,39 @@ import static java.util.Objects.nonNull;
 @RequestMapping("/dashboard")
 public class DashboardController {
 
-    @Autowired private JobFlowRunService jobFlowRunService;
+    @Autowired
+    private JobFlowRunService jobFlowRunService;
 
-    @Autowired private JobRunInfoService jobRunService;
+    @Autowired
+    private JobRunInfoService jobRunService;
 
     @GetMapping(value = "/jobRunStatusCount")
     public ResultInfo<List<Map<String, Object>>> jobRunStatusCount(
             @RequestAttribute(value = Constant.SESSION_USER) User loginUser,
-            @DateTimeFormat(pattern = GLOBAL_DATE_TIME_FORMAT)
-                    @RequestParam(name = "startTime", required = false)
+            @DateTimeFormat(pattern = GLOBAL_DATE_TIME_FORMAT) @RequestParam(name = "startTime", required = false)
                     LocalDateTime startTime,
-            @DateTimeFormat(pattern = GLOBAL_DATE_TIME_FORMAT)
-                    @RequestParam(name = "endTime", required = false)
+            @DateTimeFormat(pattern = GLOBAL_DATE_TIME_FORMAT) @RequestParam(name = "endTime", required = false)
                     LocalDateTime endTime) {
-        List<Map<String, Object>> maps =
-                jobRunService.listMaps(
-                        new QueryWrapper<JobRunInfo>()
-                                .select("status, count(id) as count")
-                                .groupBy("status")
-                                .between(
-                                        nonNull(startTime) && nonNull(endTime),
-                                        "create_time",
-                                        startTime,
-                                        endTime)
-                                .eq("user_id", loginUser.getId()));
+        List<Map<String, Object>> maps = jobRunService.listMaps(new QueryWrapper<JobRunInfo>()
+                .select("status, count(id) as count")
+                .groupBy("status")
+                .between(nonNull(startTime) && nonNull(endTime), "create_time", startTime, endTime)
+                .eq("user_id", loginUser.getId()));
         return success(maps);
     }
 
     @GetMapping(value = "/jobFlowRunStatusCount")
     public ResultInfo<List<Map<String, Object>>> jobFlowRunStatusCount(
             @RequestAttribute(value = Constant.SESSION_USER) User loginUser,
-            @DateTimeFormat(pattern = GLOBAL_DATE_TIME_FORMAT)
-                    @RequestParam(name = "startTime", required = false)
+            @DateTimeFormat(pattern = GLOBAL_DATE_TIME_FORMAT) @RequestParam(name = "startTime", required = false)
                     LocalDateTime startTime,
-            @DateTimeFormat(pattern = GLOBAL_DATE_TIME_FORMAT)
-                    @RequestParam(name = "endTime", required = false)
+            @DateTimeFormat(pattern = GLOBAL_DATE_TIME_FORMAT) @RequestParam(name = "endTime", required = false)
                     LocalDateTime endTime) {
-        List<Map<String, Object>> maps =
-                jobFlowRunService.listMaps(
-                        new QueryWrapper<JobFlowRun>()
-                                .select("status, count(id) as count")
-                                .groupBy("status")
-                                .between(
-                                        nonNull(startTime) && nonNull(endTime),
-                                        "create_time",
-                                        startTime,
-                                        endTime)
-                                .eq("user_id", loginUser.getId()));
+        List<Map<String, Object>> maps = jobFlowRunService.listMaps(new QueryWrapper<JobFlowRun>()
+                .select("status, count(id) as count")
+                .groupBy("status")
+                .between(nonNull(startTime) && nonNull(endTime), "create_time", startTime, endTime)
+                .eq("user_id", loginUser.getId()));
         return success(maps);
     }
 }

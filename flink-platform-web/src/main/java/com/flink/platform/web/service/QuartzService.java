@@ -88,16 +88,16 @@ public class QuartzService {
 
             TriggerKey originTriggerKey = quartzInfo.getTriggerKey();
             String newTriggerGroup = String.join("_", originTriggerKey.getGroup(), GROUP_RUN_ONCE);
-            TriggerKey newTriggerKey =
-                    TriggerKey.triggerKey(originTriggerKey.getName(), newTriggerGroup);
+            TriggerKey newTriggerKey = TriggerKey.triggerKey(originTriggerKey.getName(), newTriggerGroup);
 
-            JobDetail jobDetail =
-                    newJob(quartzInfo.getJobClass())
-                            .withIdentity(newJobKey)
-                            .usingJobData(new JobDataMap(quartzInfo.getData()))
-                            .build();
-            Trigger simpleTrigger =
-                    TriggerBuilder.newTrigger().withIdentity(newTriggerKey).startNow().build();
+            JobDetail jobDetail = newJob(quartzInfo.getJobClass())
+                    .withIdentity(newJobKey)
+                    .usingJobData(new JobDataMap(quartzInfo.getData()))
+                    .build();
+            Trigger simpleTrigger = TriggerBuilder.newTrigger()
+                    .withIdentity(newTriggerKey)
+                    .startNow()
+                    .build();
             scheduler.scheduleJob(jobDetail, simpleTrigger);
             return true;
         } catch (Exception e) {
@@ -133,17 +133,15 @@ public class QuartzService {
     }
 
     private void scheduleJob(IQuartzInfo quartzInfo) throws SchedulerException {
-        JobDetail jobDetail =
-                newJob(quartzInfo.getJobClass())
-                        .withIdentity(quartzInfo.getJobKey())
-                        .usingJobData(new JobDataMap(quartzInfo.getData()))
-                        .build();
-        CronTrigger trigger =
-                newTrigger()
-                        .withIdentity(quartzInfo.getTriggerKey())
-                        .withSchedule(cronSchedule(quartzInfo.getCron()))
-                        .startNow()
-                        .build();
+        JobDetail jobDetail = newJob(quartzInfo.getJobClass())
+                .withIdentity(quartzInfo.getJobKey())
+                .usingJobData(new JobDataMap(quartzInfo.getData()))
+                .build();
+        CronTrigger trigger = newTrigger()
+                .withIdentity(quartzInfo.getTriggerKey())
+                .withSchedule(cronSchedule(quartzInfo.getCron()))
+                .startNow()
+                .build();
         scheduler.scheduleJob(jobDetail, trigger);
     }
 

@@ -11,7 +11,9 @@ import static com.flink.platform.common.util.Preconditions.requireNotNull;
 @NoArgsConstructor
 public class WorkerRequest {
 
-    @Getter @Delegate private final Worker worker = new Worker();
+    @Getter
+    @Delegate
+    private final Worker worker = new Worker();
 
     public String validateOnCreate() {
         String msg = nameNotNull();

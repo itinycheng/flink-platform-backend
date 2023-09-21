@@ -18,9 +18,11 @@ import org.springframework.web.client.RestTemplate;
 @Component
 public class AlertSender {
 
-    @Autowired private AlertService alertService;
+    @Autowired
+    private AlertService alertService;
 
-    @Autowired private RestTemplate restTemplate;
+    @Autowired
+    private RestTemplate restTemplate;
 
     public boolean sendAlert(Long alertId, JobFlowRun jobFlowRun) {
         AlertInfo alertInfo = alertService.getById(alertId);
@@ -42,12 +44,11 @@ public class AlertSender {
 
     public boolean sendToFeiShu(FeiShuAlert alert, JobFlowRun jobFlowRun) {
         try {
-            String content =
-                    JsonUtil.toJsonString(alert.getContent())
-                            .replace("${id}", String.valueOf(jobFlowRun.getId()))
-                            .replace("${name}", jobFlowRun.getName())
-                            .replace("${status}", jobFlowRun.getStatus().name())
-                            .replace("${alertMsg}", jobFlowRun.getAlertMsg());
+            String content = JsonUtil.toJsonString(alert.getContent())
+                    .replace("${id}", String.valueOf(jobFlowRun.getId()))
+                    .replace("${name}", jobFlowRun.getName())
+                    .replace("${status}", jobFlowRun.getStatus().name())
+                    .replace("${alertMsg}", jobFlowRun.getAlertMsg());
             FeiShuAlert feiShuAlert = new FeiShuAlert(alert.getWebhook(), JsonUtil.toMap(content));
             String message = sendToFeiShu(feiShuAlert);
             log.info(

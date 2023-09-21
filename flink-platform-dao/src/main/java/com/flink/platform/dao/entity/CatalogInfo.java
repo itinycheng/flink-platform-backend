@@ -44,13 +44,16 @@ public class CatalogInfo implements Serializable {
     private Long userId;
 
     /** default database. */
-    @Deprecated private String defaultDatabase;
+    @Deprecated
+    private String defaultDatabase;
 
     /** config dir path. */
-    @Deprecated private String configPath;
+    @Deprecated
+    private String configPath;
 
     /** config properties. */
-    @Deprecated private String configs;
+    @Deprecated
+    private String configs;
 
     /** catalog create sql. */
     private String createSql;

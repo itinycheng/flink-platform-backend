@@ -21,7 +21,8 @@ import static com.flink.platform.web.entity.response.ResultInfo.success;
 @RequestMapping("/webhook")
 public class GrafanaWebHookController {
 
-    @Autowired private AlertSender alertSender;
+    @Autowired
+    private AlertSender alertSender;
 
     @PostMapping(value = "/forwardToFeiShu")
     public ResultInfo<String> forwardToFeiShu(@RequestBody Map<String, Object> grafanaMap) {

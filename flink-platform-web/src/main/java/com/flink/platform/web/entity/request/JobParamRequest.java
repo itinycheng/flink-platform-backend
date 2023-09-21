@@ -11,7 +11,9 @@ import static com.flink.platform.common.util.Preconditions.requireNotNull;
 @NoArgsConstructor
 public class JobParamRequest {
 
-    @Getter @Delegate private final JobParam jobParam = new JobParam();
+    @Getter
+    @Delegate
+    private final JobParam jobParam = new JobParam();
 
     public String validateOnCreate() {
         String msg = verifyName();

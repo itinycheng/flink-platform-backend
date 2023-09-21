@@ -23,9 +23,11 @@ public class DAG<VId, V extends Vertex<VId>, E extends Edge<VId>> {
 
     private final ReadWriteLock lock = new ReentrantReadWriteLock();
 
-    @Getter private final Set<V> vertices;
+    @Getter
+    private final Set<V> vertices;
 
-    @Getter private final Set<E> edges;
+    @Getter
+    private final Set<E> edges;
 
     public DAG() {
         vertices = new HashSet<>();
@@ -48,10 +50,7 @@ public class DAG<VId, V extends Vertex<VId>, E extends Edge<VId>> {
         try {
             // Whether an edge can be successfully added(fromNode -> toNode)
             if (!isLegalEdge(edge)) {
-                log.error(
-                        "Add edge({} -> {}) is invalid, cause cycle.",
-                        edge.getFromVId(),
-                        edge.getToVId());
+                log.error("Add edge({} -> {}) is invalid, cause cycle.", edge.getFromVId(), edge.getToVId());
                 return false;
             }
 
@@ -188,10 +187,7 @@ public class DAG<VId, V extends Vertex<VId>, E extends Edge<VId>> {
         }
 
         if (edge.getFromVId().equals(edge.getToVId())) {
-            log.error(
-                    "Edge fromNode({}) can't equals toNode({})",
-                    edge.getFromVId(),
-                    edge.getToVId());
+            log.error("Edge fromNode({}) can't equals toNode({})", edge.getFromVId(), edge.getToVId());
             return false;
         }
 

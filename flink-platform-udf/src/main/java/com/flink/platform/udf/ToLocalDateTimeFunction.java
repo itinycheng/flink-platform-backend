@@ -45,9 +45,7 @@ public class ToLocalDateTimeFunction extends ScalarFunction {
     }
 
     public static void main(String[] args) {
-        LocalDateTime eval =
-                new ToLocalDateTimeFunction()
-                        .eval("2022-12-05 12:20:30", "yyyy-MM-dd HH:mm:ss.SSS000000");
+        LocalDateTime eval = new ToLocalDateTimeFunction().eval("2022-12-05 12:20:30", "yyyy-MM-dd HH:mm:ss.SSS000000");
         System.out.println(eval);
     }
 }

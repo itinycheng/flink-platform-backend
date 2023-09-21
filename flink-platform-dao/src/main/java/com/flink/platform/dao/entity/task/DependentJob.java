@@ -35,7 +35,8 @@ public class DependentJob extends BaseJob {
 
         private Integer lastN;
 
-        @JsonIgnore private LocalDateTime[] timeArr;
+        @JsonIgnore
+        private LocalDateTime[] timeArr;
 
         @JsonIgnore
         public LocalDateTime getStartTime() {

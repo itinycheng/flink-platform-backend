@@ -12,7 +12,11 @@ import java.util.List;
 @NoArgsConstructor
 public class JobRunRequest {
 
-    @Getter @Delegate private final JobRunInfo jobInfo = new JobRunInfo();
+    @Getter
+    @Delegate
+    private final JobRunInfo jobInfo = new JobRunInfo();
 
-    @Getter @Setter private List<Long> jobIds;
+    @Getter
+    @Setter
+    private List<Long> jobIds;
 }

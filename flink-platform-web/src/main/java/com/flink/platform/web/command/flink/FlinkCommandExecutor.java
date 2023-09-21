@@ -38,17 +38,20 @@ import static com.flink.platform.common.enums.ExecutionStatus.SUCCESS;
 @Component("flinkCommandExecutor")
 public class FlinkCommandExecutor implements CommandExecutor {
 
-    private static final List<JobType> SUPPORTED_JOB_TYPES =
-            Arrays.asList(JobType.FLINK_JAR, JobType.FLINK_SQL);
+    private static final List<JobType> SUPPORTED_JOB_TYPES = Arrays.asList(JobType.FLINK_JAR, JobType.FLINK_SQL);
 
     @Value("${hadoop.username}")
     private String hadoopUser;
 
-    @Autowired private WorkerConfig workerConfig;
+    @Autowired
+    private WorkerConfig workerConfig;
 
-    @Lazy @Autowired private YarnClientService yarnClientService;
+    @Lazy
+    @Autowired
+    private YarnClientService yarnClientService;
 
-    @Autowired private JobRunInfoService jobRunInfoService;
+    @Autowired
+    private JobRunInfoService jobRunInfoService;
 
     @Override
     public boolean isSupported(JobType jobType) {
@@ -59,13 +62,12 @@ public class FlinkCommandExecutor implements CommandExecutor {
     @Override
     public JobCallback execCommand(@Nonnull JobCommand command) throws Exception {
         FlinkCommand flinkCommand = (FlinkCommand) command;
-        FlinkYarnTask task =
-                new FlinkYarnTask(
-                        flinkCommand.getJobRunId(),
-                        flinkCommand.getMode(),
-                        flinkCommand.toCommandString(),
-                        buildEnvProps(),
-                        workerConfig.getFlinkSubmitTimeoutMills());
+        FlinkYarnTask task = new FlinkYarnTask(
+                flinkCommand.getJobRunId(),
+                flinkCommand.getMode(),
+                flinkCommand.toCommandString(),
+                buildEnvProps(),
+                workerConfig.getFlinkSubmitTimeoutMills());
         flinkCommand.setTask(task);
         task.run();
 

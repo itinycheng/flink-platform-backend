@@ -49,11 +49,14 @@ public class AttrsController {
 
     private static final String CLASS_PATH_PREFIX = "com.flink.platform.common.enums";
 
-    @Autowired private JobInfoService jobInfoService;
+    @Autowired
+    private JobInfoService jobInfoService;
 
-    @Autowired private WorkerService workerService;
+    @Autowired
+    private WorkerService workerService;
 
-    @Autowired private List<FlinkConfig> flinkConfigs;
+    @Autowired
+    private List<FlinkConfig> flinkConfigs;
 
     @GetMapping(value = "/preconditions")
     public ResultInfo<List<ExecutionCondition>> precondition() {
@@ -72,11 +75,10 @@ public class AttrsController {
     public ResultInfo<List<String>> versions(String type) {
         List<String> versions = new ArrayList<>();
         if (FLINK.equals(type)) {
-            versions.addAll(
-                    flinkConfigs.stream()
-                            .map(FlinkConfig::getVersion)
-                            .filter(Objects::nonNull)
-                            .collect(toList()));
+            versions.addAll(flinkConfigs.stream()
+                    .map(FlinkConfig::getVersion)
+                    .filter(Objects::nonNull)
+                    .collect(toList()));
         } else {
             versions.add(FULL_VERSION);
         }
@@ -88,8 +90,7 @@ public class AttrsController {
     public ResultInfo<List<Worker>> routeUrls() {
         List<Worker> routingUrls = new ArrayList<>();
         List<Worker> list =
-                workerService.list(
-                        new QueryWrapper<Worker>().lambda().ne(Worker::getRole, INACTIVE));
+                workerService.list(new QueryWrapper<Worker>().lambda().ne(Worker::getRole, INACTIVE));
         if (CollectionUtils.isNotEmpty(list)) {
             routingUrls.addAll(list);
         }

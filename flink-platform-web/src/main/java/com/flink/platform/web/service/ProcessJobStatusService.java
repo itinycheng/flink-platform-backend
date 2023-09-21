@@ -27,8 +27,7 @@ public class ProcessJobStatusService {
     private final DefaultStatusFetcher defaultStatusFetcher;
 
     @Autowired
-    public ProcessJobStatusService(
-            List<StatusFetcher> statusFetchers, DefaultStatusFetcher defaultStatusFetcher) {
+    public ProcessJobStatusService(List<StatusFetcher> statusFetchers, DefaultStatusFetcher defaultStatusFetcher) {
         this.statusFetchers = statusFetchers;
         this.defaultStatusFetcher = defaultStatusFetcher;
     }
@@ -37,25 +36,17 @@ public class ProcessJobStatusService {
     public JobStatusReply getStatus(JobStatusRequest request) {
         final DeployMode deployMode = DeployMode.from(request.getDeployMode());
         final int retries = request.getRetries();
-        StatusFetcher statusFetcher =
-                statusFetchers.stream()
-                        .filter(fetcher -> fetcher.isSupported(deployMode))
-                        .findFirst()
-                        .orElseThrow(
-                                () ->
-                                        new JobStatusScrapeException(
-                                                "No available job status fetcher"));
+        StatusFetcher statusFetcher = statusFetchers.stream()
+                .filter(fetcher -> fetcher.isSupported(deployMode))
+                .findFirst()
+                .orElseThrow(() -> new JobStatusScrapeException("No available job status fetcher"));
 
         int errorTimes = 0;
         while (AppRunner.isRunning()) {
             try {
                 return statusFetcher.getStatus(request);
             } catch (Exception e) {
-                log.error(
-                        "Get job status failed, job run: {}, retry times: {}.",
-                        request.getJobRunId(),
-                        errorTimes,
-                        e);
+                log.error("Get job status failed, job run: {}, retry times: {}.", request.getJobRunId(), errorTimes, e);
                 if (++errorTimes > retries) {
                     long currentTimeMillis = System.currentTimeMillis();
                     return JobStatusReply.newBuilder()
