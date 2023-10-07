@@ -5,7 +5,6 @@ import com.flink.platform.dao.entity.result.ShellCallback;
 import com.flink.platform.web.command.AbstractTask;
 import com.flink.platform.web.util.CollectLogThread;
 import com.flink.platform.web.util.CommandUtil;
-import jakarta.annotation.Nullable;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -42,7 +41,9 @@ public class ShellTask extends AbstractTask {
 
     protected Process process;
 
-    protected Integer processId;
+    protected Long processId;
+
+    protected Long[] subprocessIds;
 
     protected boolean exited;
 
@@ -52,7 +53,7 @@ public class ShellTask extends AbstractTask {
 
     protected final StringBuffer errMsg = new StringBuffer();
 
-    public ShellTask(long id, String command, @Nullable String[] envs, long timeoutMills) {
+    public ShellTask(long id, String command, String[] envs, long timeoutMills) {
         super(id);
         this.command = command;
         this.envs = envs;
@@ -61,7 +62,7 @@ public class ShellTask extends AbstractTask {
     }
 
     /** Only for kill command process. */
-    public ShellTask(long id, Integer processId) {
+    public ShellTask(long id, Long processId) {
         super(id);
         this.processId = processId;
     }
@@ -85,6 +86,7 @@ public class ShellTask extends AbstractTask {
 
             this.exited = process.waitFor(timeoutMills, MILLISECONDS);
             this.exitValue = exited ? process.exitValue() : EXIT_CODE_FAILURE;
+            this.subprocessIds = CommandUtil.getSubprocessIds(process);
 
             try {
                 stdThread.join(2000);
@@ -106,9 +108,14 @@ public class ShellTask extends AbstractTask {
 
     @Override
     public void cancel() {
-        Integer processId = getProcessId();
+        if (subprocessIds != null) {
+            for (Long subprocessId : subprocessIds) {
+                CommandUtil.forceKill(subprocessId);
+            }
+        }
+
         if (processId != null) {
-            CommandUtil.forceKill(processId, envs);
+            CommandUtil.forceKill(processId);
         }
     }
 
