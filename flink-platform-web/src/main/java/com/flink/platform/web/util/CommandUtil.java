@@ -1,15 +1,11 @@
 package com.flink.platform.web.util;
 
-import com.flink.platform.common.constants.Constant;
 import com.flink.platform.common.util.OSUtil;
 import com.flink.platform.dao.entity.result.ShellCallback;
-import com.sun.jna.platform.win32.Kernel32;
-import com.sun.jna.platform.win32.WinNT;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -71,7 +67,7 @@ public class CommandUtil {
             throws IOException, InterruptedException {
         log.info("Exec command: {}, env properties: {}", command, envProps);
         Process process = Runtime.getRuntime().exec(command, envProps);
-        Integer processId = getProcessId(process);
+        Long processId = getProcessId(process);
 
         try (InputStream stdStream = process.getInputStream();
                 InputStream errStream = process.getErrorStream()) {
@@ -108,45 +104,42 @@ public class CommandUtil {
         }
     }
 
-    public static void forceKill(Integer processId, String[] envProps) {
+    public static void forceKill(Long processId) {
         if (processId == null || processId <= 0) {
             log.warn("kill process failed, invalid pid: {}", processId);
             return;
         }
 
-        Process process = null;
-        try {
-            String command = String.format("kill -9 %d", processId);
-            process = Runtime.getRuntime().exec(command, envProps);
-            process.waitFor();
-        } catch (Exception e) {
-            log.error("force kill process {} failed, envs: {}", processId, envProps);
-        } finally {
-            if (process != null) {
-                process.destroy();
+        ProcessHandle.of(processId).ifPresent(CommandUtil::recursiveForceKill);
+    }
+
+    private static void recursiveForceKill(ProcessHandle handle) {
+        ProcessHandle[] children = handle.children().toArray(ProcessHandle[]::new);
+        if (children.length > 0) {
+            for (ProcessHandle child : children) {
+                recursiveForceKill(child);
+            }
+        } else {
+            try {
+                handle.destroyForcibly();
+            } catch (Throwable t) {
+                log.error("Destroy process: {} failed", handle.pid(), t);
             }
         }
     }
 
     /** Get process id. */
-    public static Integer getProcessId(Process process) {
+    public static Long getProcessId(Process process) {
         try {
-            Field f = process.getClass().getDeclaredField(Constant.PID);
-            f.setAccessible(true);
-
-            int processId;
-            if (OSUtil.isWindows()) {
-                WinNT.HANDLE handle = (WinNT.HANDLE) f.get(process);
-                processId = Kernel32.INSTANCE.GetProcessId(handle);
-            } else {
-                processId = f.getInt(process);
-            }
-
-            return processId;
+            return process.pid();
         } catch (Throwable e) {
-            log.error(e.getMessage(), e);
+            log.error("Get process id failed", e);
             return null;
         }
+    }
+
+    public static Long[] getSubprocessIds(Process process) {
+        return process.children().map(ProcessHandle::pid).toArray(Long[]::new);
     }
 
     public static String commandDriver() {

@@ -14,13 +14,13 @@ public class ShellCallback {
 
     private Integer exitCode;
 
-    private Integer processId;
+    private Long processId;
 
     private String stdMsg;
 
     private String errMsg;
 
-    public ShellCallback(Boolean exited, Integer exitCode, Integer processId) {
+    public ShellCallback(Boolean exited, Integer exitCode, Long processId) {
         this.exited = exited;
         this.exitCode = exitCode;
         this.processId = processId;
