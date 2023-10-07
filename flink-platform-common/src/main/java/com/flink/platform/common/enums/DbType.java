@@ -5,7 +5,7 @@ import lombok.Getter;
 /** database type. */
 @Getter
 public enum DbType {
-    CLICKHOUSE("com.alibaba.druid.support.clickhouse.BalancedClickhouseDriver"),
+    CLICKHOUSE("ru.yandex.clickhouse.ClickHouseDriver"),
     MYSQL("com.mysql.jdbc.Driver"),
     HIVE("org.apache.hive.jdbc.HiveDriver");
 
