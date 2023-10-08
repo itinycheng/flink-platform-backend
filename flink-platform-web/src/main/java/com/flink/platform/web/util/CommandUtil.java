@@ -13,8 +13,8 @@ import java.util.function.BiConsumer;
 
 import static com.flink.platform.common.constants.Constant.LINE_SEPARATOR;
 import static com.flink.platform.common.constants.Constant.SPACE;
-import static com.flink.platform.web.util.CollectLogThread.CmdOutType.ERR;
-import static com.flink.platform.web.util.CollectLogThread.CmdOutType.STD;
+import static com.flink.platform.web.util.CollectLogRunnable.CmdOutType.ERR;
+import static com.flink.platform.web.util.CollectLogRunnable.CmdOutType.STD;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 /**
@@ -63,7 +63,7 @@ public class CommandUtil {
             String command,
             String[] envProps,
             long timeoutMills,
-            BiConsumer<CollectLogThread.CmdOutType, String> logConsumer)
+            BiConsumer<CollectLogRunnable.CmdOutType, String> logConsumer)
             throws IOException, InterruptedException {
         log.info("Exec command: {}, env properties: {}", command, envProps);
         Process process = Runtime.getRuntime().exec(command, envProps);
@@ -71,8 +71,8 @@ public class CommandUtil {
 
         try (InputStream stdStream = process.getInputStream();
                 InputStream errStream = process.getErrorStream()) {
-            CollectLogThread stdThread = new CollectLogThread(stdStream, STD, logConsumer);
-            CollectLogThread errThread = new CollectLogThread(errStream, ERR, logConsumer);
+            Thread stdThread = Thread.ofVirtual().unstarted(new CollectLogRunnable(stdStream, STD, logConsumer));
+            Thread errThread = Thread.ofVirtual().unstarted(new CollectLogRunnable(errStream, ERR, logConsumer));
 
             try {
                 stdThread.start();
