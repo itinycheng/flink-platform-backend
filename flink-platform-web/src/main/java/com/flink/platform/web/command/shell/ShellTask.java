@@ -3,7 +3,7 @@ package com.flink.platform.web.command.shell;
 import com.flink.platform.common.enums.ExecutionStatus;
 import com.flink.platform.dao.entity.result.ShellCallback;
 import com.flink.platform.web.command.AbstractTask;
-import com.flink.platform.web.util.CollectLogThread;
+import com.flink.platform.web.util.CollectLogRunnable;
 import com.flink.platform.web.util.CommandUtil;
 import lombok.Getter;
 import lombok.Setter;
@@ -17,9 +17,9 @@ import static com.flink.platform.common.enums.ExecutionStatus.FAILURE;
 import static com.flink.platform.common.enums.ExecutionStatus.KILLABLE;
 import static com.flink.platform.common.enums.ExecutionStatus.KILLED;
 import static com.flink.platform.common.enums.ExecutionStatus.SUCCESS;
-import static com.flink.platform.web.util.CollectLogThread.CmdOutType;
-import static com.flink.platform.web.util.CollectLogThread.CmdOutType.ERR;
-import static com.flink.platform.web.util.CollectLogThread.CmdOutType.STD;
+import static com.flink.platform.web.util.CollectLogRunnable.CmdOutType;
+import static com.flink.platform.web.util.CollectLogRunnable.CmdOutType.ERR;
+import static com.flink.platform.web.util.CollectLogRunnable.CmdOutType.STD;
 import static com.flink.platform.web.util.CommandUtil.EXIT_CODE_FAILURE;
 import static com.flink.platform.web.util.CommandUtil.EXIT_CODE_KILLED;
 import static com.flink.platform.web.util.CommandUtil.EXIT_CODE_SUCCESS;
@@ -74,8 +74,8 @@ public class ShellTask extends AbstractTask {
         this.processId = CommandUtil.getProcessId(process);
         try (InputStream stdStream = process.getInputStream();
                 InputStream errStream = process.getErrorStream()) {
-            CollectLogThread stdThread = new CollectLogThread(stdStream, STD, logConsumer);
-            CollectLogThread errThread = new CollectLogThread(errStream, ERR, logConsumer);
+            Thread stdThread = Thread.ofVirtual().unstarted(new CollectLogRunnable(stdStream, STD, logConsumer));
+            Thread errThread = Thread.ofVirtual().unstarted(new CollectLogRunnable(errStream, ERR, logConsumer));
 
             try {
                 stdThread.start();

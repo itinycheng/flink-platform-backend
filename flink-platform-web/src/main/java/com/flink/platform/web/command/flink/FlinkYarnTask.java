@@ -15,8 +15,8 @@ import java.util.regex.Matcher;
 import static com.flink.platform.common.constants.JobConstant.APP_ID_PATTERN;
 import static com.flink.platform.common.constants.JobConstant.JOB_ID_PATTERN;
 import static com.flink.platform.common.enums.DeployMode.FLINK_YARN_PER;
-import static com.flink.platform.web.util.CollectLogThread.CmdOutType;
-import static com.flink.platform.web.util.CollectLogThread.CmdOutType.STD;
+import static com.flink.platform.web.util.CollectLogRunnable.CmdOutType;
+import static com.flink.platform.web.util.CollectLogRunnable.CmdOutType.STD;
 
 /** Flink yarn task. */
 @Slf4j
