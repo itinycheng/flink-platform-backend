@@ -30,14 +30,10 @@ public class YarnStatusFetcher implements StatusFetcher {
 
     @Override
     public boolean isSupported(DeployMode deployMode) {
-        switch (deployMode) {
-            case FLINK_YARN_PER:
-            case FLINK_YARN_SESSION:
-            case FLINK_YARN_RUN_APPLICATION:
-                return true;
-            default:
-                return false;
-        }
+        return switch (deployMode) {
+            case FLINK_YARN_PER, FLINK_YARN_SESSION, FLINK_YARN_RUN_APPLICATION -> true;
+            default -> false;
+        };
     }
 
     @Override

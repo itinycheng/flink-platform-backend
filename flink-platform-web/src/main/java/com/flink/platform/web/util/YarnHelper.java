@@ -11,34 +11,21 @@ public class YarnHelper {
 
     public static ExecutionStatus getStatus(ApplicationReport applicationReport) {
         FinalApplicationStatus finalStatus = applicationReport.getFinalApplicationStatus();
-        switch (finalStatus) {
-            case UNDEFINED:
-                return getNonFinalStatus(applicationReport);
-            case FAILED:
-                return ExecutionStatus.FAILURE;
-            case KILLED:
-                return ExecutionStatus.KILLED;
-            case SUCCEEDED:
-                return ExecutionStatus.SUCCESS;
-            case ENDED:
-                return ExecutionStatus.ABNORMAL;
-            default:
-                throw new JobStatusScrapeException("Unrecognized final status: " + finalStatus);
-        }
+        return switch (finalStatus) {
+            case UNDEFINED -> getNonFinalStatus(applicationReport);
+            case FAILED -> ExecutionStatus.FAILURE;
+            case KILLED -> ExecutionStatus.KILLED;
+            case SUCCEEDED -> ExecutionStatus.SUCCESS;
+            case ENDED -> ExecutionStatus.ABNORMAL;
+        };
     }
 
     private static ExecutionStatus getNonFinalStatus(ApplicationReport applicationReport) {
         YarnApplicationState yarnState = applicationReport.getYarnApplicationState();
-        switch (yarnState) {
-            case NEW:
-            case NEW_SAVING:
-            case SUBMITTED:
-            case ACCEPTED:
-                return ExecutionStatus.SUBMITTED;
-            case RUNNING:
-                return ExecutionStatus.RUNNING;
-            default:
-                throw new JobStatusScrapeException("Unrecognized nonFinal status: " + yarnState);
-        }
+        return switch (yarnState) {
+            case NEW, NEW_SAVING, SUBMITTED, ACCEPTED -> ExecutionStatus.SUBMITTED;
+            case RUNNING -> ExecutionStatus.RUNNING;
+            default -> throw new JobStatusScrapeException("Unrecognized nonFinal status: " + yarnState);
+        };
     }
 }
