@@ -52,6 +52,9 @@ public class JobFlowRun {
     @TableField(typeHandler = JacksonTypeHandler.class)
     private AlertConfigList alerts;
 
+    @TableField(typeHandler = JacksonTypeHandler.class)
+    private Timeout timeout;
+
     private ExecutionStatus status;
 
     @JsonFormat(pattern = GLOBAL_DATE_TIME_FORMAT, timezone = GLOBAL_TIMEZONE)

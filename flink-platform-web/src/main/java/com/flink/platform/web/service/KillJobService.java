@@ -3,8 +3,10 @@ package com.flink.platform.web.service;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.flink.platform.common.enums.JobType;
 import com.flink.platform.common.exception.UnrecoverableException;
+import com.flink.platform.dao.entity.JobFlowRun;
 import com.flink.platform.dao.entity.JobRunInfo;
 import com.flink.platform.dao.entity.Worker;
+import com.flink.platform.dao.service.JobFlowRunService;
 import com.flink.platform.dao.service.JobRunInfoService;
 import com.flink.platform.dao.service.WorkerService;
 import com.flink.platform.grpc.JobGrpcServiceGrpc;
@@ -18,6 +20,7 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import static com.flink.platform.common.enums.ExecutionStatus.KILLABLE;
 import static com.flink.platform.common.enums.ExecutionStatus.KILLED;
 import static com.flink.platform.common.enums.ExecutionStatus.getNonTerminals;
 
@@ -34,16 +37,47 @@ public class KillJobService {
 
     private final WorkerService workerService;
 
+    private final JobFlowRunService jobFlowRunService;
+
     @Autowired
     public KillJobService(
             JobRunInfoService jobRunInfoService,
             List<CommandExecutor> jobCommandExecutors,
             JobProcessGrpcClient jobProcessGrpcClient,
-            WorkerService workerService) {
+            WorkerService workerService,
+            JobFlowRunService jobFlowRunService) {
         this.jobRunInfoService = jobRunInfoService;
         this.jobCommandExecutors = jobCommandExecutors;
         this.jobProcessGrpcClient = jobProcessGrpcClient;
         this.workerService = workerService;
+        this.jobFlowRunService = jobFlowRunService;
+    }
+
+    public boolean killRemoteFlow(Long userId, Long flowRunId) {
+        // Set the status of the workflow to KILLABLE.
+        var newJobFlowRun = new JobFlowRun();
+        newJobFlowRun.setId(flowRunId);
+        newJobFlowRun.setStatus(KILLABLE);
+        jobFlowRunService.updateById(newJobFlowRun);
+
+        // Get unfinished jobs and kill them concurrently.
+        return jobRunInfoService
+                .list(new QueryWrapper<JobRunInfo>()
+                        .lambda()
+                        .eq(JobRunInfo::getFlowRunId, flowRunId)
+                        .eq(JobRunInfo::getUserId, userId)
+                        .in(JobRunInfo::getStatus, getNonTerminals()))
+                .parallelStream()
+                .map(jobRun -> {
+                    try {
+                        return killRemoteJob(jobRun);
+                    } catch (Exception e) {
+                        log.error("kill job: {} failed.", jobRun.getId(), e);
+                        return false;
+                    }
+                })
+                .reduce((bool1, bool2) -> bool1 && bool2)
+                .orElse(false);
     }
 
     public boolean killRemoteJob(JobRunInfo jobRun) {
