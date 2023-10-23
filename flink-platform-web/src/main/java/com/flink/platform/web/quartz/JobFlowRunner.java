@@ -93,6 +93,7 @@ public class JobFlowRunner implements Job {
             jobFlowRun.setPriority(jobFlow.getPriority());
             jobFlowRun.setTags(jobFlow.getTags());
             jobFlowRun.setAlerts(jobFlow.getAlerts());
+            jobFlowRun.setTimeout(jobFlow.getTimeout());
             jobFlowRun.setStartTime(LocalDateTime.now());
             jobFlowRun.setStatus(SUBMITTED);
             jobFlowRunService.save(jobFlowRun);
