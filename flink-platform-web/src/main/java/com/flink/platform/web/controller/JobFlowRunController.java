@@ -98,7 +98,7 @@ public class JobFlowRunController {
         }
 
         // Check if there are any unfinished jobs.
-        if (jobRunInfoService.exists(new QueryWrapper<JobRunInfo>()
+        if (!jobRunInfoService.exists(new QueryWrapper<JobRunInfo>()
                 .lambda()
                 .eq(JobRunInfo::getFlowRunId, flowRunId)
                 .eq(JobRunInfo::getUserId, loginUser.getId())

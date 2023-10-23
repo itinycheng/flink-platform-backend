@@ -59,6 +59,7 @@ public class FlowExecuteThread implements Runnable {
         newJobFlowRun.setId(jobFlowRun.getId());
         newJobFlowRun.setStatus(RUNNING);
         jobFlowRunService.updateById(newJobFlowRun);
+        jobFlowRun.setStatus(RUNNING);
 
         // Process job flow.
         var flow = jobFlowRun.getFlow();
@@ -66,18 +67,20 @@ public class FlowExecuteThread implements Runnable {
 
         // Wait until all vertices are executed.
         var timeout = jobFlowRun.getTimeout();
-        var startTime = jobFlowRun.getCreateTime();
+        var startTime = jobFlowRun.getStartTime();
+        boolean timeoutHandled = false;
         while (isRunning && JobFlowDagHelper.hasUnExecutedVertices(flow)) {
             if (AppRunner.isStopped()) {
                 return;
             }
 
             // handle timeout.
-            if (timeout != null && timeout.isSatisfied(startTime)) {
+            if (!timeoutHandled && timeout != null && timeout.isSatisfied(startTime)) {
                 handleTimeout(timeout.getStrategies());
-            } else {
-                ThreadUtil.sleep(5000);
+                timeoutHandled = true;
             }
+
+            ThreadUtil.sleep(5000);
         }
 
         // Wait for all jobs complete.
