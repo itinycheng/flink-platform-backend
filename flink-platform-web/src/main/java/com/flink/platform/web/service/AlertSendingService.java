@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 
+import static com.flink.platform.common.constants.Constant.EMPTY;
 import static com.flink.platform.common.enums.ExecutionStatus.FAILURE;
 
 /** Alert sending service. */
@@ -27,6 +28,10 @@ public class AlertSendingService {
     private JobFlowService jobFlowService;
 
     public void sendAlerts(JobFlowRun jobFlowRun) {
+        sendAlerts(jobFlowRun, EMPTY);
+    }
+
+    public void sendAlerts(JobFlowRun jobFlowRun, String alertMsg) {
         List<AlertConfig> alerts = jobFlowRun.getAlerts();
         if (CollectionUtils.isEmpty(alerts)) {
             return;
@@ -36,13 +41,12 @@ public class AlertSendingService {
         alerts.stream()
                 .filter(alert -> CollectionUtils.isEmpty(alert.getStatuses())
                         || alert.getStatuses().contains(finalStatus))
-                .forEach(alert -> alertSender.sendAlert(alert.getAlertId(), jobFlowRun));
+                .forEach(alert -> alertSender.sendAlert(alert.getAlertId(), jobFlowRun, alertMsg));
     }
 
     public void sendErrAlerts(JobFlow jobFlow, String alertMag) {
         JobFlowRun jobFlowRun = jobFlowService.copyToJobFlowRun(jobFlow);
         jobFlowRun.setStatus(FAILURE);
-        jobFlowRun.setAlertMsg(alertMag);
-        sendAlerts(jobFlowRun);
+        sendAlerts(jobFlowRun, alertMag);
     }
 }

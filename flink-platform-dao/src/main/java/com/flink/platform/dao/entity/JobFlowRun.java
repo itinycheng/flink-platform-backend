@@ -6,7 +6,6 @@ import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.baomidou.mybatisplus.extension.handlers.JacksonTypeHandler;
 import com.fasterxml.jackson.annotation.JsonFormat;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.flink.platform.common.enums.ExecutionStatus;
 import com.flink.platform.dao.entity.alert.AlertConfigList;
 import lombok.AccessLevel;
@@ -66,11 +65,6 @@ public class JobFlowRun {
     @Setter(AccessLevel.NONE)
     @JsonFormat(pattern = GLOBAL_DATE_TIME_FORMAT, timezone = GLOBAL_TIMEZONE)
     private LocalDateTime createTime;
-
-    /** Only for temp storage of alert message. */
-    @JsonIgnore
-    @TableField(exist = false)
-    private transient String alertMsg = EMPTY;
 
     public String getDuration() {
         if (startTime == null || endTime == null) {
