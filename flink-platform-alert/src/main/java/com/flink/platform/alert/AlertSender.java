@@ -24,31 +24,28 @@ public class AlertSender {
     @Autowired
     private RestTemplate restTemplate;
 
-    public boolean sendAlert(Long alertId, JobFlowRun jobFlowRun) {
+    public boolean sendAlert(Long alertId, JobFlowRun jobFlowRun, String alertMsg) {
         AlertInfo alertInfo = alertService.getById(alertId);
         if (alertInfo == null) {
             return false;
         }
 
-        switch (alertInfo.getType()) {
-            case FEI_SHU:
-                return sendToFeiShu((FeiShuAlert) alertInfo.getConfig(), jobFlowRun);
-            case DING_DING:
-            case SMS:
-            case EMAIL:
-            default:
+        return switch (alertInfo.getType()) {
+            case FEI_SHU -> sendToFeiShu((FeiShuAlert) alertInfo.getConfig(), jobFlowRun, alertMsg);
+            default -> {
                 log.error("Alert type: {} not supported", alertInfo.getType());
-                return false;
-        }
+                yield false;
+            }
+        };
     }
 
-    public boolean sendToFeiShu(FeiShuAlert alert, JobFlowRun jobFlowRun) {
+    public boolean sendToFeiShu(FeiShuAlert alert, JobFlowRun jobFlowRun, String alertMsg) {
         try {
             String content = JsonUtil.toJsonString(alert.getContent())
                     .replace("${id}", String.valueOf(jobFlowRun.getId()))
                     .replace("${name}", jobFlowRun.getName())
                     .replace("${status}", jobFlowRun.getStatus().name())
-                    .replace("${alertMsg}", jobFlowRun.getAlertMsg());
+                    .replace("${alertMsg}", alertMsg);
             FeiShuAlert feiShuAlert = new FeiShuAlert(alert.getWebhook(), JsonUtil.toMap(content));
             String message = sendToFeiShu(feiShuAlert);
             log.info(
