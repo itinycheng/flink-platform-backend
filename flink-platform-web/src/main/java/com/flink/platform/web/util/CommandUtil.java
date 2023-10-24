@@ -115,16 +115,15 @@ public class CommandUtil {
 
     private static void recursiveForceKill(ProcessHandle handle) {
         ProcessHandle[] children = handle.children().toArray(ProcessHandle[]::new);
-        if (children.length > 0) {
-            for (ProcessHandle child : children) {
-                recursiveForceKill(child);
-            }
-        } else {
-            try {
-                handle.destroyForcibly();
-            } catch (Throwable t) {
-                log.error("Destroy process: {} failed", handle.pid(), t);
-            }
+
+        try {
+            handle.destroyForcibly();
+        } catch (Throwable t) {
+            log.error("Destroy process: {} failed", handle.pid(), t);
+        }
+
+        for (ProcessHandle child : children) {
+            recursiveForceKill(child);
         }
     }
 
