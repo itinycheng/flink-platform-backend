@@ -102,32 +102,34 @@ public class JobFlowScheduleService {
         JobFlowDag flow = jobFlowRun.getFlow();
         if (flow == null || CollectionUtils.isEmpty(flow.getVertices())) {
             log.warn("No JobVertex found, no scheduling required, flow run id: {}", jobFlowRun.getId());
-            JobFlowRun newJobFlowRun = new JobFlowRun();
-            newJobFlowRun.setId(jobFlowRun.getId());
-            newJobFlowRun.setStatus(FAILURE);
-            newJobFlowRun.setEndTime(LocalDateTime.now());
-            jobFlowRunService.updateById(newJobFlowRun);
-
-            jobFlowRun.setStatus(FAILURE);
-            jobFlowRun.setEndTime(LocalDateTime.now());
-            alertSendingService.sendAlerts(jobFlowRun);
+            failAndUpdateJobFlowRun(jobFlowRun);
+            alertSendingService.sendAlerts(jobFlowRun, "No job vertex found");
             return;
         }
 
         if (inFlightFlows.size() > 10 * workerConfig.getFlowExecThreads()) {
             log.warn("Not have enough resources to execute flow: {}", jobFlowRun);
-            JobFlowRun newJobFlowRun = new JobFlowRun();
-            newJobFlowRun.setId(jobFlowRun.getId());
-            newJobFlowRun.setStatus(FAILURE);
-            newJobFlowRun.setEndTime(LocalDateTime.now());
-            jobFlowRunService.updateById(newJobFlowRun);
-
-            jobFlowRun.setStatus(FAILURE);
-            jobFlowRun.setEndTime(LocalDateTime.now());
-            alertSendingService.sendAlerts(jobFlowRun);
+            failAndUpdateJobFlowRun(jobFlowRun);
+            alertSendingService.sendAlerts(jobFlowRun, "Not have enough resources");
             return;
         }
 
         inFlightFlows.offer(jobFlowRun);
+    }
+
+    private void failAndUpdateJobFlowRun(JobFlowRun jobFlowRun) {
+        var currentTime = LocalDateTime.now();
+        var newJobFlowRun = new JobFlowRun();
+        newJobFlowRun.setId(jobFlowRun.getId());
+        newJobFlowRun.setStatus(FAILURE);
+        if (jobFlowRun.getStartTime() == null) {
+            newJobFlowRun.setStartTime(currentTime);
+        }
+        newJobFlowRun.setEndTime(currentTime);
+        jobFlowRunService.updateById(newJobFlowRun);
+
+        jobFlowRun.setStatus(FAILURE);
+        jobFlowRun.setStartTime(currentTime);
+        jobFlowRun.setEndTime(currentTime);
     }
 }

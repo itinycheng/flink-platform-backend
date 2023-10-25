@@ -54,10 +54,15 @@ public class FlowExecuteThread implements Runnable {
 
     @Override
     public void run() {
-        // Update status of jobFlowRun.
+        // Update jobFlowRun.
         var newJobFlowRun = new JobFlowRun();
         newJobFlowRun.setId(jobFlowRun.getId());
         newJobFlowRun.setStatus(RUNNING);
+        if (jobFlowRun.getStartTime() == null) {
+            var startTime = LocalDateTime.now();
+            jobFlowRun.setStartTime(startTime);
+            newJobFlowRun.setStartTime(startTime);
+        }
         jobFlowRunService.updateById(newJobFlowRun);
         jobFlowRun.setStatus(RUNNING);
 
@@ -68,7 +73,7 @@ public class FlowExecuteThread implements Runnable {
         // Wait until all vertices are executed.
         var timeout = jobFlowRun.getTimeout();
         var startTime = jobFlowRun.getStartTime();
-        boolean timeoutHandled = false;
+        var timeoutHandled = false;
         while (isRunning && JobFlowDagHelper.hasUnExecutedVertices(flow)) {
             if (AppRunner.isStopped()) {
                 return;
@@ -92,7 +97,7 @@ public class FlowExecuteThread implements Runnable {
     private void handleTimeout(TimeoutStrategy[] strategies) {
         for (var strategy : strategies) {
             switch (strategy) {
-                case ALARM -> alertSendingService.sendAlerts(jobFlowRun, "JobFlow execution timeout");
+                case ALARM -> alertSendingService.sendAlerts(jobFlowRun, "execution timeout");
                 case FAILURE -> killJobService.killRemoteFlow(jobFlowRun.getUserId(), jobFlowRun.getId());
             }
         }
