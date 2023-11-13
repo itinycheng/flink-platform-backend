@@ -5,6 +5,7 @@ import com.flink.platform.common.constants.Constant;
 import com.flink.platform.common.enums.ExecutionStatus;
 import com.flink.platform.common.enums.JobStatus;
 import com.flink.platform.common.model.JobVertex;
+import com.flink.platform.common.util.ExceptionUtil;
 import com.flink.platform.common.util.JsonUtil;
 import com.flink.platform.dao.entity.JobFlowRun;
 import com.flink.platform.dao.entity.JobInfo;
@@ -122,8 +123,8 @@ public class JobExecuteThread implements Callable<JobResponse> {
                 }
             } catch (Exception e) {
                 log.error("Exception found when executing jobRun: {} and wait for complete", jobRunId, e);
-                if (e instanceof StatusRuntimeException) {
-                    Status status = ((StatusRuntimeException) e).getStatus();
+                if (e instanceof StatusRuntimeException se) {
+                    Status status = se.getStatus();
                     if (status != null && Status.UNAVAILABLE.getCode() == status.getCode()) {
                         break;
                     }
@@ -346,7 +347,8 @@ public class JobExecuteThread implements Callable<JobResponse> {
                 newJobRun.setStopTime(endTime);
             }
             if (exception != null) {
-                newJobRun.setBackInfo(new JobCallback(exception.getMessage(), null));
+                String exceptionMsg = ExceptionUtil.stackTrace(exception);
+                newJobRun.setBackInfo(new JobCallback(exceptionMsg, null));
             }
 
             jobRunInfoService.updateById(newJobRun);
