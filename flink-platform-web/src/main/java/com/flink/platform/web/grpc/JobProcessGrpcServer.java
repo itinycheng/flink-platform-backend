@@ -42,10 +42,7 @@ public class JobProcessGrpcServer extends JobGrpcServiceGrpc.JobGrpcServiceImplB
             responseObserver.onNext(reply);
         } catch (Exception e) {
             log.error("process job via grpc failed", e);
-            responseObserver.onError(getStatus(e)
-                    .withCause(e)
-                    .withDescription(ExceptionUtil.stackTrace(e))
-                    .asRuntimeException());
+            responseObserver.onError(buildGrpcException(e));
         }
         responseObserver.onCompleted();
     }
@@ -56,9 +53,8 @@ public class JobProcessGrpcServer extends JobGrpcServiceGrpc.JobGrpcServiceImplB
             JobStatusReply reply = processJobStatusService.getStatus(request);
             responseObserver.onNext(reply);
         } catch (Exception e) {
-            log.error("process job via grpc failed", e);
-            responseObserver.onError(
-                    getStatus(e).withCause(e).withDescription(e.getMessage()).asRuntimeException());
+            log.error("get job status via grpc failed", e);
+            responseObserver.onError(buildGrpcException(e));
         }
         responseObserver.onCompleted();
     }
@@ -72,13 +68,13 @@ public class JobProcessGrpcServer extends JobGrpcServiceGrpc.JobGrpcServiceImplB
             responseObserver.onNext(reply);
         } catch (Exception e) {
             log.error("kill job via grpc failed", e);
-            responseObserver.onError(
-                    getStatus(e).withCause(e).withDescription(e.getMessage()).asRuntimeException());
+            responseObserver.onError(buildGrpcException(e));
         }
         responseObserver.onCompleted();
     }
 
-    private Status getStatus(Exception exception) {
-        return exception instanceof UnrecoverableException ? Status.UNAVAILABLE : Status.INTERNAL;
+    private Exception buildGrpcException(Exception e) {
+        Status status = e instanceof UnrecoverableException ? Status.UNAVAILABLE : Status.INTERNAL;
+        return status.withCause(e).withDescription(ExceptionUtil.stackTrace(e)).asRuntimeException();
     }
 }

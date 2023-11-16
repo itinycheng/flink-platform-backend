@@ -38,21 +38,16 @@ public class DependentCommandBuilder implements CommandBuilder {
     @Override
     public JobCommand buildCommand(Long flowRunId, @Nonnull JobRunInfo jobRunInfo) {
         Long jobRunId = jobRunInfo.getId();
-        try {
-            DependentJob dependentJob = jobRunInfo.getConfig().unwrap(DependentJob.class);
-            if (CollectionUtils.isEmpty(dependentJob.getDependentItems())) {
-                return new DependentCommand(jobRunId, true);
-            }
-
-            boolean matched = dependentJob.getRelation() == DependentJob.DependentRelation.OR
-                    ? dependentJob.getDependentItems().stream().anyMatch(this::validateDependentItem)
-                    : dependentJob.getDependentItems().stream().allMatch(this::validateDependentItem);
-
-            return new DependentCommand(jobRunId, matched);
-        } catch (Exception e) {
-            log.error("Build dependent command failed, ", e);
-            return new DependentCommand(jobRunId, false);
+        DependentJob dependentJob = jobRunInfo.getConfig().unwrap(DependentJob.class);
+        if (CollectionUtils.isEmpty(dependentJob.getDependentItems())) {
+            return new DependentCommand(jobRunId, true);
         }
+
+        boolean matched = dependentJob.getRelation() == DependentJob.DependentRelation.OR
+                ? dependentJob.getDependentItems().stream().anyMatch(this::validateDependentItem)
+                : dependentJob.getDependentItems().stream().allMatch(this::validateDependentItem);
+
+        return new DependentCommand(jobRunId, matched);
     }
 
     private boolean validateDependentItem(DependentJob.DependentItem dependentItem) {
