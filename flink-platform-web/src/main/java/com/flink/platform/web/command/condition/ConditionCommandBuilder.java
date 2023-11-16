@@ -48,44 +48,38 @@ public class ConditionCommandBuilder implements CommandBuilder {
             return new ConditionCommand(jobRunId, true);
         }
 
-        try {
-            JobFlowRun jobFlowRun = jobFlowRunService.getById(flowRunId);
-            JobFlowDag flow = jobFlowRun.getFlow();
-            JobVertex vertex = flow.getVertex(jobRunInfo.getJobId());
-            List<Long> jobIds = flow.getPreVertices(vertex).stream()
-                    .map(JobVertex::getJobId)
-                    .collect(toList());
+        JobFlowRun jobFlowRun = jobFlowRunService.getById(flowRunId);
+        JobFlowDag flow = jobFlowRun.getFlow();
+        JobVertex vertex = flow.getVertex(jobRunInfo.getJobId());
+        List<Long> jobIds =
+                flow.getPreVertices(vertex).stream().map(JobVertex::getJobId).collect(toList());
 
-            if (CollectionUtils.isEmpty(jobIds)) {
-                return new ConditionCommand(jobRunId, true);
-            }
-
-            List<JobRunInfo> prevJobRunList = jobRunInfoService.list(new QueryWrapper<JobRunInfo>()
-                    .lambda()
-                    .eq(JobRunInfo::getFlowRunId, flowRunId)
-                    .in(JobRunInfo::getJobId, jobIds));
-
-            Long toVertexId = jobRunInfo.getJobId();
-            ExecutionCondition condition =
-                    jobRunInfo.getConfig().unwrap(ConditionJob.class).getCondition();
-            boolean success =
-                    switch (condition) {
-                        case AND -> CollectionUtils.isNotEmpty(prevJobRunList)
-                                && jobIds.size() == prevJobRunList.size()
-                                && prevJobRunList.stream()
-                                        .allMatch(jobRun -> jobRun.getStatus()
-                                                == getExpectedStatus(flow, jobRun.getJobId(), toVertexId));
-                        case OR -> CollectionUtils.isNotEmpty(prevJobRunList)
-                                && prevJobRunList.stream()
-                                        .anyMatch(jobRun -> jobRun.getStatus()
-                                                == getExpectedStatus(flow, jobRun.getJobId(), toVertexId));
-                    };
-
-            return new ConditionCommand(jobRunId, success);
-        } catch (Exception e) {
-            log.error("Build condition command failed, ", e);
-            return new ConditionCommand(jobRunId, false);
+        if (CollectionUtils.isEmpty(jobIds)) {
+            return new ConditionCommand(jobRunId, true);
         }
+
+        List<JobRunInfo> prevJobRunList = jobRunInfoService.list(new QueryWrapper<JobRunInfo>()
+                .lambda()
+                .eq(JobRunInfo::getFlowRunId, flowRunId)
+                .in(JobRunInfo::getJobId, jobIds));
+
+        Long toVertexId = jobRunInfo.getJobId();
+        ExecutionCondition condition =
+                jobRunInfo.getConfig().unwrap(ConditionJob.class).getCondition();
+        boolean success =
+                switch (condition) {
+                    case AND -> CollectionUtils.isNotEmpty(prevJobRunList)
+                            && jobIds.size() == prevJobRunList.size()
+                            && prevJobRunList.stream()
+                                    .allMatch(jobRun -> jobRun.getStatus()
+                                            == getExpectedStatus(flow, jobRun.getJobId(), toVertexId));
+                    case OR -> CollectionUtils.isNotEmpty(prevJobRunList)
+                            && prevJobRunList.stream()
+                                    .anyMatch(jobRun -> jobRun.getStatus()
+                                            == getExpectedStatus(flow, jobRun.getJobId(), toVertexId));
+                };
+
+        return new ConditionCommand(jobRunId, success);
     }
 
     private ExecutionStatus getExpectedStatus(JobFlowDag flow, Long fromJobId, Long toJobId) {
