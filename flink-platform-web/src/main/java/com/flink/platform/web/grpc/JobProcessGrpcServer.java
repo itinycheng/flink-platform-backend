@@ -1,6 +1,7 @@
 package com.flink.platform.web.grpc;
 
 import com.flink.platform.common.exception.UnrecoverableException;
+import com.flink.platform.common.util.ExceptionUtil;
 import com.flink.platform.grpc.JobGrpcServiceGrpc;
 import com.flink.platform.grpc.JobStatusReply;
 import com.flink.platform.grpc.JobStatusRequest;
@@ -22,38 +23,38 @@ import org.springframework.beans.factory.annotation.Autowired;
 @GrpcService
 public class JobProcessGrpcServer extends JobGrpcServiceGrpc.JobGrpcServiceImplBase {
 
-    @Autowired private ProcessJobService processJobService;
+    @Autowired
+    private ProcessJobService processJobService;
 
-    @Autowired private ProcessJobStatusService processJobStatusService;
+    @Autowired
+    private ProcessJobStatusService processJobStatusService;
 
-    @Autowired private KillJobService killJobService;
+    @Autowired
+    private KillJobService killJobService;
 
     @Override
-    public void processJob(
-            ProcessJobRequest request, StreamObserver<ProcessJobReply> responseObserver) {
+    public void processJob(ProcessJobRequest request, StreamObserver<ProcessJobReply> responseObserver) {
         try {
             long jobRunId = request.getJobRunId();
             processJobService.processJob(jobRunId);
-            ProcessJobReply reply = ProcessJobReply.newBuilder().setJobRunId(jobRunId).build();
+            ProcessJobReply reply =
+                    ProcessJobReply.newBuilder().setJobRunId(jobRunId).build();
             responseObserver.onNext(reply);
         } catch (Exception e) {
             log.error("process job via grpc failed", e);
-            responseObserver.onError(
-                    getStatus(e).withCause(e).withDescription(e.getMessage()).asRuntimeException());
+            responseObserver.onError(buildGrpcException(e));
         }
         responseObserver.onCompleted();
     }
 
     @Override
-    public void getJobStatus(
-            JobStatusRequest request, StreamObserver<JobStatusReply> responseObserver) {
+    public void getJobStatus(JobStatusRequest request, StreamObserver<JobStatusReply> responseObserver) {
         try {
             JobStatusReply reply = processJobStatusService.getStatus(request);
             responseObserver.onNext(reply);
         } catch (Exception e) {
-            log.error("process job via grpc failed", e);
-            responseObserver.onError(
-                    getStatus(e).withCause(e).withDescription(e.getMessage()).asRuntimeException());
+            log.error("get job status via grpc failed", e);
+            responseObserver.onError(buildGrpcException(e));
         }
         responseObserver.onCompleted();
     }
@@ -67,13 +68,13 @@ public class JobProcessGrpcServer extends JobGrpcServiceGrpc.JobGrpcServiceImplB
             responseObserver.onNext(reply);
         } catch (Exception e) {
             log.error("kill job via grpc failed", e);
-            responseObserver.onError(
-                    getStatus(e).withCause(e).withDescription(e.getMessage()).asRuntimeException());
+            responseObserver.onError(buildGrpcException(e));
         }
         responseObserver.onCompleted();
     }
 
-    private Status getStatus(Exception exception) {
-        return exception instanceof UnrecoverableException ? Status.UNAVAILABLE : Status.INTERNAL;
+    private Exception buildGrpcException(Exception e) {
+        Status status = e instanceof UnrecoverableException ? Status.UNAVAILABLE : Status.INTERNAL;
+        return status.withCause(e).withDescription(ExceptionUtil.stackTrace(e)).asRuntimeException();
     }
 }
