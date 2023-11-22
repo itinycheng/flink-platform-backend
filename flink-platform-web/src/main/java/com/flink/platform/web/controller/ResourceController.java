@@ -29,6 +29,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
@@ -84,6 +85,14 @@ public class ResourceController {
     public ResultInfo<Resource> get(@PathVariable Long resourceId) {
         Resource resource = resourceService.getById(resourceId);
         return ResultInfo.success(resource);
+    }
+
+    @GetMapping(value = "/getWithParents/{resourceId}")
+    public ResultInfo<List<Resource>> getWithParents(@PathVariable Long resourceId) {
+        var resource = resourceService.getById(resourceId);
+        var parents = recursiveParents(resource.getPid());
+        parents.add(resource);
+        return ResultInfo.success(parents);
     }
 
     @GetMapping(value = "/delete/{resourceId}")
@@ -168,5 +177,16 @@ public class ResourceController {
 
         hdfsService.delete(resourceRequest.getFullName(), false);
         return success(true);
+    }
+
+    private List<Resource> recursiveParents(Long pId) {
+        if (pId == null || pId < 0) {
+            return new ArrayList<>();
+        }
+
+        var resource = resourceService.getById(pId);
+        var parents = recursiveParents(resource.getPid());
+        parents.add(resource);
+        return parents;
     }
 }
