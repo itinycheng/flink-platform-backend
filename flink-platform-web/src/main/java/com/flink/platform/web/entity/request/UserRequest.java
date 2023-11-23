@@ -9,14 +9,13 @@ import lombok.experimental.Delegate;
 import static com.flink.platform.common.util.Preconditions.requireNotNull;
 
 /** user request. */
+@Getter
 @NoArgsConstructor
 public class UserRequest {
 
-    @Getter
     @Delegate
     private final User user = new User();
 
-    @Getter
     @Setter
     private String token;
 

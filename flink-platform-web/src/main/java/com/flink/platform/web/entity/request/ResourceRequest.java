@@ -13,6 +13,7 @@ import static com.flink.platform.common.util.Preconditions.requireState;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 /** Alert request info. */
+@Getter
 @NoArgsConstructor
 public class ResourceRequest {
 
@@ -20,7 +21,6 @@ public class ResourceRequest {
 
     private static final Pattern NAME_PATTERN = Pattern.compile(NAME_REGEX);
 
-    @Getter
     @Delegate
     private final Resource resource = new Resource();
 

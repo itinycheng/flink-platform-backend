@@ -8,10 +8,10 @@ import lombok.experimental.Delegate;
 import static com.flink.platform.common.util.Preconditions.requireNotNull;
 
 /** user request. */
+@Getter
 @NoArgsConstructor
 public class WorkerRequest {
 
-    @Getter
     @Delegate
     private final Worker worker = new Worker();
 

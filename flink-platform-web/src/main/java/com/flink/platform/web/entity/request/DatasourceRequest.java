@@ -9,10 +9,10 @@ import lombok.experimental.Delegate;
 import static com.flink.platform.common.util.Preconditions.requireNotNull;
 
 /** Alert request info. */
+@Getter
 @NoArgsConstructor
 public class DatasourceRequest {
 
-    @Getter
     @Delegate
     private final Datasource datasource = new Datasource();
 
