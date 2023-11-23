@@ -11,14 +11,18 @@ import com.flink.platform.dao.entity.JobRunInfo;
 import com.flink.platform.dao.entity.User;
 import com.flink.platform.dao.service.JobFlowRunService;
 import com.flink.platform.dao.service.JobRunInfoService;
+import com.flink.platform.web.entity.request.JobFlowRunRequest;
 import com.flink.platform.web.entity.response.ResultInfo;
 import com.flink.platform.web.service.KillJobService;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestAttribute;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -58,11 +62,27 @@ public class JobFlowRunController {
         return success(jobFlowRun);
     }
 
+    @PostMapping(value = "/update")
+    public ResultInfo<Long> update(@RequestBody JobFlowRunRequest flowRunRequest) {
+        String errorMsg = flowRunRequest.validateOnUpdate();
+        if (StringUtils.isNotBlank(errorMsg)) {
+            return failure(ERROR_PARAMETER, errorMsg);
+        }
+
+        flowRunRequest.setFlow(null);
+        flowRunRequest.setFlowId(null);
+        flowRunRequest.setUserId(null);
+        flowRunRequest.setCronExpr(null);
+        jobFlowRunService.updateById(flowRunRequest.getJobFlowRun());
+        return success(flowRunRequest.getId());
+    }
+
     @GetMapping(value = "/page")
     public ResultInfo<IPage<JobFlowRun>> page(
             @RequestAttribute(value = Constant.SESSION_USER) User loginUser,
             @RequestParam(name = "page", required = false, defaultValue = "1") Integer page,
             @RequestParam(name = "size", required = false, defaultValue = "20") Integer size,
+            @RequestParam(name = "id", required = false) Long id,
             @RequestParam(name = "name", required = false) String name,
             @RequestParam(name = "status", required = false) ExecutionStatus status,
             @RequestParam(name = "tag", required = false) String tagCode,
@@ -76,6 +96,7 @@ public class JobFlowRunController {
         LambdaQueryWrapper<JobFlowRun> queryWrapper = new QueryWrapper<JobFlowRun>()
                 .lambda()
                 .eq(JobFlowRun::getUserId, loginUser.getId())
+                .eq(nonNull(id), JobFlowRun::getId, id)
                 .eq(nonNull(status), JobFlowRun::getStatus, status)
                 .like(isNotEmpty(name), JobFlowRun::getName, name)
                 .like(isNotEmpty(tagCode), JobFlowRun::getTags, tagCode)
