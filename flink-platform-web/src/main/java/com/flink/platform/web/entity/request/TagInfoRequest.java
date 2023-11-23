@@ -6,10 +6,10 @@ import lombok.NoArgsConstructor;
 import lombok.experimental.Delegate;
 
 /** Tag request info. */
+@Getter
 @NoArgsConstructor
 public class TagInfoRequest {
 
-    @Getter
     @Delegate
     private final TagInfo tagInfo = new TagInfo();
 

@@ -16,6 +16,7 @@ import static com.flink.platform.common.enums.JobType.DEPENDENT;
 import static com.flink.platform.common.util.Preconditions.requireNotNull;
 
 /** Job request info. */
+@Getter
 @NoArgsConstructor
 public class JobInfoRequest {
 
@@ -23,7 +24,6 @@ public class JobInfoRequest {
 
     private static final Pattern JOB_NAME_PATTERN = Pattern.compile(JOB_NAME_REGEX);
 
-    @Getter
     @Delegate
     private final JobInfo jobInfo = new JobInfo();
 
