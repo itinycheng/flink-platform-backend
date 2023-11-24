@@ -47,6 +47,7 @@ import static com.flink.platform.common.enums.ResponseStatus.USER_HAVE_NO_PERMIS
 import static com.flink.platform.web.entity.response.ResultInfo.failure;
 import static com.flink.platform.web.entity.response.ResultInfo.success;
 import static java.util.stream.Collectors.toList;
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.apache.commons.lang3.StringUtils.isNotEmpty;
 
 /** crud job flow. */
@@ -170,12 +171,15 @@ public class JobFlowController {
     }
 
     @GetMapping(value = "/idNameMapList")
-    public ResultInfo<List<Map<String, Object>>> idNameMap(@RequestParam(name = "name", required = false) String name) {
+    public ResultInfo<List<Map<String, Object>>> idNameMapList(
+            @RequestParam(name = "name", required = false) String name,
+            @RequestParam(name = "status", required = false) List<JobFlowStatus> status) {
         List<Map<String, Object>> listMap = jobFlowService
                 .list(new QueryWrapper<JobFlow>()
                         .lambda()
                         .select(JobFlow::getId, JobFlow::getName)
-                        .like(isNotEmpty(name), JobFlow::getName, name))
+                        .like(isNotBlank(name), JobFlow::getName, name)
+                        .in(CollectionUtils.isNotEmpty(status), JobFlow::getStatus, status))
                 .stream()
                 .map(jobFlow -> {
                     Map<String, Object> map = new HashMap<>(2);

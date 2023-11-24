@@ -5,16 +5,18 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.flink.platform.common.constants.Constant;
 import com.flink.platform.common.enums.ExecutionStatus;
+import com.flink.platform.common.model.JobVertex;
+import com.flink.platform.dao.entity.JobFlow;
 import com.flink.platform.dao.entity.JobInfo;
 import com.flink.platform.dao.entity.JobRunInfo;
 import com.flink.platform.dao.entity.User;
+import com.flink.platform.dao.service.JobFlowService;
 import com.flink.platform.dao.service.JobInfoService;
 import com.flink.platform.dao.service.JobRunInfoService;
 import com.flink.platform.web.entity.JobQuartzInfo;
 import com.flink.platform.web.entity.request.JobInfoRequest;
 import com.flink.platform.web.entity.response.ResultInfo;
 import com.flink.platform.web.service.QuartzService;
-import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -38,6 +40,9 @@ import static com.flink.platform.common.enums.ResponseStatus.SERVICE_ERROR;
 import static com.flink.platform.web.entity.response.ResultInfo.failure;
 import static com.flink.platform.web.entity.response.ResultInfo.success;
 import static java.util.Objects.nonNull;
+import static java.util.stream.Collectors.toList;
+import static org.apache.commons.collections4.CollectionUtils.isEmpty;
+import static org.apache.commons.collections4.CollectionUtils.isNotEmpty;
 
 /** manage job info. */
 @RestController
@@ -49,6 +54,9 @@ public class JobInfoController {
 
     @Autowired
     private JobRunInfoService jobRunService;
+
+    @Autowired
+    private JobFlowService jobFlowService;
 
     @Autowired
     private QuartzService quartzService;
@@ -107,15 +115,29 @@ public class JobInfoController {
     }
 
     @GetMapping(value = "/list")
-    public ResultInfo<List<JobInfo>> list(@RequestParam(name = "flowId") Long flowId) {
-        List<JobInfo> list = jobInfoService.list(
-                new QueryWrapper<JobInfo>().lambda().like(nonNull(flowId), JobInfo::getFlowId, flowId));
+    public ResultInfo<List<JobInfo>> list(
+            @RequestParam(name = "flowId") Long flowId,
+            @RequestParam(name = "flag", defaultValue = "all") String flag) {
+        List<Long> jobIds = null;
+        if ("flow".equals(flag)) {
+            JobFlow jobFlow = jobFlowService.getById(flowId);
+            if (jobFlow != null && jobFlow.getFlow() != null) {
+                jobIds = jobFlow.getFlow().getVertices().stream()
+                        .map(JobVertex::getJobId)
+                        .collect(toList());
+            }
+        }
+
+        List<JobInfo> list = jobInfoService.list(new QueryWrapper<JobInfo>()
+                .lambda()
+                .eq(JobInfo::getFlowId, flowId)
+                .in(isNotEmpty(jobIds), JobInfo::getId, jobIds));
         return success(list);
     }
 
     @PostMapping(value = "/getByIds")
     public ResultInfo<List<JobInfo>> getByIds(@RequestBody List<Long> ids) {
-        if (CollectionUtils.isEmpty(ids)) {
+        if (isEmpty(ids)) {
             return success(Collections.emptyList());
         }
 
@@ -135,7 +157,7 @@ public class JobInfoController {
                 .eq(JobRunInfo::getJobId, jobId)
                 .in(JobRunInfo::getStatus, ExecutionStatus.getNonTerminals())
                 .gt(JobRunInfo::getCreateTime, LocalDateTime.now().minusDays(1)));
-        if (CollectionUtils.isNotEmpty(notFinishedList)) {
+        if (isNotEmpty(notFinishedList)) {
             return failure(EXIST_UNFINISHED_PROCESS);
         }
 
