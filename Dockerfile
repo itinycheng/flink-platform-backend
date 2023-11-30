@@ -1,4 +1,4 @@
-FROM openjdk:11.0.15-jdk-slim
+FROM openjdk:21-jdk-slim
 
 COPY ./flink-platform-web/target/flink-platform-web-*.jar /app/flink-platform-web.jar
 
