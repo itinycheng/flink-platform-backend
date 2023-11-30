@@ -129,6 +129,15 @@
 
 		<plugins>
 			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<configuration>
+					<!-- https://github.com/spring-projects/spring-framework/issues/31675 -->
+					<!-- https://github.com/spring-projects/spring-framework/issues/31671 -->
+					<parameters>true</parameters>
+				</configuration>
+			</plugin>
+			<plugin>
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
 				<executions>
