@@ -270,6 +270,10 @@
 						<artifactId>ant</artifactId>
 						<groupId>org.apache.ant</groupId>
 					</exclusion>
+					<exclusion>
+						<artifactId>*</artifactId>
+						<groupId>org.apache.logging.log4j</groupId>
+					</exclusion>
 				</exclusions>
 			</dependency>
 		</dependencies>
