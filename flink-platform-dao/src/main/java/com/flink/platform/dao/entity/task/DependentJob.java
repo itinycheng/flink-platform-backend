@@ -1,13 +1,13 @@
 package com.flink.platform.dao.entity.task;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.flink.platform.common.enums.DependentStrategy;
 import com.flink.platform.common.enums.ExecutionStatus;
-import com.flink.platform.common.enums.TimeRange;
+import com.flink.platform.common.util.DurationUtil;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDateTime;
+import java.time.Duration;
 import java.util.List;
 
 /** dependent job. */
@@ -20,7 +20,12 @@ public class DependentJob extends BaseJob {
 
     private DependentRelation relation;
 
-    /** dependent item. */
+    /**
+     * dependent item. <br>
+     * trigger sequence: $prev < $cur <= now < $next;
+     * It's easy to figure out $next.
+     * $prev is the second element in front of $next.
+     */
     @Data
     @NoArgsConstructor
     public static class DependentItem {
@@ -31,44 +36,16 @@ public class DependentJob extends BaseJob {
 
         private List<ExecutionStatus> statuses;
 
-        private TimeRange timeRange;
+        private DependentStrategy strategy;
 
-        private Integer lastN;
+        private String duration;
 
-        @JsonIgnore
-        private LocalDateTime[] timeArr;
-
-        @JsonIgnore
-        public LocalDateTime getStartTime() {
-            LocalDateTime[] timeArr = getTimeArr();
-            if (timeArr == null) {
+        public Duration parseDuration() {
+            try {
+                return DurationUtil.parse(duration);
+            } catch (Exception ignored) {
                 return null;
             }
-
-            return timeArr[0];
-        }
-
-        @JsonIgnore
-        public LocalDateTime getEndTime() {
-            LocalDateTime[] timeArr = getTimeArr();
-            if (timeArr == null) {
-                return null;
-            }
-
-            return timeArr[1];
-        }
-
-        private LocalDateTime[] getTimeArr() {
-            if (timeArr != null) {
-                return timeArr;
-            }
-
-            if (timeRange == null) {
-                return null;
-            }
-
-            timeArr = timeRange.getCalculator().apply(lastN);
-            return timeArr;
         }
     }
 
