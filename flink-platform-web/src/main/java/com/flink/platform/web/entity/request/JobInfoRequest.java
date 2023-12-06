@@ -1,16 +1,22 @@
 package com.flink.platform.web.entity.request;
 
+import com.flink.platform.common.enums.DependentStrategy;
 import com.flink.platform.dao.entity.JobInfo;
 import com.flink.platform.dao.entity.LongArrayList;
 import com.flink.platform.dao.entity.task.BaseJob;
+import com.flink.platform.dao.entity.task.DependentJob;
 import com.flink.platform.dao.entity.task.ShellJob;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.experimental.Delegate;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import java.time.Duration;
 import java.util.regex.Pattern;
 
+import static com.flink.platform.common.enums.DependentStrategy.LAST_EXECUTION_AFTER_TIME;
+import static com.flink.platform.common.enums.DependentStrategy.LAST_EXECUTION_AS_EXPECTED;
 import static com.flink.platform.common.enums.JobType.CONDITION;
 import static com.flink.platform.common.enums.JobType.DEPENDENT;
 import static com.flink.platform.common.util.Preconditions.requireNotNull;
@@ -130,6 +136,23 @@ public class JobInfoRequest {
             Duration timeout = shellJob.parseTimeout();
             if (timeout == null || timeout.isZero() || timeout.isNegative()) {
                 return "The timeout of ShellJob is invalid";
+            }
+        }
+
+        DependentJob dependentJob = config.unwrap(DependentJob.class);
+        if (dependentJob != null && CollectionUtils.isNotEmpty(dependentJob.getDependentItems())) {
+            for (DependentJob.DependentItem dependentItem : dependentJob.getDependentItems()) {
+                DependentStrategy strategy = dependentItem.getStrategy();
+                if (LAST_EXECUTION_AFTER_TIME.equals(strategy)) {
+                    Duration duration = dependentItem.parseDuration();
+                    if (duration == null || duration.isZero() || duration.isNegative()) {
+                        return String.format("The duration of %s is invalid", strategy);
+                    }
+                } else if (LAST_EXECUTION_AS_EXPECTED.equals(strategy)) {
+                    if (StringUtils.isNotBlank(dependentItem.getDuration())) {
+                        return String.format("The duration of %s should not be set", strategy);
+                    }
+                }
             }
         }
 

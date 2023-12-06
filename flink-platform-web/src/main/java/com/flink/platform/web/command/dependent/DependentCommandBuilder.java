@@ -13,11 +13,16 @@ import com.flink.platform.web.command.JobCommand;
 import jakarta.annotation.Nonnull;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.tuple.Triple;
+import org.quartz.CronExpression;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.util.Date;
+
 import static com.flink.platform.common.enums.JobType.DEPENDENT;
-import static java.util.Objects.nonNull;
 
 /** condition builder. */
 @Slf4j
@@ -55,33 +60,77 @@ public class DependentCommandBuilder implements CommandBuilder {
             return true;
         }
 
-        ExecutionStatus latestStatus = null;
+        // Get status and create_at of the latest JobRun/JobFlowRun.
+        Triple<Long, ExecutionStatus, LocalDateTime> latestExecution = getLatestExecution(dependentItem);
+        Long flowRunId = latestExecution.getLeft();
+        ExecutionStatus status = latestExecution.getMiddle();
+        LocalDateTime createAt = latestExecution.getRight();
+
+        // return if status doesn't match.
+        if (!dependentItem.getStatuses().contains(status)) {
+            return false;
+        }
+
+        // base time.
+        LocalDateTime now = LocalDateTime.now();
+
+        LocalDateTime sinceTime;
+        switch (dependentItem.getStrategy()) {
+            case LAST_EXECUTION_AFTER_TIME:
+                sinceTime = now.minus(dependentItem.parseDuration());
+                return !createAt.isBefore(sinceTime);
+            case LAST_EXECUTION_AS_EXPECTED:
+                // Get next trigger time from sinceTime.
+                sinceTime = createAt;
+                LocalDateTime nextTriggerTime;
+                try {
+                    JobFlowRun jobFlowRun = jobFlowRunService.getOne(new QueryWrapper<JobFlowRun>()
+                            .lambda()
+                            .select(JobFlowRun::getCronExpr)
+                            .eq(JobFlowRun::getId, flowRunId));
+                    CronExpression cronExpression = new CronExpression(jobFlowRun.getCronExpr());
+                    Date sinceDate =
+                            Date.from(sinceTime.atZone(ZoneId.systemDefault()).toInstant());
+                    Date nextTriggerDate = cronExpression.getNextValidTimeAfter(sinceDate);
+                    nextTriggerTime = nextTriggerDate != null
+                            ? nextTriggerDate
+                                    .toInstant()
+                                    .atZone(ZoneId.systemDefault())
+                                    .toLocalDateTime()
+                            : LocalDateTime.MAX;
+                } catch (Exception e) {
+                    throw new RuntimeException("Get next valid trigger time failed", e);
+                }
+
+                return !nextTriggerTime.isBefore(now);
+            default:
+                throw new RuntimeException("Invalid dependent strategy: " + dependentItem.getStrategy());
+        }
+    }
+
+    public Triple<Long, ExecutionStatus, LocalDateTime> getLatestExecution(DependentJob.DependentItem dependentItem) {
         if (dependentItem.getJobId() != null) {
             JobRunInfo jobRunInfo = jobRunInfoService.getOne(new QueryWrapper<JobRunInfo>()
                     .lambda()
-                    .select(JobRunInfo::getStatus)
+                    .select(JobRunInfo::getFlowRunId, JobRunInfo::getStatus, JobRunInfo::getCreateTime)
                     .eq(JobRunInfo::getJobId, dependentItem.getJobId())
-                    .ge(nonNull(dependentItem.getStartTime()), JobRunInfo::getCreateTime, dependentItem.getStartTime())
-                    .le(nonNull(dependentItem.getEndTime()), JobRunInfo::getCreateTime, dependentItem.getEndTime())
                     .orderByDesc(JobRunInfo::getId)
                     .last("limit 1"));
             if (jobRunInfo != null) {
-                latestStatus = jobRunInfo.getStatus();
+                return Triple.of(jobRunInfo.getFlowRunId(), jobRunInfo.getStatus(), jobRunInfo.getCreateTime());
             }
         } else {
             JobFlowRun jobFlowRun = jobFlowRunService.getOne(new QueryWrapper<JobFlowRun>()
                     .lambda()
-                    .select(JobFlowRun::getStatus)
+                    .select(JobFlowRun::getId, JobFlowRun::getStatus, JobFlowRun::getCreateTime)
                     .eq(JobFlowRun::getFlowId, dependentItem.getFlowId())
-                    .ge(nonNull(dependentItem.getStartTime()), JobFlowRun::getCreateTime, dependentItem.getStartTime())
-                    .le(nonNull(dependentItem.getEndTime()), JobFlowRun::getCreateTime, dependentItem.getEndTime())
                     .orderByDesc(JobFlowRun::getId)
                     .last("limit 1"));
             if (jobFlowRun != null) {
-                latestStatus = jobFlowRun.getStatus();
+                return Triple.of(jobFlowRun.getId(), jobFlowRun.getStatus(), jobFlowRun.getCreateTime());
             }
         }
 
-        return dependentItem.getStatuses().contains(latestStatus);
+        throw new RuntimeException("Get latest flowRunId/status/createTime failed");
     }
 }

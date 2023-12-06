@@ -37,7 +37,7 @@ public class SqlTask extends AbstractTask {
 
     private final List<String> sqlList;
 
-    private Statement statement;
+    private volatile Statement statement;
 
     private boolean isSucceed;
 
