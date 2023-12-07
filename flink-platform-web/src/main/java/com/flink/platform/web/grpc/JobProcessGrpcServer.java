@@ -23,22 +23,19 @@ import org.springframework.beans.factory.annotation.Autowired;
 @GrpcService
 public class JobProcessGrpcServer extends JobGrpcServiceGrpc.JobGrpcServiceImplBase {
 
-    @Autowired
-    private ProcessJobService processJobService;
+    @Autowired private ProcessJobService processJobService;
 
-    @Autowired
-    private ProcessJobStatusService processJobStatusService;
+    @Autowired private ProcessJobStatusService processJobStatusService;
 
-    @Autowired
-    private KillJobService killJobService;
+    @Autowired private KillJobService killJobService;
 
     @Override
-    public void processJob(ProcessJobRequest request, StreamObserver<ProcessJobReply> responseObserver) {
+    public void processJob(
+            ProcessJobRequest request, StreamObserver<ProcessJobReply> responseObserver) {
         try {
             long jobRunId = request.getJobRunId();
             processJobService.processJob(jobRunId);
-            ProcessJobReply reply =
-                    ProcessJobReply.newBuilder().setJobRunId(jobRunId).build();
+            ProcessJobReply reply = ProcessJobReply.newBuilder().setJobRunId(jobRunId).build();
             responseObserver.onNext(reply);
         } catch (Exception e) {
             log.error("process job via grpc failed", e);
@@ -48,7 +45,8 @@ public class JobProcessGrpcServer extends JobGrpcServiceGrpc.JobGrpcServiceImplB
     }
 
     @Override
-    public void getJobStatus(JobStatusRequest request, StreamObserver<JobStatusReply> responseObserver) {
+    public void getJobStatus(
+            JobStatusRequest request, StreamObserver<JobStatusReply> responseObserver) {
         try {
             JobStatusReply reply = processJobStatusService.getStatus(request);
             responseObserver.onNext(reply);
@@ -75,6 +73,8 @@ public class JobProcessGrpcServer extends JobGrpcServiceGrpc.JobGrpcServiceImplB
 
     private Exception buildGrpcException(Exception e) {
         Status status = e instanceof UnrecoverableException ? Status.UNAVAILABLE : Status.INTERNAL;
-        return status.withCause(e).withDescription(ExceptionUtil.stackTrace(e)).asRuntimeException();
+        return status.withCause(e)
+                .withDescription(ExceptionUtil.stackTrace(e))
+                .asRuntimeException();
     }
 }

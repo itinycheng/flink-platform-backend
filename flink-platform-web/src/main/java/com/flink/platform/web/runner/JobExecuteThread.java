@@ -122,16 +122,22 @@ public class JobExecuteThread implements Callable<JobResponse> {
                     break;
                 }
             } catch (Exception e) {
-                log.error("Exception found when executing jobRun: {} and wait for complete", jobRunId, e);
-                if (e instanceof StatusRuntimeException se) {
-                    Status status = se.getStatus();
+                log.error(
+                        "Exception found when executing jobRun: {} and wait for complete",
+                        jobRunId,
+                        e);
+                if (e instanceof StatusRuntimeException) {
+                    Status status = ((StatusRuntimeException) e).getStatus();
                     if (status != null && Status.UNAVAILABLE.getCode() == status.getCode()) {
                         break;
                     }
                 }
             }
 
-            log.warn("Execute jobRun: {} and wait for complete failed, retry attempt: {}.", jobRunId, retryAttempt);
+            log.warn(
+                    "Execute jobRun: {} and wait for complete failed, retry attempt: {}.",
+                    jobRunId,
+                    retryAttempt);
 
             // break if retry exhausted.
             if (++retryAttempt > retryTimes) {
@@ -151,10 +157,12 @@ public class JobExecuteThread implements Callable<JobResponse> {
         try {
             // Check whether workflow status is terminated or in KILLABLE status.
             if (flowRunId != null) {
-                JobFlowRun jobFlowRun = jobFlowRunService.getOne(new QueryWrapper<JobFlowRun>()
-                        .lambda()
-                        .select(JobFlowRun::getStatus)
-                        .eq(JobFlowRun::getId, flowRunId));
+                JobFlowRun jobFlowRun =
+                        jobFlowRunService.getOne(
+                                new QueryWrapper<JobFlowRun>()
+                                        .lambda()
+                                        .select(JobFlowRun::getStatus)
+                                        .eq(JobFlowRun::getId, flowRunId));
                 ExecutionStatus flowStatus = jobFlowRun.getStatus();
                 if (KILLABLE.equals(flowStatus) || flowStatus.isTerminalState()) {
                     jobRunStatus = KILLED;
@@ -163,10 +171,12 @@ public class JobExecuteThread implements Callable<JobResponse> {
             }
 
             // Step 1: get job info and return if null.
-            JobInfo jobInfo = jobInfoService.getOne(new QueryWrapper<JobInfo>()
-                    .lambda()
-                    .eq(JobInfo::getId, jobId)
-                    .eq(JobInfo::getStatus, JobStatus.ONLINE));
+            JobInfo jobInfo =
+                    jobInfoService.getOne(
+                            new QueryWrapper<JobInfo>()
+                                    .lambda()
+                                    .eq(JobInfo::getId, jobId)
+                                    .eq(JobInfo::getStatus, JobStatus.ONLINE));
             if (jobInfo == null) {
                 log.warn("The job:{} is no longer exists or not in ready/scheduled status.", jobId);
                 jobRunStatus = NOT_EXIST;
@@ -213,7 +223,8 @@ public class JobExecuteThread implements Callable<JobResponse> {
             }
         } catch (Exception e) {
             jobRunStatus = ERROR;
-            updateJobRunIfNeeded(jobRunInfo, new StatusInfo(ERROR, null, System.currentTimeMillis()), e);
+            updateJobRunIfNeeded(
+                    jobRunInfo, new StatusInfo(ERROR, null, System.currentTimeMillis()), e);
             throw e;
         }
     }
@@ -242,12 +253,14 @@ public class JobExecuteThread implements Callable<JobResponse> {
     }
 
     private JobRunInfo getOrCreateJobRun(JobInfo jobInfo, Worker worker) {
-        JobRunInfo jobRun = jobRunInfoService.getOne(new QueryWrapper<JobRunInfo>()
-                .lambda()
-                .eq(JobRunInfo::getJobId, jobInfo.getId())
-                .eq(nonNull(flowRunId), JobRunInfo::getFlowRunId, flowRunId)
-                .eq(JobRunInfo::getStatus, CREATED)
-                .last("LIMIT 1"));
+        JobRunInfo jobRun =
+                jobRunInfoService.getOne(
+                        new QueryWrapper<JobRunInfo>()
+                                .lambda()
+                                .eq(JobRunInfo::getJobId, jobInfo.getId())
+                                .eq(nonNull(flowRunId), JobRunInfo::getFlowRunId, flowRunId)
+                                .eq(JobRunInfo::getStatus, CREATED)
+                                .last("LIMIT 1"));
         if (jobRun == null) {
             String workerIp = worker != null ? worker.getIp() : Constant.HOST_IP;
             jobRun = jobRunExtraService.parseVarsAndSave(jobInfo, flowRunId, workerIp);
@@ -267,10 +280,11 @@ public class JobExecuteThread implements Callable<JobResponse> {
         while (AppRunner.isRunning()) {
             try {
                 // Build status request.
-                JobStatusRequest.Builder builder = JobStatusRequest.newBuilder()
-                        .setJobRunId(jobRun.getId())
-                        .setDeployMode(jobRun.getDeployMode().name())
-                        .setRetries(errorRetries);
+                JobStatusRequest.Builder builder =
+                        JobStatusRequest.newBuilder()
+                                .setJobRunId(jobRun.getId())
+                                .setDeployMode(jobRun.getDeployMode().name())
+                                .setRetries(errorRetries);
 
                 JobCallback callback = jobRun.getBackInfo();
                 if (callback != null) {
@@ -320,7 +334,8 @@ public class JobExecuteThread implements Callable<JobResponse> {
             return statusInfo;
         }
 
-        if (LocalDateTime.now().isAfter(startTime.plus(streamingJobToSuccessMills, ChronoUnit.MILLIS))) {
+        if (LocalDateTime.now()
+                .isAfter(startTime.plus(streamingJobToSuccessMills, ChronoUnit.MILLIS))) {
             ExecutionStatus finalStatus = statusInfo.getStatus() == RUNNING ? SUCCESS : FAILURE;
             return new StatusInfo(finalStatus, statusInfo.getStartTime(), statusInfo.getEndTime());
         }
@@ -328,7 +343,8 @@ public class JobExecuteThread implements Callable<JobResponse> {
         return statusInfo;
     }
 
-    private void updateJobRunIfNeeded(JobRunInfo jobRunInfo, StatusInfo statusInfo, Exception exception) {
+    private void updateJobRunIfNeeded(
+            JobRunInfo jobRunInfo, StatusInfo statusInfo, Exception exception) {
         try {
             if (jobRunInfo == null || jobRunInfo.getId() == null) {
                 return;

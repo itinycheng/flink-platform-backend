@@ -10,13 +10,14 @@ import com.flink.platform.dao.service.JobFlowRunService;
 import com.flink.platform.dao.service.JobRunInfoService;
 import com.flink.platform.web.command.CommandBuilder;
 import com.flink.platform.web.command.JobCommand;
-import jakarta.annotation.Nonnull;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.tuple.Triple;
 import org.quartz.CronExpression;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+
+import javax.annotation.Nonnull;
 
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -29,11 +30,9 @@ import static com.flink.platform.common.enums.JobType.DEPENDENT;
 @Component("dependentCommandBuilder")
 public class DependentCommandBuilder implements CommandBuilder {
 
-    @Autowired
-    private JobFlowRunService jobFlowRunService;
+    @Autowired private JobFlowRunService jobFlowRunService;
 
-    @Autowired
-    private JobRunInfoService jobRunInfoService;
+    @Autowired private JobRunInfoService jobRunInfoService;
 
     @Override
     public boolean isSupported(JobType jobType, String version) {
@@ -48,20 +47,25 @@ public class DependentCommandBuilder implements CommandBuilder {
             return new DependentCommand(jobRunId, true);
         }
 
-        boolean matched = dependentJob.getRelation() == DependentJob.DependentRelation.OR
-                ? dependentJob.getDependentItems().stream().anyMatch(this::validateDependentItem)
-                : dependentJob.getDependentItems().stream().allMatch(this::validateDependentItem);
+        boolean matched =
+                dependentJob.getRelation() == DependentJob.DependentRelation.OR
+                        ? dependentJob.getDependentItems().stream()
+                                .anyMatch(this::validateDependentItem)
+                        : dependentJob.getDependentItems().stream()
+                                .allMatch(this::validateDependentItem);
 
         return new DependentCommand(jobRunId, matched);
     }
 
     private boolean validateDependentItem(DependentJob.DependentItem dependentItem) {
-        if (dependentItem.getFlowId() == null || CollectionUtils.isEmpty(dependentItem.getStatuses())) {
+        if (dependentItem.getFlowId() == null
+                || CollectionUtils.isEmpty(dependentItem.getStatuses())) {
             return true;
         }
 
         // Get status and create_at of the latest JobRun/JobFlowRun.
-        Triple<Long, ExecutionStatus, LocalDateTime> latestExecution = getLatestExecution(dependentItem);
+        Triple<Long, ExecutionStatus, LocalDateTime> latestExecution =
+                getLatestExecution(dependentItem);
         Long flowRunId = latestExecution.getLeft();
         ExecutionStatus status = latestExecution.getMiddle();
         LocalDateTime createAt = latestExecution.getRight();
@@ -84,50 +88,69 @@ public class DependentCommandBuilder implements CommandBuilder {
                 sinceTime = createAt;
                 LocalDateTime nextTriggerTime;
                 try {
-                    JobFlowRun jobFlowRun = jobFlowRunService.getOne(new QueryWrapper<JobFlowRun>()
-                            .lambda()
-                            .select(JobFlowRun::getCronExpr)
-                            .eq(JobFlowRun::getId, flowRunId));
+                    JobFlowRun jobFlowRun =
+                            jobFlowRunService.getOne(
+                                    new QueryWrapper<JobFlowRun>()
+                                            .lambda()
+                                            .select(JobFlowRun::getCronExpr)
+                                            .eq(JobFlowRun::getId, flowRunId));
                     CronExpression cronExpression = new CronExpression(jobFlowRun.getCronExpr());
                     Date sinceDate =
                             Date.from(sinceTime.atZone(ZoneId.systemDefault()).toInstant());
                     Date nextTriggerDate = cronExpression.getNextValidTimeAfter(sinceDate);
-                    nextTriggerTime = nextTriggerDate != null
-                            ? nextTriggerDate
-                                    .toInstant()
-                                    .atZone(ZoneId.systemDefault())
-                                    .toLocalDateTime()
-                            : LocalDateTime.MAX;
+                    nextTriggerTime =
+                            nextTriggerDate != null
+                                    ? nextTriggerDate
+                                            .toInstant()
+                                            .atZone(ZoneId.systemDefault())
+                                            .toLocalDateTime()
+                                    : LocalDateTime.MAX;
                 } catch (Exception e) {
                     throw new RuntimeException("Get next valid trigger time failed", e);
                 }
 
                 return !nextTriggerTime.isBefore(now);
             default:
-                throw new RuntimeException("Invalid dependent strategy: " + dependentItem.getStrategy());
+                throw new RuntimeException(
+                        "Invalid dependent strategy: " + dependentItem.getStrategy());
         }
     }
 
-    public Triple<Long, ExecutionStatus, LocalDateTime> getLatestExecution(DependentJob.DependentItem dependentItem) {
+    public Triple<Long, ExecutionStatus, LocalDateTime> getLatestExecution(
+            DependentJob.DependentItem dependentItem) {
         if (dependentItem.getJobId() != null) {
-            JobRunInfo jobRunInfo = jobRunInfoService.getOne(new QueryWrapper<JobRunInfo>()
-                    .lambda()
-                    .select(JobRunInfo::getFlowRunId, JobRunInfo::getStatus, JobRunInfo::getCreateTime)
-                    .eq(JobRunInfo::getJobId, dependentItem.getJobId())
-                    .orderByDesc(JobRunInfo::getId)
-                    .last("limit 1"));
+            JobRunInfo jobRunInfo =
+                    jobRunInfoService.getOne(
+                            new QueryWrapper<JobRunInfo>()
+                                    .lambda()
+                                    .select(
+                                            JobRunInfo::getFlowRunId,
+                                            JobRunInfo::getStatus,
+                                            JobRunInfo::getCreateTime)
+                                    .eq(JobRunInfo::getJobId, dependentItem.getJobId())
+                                    .orderByDesc(JobRunInfo::getId)
+                                    .last("limit 1"));
             if (jobRunInfo != null) {
-                return Triple.of(jobRunInfo.getFlowRunId(), jobRunInfo.getStatus(), jobRunInfo.getCreateTime());
+                return Triple.of(
+                        jobRunInfo.getFlowRunId(),
+                        jobRunInfo.getStatus(),
+                        jobRunInfo.getCreateTime());
             }
         } else {
-            JobFlowRun jobFlowRun = jobFlowRunService.getOne(new QueryWrapper<JobFlowRun>()
-                    .lambda()
-                    .select(JobFlowRun::getId, JobFlowRun::getStatus, JobFlowRun::getCreateTime)
-                    .eq(JobFlowRun::getFlowId, dependentItem.getFlowId())
-                    .orderByDesc(JobFlowRun::getId)
-                    .last("limit 1"));
+            JobFlowRun jobFlowRun =
+                    jobFlowRunService.getOne(
+                            new QueryWrapper<JobFlowRun>()
+                                    .lambda()
+                                    .select(
+                                            JobFlowRun::getId,
+                                            JobFlowRun::getStatus,
+                                            JobFlowRun::getCreateTime)
+                                    .eq(JobFlowRun::getFlowId, dependentItem.getFlowId())
+                                    .orderByDesc(JobFlowRun::getId)
+                                    .last("limit 1"));
             if (jobFlowRun != null) {
-                return Triple.of(jobFlowRun.getId(), jobFlowRun.getStatus(), jobFlowRun.getCreateTime());
+                return Triple.of(
+                        jobFlowRun.getId(), jobFlowRun.getStatus(), jobFlowRun.getCreateTime());
             }
         }
 
