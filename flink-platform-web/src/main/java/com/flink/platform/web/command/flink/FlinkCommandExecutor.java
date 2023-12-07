@@ -86,12 +86,6 @@ public class FlinkCommandExecutor implements CommandExecutor {
                 ApplicationReport applicationReport = yarnClientService.getApplicationReport(appId);
                 status = YarnHelper.getStatus(applicationReport);
                 trackingUrl = applicationReport.getTrackingUrl();
-                if (trackingUrl != null) {
-                    trackingUrl =
-                            trackingUrl.replaceAll(
-                                    "jja-vm-12-\\d+.itiger-internal.com:8088",
-                                    "data-userprofile-yarn-hk.tigerfintech.com");
-                }
             } catch (Exception e) {
                 log.error("Failed to get ApplicationReport after command executed", e);
             }
