@@ -262,47 +262,49 @@ public class JobExecuteThread implements Callable<JobResponse> {
         return jobRunInfoService.getById(reply.getJobRunId());
     }
 
-    public StatusInfo updateAndWaitForComplete(JobGrpcServiceBlockingStub stub, JobRunInfo jobRunInfo) {
+    public StatusInfo updateAndWaitForComplete(JobGrpcServiceBlockingStub stub, JobRunInfo jobRun) {
         int retryTimes = 0;
         while (AppRunner.isRunning()) {
             try {
-                JobCallback callback = jobRunInfo.getBackInfo();
+                // Build status request.
+                JobStatusRequest.Builder builder = JobStatusRequest.newBuilder()
+                        .setJobRunId(jobRun.getId())
+                        .setDeployMode(jobRun.getDeployMode().name())
+                        .setRetries(errorRetries);
+
+                JobCallback callback = jobRun.getBackInfo();
                 if (callback != null) {
                     callback = callback.cloneWithoutMsg();
+                    builder.setBackInfo(JsonUtil.toJsonString(callback));
                 }
 
-                JobStatusRequest request = JobStatusRequest.newBuilder()
-                        .setJobRunId(jobRunInfo.getId())
-                        .setBackInfo(JsonUtil.toJsonString(callback))
-                        .setDeployMode(jobRunInfo.getDeployMode().name())
-                        .setRetries(errorRetries)
-                        .build();
-                JobStatusReply jobStatusReply = stub.getJobStatus(request);
+                // Get and correct job status.
+                JobStatusReply jobStatusReply = stub.getJobStatus(builder.build());
                 StatusInfo statusInfo = StatusInfo.fromReplay(jobStatusReply);
-                if (jobRunInfo.getExecMode() == STREAMING) {
-                    if (jobRunInfo.getCreateTime() == null) {
-                        jobRunInfo.setCreateTime(LocalDateTime.now());
+                if (jobRun.getExecMode() == STREAMING) {
+                    if (jobRun.getCreateTime() == null) {
+                        jobRun.setCreateTime(LocalDateTime.now());
                     }
 
                     // Interim solution: finite data streams can also use streaming mode.
-                    FlinkJob flinkJob = jobRunInfo.getConfig().unwrap(FlinkJob.class);
+                    FlinkJob flinkJob = jobRun.getConfig().unwrap(FlinkJob.class);
                     if (flinkJob != null && !flinkJob.isWaitForTermination()) {
-                        statusInfo = correctStreamJobStatus(statusInfo, jobRunInfo.getCreateTime());
+                        statusInfo = correctStreamJobStatus(statusInfo, jobRun.getCreateTime());
                     }
                 }
 
+                // update status.
                 if (statusInfo != null) {
                     log.info(
                             "Job runId: {}, name: {} Status: {}",
-                            jobRunInfo.getId(),
-                            jobRunInfo.getName(),
+                            jobRun.getId(),
+                            jobRun.getName(),
                             statusInfo.getStatus());
-                    updateJobRunIfNeeded(jobRunInfo, statusInfo, null);
+                    updateJobRunIfNeeded(jobRun, statusInfo, null);
                     if (statusInfo.getStatus().isTerminalState()) {
                         return statusInfo;
                     }
                 }
-
             } catch (Exception e) {
                 log.error("Fetch job status failed", e);
             }
