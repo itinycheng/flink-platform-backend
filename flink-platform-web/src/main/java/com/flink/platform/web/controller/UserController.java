@@ -5,11 +5,15 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.flink.platform.common.constants.Constant;
+import com.flink.platform.dao.entity.LongArrayList;
 import com.flink.platform.dao.entity.User;
+import com.flink.platform.dao.entity.Worker;
 import com.flink.platform.dao.service.SessionService;
 import com.flink.platform.dao.service.UserService;
+import com.flink.platform.dao.service.WorkerService;
 import com.flink.platform.web.entity.request.UserRequest;
 import com.flink.platform.web.entity.response.ResultInfo;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -22,13 +26,16 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
 import static com.flink.platform.common.enums.ResponseStatus.ERROR_PARAMETER;
 import static com.flink.platform.common.enums.ResponseStatus.USER_HAVE_NO_PERMISSION;
 import static com.flink.platform.common.enums.UserType.ADMIN;
+import static com.flink.platform.common.enums.WorkerStatus.INACTIVE;
 import static com.flink.platform.web.entity.response.ResultInfo.failure;
 import static com.flink.platform.web.entity.response.ResultInfo.success;
 
@@ -43,6 +50,9 @@ public class UserController {
     @Autowired
     private SessionService sessionService;
 
+    @Autowired
+    private WorkerService workerService;
+
     @GetMapping(value = "/get/{userId}")
     public ResultInfo<User> get(@PathVariable Long userId) {
         User user = userService.getById(userId);
@@ -50,13 +60,14 @@ public class UserController {
     }
 
     @PostMapping(value = "/create")
-    public ResultInfo<Long> create(@RequestBody UserRequest userRequest) {
+    public ResultInfo<Long> create(
+            @RequestAttribute(value = Constant.SESSION_USER) User loginUser, @RequestBody UserRequest userRequest) {
         String errorMsg = userRequest.validateOnCreate();
         if (StringUtils.isNotBlank(errorMsg)) {
             return failure(ERROR_PARAMETER, errorMsg);
         }
 
-        if (userRequest.getType() == ADMIN) {
+        if (loginUser.getType() != ADMIN) {
             return failure(USER_HAVE_NO_PERMISSION);
         }
 
@@ -67,13 +78,14 @@ public class UserController {
     }
 
     @PostMapping(value = "/update")
-    public ResultInfo<Long> update(@RequestBody UserRequest userRequest) {
+    public ResultInfo<Long> update(
+            @RequestAttribute(value = Constant.SESSION_USER) User loginUser, @RequestBody UserRequest userRequest) {
         String errorMsg = userRequest.validateOnUpdate();
         if (StringUtils.isNotBlank(errorMsg)) {
             return failure(ERROR_PARAMETER, errorMsg);
         }
 
-        if (userRequest.getType() == ADMIN) {
+        if (loginUser.getType() != ADMIN) {
             return failure(USER_HAVE_NO_PERMISSION);
         }
 
@@ -102,12 +114,26 @@ public class UserController {
 
     @GetMapping(value = "/info")
     public ResultInfo<Map<String, Object>> info(@RequestAttribute(value = Constant.SESSION_USER) User loginUser) {
-
         Map<String, Object> result = new HashMap<>();
         result.put("roles", Arrays.asList("admin", "common"));
         result.put("introduction", "A fixed user given by the backend");
         result.put("avatar", "https://wpimg.wallstcn.com/f778738c-e4f8-4870-b634-56703b4acafe.gif");
         result.put("name", loginUser.getUsername());
         return success(result);
+    }
+
+    @GetMapping(value = "/workers")
+    public ResultInfo<List<Worker>> workers(@RequestAttribute(value = Constant.SESSION_USER) User loginUser) {
+        User user = userService.getById(loginUser.getId());
+        LongArrayList workerIdList = user.getWorkers();
+        if (CollectionUtils.isEmpty(workerIdList)) {
+            return success(Collections.emptyList());
+        }
+
+        List<Worker> list = workerService.list(new QueryWrapper<Worker>()
+                .lambda()
+                .in(Worker::getId, workerIdList)
+                .ne(Worker::getRole, INACTIVE));
+        return success(list);
     }
 }

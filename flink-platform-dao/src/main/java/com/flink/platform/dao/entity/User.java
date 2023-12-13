@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
+import com.baomidou.mybatisplus.extension.handlers.JacksonTypeHandler;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.flink.platform.common.enums.UserType;
 import lombok.AccessLevel;
@@ -20,7 +21,7 @@ import static com.flink.platform.common.util.DateUtil.GLOBAL_TIMEZONE;
 /** Login user. */
 @Data
 @NoArgsConstructor
-@TableName(value = "t_user")
+@TableName(value = "t_user", autoResultMap = true)
 public class User {
 
     @TableId(value = "id", type = IdType.AUTO)
@@ -33,6 +34,9 @@ public class User {
     private UserType type;
 
     private String email;
+
+    @TableField(typeHandler = JacksonTypeHandler.class)
+    private LongArrayList workers;
 
     private String status;
 
