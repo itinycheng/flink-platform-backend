@@ -1,11 +1,9 @@
 package com.flink.platform.web.controller;
 
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.flink.platform.common.enums.DeployMode;
 import com.flink.platform.common.enums.ExecutionCondition;
 import com.flink.platform.common.enums.ExecutionStatus;
 import com.flink.platform.common.enums.JobType;
-import com.flink.platform.dao.entity.Worker;
 import com.flink.platform.dao.entity.task.DependentJob;
 import com.flink.platform.dao.service.JobInfoService;
 import com.flink.platform.dao.service.WorkerService;
@@ -13,7 +11,6 @@ import com.flink.platform.web.config.FlinkConfig;
 import com.flink.platform.web.entity.response.ResultInfo;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -38,7 +35,6 @@ import static com.flink.platform.common.enums.ExecutionCondition.AND;
 import static com.flink.platform.common.enums.ExecutionCondition.OR;
 import static com.flink.platform.common.enums.ExecutionStatus.FAILURE;
 import static com.flink.platform.common.enums.ExecutionStatus.SUCCESS;
-import static com.flink.platform.common.enums.WorkerStatus.INACTIVE;
 import static com.flink.platform.web.entity.response.ResultInfo.success;
 import static java.util.stream.Collectors.toList;
 
@@ -84,17 +80,6 @@ public class AttrsController {
         }
 
         return success(versions);
-    }
-
-    @GetMapping(value = "/routeUrls")
-    public ResultInfo<List<Worker>> routeUrls() {
-        List<Worker> routingUrls = new ArrayList<>();
-        List<Worker> list =
-                workerService.list(new QueryWrapper<Worker>().lambda().ne(Worker::getRole, INACTIVE));
-        if (CollectionUtils.isNotEmpty(list)) {
-            routingUrls.addAll(list);
-        }
-        return success(routingUrls);
     }
 
     @GetMapping(value = "/deployModes")

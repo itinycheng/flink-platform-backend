@@ -394,6 +394,7 @@ CREATE TABLE `t_user` (
   `password` varchar(255) DEFAULT NULL,
   `type` varchar(32) DEFAULT NULL,
   `email` varchar(255) DEFAULT NULL,
+  `workers` varchar(255) DEFAULT NULL,
   `status` tinyint(2) DEFAULT NULL,
   `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   `create_time` datetime DEFAULT CURRENT_TIMESTAMP,
