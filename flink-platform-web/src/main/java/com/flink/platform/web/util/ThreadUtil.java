@@ -20,6 +20,11 @@ public class ThreadUtil {
         return (ThreadPoolExecutor) Executors.newFixedThreadPool(threadsNum, threadFactory);
     }
 
+    public static ThreadPoolExecutor newFixedVirtualThreadExecutor(String namePrefix, int threadsNum) {
+        var factory = Thread.ofVirtual().name(namePrefix + "-", 1).factory();
+        return (ThreadPoolExecutor) Executors.newFixedThreadPool(threadsNum, factory);
+    }
+
     public static ThreadPoolExecutor newDaemonFixedThreadExecutor(String namePrefix, int threadsNum) {
         ThreadFactory threadFactory = namedThreadFactory(namePrefix, true);
         return (ThreadPoolExecutor) Executors.newFixedThreadPool(threadsNum, threadFactory);

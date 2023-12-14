@@ -53,7 +53,8 @@ public class JobFlowScheduleService {
         this.jobRunInfoService = jobRunInfoService;
         this.jobFlowRunService = jobFlowRunService;
         this.alertSendingService = alertSendingService;
-        this.flowExecService = ThreadUtil.newFixedThreadExecutor("FlowExecThread", workerConfig.getFlowExecThreads());
+        this.flowExecService =
+                ThreadUtil.newFixedVirtualThreadExecutor("FlowExecThread", workerConfig.getFlowExecThreads());
         this.inFlightFlows = new PriorityBlockingQueue<>(
                 workerConfig.getFlowExecThreads(), (o1, o2) -> ObjectUtils.compare(o2.getPriority(), o1.getPriority()));
     }
