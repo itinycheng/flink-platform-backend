@@ -48,7 +48,7 @@ public class FlowExecuteThread implements Runnable {
     public FlowExecuteThread(@Nonnull JobFlowRun jobFlowRun, @Nonnull WorkerConfig workerConfig) {
         this.jobFlowRun = jobFlowRun;
         this.workerConfig = workerConfig;
-        this.jobExecService = ThreadUtil.newFixedThreadExecutor(
+        this.jobExecService = ThreadUtil.newFixedVirtualThreadExecutor(
                 String.format("FlowExecThread-flowRunId_%d", jobFlowRun.getId()), workerConfig.getPerFlowExecThreads());
     }
 
