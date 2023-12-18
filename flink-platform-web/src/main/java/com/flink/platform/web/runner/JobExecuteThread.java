@@ -248,11 +248,13 @@ public class JobExecuteThread implements Callable<JobResponse> {
                 .eq(nonNull(flowRunId), JobRunInfo::getFlowRunId, flowRunId)
                 .eq(JobRunInfo::getStatus, CREATED)
                 .last("LIMIT 1"));
-        if (jobRun == null) {
-            String workerIp = worker != null ? worker.getIp() : Constant.HOST_IP;
-            jobRun = jobRunExtraService.parseVarsAndSave(jobInfo, flowRunId, workerIp);
+        if (jobRun != null) {
+            return jobRun;
         }
-        return jobRun;
+
+        String workerIp = worker != null ? worker.getIp() : Constant.HOST_IP;
+        Long jobRunId = jobRunExtraService.parseVarsAndSave(jobInfo, flowRunId, workerIp);
+        return jobRunInfoService.getById(jobRunId);
     }
 
     /** process job. */
@@ -281,11 +283,7 @@ public class JobExecuteThread implements Callable<JobResponse> {
                 // Get and correct job status.
                 JobStatusReply jobStatusReply = stub.getJobStatus(builder.build());
                 StatusInfo statusInfo = StatusInfo.fromReplay(jobStatusReply);
-                if (jobRun.getExecMode() == STREAMING) {
-                    if (jobRun.getCreateTime() == null) {
-                        jobRun.setCreateTime(LocalDateTime.now());
-                    }
-
+                if (STREAMING.equals(jobRun.getExecMode())) {
                     // Interim solution: finite data streams can also use streaming mode.
                     FlinkJob flinkJob = jobRun.getConfig().unwrap(FlinkJob.class);
                     if (flinkJob != null && !flinkJob.isWaitForTermination()) {
