@@ -24,7 +24,7 @@ public class JobRunExtraService {
     private JobRunInfoService jobRunService;
 
     @Transactional
-    public JobRunInfo parseVarsAndSave(JobInfo jobInfo, Long flowRunId, String host) {
+    public Long parseVarsAndSave(JobInfo jobInfo, Long flowRunId, String host) {
         // Save jobRun, generate an id.
         JobRunInfo jobRun = createFrom(jobInfo, flowRunId, host);
         jobRunService.save(jobRun);
@@ -39,7 +39,7 @@ public class JobRunExtraService {
         // Reset variables/subject in memory.
         jobRun.setVariables(variableMap);
         jobRun.setSubject(plainSubject);
-        return jobRun;
+        return jobRun.getId();
     }
 
     public JobRunInfo createFrom(JobInfo jobInfo, Long flowRunId, String host) {
