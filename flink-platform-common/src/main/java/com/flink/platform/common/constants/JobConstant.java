@@ -69,4 +69,6 @@ public class JobConstant {
             Pattern.compile("\\$\\{\\s*resource:(?<file>\\S+)\\s*}", Pattern.CASE_INSENSITIVE | Pattern.MULTILINE);
 
     public static final String PARAM_FORMAT = "${param:%s}";
+
+    public static final String CONFIG = "config";
 }

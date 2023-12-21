@@ -6,12 +6,12 @@ import com.flink.platform.common.model.JobVertex;
 import com.flink.platform.dao.entity.JobFlowDag;
 import com.flink.platform.dao.entity.JobFlowRun;
 import com.flink.platform.dao.service.JobFlowRunService;
+import com.flink.platform.dao.util.JobFlowDagHelper;
 import com.flink.platform.web.common.SpringContext;
 import com.flink.platform.web.config.AppRunner;
 import com.flink.platform.web.config.WorkerConfig;
 import com.flink.platform.web.service.AlertSendingService;
 import com.flink.platform.web.service.KillJobService;
-import com.flink.platform.web.util.JobFlowDagHelper;
 import com.flink.platform.web.util.ThreadUtil;
 import jakarta.annotation.Nonnull;
 import lombok.extern.slf4j.Slf4j;
@@ -68,13 +68,14 @@ public class FlowExecuteThread implements Runnable {
 
         // Process job flow.
         var flow = jobFlowRun.getFlow();
+        flow.setConfig(jobFlowRun.getConfig());
         flow.getBeginVertices().forEach(jobVertex -> execVertex(jobVertex, flow));
 
         // Wait until all vertices are executed.
         var timeout = jobFlowRun.getTimeout();
         var startTime = jobFlowRun.getStartTime();
         var timeoutHandled = false;
-        while (isRunning && JobFlowDagHelper.hasUnExecutedVertices(flow)) {
+        while (isRunning && flow.hasUnExecutedVertices()) {
             if (AppRunner.isStopped()) {
                 return;
             }
@@ -144,7 +145,7 @@ public class FlowExecuteThread implements Runnable {
         }
 
         for (JobVertex nextVertex : flow.getNextVertices(jobVertex)) {
-            if (JobFlowDagHelper.isPreconditionSatisfied(nextVertex, flow)) {
+            if (flow.isPreconditionSatisfied(nextVertex)) {
                 execVertex(nextVertex, flow);
             }
         }

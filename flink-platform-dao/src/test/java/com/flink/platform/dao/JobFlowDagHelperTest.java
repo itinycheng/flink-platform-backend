@@ -1,9 +1,9 @@
-package com.flink.platform.web;
+package com.flink.platform.dao;
 
 import com.flink.platform.common.graph.DAG;
 import com.flink.platform.common.model.JobEdge;
 import com.flink.platform.common.model.JobVertex;
-import com.flink.platform.web.util.JobFlowDagHelper;
+import com.flink.platform.dao.util.JobFlowDagHelper;
 import org.junit.Before;
 import org.junit.Test;
 
