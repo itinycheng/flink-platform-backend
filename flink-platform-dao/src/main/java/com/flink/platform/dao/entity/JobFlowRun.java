@@ -46,6 +46,9 @@ public class JobFlowRun {
     private Integer priority;
 
     @TableField(typeHandler = JacksonTypeHandler.class)
+    private ExecutionConfig config;
+
+    @TableField(typeHandler = JacksonTypeHandler.class)
     private StringArrayList tags;
 
     @TableField(typeHandler = JacksonTypeHandler.class)

@@ -8,6 +8,7 @@ import com.flink.platform.common.constants.Constant;
 import com.flink.platform.common.enums.ExecutionStatus;
 import com.flink.platform.common.enums.JobFlowStatus;
 import com.flink.platform.common.util.UuidGenerator;
+import com.flink.platform.dao.entity.ExecutionConfig;
 import com.flink.platform.dao.entity.JobFlow;
 import com.flink.platform.dao.entity.JobFlowDag;
 import com.flink.platform.dao.entity.JobFlowRun;
@@ -236,8 +237,8 @@ public class JobFlowController {
         return success(flowId);
     }
 
-    @GetMapping(value = "/schedule/runOnce/{flowId}")
-    public ResultInfo<Long> runOnce(@PathVariable Long flowId) {
+    @PostMapping(value = "/schedule/runOnce/{flowId}")
+    public ResultInfo<Long> runOnce(@PathVariable Long flowId, @RequestBody(required = false) ExecutionConfig config) {
         JobFlow jobFlow = jobFlowService.getById(flowId);
         JobFlowStatus status = jobFlow.getStatus();
         if (status == null || !status.isRunnable()) {
@@ -255,6 +256,7 @@ public class JobFlowController {
         }
 
         JobFlowQuartzInfo jobFlowQuartzInfo = new JobFlowQuartzInfo(jobFlow);
+        jobFlowQuartzInfo.setConfig(config);
         if (quartzService.runOnce(jobFlowQuartzInfo)) {
             return success(flowId);
         } else {
