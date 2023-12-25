@@ -65,7 +65,7 @@
 		<palantir-java-format.version>2.38.0</palantir-java-format.version>
 		<spotless-maven-plugin.version>2.41.0</spotless-maven-plugin.version>
 		<maven-shade-plugin.version>3.5.1</maven-shade-plugin.version>
-		<maven-compiler-plugin.version>3.11.0</maven-compiler-plugin.version>
+		<maven-compiler-plugin.version>3.12.1</maven-compiler-plugin.version>
 	</properties>
 
 	<dependencies>
