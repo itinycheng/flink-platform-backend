@@ -95,6 +95,7 @@ public class JobFlowRunController {
 
         LambdaQueryWrapper<JobFlowRun> queryWrapper = new QueryWrapper<JobFlowRun>()
                 .lambda()
+                .select(JobFlowRun.class, field -> !"flow".equals(field.getProperty()))
                 .eq(JobFlowRun::getUserId, loginUser.getId())
                 .eq(nonNull(id), JobFlowRun::getId, id)
                 .eq(nonNull(status), JobFlowRun::getStatus, status)
