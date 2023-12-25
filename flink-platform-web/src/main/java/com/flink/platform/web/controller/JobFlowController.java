@@ -153,6 +153,7 @@ public class JobFlowController {
 
         LambdaQueryWrapper<JobFlow> queryWrapper = new QueryWrapper<JobFlow>()
                 .lambda()
+                .select(JobFlow.class, field -> !"flow".equals(field.getProperty()))
                 .eq(JobFlow::getUserId, loginUser.getId())
                 .like(isNotEmpty(name), JobFlow::getName, name)
                 .like(isNotEmpty(tagCode), JobFlow::getTags, tagCode);

@@ -30,6 +30,7 @@ import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
 import static com.flink.platform.common.enums.ExecutionStatus.getNonTerminals;
 import static com.flink.platform.common.enums.ResponseStatus.NO_RUNNING_JOB_FOUND;
@@ -43,6 +44,8 @@ import static java.util.stream.Collectors.toList;
 @RestController
 @RequestMapping("/jobRun")
 public class JobRunController {
+
+    private static final Set<String> EXCLUDE_PAGE_FIELDS = Set.of("backInfo", "config", "variables", "subject");
 
     @Autowired
     private JobRunInfoService jobRunInfoService;
@@ -75,6 +78,7 @@ public class JobRunController {
             @RequestParam(name = "sort", required = false) String sort) {
         LambdaQueryWrapper<JobRunInfo> queryWrapper = new QueryWrapper<JobRunInfo>()
                 .lambda()
+                .select(JobRunInfo.class, field -> !EXCLUDE_PAGE_FIELDS.contains(field.getProperty()))
                 .eq(JobRunInfo::getUserId, loginUser.getId())
                 .eq(nonNull(flowRunId), JobRunInfo::getFlowRunId, flowRunId)
                 .eq(nonNull(jobId), JobRunInfo::getJobId, jobId)
