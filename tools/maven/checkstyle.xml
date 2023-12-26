@@ -323,7 +323,7 @@ This file is based on the checkstyle file of Apache Beam.
 		<module name="MethodNameCheck">
 			<!-- Validates identifiers for method names. -->
 			<metadata name="altname" value="MethodName"/>
-			<property name="format" value="^[a-z][a-zA-Z0-9]*(_[a-zA-Z0-9]+)*$"/>
+			<property name="format" value="^[a-z_][a-zA-Z0-9]*(_[a-zA-Z0-9]+)*$"/>
 			<property name="severity" value="error"/>
 		</module>
 
