@@ -1,7 +1,6 @@
 package com.flink.platform.web.runner;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import com.flink.platform.common.constants.Constant;
 import com.flink.platform.common.enums.ExecutionStatus;
 import com.flink.platform.common.enums.JobStatus;
 import com.flink.platform.common.model.JobVertex;
@@ -10,7 +9,6 @@ import com.flink.platform.common.util.JsonUtil;
 import com.flink.platform.dao.entity.JobFlowRun;
 import com.flink.platform.dao.entity.JobInfo;
 import com.flink.platform.dao.entity.JobRunInfo;
-import com.flink.platform.dao.entity.Worker;
 import com.flink.platform.dao.entity.result.JobCallback;
 import com.flink.platform.dao.entity.task.BaseJob;
 import com.flink.platform.dao.entity.task.FlinkJob;
@@ -27,7 +25,6 @@ import com.flink.platform.web.config.WorkerConfig;
 import com.flink.platform.web.grpc.JobProcessGrpcClient;
 import com.flink.platform.web.monitor.StatusInfo;
 import com.flink.platform.web.service.JobRunExtraService;
-import com.flink.platform.web.service.WorkerApplyService;
 import com.flink.platform.web.util.ThreadUtil;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
@@ -70,8 +67,6 @@ public class JobExecuteThread implements Callable<JobResponse> {
 
     private final JobFlowRunService jobFlowRunService;
 
-    private final WorkerApplyService workerApplyService;
-
     private final JobProcessGrpcClient jobProcessGrpcClient;
 
     private Long jobRunId;
@@ -89,7 +84,6 @@ public class JobExecuteThread implements Callable<JobResponse> {
         this.jobRunInfoService = SpringContext.getBean(JobRunInfoService.class);
         this.jobRunExtraService = SpringContext.getBean(JobRunExtraService.class);
         this.jobFlowRunService = SpringContext.getBean(JobFlowRunService.class);
-        this.workerApplyService = SpringContext.getBean(WorkerApplyService.class);
         this.jobProcessGrpcClient = SpringContext.getBean(JobProcessGrpcClient.class);
     }
 
@@ -173,10 +167,6 @@ public class JobExecuteThread implements Callable<JobResponse> {
                 return;
             }
 
-            // Step 2: random a grpc client.
-            Worker worker = workerApplyService.randomWorker(jobInfo.getRouteUrl());
-            JobGrpcServiceBlockingStub stub = jobProcessGrpcClient.grpcClient(worker);
-
             // Step 3: get or create new jobRun.
             boolean isNewJob = false;
             if (jobRunId != null) {
@@ -185,7 +175,7 @@ public class JobExecuteThread implements Callable<JobResponse> {
                 log.info("Job:{} already submitted, runId = {}.", jobId, jobRunId);
             } else {
                 // create a new jobRun.
-                jobRunInfo = getOrCreateJobRun(jobInfo, worker);
+                jobRunInfo = getOrCreateJobRun(jobInfo);
                 isNewJob = true;
             }
 
@@ -198,6 +188,9 @@ public class JobExecuteThread implements Callable<JobResponse> {
             // Step 4: Update jobRunId and jobRunStatus in memory.
             jobRunId = jobRunInfo.getId();
             jobRunStatus = jobRunInfo.getStatus();
+
+            // Step 2: random a grpc client.
+            JobGrpcServiceBlockingStub stub = jobProcessGrpcClient.grpcClient(jobRunInfo.getHost());
 
             // Step 5: Process job, wait for job completion and get status.
             if (isNewJob || retryAttempt > 0) {
@@ -241,7 +234,7 @@ public class JobExecuteThread implements Callable<JobResponse> {
         throw new RuntimeException("Get job config failed");
     }
 
-    private JobRunInfo getOrCreateJobRun(JobInfo jobInfo, Worker worker) {
+    private JobRunInfo getOrCreateJobRun(JobInfo jobInfo) {
         JobRunInfo jobRun = jobRunInfoService.getOne(new QueryWrapper<JobRunInfo>()
                 .lambda()
                 .eq(JobRunInfo::getJobId, jobInfo.getId())
@@ -252,8 +245,7 @@ public class JobExecuteThread implements Callable<JobResponse> {
             return jobRun;
         }
 
-        String workerIp = worker != null ? worker.getIp() : Constant.HOST_IP;
-        Long jobRunId = jobRunExtraService.parseVarsAndSave(jobInfo, flowRunId, workerIp);
+        Long jobRunId = jobRunExtraService.createJobRun(jobInfo, flowRunId);
         return jobRunInfoService.getById(jobRunId);
     }
 

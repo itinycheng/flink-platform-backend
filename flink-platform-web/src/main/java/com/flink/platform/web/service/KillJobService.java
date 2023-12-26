@@ -5,7 +5,6 @@ import com.flink.platform.common.enums.JobType;
 import com.flink.platform.common.exception.UnrecoverableException;
 import com.flink.platform.dao.entity.JobFlowRun;
 import com.flink.platform.dao.entity.JobRunInfo;
-import com.flink.platform.dao.entity.Worker;
 import com.flink.platform.dao.service.JobFlowRunService;
 import com.flink.platform.dao.service.JobRunInfoService;
 import com.flink.platform.dao.service.WorkerService;
@@ -82,10 +81,7 @@ public class KillJobService {
 
     public boolean killRemoteJob(JobRunInfo jobRun) {
         String host = jobRun.getHost();
-        Worker worker = workerService.getOne(
-                new QueryWrapper<Worker>().lambda().eq(Worker::getIp, host).last("LIMIT 1"));
-
-        JobGrpcServiceGrpc.JobGrpcServiceBlockingStub stub = jobProcessGrpcClient.grpcClient(worker);
+        JobGrpcServiceGrpc.JobGrpcServiceBlockingStub stub = jobProcessGrpcClient.grpcClient(host);
         KillJobRequest request =
                 KillJobRequest.newBuilder().setJobRunId(jobRun.getId()).build();
         stub.killJob(request);
