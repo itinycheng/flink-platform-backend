@@ -101,7 +101,7 @@ public class WorkerHeartbeat {
                             .lambda()
                             .eq(JobFlowRun::getHost, timeoutWorker.getIp())
                             .in(JobFlowRun::getStatus, getNonTerminals()))
-                    .forEach(jobFlowRun -> jobFlowScheduleService.rebuildAndSchedule(jobFlowRun)));
+                    .forEach(jobFlowScheduleService::registerToScheduler));
         }
     }
 

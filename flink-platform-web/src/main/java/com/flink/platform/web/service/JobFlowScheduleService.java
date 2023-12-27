@@ -1,12 +1,7 @@
 package com.flink.platform.web.service;
 
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import com.flink.platform.common.graph.DAG;
-import com.flink.platform.common.model.JobEdge;
-import com.flink.platform.common.model.JobVertex;
 import com.flink.platform.dao.entity.JobFlowDag;
 import com.flink.platform.dao.entity.JobFlowRun;
-import com.flink.platform.dao.entity.JobRunInfo;
 import com.flink.platform.dao.service.JobFlowRunService;
 import com.flink.platform.dao.service.JobRunInfoService;
 import com.flink.platform.web.config.AppRunner;
@@ -77,21 +72,6 @@ public class JobFlowScheduleService {
 
             flowExecService.execute(new FlowExecuteThread(jobFlowRun, workerConfig));
         }
-    }
-
-    public void rebuildAndSchedule(JobFlowRun jobFlowRun) {
-        DAG<Long, JobVertex, JobEdge> flow = jobFlowRun.getFlow();
-
-        // Update status of JobVertex in flow.
-        jobRunInfoService
-                .list(new QueryWrapper<JobRunInfo>().lambda().eq(JobRunInfo::getFlowRunId, jobFlowRun.getId()))
-                .forEach(jobRunInfo -> {
-                    JobVertex vertex = flow.getVertex(jobRunInfo.getJobId());
-                    vertex.setJobRunId(jobRunInfo.getId());
-                    vertex.setJobRunStatus(jobRunInfo.getStatus());
-                });
-
-        registerToScheduler(jobFlowRun);
     }
 
     public synchronized void registerToScheduler(JobFlowRun jobFlowRun) {

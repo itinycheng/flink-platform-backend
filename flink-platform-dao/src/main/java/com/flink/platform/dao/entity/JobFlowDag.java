@@ -76,11 +76,11 @@ public class JobFlowDag extends DAG<Long, JobVertex, JobEdge> {
         switch (config.getStrategy()) {
             case ONLY_CUR_JOB:
                 JobVertex vertex = super.getVertex(config.getStartJobId());
-                if (vertex != null) {
-                    return vertex.getJobRunId() == null;
+                if (vertex == null) {
+                    return false;
                 }
 
-                return false;
+                return vertex.getJobRunId() == null && vertex.getJobRunStatus() == null;
             case ALL_POST_JOBS:
             case ALL_PRE_JOBS:
             default:

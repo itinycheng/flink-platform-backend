@@ -29,7 +29,6 @@ import static java.util.stream.Collectors.toSet;
 /** Dag helper for job flow. */
 public class JobFlowDagHelper {
 
-    // ! JobFlowDag shouldn't have unfinished/unexecuted jobs.
     @Nonnull
     public static ExecutionStatus getFinalStatus(DAG<Long, JobVertex, JobEdge> dag) {
         Set<ExecutionStatus> statusList = dag.getVertices().stream()
