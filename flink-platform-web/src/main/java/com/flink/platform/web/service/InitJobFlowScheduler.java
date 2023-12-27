@@ -44,6 +44,6 @@ public class InitJobFlowScheduler {
                         .lambda()
                         .eq(JobFlowRun::getHost, HOST_IP)
                         .in(JobFlowRun::getStatus, getNonTerminals()))
-                .forEach(jobFlowRun -> jobFlowScheduleService.rebuildAndSchedule(jobFlowRun));
+                .forEach(jobFlowScheduleService::registerToScheduler);
     }
 }

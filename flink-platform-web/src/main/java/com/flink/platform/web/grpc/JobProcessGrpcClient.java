@@ -50,7 +50,7 @@ public class JobProcessGrpcClient {
         return grpcClient(key, worker);
     }
 
-    public synchronized JobGrpcServiceBlockingStub grpcClient(String key, Worker worker) {
+    private synchronized JobGrpcServiceBlockingStub grpcClient(String key, Worker worker) {
         JobGrpcServiceBlockingStub stub = grpcStubMap.get(key);
         if (stub != null) {
             return stub;
