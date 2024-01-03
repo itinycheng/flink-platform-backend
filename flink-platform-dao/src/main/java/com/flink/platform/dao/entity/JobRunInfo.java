@@ -21,6 +21,7 @@ import java.io.Serializable;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.Map;
+import java.util.Set;
 
 import static com.flink.platform.common.constants.Constant.EMPTY;
 import static com.flink.platform.common.util.DateUtil.GLOBAL_DATE_TIME_FORMAT;
@@ -33,7 +34,7 @@ import static org.apache.commons.lang3.StringUtils.defaultString;
 @TableName(value = "t_job_run", autoResultMap = true)
 public class JobRunInfo implements Serializable {
 
-    private static final long serialVersionUID = 1L;
+    public static final Set<String> LARGE_FIELDS = Set.of("backInfo", "config", "variables", "subject");
 
     @TableId(value = "id", type = IdType.AUTO)
     private Long id;

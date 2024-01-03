@@ -7,7 +7,6 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.flink.platform.common.constants.Constant;
 import com.flink.platform.common.enums.ExecutionStatus;
 import com.flink.platform.dao.entity.JobFlowRun;
-import com.flink.platform.dao.entity.JobRunInfo;
 import com.flink.platform.dao.entity.User;
 import com.flink.platform.dao.service.JobFlowRunService;
 import com.flink.platform.dao.service.JobRunInfoService;
@@ -29,11 +28,9 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.time.LocalDateTime;
 
-import static com.flink.platform.common.enums.ExecutionStatus.getNonTerminals;
 import static com.flink.platform.common.enums.ResponseStatus.ERROR_PARAMETER;
 import static com.flink.platform.common.enums.ResponseStatus.FLOW_ALREADY_TERMINATED;
 import static com.flink.platform.common.enums.ResponseStatus.KILL_FLOW_EXCEPTION_FOUND;
-import static com.flink.platform.common.enums.ResponseStatus.NO_RUNNING_JOB_FOUND;
 import static com.flink.platform.common.enums.ResponseStatus.USER_HAVE_NO_PERMISSION;
 import static com.flink.platform.common.util.DateUtil.GLOBAL_DATE_TIME_FORMAT;
 import static com.flink.platform.web.entity.response.ResultInfo.failure;
@@ -117,15 +114,6 @@ public class JobFlowRunController {
         ExecutionStatus status = jobFlowRun.getStatus();
         if (status != null && status.isTerminalState()) {
             return failure(FLOW_ALREADY_TERMINATED);
-        }
-
-        // Check if there are any unfinished jobs.
-        if (!jobRunInfoService.exists(new QueryWrapper<JobRunInfo>()
-                .lambda()
-                .eq(JobRunInfo::getFlowRunId, flowRunId)
-                .eq(JobRunInfo::getUserId, loginUser.getId())
-                .in(JobRunInfo::getStatus, getNonTerminals()))) {
-            return failure(NO_RUNNING_JOB_FOUND);
         }
 
         boolean isSuccess = killJobService.killRemoteFlow(loginUser.getId(), flowRunId);
