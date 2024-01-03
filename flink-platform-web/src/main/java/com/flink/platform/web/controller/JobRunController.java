@@ -30,11 +30,11 @@ import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import java.util.Set;
 
 import static com.flink.platform.common.enums.ExecutionStatus.getNonTerminals;
 import static com.flink.platform.common.enums.ResponseStatus.NO_RUNNING_JOB_FOUND;
 import static com.flink.platform.common.util.DateUtil.GLOBAL_DATE_TIME_FORMAT;
+import static com.flink.platform.dao.entity.JobRunInfo.LARGE_FIELDS;
 import static com.flink.platform.web.entity.response.ResultInfo.failure;
 import static com.flink.platform.web.entity.response.ResultInfo.success;
 import static java.util.Objects.nonNull;
@@ -44,8 +44,6 @@ import static java.util.stream.Collectors.toList;
 @RestController
 @RequestMapping("/jobRun")
 public class JobRunController {
-
-    private static final Set<String> EXCLUDE_PAGE_FIELDS = Set.of("backInfo", "config", "variables", "subject");
 
     @Autowired
     private JobRunInfoService jobRunInfoService;
@@ -78,7 +76,7 @@ public class JobRunController {
             @RequestParam(name = "sort", required = false) String sort) {
         LambdaQueryWrapper<JobRunInfo> queryWrapper = new QueryWrapper<JobRunInfo>()
                 .lambda()
-                .select(JobRunInfo.class, field -> !EXCLUDE_PAGE_FIELDS.contains(field.getProperty()))
+                .select(JobRunInfo.class, field -> !LARGE_FIELDS.contains(field.getProperty()))
                 .eq(JobRunInfo::getUserId, loginUser.getId())
                 .eq(nonNull(flowRunId), JobRunInfo::getFlowRunId, flowRunId)
                 .eq(nonNull(jobId), JobRunInfo::getJobId, jobId)
@@ -95,29 +93,17 @@ public class JobRunController {
     }
 
     @PostMapping(value = "/getJobOrRunByJobIds")
-    public ResultInfo<Collection<Object>> list(@RequestBody JobRunRequest jobRunRequest) {
-        if (CollectionUtils.isEmpty(jobRunRequest.getJobIds()) || jobRunRequest.getFlowRunId() == null) {
+    public ResultInfo<Collection<Object>> list(@RequestBody JobRunRequest request) {
+        if (request.getFlowRunId() == null) {
             return success(Collections.emptyList());
         }
 
-        List<JobRunInfo> jobRunList = jobRunInfoService.list(new QueryWrapper<JobRunInfo>()
-                .lambda()
-                .eq(JobRunInfo::getFlowRunId, jobRunRequest.getFlowRunId())
-                .in(JobRunInfo::getJobId, jobRunRequest.getJobIds()));
-
-        List<Long> existedJobs = CollectionUtils.emptyIfNull(jobRunList).stream()
-                .map(JobRunInfo::getJobId)
-                .collect(toList());
-
-        Collection<Long> unRunJobIds = CollectionUtils.subtract(jobRunRequest.getJobIds(), existedJobs);
-
-        List<JobInfo> jobList = null;
-        if (CollectionUtils.isNotEmpty(unRunJobIds)) {
-            jobList = jobInfoService.listByIds(unRunJobIds);
-        }
-        Collection<Object> jobAndJobRunList =
-                CollectionUtils.union(CollectionUtils.emptyIfNull(jobRunList), CollectionUtils.emptyIfNull(jobList));
-        return success(jobAndJobRunList);
+        List<JobRunInfo> jobRunList =
+                jobRunInfoService.listLastWithoutLargeFields(request.getFlowRunId(), request.getJobIds());
+        List<Long> existedJobs = jobRunList.stream().map(JobRunInfo::getJobId).collect(toList());
+        Collection<Long> unRunJobIds = CollectionUtils.subtract(request.getJobIds(), existedJobs);
+        List<JobInfo> jobList = jobInfoService.listWithoutLargeFields(unRunJobIds);
+        return success(CollectionUtils.union(jobRunList, jobList));
     }
 
     @GetMapping(value = "/kill/{runId}")

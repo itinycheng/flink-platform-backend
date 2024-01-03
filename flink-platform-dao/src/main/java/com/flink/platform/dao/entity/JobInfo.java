@@ -20,6 +20,7 @@ import lombok.Setter;
 import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.Map;
+import java.util.Set;
 
 import static com.flink.platform.common.util.DateUtil.GLOBAL_DATE_TIME_FORMAT;
 import static com.flink.platform.common.util.DateUtil.GLOBAL_TIMEZONE;
@@ -33,7 +34,7 @@ import static com.flink.platform.common.util.DateUtil.GLOBAL_TIMEZONE;
 @TableName(value = "t_job", autoResultMap = true)
 public class JobInfo implements Serializable {
 
-    private static final long serialVersionUID = 1L;
+    public static final Set<String> LARGE_FIELDS = Set.of("config", "variables", "subject");
 
     @TableId(value = "id", type = IdType.AUTO)
     private Long id;
