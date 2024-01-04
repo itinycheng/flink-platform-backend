@@ -65,6 +65,7 @@ public class JobRunController {
             @RequestAttribute(value = Constant.SESSION_USER) User loginUser,
             @RequestParam(name = "page", required = false, defaultValue = "1") Integer page,
             @RequestParam(name = "size", required = false, defaultValue = "20") Integer size,
+            @RequestParam(name = "id", required = false) Long id,
             @RequestParam(name = "flowRunId", required = false) Long flowRunId,
             @RequestParam(name = "jobId", required = false) Long jobId,
             @RequestParam(name = "status", required = false) ExecutionStatus status,
@@ -78,6 +79,7 @@ public class JobRunController {
                 .lambda()
                 .select(JobRunInfo.class, field -> !LARGE_FIELDS.contains(field.getProperty()))
                 .eq(JobRunInfo::getUserId, loginUser.getId())
+                .eq(nonNull(id), JobRunInfo::getId, id)
                 .eq(nonNull(flowRunId), JobRunInfo::getFlowRunId, flowRunId)
                 .eq(nonNull(jobId), JobRunInfo::getJobId, jobId)
                 .eq(nonNull(status), JobRunInfo::getStatus, status)
