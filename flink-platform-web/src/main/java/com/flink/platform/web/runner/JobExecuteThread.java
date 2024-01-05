@@ -50,6 +50,7 @@ import static com.flink.platform.common.enums.ExecutionStatus.NOT_EXIST;
 import static com.flink.platform.common.enums.ExecutionStatus.RUNNING;
 import static com.flink.platform.common.enums.ExecutionStatus.SUCCESS;
 import static com.flink.platform.grpc.JobGrpcServiceGrpc.JobGrpcServiceBlockingStub;
+import static com.flink.platform.web.util.ThreadUtil.MIN_SLEEP_TIME_MILLIS;
 import static java.util.Objects.nonNull;
 
 /** Execute job in a separate thread. */
@@ -138,7 +139,7 @@ public class JobExecuteThread implements Callable<JobResponse> {
 
             // sleep and retry if exception found or status isn't success.
             if (retryAttempt < retryTimes) {
-                ThreadUtil.sleepDuration(retryAttempt, retryInterval);
+                sleepRetry(retryInterval);
             }
         }
 
@@ -153,12 +154,8 @@ public class JobExecuteThread implements Callable<JobResponse> {
         JobRunInfo jobRun = null;
         try {
             // Check whether workflow status is terminated or in KILLABLE status.
-            JobFlowRun jobFlowRun = jobFlowRunService.getOne(new QueryWrapper<JobFlowRun>()
-                    .lambda()
-                    .select(JobFlowRun::getStatus)
-                    .eq(JobFlowRun::getId, flowRunId));
-            ExecutionStatus flowStatus = jobFlowRun.getStatus();
-            if (KILLABLE.equals(flowStatus) || flowStatus.isTerminalState()) {
+
+            if (isFlowRunStopped()) {
                 log.warn("JobFlowRun: {} is stopping, cannot submit job: {}", flowRunId, jobId);
                 jobRunStatus = KILLED;
                 return;
@@ -252,6 +249,24 @@ public class JobExecuteThread implements Callable<JobResponse> {
     // --------------------------------------------------------------------------------------------
     // The following methods should be called in while/retry loop.
     // --------------------------------------------------------------------------------------------
+
+    public void sleepRetry(Duration interval) {
+        if (interval == null || !interval.isPositive()) {
+            ThreadUtil.sleep(MIN_SLEEP_TIME_MILLIS);
+            return;
+        }
+
+        var remaining = interval.toMillis();
+        while (AppRunner.isRunning() && remaining > 0) {
+            if (isFlowRunStopped()) {
+                return;
+            }
+
+            var tmp = remaining;
+            remaining = remaining - MIN_SLEEP_TIME_MILLIS;
+            ThreadUtil.sleep(remaining > 0 ? MIN_SLEEP_TIME_MILLIS : tmp);
+        }
+    }
 
     private JobRunInfo getOrCreateJobRun(JobInfo jobInfo) {
         JobRunInfo jobRun = jobRunInfoService.getOne(new QueryWrapper<JobRunInfo>()
@@ -366,6 +381,20 @@ public class JobExecuteThread implements Callable<JobResponse> {
             jobRunInfo.setStatus(statusInfo.getStatus());
         } catch (Exception e) {
             log.error("Update job run status failed", e);
+        }
+    }
+
+    private boolean isFlowRunStopped() {
+        try {
+            JobFlowRun jobFlowRun = jobFlowRunService.getOne(new QueryWrapper<JobFlowRun>()
+                    .lambda()
+                    .select(JobFlowRun::getStatus)
+                    .eq(JobFlowRun::getId, flowRunId));
+            ExecutionStatus flowStatus = jobFlowRun.getStatus();
+            return KILLABLE.equals(flowStatus) || flowStatus.isTerminalState();
+        } catch (Exception exception) {
+            log.error("Get flow run status failed", exception);
+            return false;
         }
     }
 }

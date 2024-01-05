@@ -89,31 +89,31 @@ public class KillJobService {
     }
 
     public void killJob(final long jobRunId) {
-        JobRunInfo latestJobRun = jobRunInfoService.getOne(new QueryWrapper<JobRunInfo>()
+        JobRunInfo jobRun = jobRunInfoService.getOne(new QueryWrapper<JobRunInfo>()
                 .lambda()
                 .select(JobRunInfo::getType)
                 .eq(JobRunInfo::getId, jobRunId)
                 .in(JobRunInfo::getStatus, getNonTerminals()));
-        if (latestJobRun == null) {
+        if (jobRun == null) {
             return;
         }
 
         // exec kill
-        JobType type = latestJobRun.getType();
+        JobType type = jobRun.getType();
         jobCommandExecutors.stream()
                 .filter(executor -> executor.isSupported(type))
                 .findFirst()
                 .orElseThrow(() -> new UnrecoverableException("No available job command executor"))
                 .kill(jobRunId);
 
-        latestJobRun = jobRunInfoService.getOne(new QueryWrapper<JobRunInfo>()
+        jobRun = jobRunInfoService.getOne(new QueryWrapper<JobRunInfo>()
                 .lambda()
                 .select(JobRunInfo::getStatus)
                 .eq(JobRunInfo::getId, jobRunId));
 
         // set status to KILLED
         // Better in a transaction with serializable isolation level.
-        if (!latestJobRun.getStatus().isTerminalState()) {
+        if (!jobRun.getStatus().isTerminalState()) {
             JobRunInfo newJobRun = new JobRunInfo();
             newJobRun.setId(jobRunId);
             newJobRun.setStatus(KILLED);

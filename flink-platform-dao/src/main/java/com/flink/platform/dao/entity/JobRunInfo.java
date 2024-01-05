@@ -95,8 +95,12 @@ public class JobRunInfo implements Serializable {
             return EMPTY;
         }
 
-        Duration duration = Duration.between(submitTime, stopTime);
-        return DurationFormatUtils.formatDuration(duration.toMillis(), "HH:mm:ss");
+        try {
+            Duration duration = Duration.between(submitTime, stopTime);
+            return DurationFormatUtils.formatDuration(duration.toMillis(), "HH:mm:ss");
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     /**
