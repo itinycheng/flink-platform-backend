@@ -23,7 +23,7 @@ import static com.flink.platform.common.constants.Constant.SLASH;
 @Slf4j
 @Setter
 @Configuration
-@ConfigurationProperties(prefix = "hadoop")
+@ConfigurationProperties(prefix = "storage.hdfs")
 public class HadoopConfig {
 
     private String username;
