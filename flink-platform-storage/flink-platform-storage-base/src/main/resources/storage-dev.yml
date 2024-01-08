@@ -1,0 +1,18 @@
+storage:
+  type: hdfs
+  hdfs:
+    username: hdfs
+    hdfsFilePath: hdfs:///flink-platform/
+    localDirName: data_dir
+    properties:
+      fs.hdfs.impl: org.apache.hadoop.hdfs.DistributedFileSystem
+      fs.defaultFS: hdfs://nameservice1
+      ha.zookeeper.quorum: gz-vm-30-73-155:2181,gz-vm-30-73-156:2181,gz-vm-30-73-157:2181
+      dfs.client.failover.proxy.provider.nameservice1: org.apache.hadoop.hdfs.server.namenode.ha.ConfiguredFailoverProxyProvider
+      dfs.ha.automatic-failover.enabled.nameservice1: true
+      dfs.nameservices: nameservice1
+      dfs.ha.namenodes.nameservice1: namenode268,namenode272
+      dfs.namenode.rpc-address.nameservice1.namenode268: id-00008.data.vm.gzjf.test.host.tiger:8020
+      dfs.namenode.rpc-address.nameservice1.namenode272: id-00009.data.vm.gzjf.test.host.tiger:8020
+      dfs.namenode.servicerpc-address.nameservice1.namenode268: id-00008.data.vm.gzjf.test.host.tiger:8022
+      dfs.namenode.servicerpc-address.nameservice1.namenode272: id-00009.data.vm.gzjf.test.host.tiger:8022
