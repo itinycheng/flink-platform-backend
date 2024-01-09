@@ -1,21 +1,20 @@
 package com.flink.platform.storage.hdfs;
 
-import com.flink.platform.storage.base.SpringContext2;
+import com.flink.platform.storage.StorageProperties;
 import com.flink.platform.storage.base.StorageFactory;
 import com.flink.platform.storage.base.StorageSystem;
 import com.flink.platform.storage.base.StorageType;
 import com.google.auto.service.AutoService;
 
 /**
- * Hello world!
+ * Hello world.
  */
 @AutoService(StorageFactory.class)
 public class HdfsStorageFactory implements StorageFactory {
 
     @Override
-    public StorageSystem createStorageSystem() {
+    public StorageSystem createStorageSystem(StorageProperties properties) {
         try {
-            HdfsStorageProperties properties = SpringContext2.getBean(HdfsStorageProperties.class);
             HdfsStorageSystem hdfsStorageSystem = new HdfsStorageSystem(properties);
             hdfsStorageSystem.open();
             return hdfsStorageSystem;

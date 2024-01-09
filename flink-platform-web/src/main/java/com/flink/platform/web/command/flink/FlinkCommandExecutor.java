@@ -40,7 +40,7 @@ public class FlinkCommandExecutor implements CommandExecutor {
 
     private static final List<JobType> SUPPORTED_JOB_TYPES = Arrays.asList(JobType.FLINK_JAR, JobType.FLINK_SQL);
 
-    @Value("${storage.hdfs.username}")
+    @Value("${storage.username}")
     private String hadoopUser;
 
     @Autowired

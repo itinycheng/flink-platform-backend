@@ -14,7 +14,7 @@ public class ResourceManageService {
     private ResourceService resourceService;
 
     @Autowired
-    private HdfsService hdfsService;
+    private StorageService storageService;
 
     public boolean save(Resource entity) throws Exception {
         switch (entity.getType()) {
@@ -29,15 +29,15 @@ public class ResourceManageService {
                 }
                 String hdfsAbsolutePath =
                         ResourceUtil.getFullHdfsFilePath(entity.getUserId(), parentPath, entity.getName());
-                if (!hdfsService.exists(hdfsAbsolutePath)) {
-                    hdfsService.mkDirs(hdfsAbsolutePath);
+                if (!storageService.exists(hdfsAbsolutePath)) {
+                    storageService.mkDir(hdfsAbsolutePath);
                     entity.setFullName(hdfsAbsolutePath);
                     return resourceService.save(entity);
                 }
                 break;
             case JAR:
             case SHELL:
-                if (hdfsService.exists(entity.getFullName())) {
+                if (storageService.exists(entity.getFullName())) {
                     return resourceService.save(entity);
                 }
                 break;
@@ -54,8 +54,8 @@ public class ResourceManageService {
             return false;
         }
 
-        if (hdfsService.exists(resource.getFullName())) {
-            hdfsService.delete(resource.getFullName(), false);
+        if (storageService.exists(resource.getFullName())) {
+            storageService.delete(resource.getFullName(), false);
         }
         return resourceService.removeById(resource.getId());
     }

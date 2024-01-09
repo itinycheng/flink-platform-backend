@@ -1,4 +1,4 @@
-package com.flink.platform.storage.hdfs;
+package com.flink.platform.storage;
 
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -11,13 +11,16 @@ import java.util.Map;
  */
 @Data
 @Configuration
-@ConfigurationProperties(prefix = "hadoop")
-public class HdfsStorageProperties {
+@ConfigurationProperties(prefix = "storage")
+public class StorageProperties {
+
+    private String type;
+
     private String username;
 
-    private String localDirName;
+    private String storageBasePath;
 
-    private String hdfsFilePath;
+    private String localBasePath;
 
     private Map<String, String> properties;
 }
