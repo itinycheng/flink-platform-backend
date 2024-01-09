@@ -29,8 +29,8 @@ import java.io.IOException;
 public class YarnClientService {
 
     @Autowired
-    @Qualifier("hdfsClusterIdPath")
-    private String hdfsClusterIdPath;
+    @Qualifier("clusterIdPath")
+    private String clusterIdPath;
 
     private YarnClient yarnClient;
 
@@ -48,9 +48,14 @@ public class YarnClientService {
 
         try {
             fileSystem = FileSystem.newInstance(conf);
-            isMainCluster = fileSystem.exists(new Path(hdfsClusterIdPath));
         } catch (Exception e) {
             throw new RuntimeException("create FileSystem failed", e);
+        }
+
+        try {
+            isMainCluster = clusterIdPath.contains("hdfs") && fileSystem.exists(new Path(clusterIdPath));
+        } catch (Exception e) {
+            throw new RuntimeException("check cluster id failed");
         }
     }
 

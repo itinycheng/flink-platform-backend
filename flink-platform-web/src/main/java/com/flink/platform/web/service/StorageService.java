@@ -1,0 +1,39 @@
+package com.flink.platform.web.service;
+
+import com.flink.platform.storage.base.StorageSystem;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
+import org.springframework.stereotype.Service;
+
+import java.io.IOException;
+
+/** service for uploading/downloading resources. */
+@Slf4j
+@Service
+public class StorageService {
+
+    @Lazy
+    @Autowired
+    private StorageSystem storageSystem;
+
+    public void copyFileToLocalIfChanged(String hdfsFile, String localFile) throws IOException {
+        storageSystem.copyToLocalFileIfChanged(hdfsFile, localFile);
+    }
+
+    public boolean delete(String dstPath, boolean recursive) throws IOException {
+        return storageSystem.delete(dstPath, recursive);
+    }
+
+    public void copyFromLocal(String srcFile, String dstFile, boolean deleteSrc, boolean overwrite) throws IOException {
+        storageSystem.copyFromLocalFile(srcFile, dstFile, deleteSrc, overwrite);
+    }
+
+    public boolean mkDir(String path) throws IOException {
+        return storageSystem.mkdir(path);
+    }
+
+    public boolean exists(String path) throws IOException {
+        return storageSystem.exists(path);
+    }
+}

@@ -13,6 +13,7 @@ import com.flink.platform.grpc.KillJobRequest;
 import com.flink.platform.web.command.CommandExecutor;
 import com.flink.platform.web.grpc.JobProcessGrpcClient;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -60,13 +61,17 @@ public class KillJobService {
         jobFlowRunService.updateById(newJobFlowRun);
 
         // Get unfinished jobs and kill them concurrently.
-        return jobRunInfoService
-                .list(new QueryWrapper<JobRunInfo>()
-                        .lambda()
-                        .eq(JobRunInfo::getFlowRunId, flowRunId)
-                        .eq(JobRunInfo::getUserId, userId)
-                        .in(JobRunInfo::getStatus, getNonTerminals()))
-                .parallelStream()
+        List<JobRunInfo> list = jobRunInfoService.list(new QueryWrapper<JobRunInfo>()
+                .lambda()
+                .select(JobRunInfo::getId, JobRunInfo::getHost)
+                .eq(JobRunInfo::getFlowRunId, flowRunId)
+                .eq(JobRunInfo::getUserId, userId)
+                .in(JobRunInfo::getStatus, getNonTerminals()));
+        if (CollectionUtils.isEmpty(list)) {
+            return true;
+        }
+
+        return list.parallelStream()
                 .map(jobRun -> {
                     try {
                         return killRemoteJob(jobRun);

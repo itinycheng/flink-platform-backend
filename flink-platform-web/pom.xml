@@ -31,7 +31,7 @@
 		</dependency>
 		<dependency>
 			<groupId>com.flink.platform</groupId>
-			<artifactId>flink-platform-udf</artifactId>
+			<artifactId>flink-platform-storage-all</artifactId>
 			<version>${project.version}</version>
 		</dependency>
 		<!-- spring start -->

@@ -1,12 +1,15 @@
 package com.flink.platform.storage.hdfs;
 
 import com.flink.platform.common.util.Preconditions;
+import com.flink.platform.storage.StorageProperties;
 import com.flink.platform.storage.base.StorageStatus;
 import com.flink.platform.storage.base.StorageSystem;
 import jakarta.annotation.Nonnull;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.LocalFileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hdfs.HdfsConfiguration;
 
@@ -22,10 +25,10 @@ import static com.flink.platform.common.util.DateUtil.DEFAULT_ZONE_ID;
 @Slf4j
 public class HdfsStorageSystem implements StorageSystem {
 
-    private final HdfsStorageProperties properties;
+    protected final StorageProperties properties;
     protected FileSystem fs;
 
-    public HdfsStorageSystem(@Nonnull HdfsStorageProperties properties) {
+    public HdfsStorageSystem(@Nonnull StorageProperties properties) {
         this.properties = Preconditions.checkNotNull(properties);
     }
 
@@ -54,11 +57,29 @@ public class HdfsStorageSystem implements StorageSystem {
     }
 
     @Override
-    public void copyToLocalFile(String srcFile, String dstFile, boolean delSrc, boolean overwrite) throws IOException {
+    public void copyToLocalFile(String srcFile, String dstFile) throws IOException {
         Path srcPath = new Path(srcFile);
         Path dstPath = new Path(dstFile);
 
         fs.copyToLocalFile(srcPath, dstPath);
+    }
+
+    @Override
+    public void copyToLocalFileIfChanged(String hdfsFile, String localFile) throws IOException {
+        Path hdfsPath = new Path(hdfsFile);
+        Path localPath = new Path(localFile);
+
+        boolean isCopy = true;
+        LocalFileSystem local = FileSystem.getLocal(fs.getConf());
+        if (local.exists(localPath)) {
+            FileStatus localFileStatus = local.getFileStatus(localPath);
+            FileStatus hdfsFileStatus = fs.getFileStatus(hdfsPath);
+            isCopy = localFileStatus.getLen() != hdfsFileStatus.getLen()
+                    || localFileStatus.getModificationTime() < hdfsFileStatus.getModificationTime();
+        }
+        if (isCopy) {
+            fs.copyToLocalFile(hdfsPath, localPath);
+        }
     }
 
     @Override
@@ -68,6 +89,14 @@ public class HdfsStorageSystem implements StorageSystem {
         Path dstPath = new Path(dstFile);
 
         fs.copyFromLocalFile(delSrc, overwrite, srcPath, dstPath);
+    }
+
+    @Override
+    public void createFile(String file, String data, boolean overwrite) throws IOException {
+        Path filePath = new Path(file);
+        try (FSDataOutputStream out = fs.create(filePath, overwrite)) {
+            out.writeBytes(data);
+        }
     }
 
     @Override
@@ -84,6 +113,19 @@ public class HdfsStorageSystem implements StorageSystem {
     @Override
     public boolean exists(String path) throws IOException {
         return fs.exists(new Path(path));
+    }
+
+    @Override
+    public boolean rename(String srcPath, String dstPath) throws IOException {
+        Path src = new Path(srcPath);
+        Path dst = new Path(dstPath);
+        return fs.rename(src, dst);
+    }
+
+    @Override
+    public String normalizePath(String path) {
+        Path hdfsPath = new Path(path);
+        return hdfsPath.toString();
     }
 
     @Override

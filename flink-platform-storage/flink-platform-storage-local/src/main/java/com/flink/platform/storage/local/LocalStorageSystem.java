@@ -1,6 +1,6 @@
 package com.flink.platform.storage.local;
 
-import com.flink.platform.storage.hdfs.HdfsStorageProperties;
+import com.flink.platform.storage.StorageProperties;
 import com.flink.platform.storage.hdfs.HdfsStorageSystem;
 import jakarta.annotation.Nonnull;
 import lombok.extern.slf4j.Slf4j;
@@ -15,11 +15,8 @@ import java.io.IOException;
 @Slf4j
 public class LocalStorageSystem extends HdfsStorageSystem {
 
-    private final LocalStorageProperties properties;
-
-    public LocalStorageSystem(@Nonnull LocalStorageProperties properties) {
-        super(new HdfsStorageProperties());
-        this.properties = properties;
+    public LocalStorageSystem(@Nonnull StorageProperties properties) {
+        super(properties);
     }
 
     public void open() throws IOException {

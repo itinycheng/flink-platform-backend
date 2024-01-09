@@ -11,7 +11,7 @@ import com.flink.platform.dao.entity.User;
 import com.flink.platform.dao.service.ResourceService;
 import com.flink.platform.web.entity.request.ResourceRequest;
 import com.flink.platform.web.entity.response.ResultInfo;
-import com.flink.platform.web.service.HdfsService;
+import com.flink.platform.web.service.StorageService;
 import com.flink.platform.web.service.ResourceManageService;
 import com.flink.platform.web.util.ResourceUtil;
 import org.apache.commons.lang3.StringUtils;
@@ -49,7 +49,7 @@ public class ResourceController {
     private ResourceService resourceService;
 
     @Autowired
-    private HdfsService hdfsService;
+    private StorageService storageService;
 
     @PostMapping(value = "/create")
     public ResultInfo<Long> create(
@@ -151,7 +151,7 @@ public class ResourceController {
             String fullHdfsFileName =
                     ResourceUtil.getFullHdfsFilePath(loginUser.getId(), parentDir, file.getOriginalFilename());
             ResourceUtil.copyToLocal(file, localFileName);
-            hdfsService.copyFromLocal(localFileName, fullHdfsFileName, true, true);
+            storageService.copyFromLocal(localFileName, fullHdfsFileName, true, true);
 
             Resource resource = new Resource();
             resource.setFullName(fullHdfsFileName);
@@ -175,7 +175,7 @@ public class ResourceController {
             return failure(ERROR_PARAMETER, "file path is null");
         }
 
-        hdfsService.delete(resourceRequest.getFullName(), false);
+        storageService.delete(resourceRequest.getFullName(), false);
         return success(true);
     }
 
