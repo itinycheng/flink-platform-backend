@@ -3,7 +3,6 @@ package com.flink.platform.web.service;
 import com.flink.platform.dao.entity.JobFlowDag;
 import com.flink.platform.dao.entity.JobFlowRun;
 import com.flink.platform.dao.service.JobFlowRunService;
-import com.flink.platform.dao.service.JobRunInfoService;
 import com.flink.platform.web.config.AppRunner;
 import com.flink.platform.web.config.WorkerConfig;
 import com.flink.platform.web.runner.FlowExecuteThread;
@@ -28,8 +27,6 @@ public class JobFlowScheduleService {
 
     private final WorkerConfig workerConfig;
 
-    private final JobRunInfoService jobRunInfoService;
-
     private final JobFlowRunService jobFlowRunService;
 
     private final AlertSendingService alertSendingService;
@@ -40,12 +37,8 @@ public class JobFlowScheduleService {
 
     @Autowired
     public JobFlowScheduleService(
-            WorkerConfig workerConfig,
-            JobRunInfoService jobRunInfoService,
-            JobFlowRunService jobFlowRunService,
-            AlertSendingService alertSendingService) {
+            WorkerConfig workerConfig, JobFlowRunService jobFlowRunService, AlertSendingService alertSendingService) {
         this.workerConfig = workerConfig;
-        this.jobRunInfoService = jobRunInfoService;
         this.jobFlowRunService = jobFlowRunService;
         this.alertSendingService = alertSendingService;
         this.flowExecService =

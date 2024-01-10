@@ -36,13 +36,13 @@ public class HdfsStorageSystem implements StorageSystem {
         System.setProperty("HADOOP_USER_NAME", properties.getUsername());
         org.apache.hadoop.conf.Configuration conf = new HdfsConfiguration();
         properties.getProperties().forEach(conf::set);
-        log.info("=============== [hadoop configuration info start.] ===============");
+        log.info("=============== [storage configuration info start.] ===============");
         log.info("[hadoop conf]: size:{}, {}", conf.size(), conf);
         log.info("[fs.defaultFS]: {}", conf.get("fs.defaultFS"));
         log.info("[fs.hdfs.impl]: {}", conf.get("fs.hdfs.impl"));
         fs = FileSystem.newInstance(conf);
         log.info("[fileSystem scheme]: {}", fs.getScheme());
-        log.info("=============== [hadoop configuration info end.] ===============");
+        log.info("=============== [storage configuration info end.] ===============");
     }
 
     @Override
@@ -123,9 +123,14 @@ public class HdfsStorageSystem implements StorageSystem {
     }
 
     @Override
-    public String normalizePath(String path) {
+    public String normalizePath(String path) throws IOException {
         Path hdfsPath = new Path(path);
-        return hdfsPath.toString();
+        if (hdfsPath.isAbsolute()) {
+            return hdfsPath.toString();
+        }
+
+        FileStatus status = fs.getFileStatus(hdfsPath);
+        return status.getPath().toString();
     }
 
     @Override

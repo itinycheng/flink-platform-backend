@@ -8,6 +8,7 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.hdfs.HdfsConfiguration;
 
 import java.io.IOException;
+import java.util.Map;
 
 /**
  * hdfs storage system.
@@ -20,15 +21,18 @@ public class LocalStorageSystem extends HdfsStorageSystem {
     }
 
     public void open() throws IOException {
-        System.setProperty("HADOOP_USER_NAME", properties.getUsername());
         org.apache.hadoop.conf.Configuration conf = new HdfsConfiguration();
-        properties.getProperties().forEach(conf::set);
-        log.info("=============== [hadoop configuration info start.] ===============");
+        Map<String, String> props = properties.getProperties();
+        if (props != null) {
+            props.forEach(conf::set);
+        }
+        log.info("=============== [storage configuration info start.] ===============");
+        log.info("[storage type]: {}", properties.getType());
         log.info("[hadoop conf]: size:{}, {}", conf.size(), conf);
         log.info("[fs.defaultFS]: {}", conf.get("fs.defaultFS"));
         log.info("[fs.hdfs.impl]: {}", conf.get("fs.hdfs.impl"));
         fs = FileSystem.newInstanceLocal(conf);
         log.info("[fileSystem scheme]: {}", fs.getScheme());
-        log.info("=============== [hadoop configuration info end.] ===============");
+        log.info("=============== [storage configuration info end.] ===============");
     }
 }

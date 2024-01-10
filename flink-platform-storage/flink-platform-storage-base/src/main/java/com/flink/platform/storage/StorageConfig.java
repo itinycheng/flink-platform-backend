@@ -6,7 +6,6 @@ import com.flink.platform.storage.base.StorageType;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Lazy;
 
 import java.io.File;
 import java.nio.file.Path;
@@ -17,6 +16,7 @@ import java.util.UUID;
 import static com.flink.platform.common.constants.Constant.FILE_SEPARATOR;
 import static com.flink.platform.common.constants.Constant.ROOT_DIR;
 import static com.flink.platform.common.constants.Constant.SLASH;
+import static java.lang.String.format;
 
 /**
  * storage loader.
@@ -25,7 +25,6 @@ import static com.flink.platform.common.constants.Constant.SLASH;
 @Configuration
 public class StorageConfig {
 
-    @Lazy
     @Bean
     public StorageSystem createStorageSystem(StorageProperties properties) {
         StorageType storageType = StorageType.from(properties.getType());
@@ -56,24 +55,22 @@ public class StorageConfig {
         return path.toString();
     }
 
-    @Lazy
     @Bean("storageBasePath")
-    public String createHdfsFilePath(StorageSystem storageSystem, StorageProperties properties) throws Exception {
+    public String createStorageBasePath(StorageSystem storageSystem, StorageProperties properties) throws Exception {
         String storageBasePath = properties.getStorageBasePath();
         if (!storageSystem.exists(storageBasePath)) {
             if (storageSystem.mkdir(storageBasePath)) {
-                log.info("hdfs file dir: {} created successfully.", storageBasePath);
+                log.info("storage base dir: {} created successfully.", storageBasePath);
             } else {
-                throw new RuntimeException("create hdfs file dir failed.");
+                throw new RuntimeException(format("create storage base dir: %s failed.", storageBasePath));
             }
         } else {
-            log.info("hdfs file dir: {} already exists", storageBasePath);
+            log.info("storage base dir: {} already exists", storageBasePath);
         }
 
         return storageSystem.normalizePath(storageBasePath);
     }
 
-    @Lazy
     @Bean("clusterIdPath")
     public String createClusterId(StorageSystem storageSystem, StorageProperties properties) throws Exception {
         String storageBasePath = properties.getStorageBasePath();

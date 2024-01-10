@@ -7,7 +7,6 @@ import com.flink.platform.dao.entity.JobFlowRun;
 import com.flink.platform.dao.entity.JobRunInfo;
 import com.flink.platform.dao.service.JobFlowRunService;
 import com.flink.platform.dao.service.JobRunInfoService;
-import com.flink.platform.dao.service.WorkerService;
 import com.flink.platform.grpc.JobGrpcServiceGrpc;
 import com.flink.platform.grpc.KillJobRequest;
 import com.flink.platform.web.command.CommandExecutor;
@@ -35,8 +34,6 @@ public class KillJobService {
 
     private final List<CommandExecutor> jobCommandExecutors;
 
-    private final WorkerService workerService;
-
     private final JobFlowRunService jobFlowRunService;
 
     @Autowired
@@ -44,12 +41,10 @@ public class KillJobService {
             JobRunInfoService jobRunInfoService,
             List<CommandExecutor> jobCommandExecutors,
             JobProcessGrpcClient jobProcessGrpcClient,
-            WorkerService workerService,
             JobFlowRunService jobFlowRunService) {
         this.jobRunInfoService = jobRunInfoService;
         this.jobCommandExecutors = jobCommandExecutors;
         this.jobProcessGrpcClient = jobProcessGrpcClient;
-        this.workerService = workerService;
         this.jobFlowRunService = jobFlowRunService;
     }
 
