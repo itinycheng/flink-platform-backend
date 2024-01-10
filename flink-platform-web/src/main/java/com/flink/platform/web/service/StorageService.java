@@ -1,9 +1,9 @@
 package com.flink.platform.web.service;
 
 import com.flink.platform.storage.base.StorageSystem;
+import jakarta.annotation.PreDestroy;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -13,7 +13,6 @@ import java.io.IOException;
 @Service
 public class StorageService {
 
-    @Lazy
     @Autowired
     private StorageSystem storageSystem;
 
@@ -35,5 +34,13 @@ public class StorageService {
 
     public boolean exists(String path) throws IOException {
         return storageSystem.exists(path);
+    }
+
+    @PreDestroy
+    public void destroy() {
+        try {
+            storageSystem.close();
+        } catch (Exception ignored) {
+        }
     }
 }
