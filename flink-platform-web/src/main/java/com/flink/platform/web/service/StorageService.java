@@ -36,6 +36,10 @@ public class StorageService {
         return storageSystem.exists(path);
     }
 
+    public boolean isAbsolutePath(String path) {
+        return storageSystem.isAbsolutePath(path);
+    }
+
     @PreDestroy
     public void destroy() {
         try {

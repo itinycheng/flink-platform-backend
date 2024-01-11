@@ -29,4 +29,6 @@ public interface StorageSystem extends Closeable {
     boolean rename(String src, String dst) throws IOException;
 
     String normalizePath(String path) throws IOException;
+
+    boolean isAbsolutePath(String path);
 }

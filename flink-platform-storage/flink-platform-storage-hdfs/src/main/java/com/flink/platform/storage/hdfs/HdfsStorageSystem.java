@@ -134,6 +134,12 @@ public class HdfsStorageSystem implements StorageSystem {
     }
 
     @Override
+    public boolean isAbsolutePath(String path) {
+        Path hdfsPath = new Path(path);
+        return hdfsPath.isAbsolute();
+    }
+
+    @Override
     public void close() throws IOException {
         fs.close();
     }
