@@ -149,7 +149,7 @@ public class ResourceController {
             }
             localFileName = ResourceUtil.randomLocalTmpFile();
             String fullHdfsFileName =
-                    ResourceUtil.getFullHdfsFilePath(loginUser.getId(), parentDir, file.getOriginalFilename());
+                    ResourceUtil.getFullStorageFilePath(loginUser.getId(), parentDir, file.getOriginalFilename());
             ResourceUtil.copyToLocal(file, localFileName);
             storageService.copyFromLocal(localFileName, fullHdfsFileName, true, true);
 

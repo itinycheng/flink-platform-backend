@@ -25,13 +25,21 @@ public class ResourceUtil {
 
     private static final StorageService STORAGE_SERVICE = SpringContext.getBean(StorageService.class);
 
-    public static String getHdfsFilePath(String relativePath, Long userId) {
-        String hdfsUserDir = getHdfsUserDir(userId);
+    public static String getStorageFilePath(String relativePath, Long userId) {
+        String hdfsUserDir = getStorageUserDir(userId);
         return String.join(SLASH, hdfsUserDir, relativePath);
     }
 
+    public static String getAbsoluteStoragePath(String path, Long userId) {
+        if (STORAGE_SERVICE.isAbsolutePath(path)) {
+            return path;
+        } else {
+            return getStorageFilePath(path, userId);
+        }
+    }
+
     public static String getHdfsRelativePath(String path, Long userId) {
-        String hdfsUserDir = getHdfsUserDir(userId);
+        String hdfsUserDir = getStorageUserDir(userId);
         if (path.startsWith(hdfsUserDir)) {
             throw new RuntimeException("can not found");
         }
@@ -48,9 +56,9 @@ public class ResourceUtil {
     }
 
     /** Only for file upload. */
-    public static String getFullHdfsFilePath(Long userId, String parentPath, String fileName) {
+    public static String getFullStorageFilePath(Long userId, String parentPath, String fileName) {
         if (StringUtils.isBlank(parentPath)) {
-            parentPath = getHdfsUserDir(userId);
+            parentPath = getStorageUserDir(userId);
         }
 
         return String.join(SLASH, parentPath, fileName);
@@ -67,13 +75,13 @@ public class ResourceUtil {
         Files.copy(file.getInputStream(), dstFile.toPath());
     }
 
-    public static String copyFromHdfsToLocal(String hdfsPath) throws IOException {
+    public static String copyFromStorageToLocal(String hdfsPath) throws IOException {
         String localPath = hdfsPath.replace(hdfsRootPath, localRootPath);
         STORAGE_SERVICE.copyFileToLocalIfChanged(hdfsPath, localPath);
         return localPath;
     }
 
-    private static String getHdfsUserDir(Long userId) {
+    private static String getStorageUserDir(Long userId) {
         String userDir = "user_id_" + userId;
         return String.join(SLASH, hdfsRootPath, RESOURCE_DIR, userDir);
     }

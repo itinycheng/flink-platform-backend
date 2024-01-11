@@ -39,8 +39,8 @@ import static com.flink.platform.common.constants.JobConstant.TODAY_YYYY_MM_DD_V
 import static com.flink.platform.common.enums.JobType.SHELL;
 import static com.flink.platform.common.util.FunctionUtil.uncheckedFunction;
 import static com.flink.platform.common.util.Preconditions.checkNotNull;
-import static com.flink.platform.web.util.ResourceUtil.copyFromHdfsToLocal;
-import static com.flink.platform.web.util.ResourceUtil.getHdfsFilePath;
+import static com.flink.platform.web.util.ResourceUtil.copyFromStorageToLocal;
+import static com.flink.platform.web.util.ResourceUtil.getAbsoluteStoragePath;
 
 /** placeholder in subject field of job. */
 @Slf4j
@@ -103,13 +103,13 @@ public enum Placeholder {
         while (matcher.find()) {
             String variable = matcher.group();
             String filePath = matcher.group("file");
-            if (StringUtils.isBlank(filePath) || !filePath.startsWith("hdfs")) {
-                throw new RuntimeException("Hdfs path not found or isn't start with 'hdfs', variable:" + variable);
+            if (StringUtils.isBlank(filePath)) {
+                throw new RuntimeException("Hdfs path not found, variable:" + variable);
             }
 
-            String absoluteHdfsPath =
-                    filePath.startsWith("hdfs") ? filePath : getHdfsFilePath(filePath, jobRun.getUserId());
-            String localPath = copyFromHdfsToLocal(absoluteHdfsPath);
+            // filePath.startsWith("hdfs") ? filePath : getStorageFilePath(filePath, jobRun.getUserId());
+            String absoluteHdfsPath = getAbsoluteStoragePath(filePath, jobRun.getUserId());
+            String localPath = copyFromStorageToLocal(absoluteHdfsPath);
             result.put(variable, localPath);
 
             // Make the local file readable and executable.

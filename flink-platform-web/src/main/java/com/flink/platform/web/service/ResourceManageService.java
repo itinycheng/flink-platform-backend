@@ -2,9 +2,10 @@ package com.flink.platform.web.service;
 
 import com.flink.platform.dao.entity.Resource;
 import com.flink.platform.dao.service.ResourceService;
-import com.flink.platform.web.util.ResourceUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
+import static com.flink.platform.web.util.ResourceUtil.getFullStorageFilePath;
 
 /** Resource manage service. */
 @Service
@@ -27,11 +28,10 @@ public class ResourceManageService {
                     }
                     parentPath = parentResource.getFullName();
                 }
-                String hdfsAbsolutePath =
-                        ResourceUtil.getFullHdfsFilePath(entity.getUserId(), parentPath, entity.getName());
-                if (!storageService.exists(hdfsAbsolutePath)) {
-                    storageService.mkDir(hdfsAbsolutePath);
-                    entity.setFullName(hdfsAbsolutePath);
+                String absolutePath = getFullStorageFilePath(entity.getUserId(), parentPath, entity.getName());
+                if (!storageService.exists(absolutePath)) {
+                    storageService.mkDir(absolutePath);
+                    entity.setFullName(absolutePath);
                     return resourceService.save(entity);
                 }
                 break;
