@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <configuration debug="true" scan="true" scanPeriod="30 seconds">
-	<property name="log.home" value="logs"/>
+	<property name="log.home" value="/data0/logs/flink-platform-web"/>
 	<property name="log.pattern"
 			  value="%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level [%logger:%line] - %msg%n"/>
 
