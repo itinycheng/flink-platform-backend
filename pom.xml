@@ -66,6 +66,8 @@
 		<palantir-java-format.version>2.38.0</palantir-java-format.version>
 		<spotless-maven-plugin.version>2.41.1</spotless-maven-plugin.version>
 		<maven-shade-plugin.version>3.5.1</maven-shade-plugin.version>
+		<rewrite-maven-plugin.version>5.18.0</rewrite-maven-plugin.version>
+		<rewrite-migrate-java.version>2.5.0</rewrite-migrate-java.version>
 		<maven-compiler-plugin.version>3.12.1</maven-compiler-plugin.version>
 	</properties>
 
@@ -336,6 +338,23 @@
 						</goals>
 					</execution>
 				</executions>
+			</plugin>
+			<plugin>
+				<groupId>org.openrewrite.maven</groupId>
+				<artifactId>rewrite-maven-plugin</artifactId>
+				<version>${rewrite-maven-plugin.version}</version>
+				<configuration>
+					<activeRecipes>
+						<recipe>org.openrewrite.java.migrate.UpgradeToJava21</recipe>
+					</activeRecipes>
+				</configuration>
+				<dependencies>
+					<dependency>
+						<groupId>org.openrewrite.recipe</groupId>
+						<artifactId>rewrite-migrate-java</artifactId>
+						<version>${rewrite-migrate-java.version}</version>
+					</dependency>
+				</dependencies>
 			</plugin>
 		</plugins>
 
