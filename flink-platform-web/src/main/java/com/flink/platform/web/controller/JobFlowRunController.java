@@ -7,7 +7,6 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.flink.platform.common.constants.Constant;
 import com.flink.platform.common.enums.ExecutionStatus;
 import com.flink.platform.dao.entity.JobFlowRun;
-import com.flink.platform.dao.entity.JobRunInfo;
 import com.flink.platform.dao.entity.User;
 import com.flink.platform.dao.service.JobFlowRunService;
 import com.flink.platform.dao.service.JobRunInfoService;
@@ -15,7 +14,6 @@ import com.flink.platform.web.entity.request.JobFlowRunRequest;
 import com.flink.platform.web.entity.response.ResultInfo;
 import com.flink.platform.web.service.KillJobService;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -29,14 +27,10 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.time.LocalDateTime;
-import java.util.List;
 
-import static com.flink.platform.common.enums.ExecutionStatus.KILLABLE;
-import static com.flink.platform.common.enums.ExecutionStatus.getNonTerminals;
 import static com.flink.platform.common.enums.ResponseStatus.ERROR_PARAMETER;
 import static com.flink.platform.common.enums.ResponseStatus.FLOW_ALREADY_TERMINATED;
 import static com.flink.platform.common.enums.ResponseStatus.KILL_FLOW_EXCEPTION_FOUND;
-import static com.flink.platform.common.enums.ResponseStatus.NO_RUNNING_JOB_FOUND;
 import static com.flink.platform.common.enums.ResponseStatus.USER_HAVE_NO_PERMISSION;
 import static com.flink.platform.common.util.DateUtil.GLOBAL_DATE_TIME_FORMAT;
 import static com.flink.platform.web.entity.response.ResultInfo.failure;
@@ -98,6 +92,7 @@ public class JobFlowRunController {
         LambdaQueryWrapper<JobFlowRun> queryWrapper =
                 new QueryWrapper<JobFlowRun>()
                         .lambda()
+                        .select(JobFlowRun.class, field -> !"flow".equals(field.getProperty()))
                         .eq(JobFlowRun::getUserId, loginUser.getId())
                         .eq(nonNull(id), JobFlowRun::getId, id)
                         .eq(nonNull(status), JobFlowRun::getStatus, status)
@@ -126,39 +121,7 @@ public class JobFlowRunController {
             return failure(FLOW_ALREADY_TERMINATED);
         }
 
-        // Set the status of the workflow to KILLABLE.
-        JobFlowRun newJobFlowRun = new JobFlowRun();
-        newJobFlowRun.setId(jobFlowRun.getId());
-        newJobFlowRun.setStatus(KILLABLE);
-        jobFlowRunService.updateById(newJobFlowRun);
-
-        // Get unfinished jobs and kill them concurrently.
-        List<JobRunInfo> unfinishedJobs =
-                jobRunInfoService.list(
-                        new QueryWrapper<JobRunInfo>()
-                                .lambda()
-                                .eq(JobRunInfo::getFlowRunId, flowRunId)
-                                .eq(JobRunInfo::getUserId, loginUser.getId())
-                                .in(JobRunInfo::getStatus, getNonTerminals()));
-        if (CollectionUtils.isEmpty(unfinishedJobs)) {
-            return failure(NO_RUNNING_JOB_FOUND);
-        }
-
-        boolean isSuccess =
-                unfinishedJobs
-                        .parallelStream()
-                        .map(
-                                jobRun -> {
-                                    try {
-                                        return killJobService.killRemoteJob(jobRun);
-                                    } catch (Exception e) {
-                                        log.error("kill job: {} failed.", jobRun.getId(), e);
-                                        return false;
-                                    }
-                                })
-                        .reduce((bool1, bool2) -> bool1 && bool2)
-                        .orElse(false);
-
+        boolean isSuccess = killJobService.killRemoteFlow(loginUser.getId(), flowRunId);
         return isSuccess ? success(flowRunId) : failure(KILL_FLOW_EXCEPTION_FOUND);
     }
 

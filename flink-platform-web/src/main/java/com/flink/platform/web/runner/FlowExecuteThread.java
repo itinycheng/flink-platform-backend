@@ -1,17 +1,22 @@
 package com.flink.platform.web.runner;
 
 import com.flink.platform.common.enums.ExecutionStatus;
+import com.flink.platform.common.enums.TimeoutStrategy;
 import com.flink.platform.common.model.JobVertex;
 import com.flink.platform.dao.entity.JobFlowDag;
 import com.flink.platform.dao.entity.JobFlowRun;
 import com.flink.platform.dao.service.JobFlowRunService;
+import com.flink.platform.dao.util.JobFlowDagHelper;
 import com.flink.platform.web.common.SpringContext;
 import com.flink.platform.web.config.AppRunner;
 import com.flink.platform.web.config.WorkerConfig;
 import com.flink.platform.web.service.AlertSendingService;
-import com.flink.platform.web.util.JobFlowDagHelper;
+import com.flink.platform.web.service.KillJobService;
 import com.flink.platform.web.util.ThreadUtil;
 import lombok.extern.slf4j.Slf4j;
+import lombok.var;
+
+import javax.annotation.Nonnull;
 
 import java.time.LocalDateTime;
 import java.util.Map;
@@ -40,33 +45,51 @@ public class FlowExecuteThread implements Runnable {
     private final AlertSendingService alertSendingService =
             SpringContext.getBean(AlertSendingService.class);
 
+    private final KillJobService killJobService = SpringContext.getBean(KillJobService.class);
+
     private volatile boolean isRunning = true;
 
-    public FlowExecuteThread(JobFlowRun jobFlowRun, WorkerConfig workerConfig) {
+    public FlowExecuteThread(@Nonnull JobFlowRun jobFlowRun, @Nonnull WorkerConfig workerConfig) {
         this.jobFlowRun = jobFlowRun;
         this.workerConfig = workerConfig;
         this.jobExecService =
-                ThreadUtil.newFixedThreadExecutor(
+                ThreadUtil.newFixedVirtualThreadExecutor(
                         String.format("FlowExecThread-flowRunId_%d", jobFlowRun.getId()),
                         workerConfig.getPerFlowExecThreads());
     }
 
     @Override
     public void run() {
-        // Update status of jobFlowRun.
-        JobFlowRun newJobFlowRun = new JobFlowRun();
+        // Update jobFlowRun.
+        var newJobFlowRun = new JobFlowRun();
         newJobFlowRun.setId(jobFlowRun.getId());
         newJobFlowRun.setStatus(RUNNING);
+        if (jobFlowRun.getStartTime() == null) {
+            var startTime = LocalDateTime.now();
+            jobFlowRun.setStartTime(startTime);
+            newJobFlowRun.setStartTime(startTime);
+        }
         jobFlowRunService.updateById(newJobFlowRun);
+        jobFlowRun.setStatus(RUNNING);
 
         // Process job flow.
-        JobFlowDag flow = jobFlowRun.getFlow();
+        var flow = jobFlowRun.getFlow();
+        flow.setConfig(jobFlowRun.getConfig());
         flow.getBeginVertices().forEach(jobVertex -> execVertex(jobVertex, flow));
 
         // Wait until all vertices are executed.
-        while (isRunning && JobFlowDagHelper.hasUnExecutedVertices(flow)) {
+        var timeout = jobFlowRun.getTimeout();
+        var startTime = jobFlowRun.getStartTime();
+        var timeoutHandled = false;
+        while (isRunning && flow.hasUnExecutedVertices()) {
             if (AppRunner.isStopped()) {
                 return;
+            }
+
+            // handle timeout.
+            if (!timeoutHandled && timeout != null && timeout.isSatisfied(startTime)) {
+                handleTimeout(timeout.getStrategies());
+                timeoutHandled = true;
             }
 
             ThreadUtil.sleep(5000);
@@ -76,6 +99,20 @@ public class FlowExecuteThread implements Runnable {
         CompletableFuture.allOf(runningJobs.values().toArray(new CompletableFuture[0]))
                 .thenAccept(unused -> completeAndNotify(flow))
                 .thenAccept(unused -> jobExecService.shutdownNow());
+    }
+
+    private void handleTimeout(TimeoutStrategy[] strategies) {
+        for (var strategy : strategies) {
+            switch (strategy) {
+                case ALARM:
+                    alertSendingService.sendAlerts(jobFlowRun, "execution timeout");
+                    break;
+                case FAILURE:
+                    killJobService.killRemoteFlow(jobFlowRun.getUserId(), jobFlowRun.getId());
+                    break;
+                default:
+            }
+        }
     }
 
     /** Update status of jobFlow and send notification. */
@@ -121,7 +158,7 @@ public class FlowExecuteThread implements Runnable {
         }
 
         for (JobVertex nextVertex : flow.getNextVertices(jobVertex)) {
-            if (JobFlowDagHelper.isPreconditionSatisfied(nextVertex, flow)) {
+            if (flow.isPreconditionSatisfied(nextVertex)) {
                 execVertex(nextVertex, flow);
             }
         }

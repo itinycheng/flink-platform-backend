@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<configuration debug="true" scan="true" scanPeriod="30 seconds">
+	<property name="log.home" value="logs"/>
+	<property name="log.pattern"
+			  value="%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level [%logger:%line] - %msg%n"/>
+
+	<appender name="console" class="ch.qos.logback.core.ConsoleAppender">
+		<encoder>
+			<pattern>${log.pattern}</pattern>
+		</encoder>
+	</appender>
+
+	<appender name="log" class="ch.qos.logback.core.FileAppender">
+		<file>${log.home}/console.log</file>
+		<append>false</append>
+		<encoder>
+			<pattern>${log.pattern}</pattern>
+		</encoder>
+	</appender>
+	<appender name="rollingFileInfo" class="ch.qos.logback.core.rolling.RollingFileAppender">
+		<file>${log.home}/info.log</file>
+		<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+			<fileNamePattern>${log.home}/%d{yyyy-MM}/info-%d{yyyy-MM-dd}-%i.log.zip
+			</fileNamePattern>
+			<maxHistory>30</maxHistory>
+			<TimeBasedFileNamingAndTriggeringPolicy
+				class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
+				<MaxFileSize>100MB</MaxFileSize>
+			</TimeBasedFileNamingAndTriggeringPolicy>
+		</rollingPolicy>
+		<encoder>
+			<pattern>${log.pattern}</pattern>
+		</encoder>
+	</appender>
+	<appender name="rollingFileWarn" class="ch.qos.logback.core.rolling.RollingFileAppender">
+		<file>${log.home}/warn.log</file>
+		<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+			<fileNamePattern>${log.home}/%d{yyyy-MM}/warn-%d{yyyy-MM-dd}-%i.log.zip
+			</fileNamePattern>
+			<maxHistory>30</maxHistory>
+			<TimeBasedFileNamingAndTriggeringPolicy
+				class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
+				<MaxFileSize>100MB</MaxFileSize>
+			</TimeBasedFileNamingAndTriggeringPolicy>
+		</rollingPolicy>
+		<encoder>
+			<pattern>${log.pattern}</pattern>
+		</encoder>
+	</appender>
+	<appender name="rollingFileError" class="ch.qos.logback.core.rolling.RollingFileAppender">
+		<file>${log.home}/error.log</file>
+		<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+			<fileNamePattern>${log.home}/%d{yyyy-MM}/error-%d{yyyy-MM-dd}-%i.log.zip
+			</fileNamePattern>
+			<maxHistory>30</maxHistory>
+			<TimeBasedFileNamingAndTriggeringPolicy
+				class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
+				<MaxFileSize>100MB</MaxFileSize>
+			</TimeBasedFileNamingAndTriggeringPolicy>
+		</rollingPolicy>
+		<encoder>
+			<pattern>${log.pattern}</pattern>
+			<immediateFlush>true</immediateFlush>
+		</encoder>
+	</appender>
+
+	<logger name="com.flink.platform.dao.mapper" level="info">
+		<appender-ref ref="console"/>
+	</logger>
+
+	<root level="INFO">
+		<appender-ref ref="log"/>
+		<appender-ref ref="console"/>
+		<appender-ref ref="rollingFileInfo"/>
+		<appender-ref ref="rollingFileWarn"/>
+		<appender-ref ref="rollingFileError"/>
+	</root>
+</configuration>

@@ -5,6 +5,8 @@ import com.flink.platform.common.constants.Constant;
 import com.flink.platform.common.graph.DAG;
 import com.flink.platform.common.model.JobEdge;
 import com.flink.platform.common.model.JobVertex;
+import com.flink.platform.common.util.JsonUtil;
+import com.flink.platform.dao.entity.ExecutionConfig;
 import com.flink.platform.dao.entity.JobFlow;
 import com.flink.platform.dao.entity.JobFlowRun;
 import com.flink.platform.dao.service.JobFlowRunService;
@@ -14,14 +16,15 @@ import com.flink.platform.web.service.AlertSendingService;
 import com.flink.platform.web.service.JobFlowScheduleService;
 import lombok.extern.slf4j.Slf4j;
 import org.quartz.Job;
+import org.quartz.JobDataMap;
 import org.quartz.JobDetail;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobKey;
 
-import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import static com.flink.platform.common.constants.JobConstant.CONFIG;
 import static com.flink.platform.common.enums.ExecutionStatus.SUBMITTED;
 import static com.flink.platform.common.enums.ExecutionStatus.getNonTerminals;
 import static com.flink.platform.common.enums.JobFlowStatus.ONLINE;
@@ -49,6 +52,12 @@ public class JobFlowRunner implements Job {
         JobDetail detail = context.getJobDetail();
         JobKey key = detail.getKey();
         String code = key.getName();
+        JobDataMap dataMap = detail.getJobDataMap();
+        ExecutionConfig executionConfig = null;
+        if (dataMap.containsKey(CONFIG)) {
+            String config = dataMap.getString(CONFIG);
+            executionConfig = JsonUtil.toBean(config, ExecutionConfig.class);
+        }
 
         synchronized (getProcessLock(code)) {
             // Get job flow info.
@@ -102,9 +111,10 @@ public class JobFlowRunner implements Job {
             jobFlowRun.setHost(Constant.HOST_IP);
             jobFlowRun.setCronExpr(jobFlow.getCronExpr());
             jobFlowRun.setPriority(jobFlow.getPriority());
+            jobFlowRun.setConfig(executionConfig);
             jobFlowRun.setTags(jobFlow.getTags());
             jobFlowRun.setAlerts(jobFlow.getAlerts());
-            jobFlowRun.setStartTime(LocalDateTime.now());
+            jobFlowRun.setTimeout(jobFlow.getTimeout());
             jobFlowRun.setStatus(SUBMITTED);
             jobFlowRunService.save(jobFlowRun);
 

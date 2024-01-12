@@ -6,7 +6,6 @@ import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.baomidou.mybatisplus.extension.handlers.JacksonTypeHandler;
 import com.fasterxml.jackson.annotation.JsonFormat;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.flink.platform.common.enums.ExecutionStatus;
 import com.flink.platform.dao.entity.alert.AlertConfigList;
 import lombok.AccessLevel;
@@ -47,10 +46,16 @@ public class JobFlowRun {
     private Integer priority;
 
     @TableField(typeHandler = JacksonTypeHandler.class)
+    private ExecutionConfig config;
+
+    @TableField(typeHandler = JacksonTypeHandler.class)
     private StringArrayList tags;
 
     @TableField(typeHandler = JacksonTypeHandler.class)
     private AlertConfigList alerts;
+
+    @TableField(typeHandler = JacksonTypeHandler.class)
+    private Timeout timeout;
 
     private ExecutionStatus status;
 
@@ -63,11 +68,6 @@ public class JobFlowRun {
     @Setter(AccessLevel.NONE)
     @JsonFormat(pattern = GLOBAL_DATE_TIME_FORMAT, timezone = GLOBAL_TIMEZONE)
     private LocalDateTime createTime;
-
-    /** Only for temp storage of alert message. */
-    @JsonIgnore
-    @TableField(exist = false)
-    private transient String alertMsg = EMPTY;
 
     public String getDuration() {
         if (startTime == null || endTime == null) {

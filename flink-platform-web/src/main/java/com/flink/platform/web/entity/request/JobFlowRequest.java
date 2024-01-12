@@ -14,10 +14,11 @@ import java.util.Date;
 import java.util.List;
 
 /** Job flow request info. */
+@Getter
 @NoArgsConstructor
 public class JobFlowRequest {
 
-    @Getter @Delegate private final JobFlow jobFlow = new JobFlow();
+    @Delegate private final JobFlow jobFlow = new JobFlow();
 
     public String validateOnCreate() {
         String msg = verifyName();

@@ -43,7 +43,7 @@
 	</appenders>
 
 	<loggers>
-		<logger name="org.apache.hadoop" level="info"/>
+		<logger name="com.flink.platform.dao.mapper" level="info"/>
 		<Root level="info">
 			<AppenderRef ref="log"/>
 			<AppenderRef ref="Console"/>

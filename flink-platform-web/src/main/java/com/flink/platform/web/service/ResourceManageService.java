@@ -2,9 +2,10 @@ package com.flink.platform.web.service;
 
 import com.flink.platform.dao.entity.Resource;
 import com.flink.platform.dao.service.ResourceService;
-import com.flink.platform.web.util.ResourceUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
+import static com.flink.platform.web.util.ResourceUtil.getFullStorageFilePath;
 
 /** Resource manage service. */
 @Service
@@ -12,7 +13,7 @@ public class ResourceManageService {
 
     @Autowired private ResourceService resourceService;
 
-    @Autowired private HdfsService hdfsService;
+    @Autowired private StorageService storageService;
 
     public boolean save(Resource entity) throws Exception {
         switch (entity.getType()) {
@@ -25,18 +26,17 @@ public class ResourceManageService {
                     }
                     parentPath = parentResource.getFullName();
                 }
-                String hdfsAbsolutePath =
-                        ResourceUtil.getFullHdfsFilePath(
-                                entity.getUserId(), parentPath, entity.getName());
-                if (!hdfsService.exists(hdfsAbsolutePath)) {
-                    hdfsService.mkDirs(hdfsAbsolutePath);
-                    entity.setFullName(hdfsAbsolutePath);
+                String absolutePath =
+                        getFullStorageFilePath(entity.getUserId(), parentPath, entity.getName());
+                if (!storageService.exists(absolutePath)) {
+                    storageService.mkDir(absolutePath);
+                    entity.setFullName(absolutePath);
                     return resourceService.save(entity);
                 }
                 break;
             case JAR:
             case SHELL:
-                if (hdfsService.exists(entity.getFullName())) {
+                if (storageService.exists(entity.getFullName())) {
                     return resourceService.save(entity);
                 }
                 break;
@@ -53,8 +53,8 @@ public class ResourceManageService {
             return false;
         }
 
-        if (hdfsService.exists(resource.getFullName())) {
-            hdfsService.delete(resource.getFullName(), false);
+        if (storageService.exists(resource.getFullName())) {
+            storageService.delete(resource.getFullName(), false);
         }
         return resourceService.removeById(resource.getId());
     }

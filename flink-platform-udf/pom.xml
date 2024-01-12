@@ -15,6 +15,14 @@
 	<name>flink-platform-udf</name>
 	<packaging>jar</packaging>
 
+	<properties>
+		<maven.compiler.source>8</maven.compiler.source>
+		<maven.compiler.target>8</maven.compiler.target>
+
+		<flink.version>1.12.0</flink.version>
+		<flink.scope>provided</flink.scope>
+	</properties>
+
 	<dependencies>
 		<dependency>
 			<groupId>com.flink.platform</groupId>
@@ -28,6 +36,8 @@
 		<dependency>
 			<groupId>org.apache.flink</groupId>
 			<artifactId>flink-table-common</artifactId>
+			<version>${flink.version}</version>
+			<scope>${flink.scope}</scope>
 		</dependency>
 	</dependencies>
 </project>

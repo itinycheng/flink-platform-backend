@@ -6,7 +6,14 @@ import com.flink.platform.dao.entity.JobRunInfo;
 import com.flink.platform.dao.mapper.JobRunInfoMapper;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 /** job run info. */
 @Service
 @DS("master_platform")
-public class JobRunInfoService extends ServiceImpl<JobRunInfoMapper, JobRunInfo> {}
+public class JobRunInfoService extends ServiceImpl<JobRunInfoMapper, JobRunInfo> {
+
+    public List<JobRunInfo> listLastWithoutLargeFields(Long flowRunId, List<Long> jobIds) {
+        return this.baseMapper.lastJobRunList(flowRunId, jobIds);
+    }
+}

@@ -21,10 +21,13 @@ import java.io.Serializable;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Stream;
 
 import static com.flink.platform.common.constants.Constant.EMPTY;
 import static com.flink.platform.common.util.DateUtil.GLOBAL_DATE_TIME_FORMAT;
 import static com.flink.platform.common.util.DateUtil.GLOBAL_TIMEZONE;
+import static java.util.stream.Collectors.toSet;
 import static org.apache.commons.lang3.StringUtils.defaultString;
 
 /** Job run info. */
@@ -33,7 +36,8 @@ import static org.apache.commons.lang3.StringUtils.defaultString;
 @TableName(value = "t_job_run", autoResultMap = true)
 public class JobRunInfo implements Serializable {
 
-    private static final long serialVersionUID = 1L;
+    public static final Set<String> LARGE_FIELDS =
+            Stream.of("backInfo", "config", "variables", "subject").collect(toSet());
 
     @TableId(value = "id", type = IdType.AUTO)
     private Long id;
@@ -94,8 +98,12 @@ public class JobRunInfo implements Serializable {
             return EMPTY;
         }
 
-        Duration duration = Duration.between(submitTime, stopTime);
-        return DurationFormatUtils.formatDuration(duration.toMillis(), "HH:mm:ss");
+        try {
+            Duration duration = Duration.between(submitTime, stopTime);
+            return DurationFormatUtils.formatDuration(duration.toMillis(), "HH:mm:ss");
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     /**

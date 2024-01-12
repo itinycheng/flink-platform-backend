@@ -56,6 +56,9 @@ public class JobFlow {
     @TableField(typeHandler = JacksonTypeHandler.class)
     private AlertConfigList alerts;
 
+    @TableField(typeHandler = JacksonTypeHandler.class)
+    private Timeout timeout;
+
     /** status. */
     private JobFlowStatus status;
 

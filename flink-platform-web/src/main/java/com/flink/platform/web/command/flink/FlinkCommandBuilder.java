@@ -11,7 +11,7 @@ import com.flink.platform.web.command.JobCommand;
 import com.flink.platform.web.command.SqlContextHelper;
 import com.flink.platform.web.config.FlinkConfig;
 import com.flink.platform.web.external.YarnClientService;
-import com.flink.platform.web.service.HdfsService;
+import com.flink.platform.web.service.StorageService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.ListUtils;
 import org.apache.hadoop.fs.Path;
@@ -52,7 +52,7 @@ public abstract class FlinkCommandBuilder implements CommandBuilder {
     @Resource(name = "sqlContextHelper")
     private SqlContextHelper sqlContextHelper;
 
-    @Resource private HdfsService hdfsService;
+    @Resource private StorageService storageService;
 
     @Resource private ResourceService resourceService;
 
@@ -174,7 +174,7 @@ public abstract class FlinkCommandBuilder implements CommandBuilder {
 
     private void copyToLocalIfChanged(String hdfsFile, String localFile) {
         try {
-            hdfsService.copyFileToLocalIfChanged(new Path(hdfsFile), new Path(localFile));
+            storageService.copyFileToLocalIfChanged(hdfsFile, localFile);
         } catch (Exception e) {
             throw new RuntimeException(
                     String.format("Copy %s from hdfs to local disk failed", hdfsFile), e);

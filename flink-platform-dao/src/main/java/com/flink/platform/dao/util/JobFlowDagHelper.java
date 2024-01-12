@@ -1,4 +1,4 @@
-package com.flink.platform.web.util;
+package com.flink.platform.dao.util;
 
 import com.flink.platform.common.enums.ExecutionCondition;
 import com.flink.platform.common.enums.ExecutionStatus;
@@ -30,7 +30,6 @@ import static java.util.stream.Collectors.toSet;
 /** Dag helper for job flow. */
 public class JobFlowDagHelper {
 
-    // ! JobFlowDag shouldn't have unfinished/unexecuted jobs.
     @Nonnull
     public static ExecutionStatus getFinalStatus(DAG<Long, JobVertex, JobEdge> dag) {
         Set<ExecutionStatus> statusList =

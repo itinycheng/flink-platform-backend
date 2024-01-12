@@ -11,9 +11,10 @@ import com.flink.platform.dao.entity.User;
 import com.flink.platform.dao.service.ResourceService;
 import com.flink.platform.web.entity.request.ResourceRequest;
 import com.flink.platform.web.entity.response.ResultInfo;
-import com.flink.platform.web.service.HdfsService;
 import com.flink.platform.web.service.ResourceManageService;
+import com.flink.platform.web.service.StorageService;
 import com.flink.platform.web.util.ResourceUtil;
+import lombok.var;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.fs.Path;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,6 +30,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
@@ -45,7 +47,7 @@ public class ResourceController {
 
     @Autowired private ResourceService resourceService;
 
-    @Autowired private HdfsService hdfsService;
+    @Autowired private StorageService storageService;
 
     @PostMapping(value = "/create")
     public ResultInfo<Long> create(
@@ -81,6 +83,14 @@ public class ResourceController {
     public ResultInfo<Resource> get(@PathVariable Long resourceId) {
         Resource resource = resourceService.getById(resourceId);
         return ResultInfo.success(resource);
+    }
+
+    @GetMapping(value = "/getWithParents/{resourceId}")
+    public ResultInfo<List<Resource>> getWithParents(@PathVariable Long resourceId) {
+        var resource = resourceService.getById(resourceId);
+        var parents = recursiveParents(resource.getPid());
+        parents.add(resource);
+        return ResultInfo.success(parents);
     }
 
     @GetMapping(value = "/delete/{resourceId}")
@@ -140,10 +150,10 @@ public class ResourceController {
             }
             localFileName = ResourceUtil.randomLocalTmpFile();
             String fullHdfsFileName =
-                    ResourceUtil.getFullHdfsFilePath(
+                    ResourceUtil.getFullStorageFilePath(
                             loginUser.getId(), parentDir, file.getOriginalFilename());
             ResourceUtil.copyToLocal(file, localFileName);
-            hdfsService.copyFromLocal(localFileName, fullHdfsFileName, true, true);
+            storageService.copyFromLocal(localFileName, fullHdfsFileName, true, true);
 
             Resource resource = new Resource();
             resource.setFullName(fullHdfsFileName);
@@ -167,7 +177,18 @@ public class ResourceController {
             return failure(ERROR_PARAMETER, "file path is null");
         }
 
-        hdfsService.delete(resourceRequest.getFullName(), false);
+        storageService.delete(resourceRequest.getFullName(), false);
         return success(true);
+    }
+
+    private List<Resource> recursiveParents(Long pId) {
+        if (pId == null || pId < 0) {
+            return new ArrayList<>();
+        }
+
+        var resource = resourceService.getById(pId);
+        var parents = recursiveParents(resource.getPid());
+        parents.add(resource);
+        return parents;
     }
 }

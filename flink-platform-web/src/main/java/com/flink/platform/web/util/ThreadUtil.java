@@ -1,6 +1,7 @@
 package com.flink.platform.web.util;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import lombok.var;
 
 import java.time.Duration;
 import java.util.concurrent.Executors;
@@ -11,13 +12,19 @@ import java.util.concurrent.ThreadPoolExecutor;
 /** Thread utils. */
 public class ThreadUtil {
 
-    private static final int MIN_SLEEP_TIME_MILLIS = 2000;
+    public static final int MIN_SLEEP_TIME_MILLIS = 3000;
 
-    private static final int MAX_SLEEP_TIME_MILLIS = 60_000;
+    public static final int MAX_SLEEP_TIME_MILLIS = 60_000;
 
     public static ThreadPoolExecutor newFixedThreadExecutor(String namePrefix, int threadsNum) {
         ThreadFactory threadFactory = namedThreadFactory(namePrefix, false);
         return (ThreadPoolExecutor) Executors.newFixedThreadPool(threadsNum, threadFactory);
+    }
+
+    public static ThreadPoolExecutor newFixedVirtualThreadExecutor(
+            String namePrefix, int threadsNum) {
+        var factory = namedThreadFactory(namePrefix + "-", false);
+        return (ThreadPoolExecutor) Executors.newFixedThreadPool(threadsNum, factory);
     }
 
     public static ThreadPoolExecutor newDaemonFixedThreadExecutor(

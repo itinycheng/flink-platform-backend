@@ -8,10 +8,11 @@ import lombok.experimental.Delegate;
 import static com.flink.platform.common.util.Preconditions.requireNotNull;
 
 /** job param request info. */
+@Getter
 @NoArgsConstructor
 public class JobParamRequest {
 
-    @Getter @Delegate private final JobParam jobParam = new JobParam();
+    @Delegate private final JobParam jobParam = new JobParam();
 
     public String validateOnCreate() {
         String msg = verifyName();

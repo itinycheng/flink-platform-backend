@@ -12,10 +12,11 @@ import static com.flink.platform.common.util.Preconditions.requireNotNull;
 
 /** user request. */
 @Data
+@Getter
 @NoArgsConstructor
 public class ReactiveRequest {
 
-    @Getter @Delegate private final JobInfo jobInfo = new JobInfo();
+    @Delegate private final JobInfo jobInfo = new JobInfo();
 
     private String[] envProps;
 

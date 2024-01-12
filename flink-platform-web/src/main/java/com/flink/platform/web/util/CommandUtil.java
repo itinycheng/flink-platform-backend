@@ -17,8 +17,8 @@ import java.util.function.BiConsumer;
 
 import static com.flink.platform.common.constants.Constant.LINE_SEPARATOR;
 import static com.flink.platform.common.constants.Constant.SPACE;
-import static com.flink.platform.web.util.CollectLogThread.CmdOutType.ERR;
-import static com.flink.platform.web.util.CollectLogThread.CmdOutType.STD;
+import static com.flink.platform.web.util.CollectLogRunnable.CmdOutType.ERR;
+import static com.flink.platform.web.util.CollectLogRunnable.CmdOutType.STD;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 /**
@@ -72,16 +72,16 @@ public class CommandUtil {
             String command,
             String[] envProps,
             long timeoutMills,
-            BiConsumer<CollectLogThread.CmdOutType, String> logConsumer)
+            BiConsumer<CollectLogRunnable.CmdOutType, String> logConsumer)
             throws IOException, InterruptedException {
         log.info("Exec command: {}, env properties: {}", command, envProps);
         Process process = Runtime.getRuntime().exec(command, envProps);
-        Integer processId = getProcessId(process);
+        Long processId = getProcessId(process);
 
         try (InputStream stdStream = process.getInputStream();
                 InputStream errStream = process.getErrorStream()) {
-            CollectLogThread stdThread = new CollectLogThread(stdStream, STD, logConsumer);
-            CollectLogThread errThread = new CollectLogThread(errStream, ERR, logConsumer);
+            Thread stdThread = new Thread(new CollectLogRunnable(stdStream, STD, logConsumer));
+            Thread errThread = new Thread(new CollectLogRunnable(errStream, ERR, logConsumer));
 
             try {
                 stdThread.start();
@@ -113,7 +113,7 @@ public class CommandUtil {
         }
     }
 
-    public static void forceKill(Integer processId, String[] envProps) {
+    public static void forceKill(Long processId) {
         if (processId == null || processId <= 0) {
             log.warn("kill process failed, invalid pid: {}", processId);
             return;
@@ -122,10 +122,10 @@ public class CommandUtil {
         Process process = null;
         try {
             String command = String.format("kill -9 %d", processId);
-            process = Runtime.getRuntime().exec(command, envProps);
+            process = Runtime.getRuntime().exec(command, new String[0]);
             process.waitFor();
         } catch (Exception e) {
-            log.error("force kill process {} failed, envs: {}", processId, envProps);
+            log.error("force kill process {} failed, envs: {}", processId, new String[0]);
         } finally {
             if (process != null) {
                 process.destroy();
@@ -134,7 +134,7 @@ public class CommandUtil {
     }
 
     /** Get process id. */
-    public static Integer getProcessId(Process process) {
+    public static Long getProcessId(Process process) {
         try {
             Field f = process.getClass().getDeclaredField(Constant.PID);
             f.setAccessible(true);
@@ -147,11 +147,15 @@ public class CommandUtil {
                 processId = f.getInt(process);
             }
 
-            return processId;
+            return (long) processId;
         } catch (Throwable e) {
             log.error(e.getMessage(), e);
             return null;
         }
+    }
+
+    public static Long[] getSubprocessIds(Process process) {
+        return new Long[0];
     }
 
     public static String commandDriver() {

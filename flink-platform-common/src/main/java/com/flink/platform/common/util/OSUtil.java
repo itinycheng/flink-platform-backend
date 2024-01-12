@@ -56,9 +56,9 @@ public class OSUtil {
                 }
             }
 
-            return noLoopbackAddrs.size() > 0
+            return !noLoopbackAddrs.isEmpty()
                     ? noLoopbackAddrs.get(0)
-                    : (siteLocalAddrs.size() > 0 ? siteLocalAddrs.get(0) : null);
+                    : (!siteLocalAddrs.isEmpty() ? siteLocalAddrs.get(0) : null);
         } catch (Exception e) {
             throw new RuntimeException("Get ip address failed", e);
         }

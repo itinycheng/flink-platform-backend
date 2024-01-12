@@ -1,7 +1,9 @@
 package com.flink.platform.web.service;
 
+import com.flink.platform.common.constants.Constant;
 import com.flink.platform.dao.entity.JobInfo;
 import com.flink.platform.dao.entity.JobRunInfo;
+import com.flink.platform.dao.entity.Worker;
 import com.flink.platform.dao.service.JobRunInfoService;
 import com.flink.platform.web.enums.Placeholder;
 import com.flink.platform.web.enums.Variable;
@@ -22,8 +24,16 @@ public class JobRunExtraService {
 
     @Autowired private JobRunInfoService jobRunService;
 
+    @Autowired private WorkerApplyService workerApplyService;
+
+    public Long createJobRun(JobInfo jobInfo, Long flowRunId) {
+        Worker worker = workerApplyService.randomWorker(jobInfo.getRouteUrl());
+        String host = worker != null ? worker.getIp() : Constant.HOST_IP;
+        return _parseVarsAndSave(jobInfo, flowRunId, host);
+    }
+
     @Transactional
-    public JobRunInfo parseVarsAndSave(JobInfo jobInfo, Long flowRunId, String host) {
+    public Long _parseVarsAndSave(JobInfo jobInfo, Long flowRunId, String host) {
         // Save jobRun, generate an id.
         JobRunInfo jobRun = createFrom(jobInfo, flowRunId, host);
         jobRunService.save(jobRun);
@@ -35,10 +45,7 @@ public class JobRunExtraService {
         newJobRun.setVariables(variableMap);
         newJobRun.setSubject(plainSubject);
         jobRunService.updateById(newJobRun);
-        // Reset variables/subject in memory.
-        jobRun.setVariables(variableMap);
-        jobRun.setSubject(plainSubject);
-        return jobRun;
+        return jobRun.getId();
     }
 
     public JobRunInfo createFrom(JobInfo jobInfo, Long flowRunId, String host) {
@@ -60,7 +67,7 @@ public class JobRunExtraService {
         return jobRun;
     }
 
-    public static Map<String, Object> parseVariables(JobRunInfo jobRun) {
+    private Map<String, Object> parseVariables(JobRunInfo jobRun) {
         Map<String, Object> variableMap = new HashMap<>();
         Arrays.stream(Placeholder.values())
                 .filter(placeholder -> jobRun.getSubject().contains(placeholder.wildcard))

@@ -9,10 +9,11 @@ import lombok.experimental.Delegate;
 import java.util.List;
 
 /** Job request info. */
+@Getter
 @NoArgsConstructor
 public class JobRunRequest {
 
-    @Getter @Delegate private final JobRunInfo jobInfo = new JobRunInfo();
+    @Delegate private final JobRunInfo jobInfo = new JobRunInfo();
 
-    @Getter @Setter private List<Long> jobIds;
+    @Setter private List<Long> jobIds;
 }

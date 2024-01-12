@@ -3,13 +3,11 @@ package com.flink.platform.web.command.shell;
 import com.flink.platform.common.enums.ExecutionStatus;
 import com.flink.platform.dao.entity.result.ShellCallback;
 import com.flink.platform.web.command.AbstractTask;
-import com.flink.platform.web.util.CollectLogThread;
+import com.flink.platform.web.util.CollectLogRunnable;
 import com.flink.platform.web.util.CommandUtil;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
-
-import javax.annotation.Nullable;
 
 import java.io.InputStream;
 import java.util.function.BiConsumer;
@@ -19,9 +17,9 @@ import static com.flink.platform.common.enums.ExecutionStatus.FAILURE;
 import static com.flink.platform.common.enums.ExecutionStatus.KILLABLE;
 import static com.flink.platform.common.enums.ExecutionStatus.KILLED;
 import static com.flink.platform.common.enums.ExecutionStatus.SUCCESS;
-import static com.flink.platform.web.util.CollectLogThread.CmdOutType;
-import static com.flink.platform.web.util.CollectLogThread.CmdOutType.ERR;
-import static com.flink.platform.web.util.CollectLogThread.CmdOutType.STD;
+import static com.flink.platform.web.util.CollectLogRunnable.CmdOutType;
+import static com.flink.platform.web.util.CollectLogRunnable.CmdOutType.ERR;
+import static com.flink.platform.web.util.CollectLogRunnable.CmdOutType.STD;
 import static com.flink.platform.web.util.CommandUtil.EXIT_CODE_FAILURE;
 import static com.flink.platform.web.util.CommandUtil.EXIT_CODE_KILLED;
 import static com.flink.platform.web.util.CommandUtil.EXIT_CODE_SUCCESS;
@@ -43,7 +41,9 @@ public class ShellTask extends AbstractTask {
 
     protected Process process;
 
-    protected Integer processId;
+    protected Long processId;
+
+    protected Long[] subprocessIds;
 
     protected boolean exited;
 
@@ -53,7 +53,7 @@ public class ShellTask extends AbstractTask {
 
     protected final StringBuffer errMsg = new StringBuffer();
 
-    public ShellTask(long id, String command, @Nullable String[] envs, long timeoutMills) {
+    public ShellTask(long id, String command, String[] envs, long timeoutMills) {
         super(id);
         this.command = command;
         this.envs = envs;
@@ -62,7 +62,7 @@ public class ShellTask extends AbstractTask {
     }
 
     /** Only for kill command process. */
-    public ShellTask(long id, Integer processId) {
+    public ShellTask(long id, Long processId) {
         super(id);
         this.processId = processId;
     }
@@ -74,8 +74,8 @@ public class ShellTask extends AbstractTask {
         this.processId = CommandUtil.getProcessId(process);
         try (InputStream stdStream = process.getInputStream();
                 InputStream errStream = process.getErrorStream()) {
-            CollectLogThread stdThread = new CollectLogThread(stdStream, STD, logConsumer);
-            CollectLogThread errThread = new CollectLogThread(errStream, ERR, logConsumer);
+            Thread stdThread = new Thread(new CollectLogRunnable(stdStream, STD, logConsumer));
+            Thread errThread = new Thread(new CollectLogRunnable(errStream, ERR, logConsumer));
 
             try {
                 stdThread.start();
@@ -86,6 +86,7 @@ public class ShellTask extends AbstractTask {
 
             this.exited = process.waitFor(timeoutMills, MILLISECONDS);
             this.exitValue = exited ? process.exitValue() : EXIT_CODE_FAILURE;
+            this.subprocessIds = CommandUtil.getSubprocessIds(process);
 
             try {
                 stdThread.join(2000);
@@ -107,9 +108,14 @@ public class ShellTask extends AbstractTask {
 
     @Override
     public void cancel() {
-        Integer processId = getProcessId();
         if (processId != null) {
-            CommandUtil.forceKill(processId, envs);
+            CommandUtil.forceKill(processId);
+        }
+
+        if (subprocessIds != null) {
+            for (Long subprocessId : subprocessIds) {
+                CommandUtil.forceKill(subprocessId);
+            }
         }
     }
 

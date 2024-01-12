@@ -1,5 +1,7 @@
 package com.flink.platform.common.enums;
 
+import lombok.Getter;
+
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -37,7 +39,7 @@ public enum ExecutionStatus {
                                     executionStatus.terminalState == TerminalState.NON_TERMINAL)
                     .collect(Collectors.toList());
 
-    private final int code;
+    @Getter private final int code;
 
     private final TerminalState terminalState;
 
@@ -48,10 +50,6 @@ public enum ExecutionStatus {
 
     public boolean isTerminalState() {
         return terminalState == TerminalState.TERMINAL;
-    }
-
-    public int getCode() {
-        return code;
     }
 
     public static boolean isStopFlowState(ExecutionStatus status) {

@@ -1,5 +1,6 @@
 package com.flink.platform.web.util;
 
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.BufferedReader;
@@ -11,9 +12,11 @@ import java.util.function.BiConsumer;
 
 /** Collect exec command log. */
 @Slf4j
-public class CollectLogThread extends Thread {
+public class CollectLogRunnable implements Runnable {
 
     private static final AtomicInteger COUNTER = new AtomicInteger(0);
+
+    @Getter private final String name;
 
     private final InputStream inputStream;
 
@@ -21,11 +24,11 @@ public class CollectLogThread extends Thread {
 
     private final BiConsumer<CmdOutType, String> consumer;
 
-    public CollectLogThread(
+    public CollectLogRunnable(
             InputStream inputStream,
             CmdOutType inputType,
             BiConsumer<CmdOutType, String> consumer) {
-        super("collect-stream-log-" + COUNTER.incrementAndGet());
+        this.name = "collect-stream-log-" + COUNTER.incrementAndGet();
         this.inputStream = inputStream;
         this.inputType = inputType;
         this.consumer = consumer;

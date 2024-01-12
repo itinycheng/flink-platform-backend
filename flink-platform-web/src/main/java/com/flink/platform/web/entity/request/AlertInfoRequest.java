@@ -8,10 +8,11 @@ import lombok.experimental.Delegate;
 import static com.flink.platform.common.util.Preconditions.requireNotNull;
 
 /** Alert request info. */
+@Getter
 @NoArgsConstructor
 public class AlertInfoRequest {
 
-    @Getter @Delegate private final AlertInfo alertInfo = new AlertInfo();
+    @Delegate private final AlertInfo alertInfo = new AlertInfo();
 
     public String validateOnCreate() {
         String msg = verifyName();

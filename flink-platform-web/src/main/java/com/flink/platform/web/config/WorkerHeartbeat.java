@@ -110,11 +110,7 @@ public class WorkerHeartbeat {
                                                             .in(
                                                                     JobFlowRun::getStatus,
                                                                     getNonTerminals()))
-                                            .forEach(
-                                                    jobFlowRun ->
-                                                            jobFlowScheduleService
-                                                                    .rebuildAndSchedule(
-                                                                            jobFlowRun)));
+                                            .forEach(jobFlowScheduleService::registerToScheduler));
         }
     }
 
