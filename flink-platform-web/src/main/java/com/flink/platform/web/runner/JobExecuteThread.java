@@ -142,7 +142,10 @@ public class JobExecuteThread implements Callable<JobResponse> {
                 }
             }
 
-            log.warn("Execute jobRun: {} and wait for complete failed, retry attempt: {}.", jobRunId, retryAttempt);
+            log.warn(
+                    "Execute jobRun: {} and wait for complete failed, retry attempt: {}.",
+                    jobRunId,
+                    retryAttempt);
 
             // sleep and retry if exception found or status isn't success.
             if (retryAttempt < retryTimes) {
