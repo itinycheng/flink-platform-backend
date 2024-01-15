@@ -25,7 +25,6 @@ import com.flink.platform.web.config.WorkerConfig;
 import com.flink.platform.web.grpc.JobProcessGrpcClient;
 import com.flink.platform.web.monitor.StatusInfo;
 import com.flink.platform.web.service.JobRunExtraService;
-import com.flink.platform.web.util.CollectionUtil;
 import com.flink.platform.web.util.ThreadUtil;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
@@ -38,9 +37,7 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
-import java.util.Set;
 import java.util.concurrent.Callable;
-import java.util.stream.Stream;
 
 import static com.flink.platform.common.enums.ExecutionMode.STREAMING;
 import static com.flink.platform.common.enums.ExecutionStatus.CREATED;
@@ -54,14 +51,10 @@ import static com.flink.platform.common.enums.ExecutionStatus.SUCCESS;
 import static com.flink.platform.grpc.JobGrpcServiceGrpc.JobGrpcServiceBlockingStub;
 import static com.flink.platform.web.util.ThreadUtil.MIN_SLEEP_TIME_MILLIS;
 import static java.util.Objects.nonNull;
-import static java.util.stream.Collectors.toSet;
 
 /** Execute job in a separate thread. */
 @Slf4j
 public class JobExecuteThread implements Callable<JobResponse> {
-
-    private static final Set<ExecutionStatus> NO_RETRY_STATUS =
-            Stream.of(SUCCESS, KILLED).collect(toSet());
 
     private final Long flowRunId;
 
@@ -122,9 +115,16 @@ public class JobExecuteThread implements Callable<JobResponse> {
         }
 
         // 3. check and execute job.
+        boolean flowRunStopped = false;
         while (AppRunner.isRunning() && ++retryAttempt <= retryTimes) {
             try {
-                if (CollectionUtil.contains(NO_RETRY_STATUS, jobRunStatus)) {
+                if (SUCCESS.equals(jobRunStatus)) {
+                    break;
+                }
+
+                flowRunStopped = isFlowRunStopped();
+                if (flowRunStopped) {
+                    jobRunStatus = KILLED;
                     break;
                 }
 
@@ -142,10 +142,7 @@ public class JobExecuteThread implements Callable<JobResponse> {
                 }
             }
 
-            log.warn(
-                    "Execute jobRun: {} and wait for complete failed, retry attempt: {}.",
-                    jobRunId,
-                    retryAttempt);
+            log.warn("Execute jobRun: {} and wait for complete failed, retry attempt: {}.", jobRunId, retryAttempt);
 
             // sleep and retry if exception found or status isn't success.
             if (retryAttempt < retryTimes) {
@@ -154,7 +151,7 @@ public class JobExecuteThread implements Callable<JobResponse> {
         }
 
         ExecutionStatus finalStatus = null;
-        if (retryAttempt > retryTimes || CollectionUtil.contains(NO_RETRY_STATUS, jobRunStatus)) {
+        if (flowRunStopped || retryAttempt > retryTimes || SUCCESS.equals(jobRunStatus)) {
             finalStatus = jobRunStatus;
         }
         return new JobResponse(jobId, jobRunId, finalStatus);
@@ -163,14 +160,6 @@ public class JobExecuteThread implements Callable<JobResponse> {
     public void callOnce() {
         JobRunInfo jobRun = null;
         try {
-            // Check whether workflow status is terminated or in KILLABLE status.
-
-            if (isFlowRunStopped()) {
-                log.warn("JobFlowRun: {} is stopping, cannot submit job: {}", flowRunId, jobId);
-                jobRunStatus = KILLED;
-                return;
-            }
-
             // Get job info, return if not found.
             JobInfo jobInfo =
                     jobInfoService.getOne(
