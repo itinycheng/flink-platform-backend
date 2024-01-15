@@ -1,17 +1,5 @@
 storage:
-  type: hdfs
-  username: admin
-  storageBasePath: hdfs:///flink-platform/
+  type: local
+  username: admin # unused in local storage.
+  storageBasePath: flink-platform
   localBasePath: data_dir
-  properties:
-    fs.hdfs.impl: org.apache.hadoop.hdfs.DistributedFileSystem
-    fs.defaultFS: hdfs://nameservice1
-    ha.zookeeper.quorum: 0.0.0.0:2181,0.0.0.0:2181,0.0.0.0:2181
-    dfs.client.failover.proxy.provider.nameservice1: org.apache.hadoop.hdfs.server.namenode.ha.ConfiguredFailoverProxyProvider
-    dfs.ha.automatic-failover.enabled.nameservice1: true
-    dfs.nameservices: nameservice1
-    dfs.ha.namenodes.nameservice1: namenode39,namenode127
-    dfs.namenode.rpc-address.nameservice1.namenode39: 0.0.0.0:8020
-    dfs.namenode.rpc-address.nameservice1.namenode127: 0.0.0.0:8020
-    dfs.namenode.servicerpc-address.nameservice1.namenode39: 0.0.0.0:8022
-    dfs.namenode.servicerpc-address.nameservice1.namenode127: 0.0.0.0:8022

@@ -23,7 +23,7 @@ spring:
     overwrite-existing-jobs: true
     startup-delay: 5s
     jdbc:
-      initialize-schema: never
+      initialize-schema: always
     properties:
       org:
         quartz:
