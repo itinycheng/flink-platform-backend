@@ -328,6 +328,7 @@ CREATE TABLE `t_job_flow_run` (
   `flow` text NOT NULL,
   `host` varchar(255) NOT NULL,
   `priority` tinyint(2) DEFAULT NULL,
+  `config` varchar(255) DEFAULT NULL,
   `tags` VARCHAR(255) DEFAULT NULL,
   `alerts` varchar(255) DEFAULT NULL,
   `timeout` varchar(255) DEFAULT NULL,
@@ -364,7 +365,8 @@ CREATE TABLE `t_job_run` (
   `stop_time` datetime DEFAULT NULL COMMENT 'stop time',
   `create_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT 'create time',
   PRIMARY KEY (`id`),
-  KEY `t_job_run_create_time_idx` (`create_time`) USING BTREE
+  KEY `t_job_run_create_time_idx` (`create_time`) USING BTREE,
+  KEY `t_job_run_flow_run_id_idx` (`flow_run_id`) USING BTREE
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COMMENT='job run info';
 
 -- ----------------------------
@@ -468,7 +470,7 @@ CREATE TABLE `t_tag` (
 -- Records of t_user
 -- ----------------------------
 BEGIN;
-INSERT INTO `t_user` VALUES (1, 'admin', '111111', 'ADMIN', 'admin@email.com', NULL, now(), now());
+INSERT INTO `t_user` VALUES (1, 'admin', '111111', 'ADMIN', 'admin@email.com', '[]', NULL, now(), now());
 COMMIT;
 
 -- ----------------------------
