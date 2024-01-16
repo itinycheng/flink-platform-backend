@@ -26,8 +26,6 @@ import com.flink.platform.web.grpc.JobProcessGrpcClient;
 import com.flink.platform.web.monitor.StatusInfo;
 import com.flink.platform.web.service.JobRunExtraService;
 import com.flink.platform.web.util.ThreadUtil;
-import io.grpc.Status;
-import io.grpc.StatusRuntimeException;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.tuple.Pair;
@@ -130,12 +128,6 @@ public class JobExecuteThread implements Callable<JobResponse> {
                 callOnce();
             } catch (Exception e) {
                 log.error("Exception found when executing jobRun: {} and wait for complete", jobRunId, e);
-                if (e instanceof StatusRuntimeException se) {
-                    Status status = se.getStatus();
-                    if (status != null && Status.UNAVAILABLE.getCode() == status.getCode()) {
-                        break;
-                    }
-                }
             }
 
             log.warn("Execute jobRun: {} and wait for complete failed, retry attempt: {}.", jobRunId, retryAttempt);
