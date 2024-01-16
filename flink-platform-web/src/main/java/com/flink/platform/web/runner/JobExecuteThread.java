@@ -26,8 +26,6 @@ import com.flink.platform.web.grpc.JobProcessGrpcClient;
 import com.flink.platform.web.monitor.StatusInfo;
 import com.flink.platform.web.service.JobRunExtraService;
 import com.flink.platform.web.util.ThreadUtil;
-import io.grpc.Status;
-import io.grpc.StatusRuntimeException;
 import lombok.extern.slf4j.Slf4j;
 import lombok.var;
 import org.apache.commons.collections4.CollectionUtils;
@@ -134,12 +132,6 @@ public class JobExecuteThread implements Callable<JobResponse> {
                         "Exception found when executing jobRun: {} and wait for complete",
                         jobRunId,
                         e);
-                if (e instanceof StatusRuntimeException) {
-                    Status status = ((StatusRuntimeException) e).getStatus();
-                    if (status != null && Status.UNAVAILABLE.getCode() == status.getCode()) {
-                        break;
-                    }
-                }
             }
 
             log.warn(
