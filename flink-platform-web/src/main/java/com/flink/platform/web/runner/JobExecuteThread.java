@@ -111,27 +111,24 @@ public class JobExecuteThread implements Callable<JobResponse> {
             return new JobResponse(jobId, jobRunId, ERROR);
         }
 
-        // 3. check and execute job.
-        boolean flowRunStopped = false;
-        while (AppRunner.isRunning() && ++retryAttempt <= retryTimes) {
-            try {
-                if (SUCCESS.equals(jobRunStatus)) {
-                    break;
-                }
+        // 3. return if last job was successful.
+        if (SUCCESS.equals(jobRunStatus)) {
+            return new JobResponse(jobId, jobRunId, SUCCESS);
+        }
 
-                flowRunStopped = isFlowRunStopped();
-                if (flowRunStopped) {
-                    jobRunStatus = KILLED;
-                    break;
-                }
+        // 4. check status or execute job.
+        boolean unfinishedJob = jobRunStatus != null && !jobRunStatus.isTerminalState();
+        while (AppRunner.isRunning() && (unfinishedJob || ++retryAttempt <= retryTimes)) {
+            if (isFlowRunStopped()) {
+                return new JobResponse(jobId, jobRunId, KILLED);
+            }
 
-                callOnce();
-            } catch (Exception e) {
-                log.error("Exception found when executing jobRun: {} and wait for complete", jobRunId, e);
+            callOnce();
+            if (SUCCESS.equals(jobRunStatus)) {
+                return new JobResponse(jobId, jobRunId, SUCCESS);
             }
 
             log.warn("Execute jobRun: {} and wait for complete failed, retry attempt: {}.", jobRunId, retryAttempt);
-
             // sleep and retry if exception found or status isn't success.
             if (retryAttempt < retryTimes) {
                 sleepRetry(retryInterval);
@@ -139,7 +136,7 @@ public class JobExecuteThread implements Callable<JobResponse> {
         }
 
         ExecutionStatus finalStatus = null;
-        if (flowRunStopped || retryAttempt > retryTimes || SUCCESS.equals(jobRunStatus)) {
+        if (retryAttempt > retryTimes || SUCCESS.equals(jobRunStatus)) {
             finalStatus = jobRunStatus;
         }
         return new JobResponse(jobId, jobRunId, finalStatus);
@@ -190,7 +187,7 @@ public class JobExecuteThread implements Callable<JobResponse> {
         } catch (Exception e) {
             jobRunStatus = ERROR;
             updateJobRunIfNeeded(jobRun, new StatusInfo(ERROR, null, System.currentTimeMillis()), e);
-            throw e;
+            log.error("Exception found when executing jobRun: {} and wait for complete", jobRunId, e);
         }
     }
 
