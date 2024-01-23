@@ -398,7 +398,7 @@ public class JobExecuteThread implements Callable<JobResponse> {
             ExecutionStatus flowStatus = jobFlowRun.getStatus();
             return KILLABLE.equals(flowStatus) || flowStatus.isTerminalState();
         } catch (Exception exception) {
-            log.error("Get flow run status failed", exception);
+            log.error("Get flow run: {} status failed", flowRunId, exception);
             return false;
         }
     }

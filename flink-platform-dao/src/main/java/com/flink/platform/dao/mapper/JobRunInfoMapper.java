@@ -11,20 +11,20 @@ import java.util.List;
 public interface JobRunInfoMapper extends BaseMapper<JobRunInfo> {
 
     @Select(
-            "<script>\n"
-                    + "select id, name, job_id, flow_run_id, user_id, type, version, deploy_mode,\n"
-                    + "exec_mode, host, status, submit_time, stop_time, create_time\n"
-                    + "from t_job_run where id in (\n"
-                    + "    select max(id) from t_job_run where flow_run_id = #{flowRunId}\n"
-                    + "    <if test=\"jobIds != null and jobIds.size() > 0\">\n"
-                    + "        and job_id in\n"
-                    + "        <foreach collection=\"jobIds\" item=\"jobId\" open='(' close=')' separator=','>\n"
-                    + "            #{jobId}\n"
-                    + "        </foreach>\n"
-                    + "    </if>\n"
-                    + "    group by job_id\n"
-                    + ")\n"
-                    + "</script>\n")
-    List<JobRunInfo> lastJobRunList(
-            @Param("flowRunId") Long flowRunId, @Param("jobIds") List<Long> jobIds);
+        "<script>\n" 
+        + "SELECT t1.id, t1.name, t1.job_id, t1.flow_run_id, t1.user_id, t1.type, t1.version,\n"
+        + "t1.deploy_mode, t1.exec_mode, t1.host, t1.status, t1.submit_time, t1.stop_time,t1.create_time\n"
+        + "FROM t_job_run t1,\n"
+        + "(select max(id) as id from t_job_run where flow_run_id = #{flowRunId}\n"
+        + "    <if test='jobIds != null and jobIds.size() > 0'>\n"
+        + "        and job_id in\n"
+        + "        <foreach collection='jobIds' item='jobId' open='(' close=')' separator=','>\n"
+        + "            #{jobId}\n"
+        + "        </foreach>\n"
+        + "    </if>\n"
+        + "GROUP BY job_id) t2\n"
+        + "WHERE t1.id = t2.id\n"
+        + "</script>\n"
+        )
+    List<JobRunInfo> lastJobRunList(@Param("flowRunId") Long flowRunId, @Param("jobIds") List<Long> jobIds);
 }
