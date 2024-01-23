@@ -12,20 +12,20 @@ public interface JobRunInfoMapper extends BaseMapper<JobRunInfo> {
 
     @Select(
             """
-                    <script>
-                    select id, name, job_id, flow_run_id, user_id, type, version, deploy_mode,
-                    exec_mode, host, status, submit_time, stop_time, create_time
-                    from t_job_run where id in (
-                        select max(id) from t_job_run where flow_run_id = #{flowRunId}
-                        <if test="jobIds != null and jobIds.size() > 0">
-                            and job_id in
-                            <foreach collection="jobIds" item="jobId" open='(' close=')' separator=','>
-                                #{jobId}
-                            </foreach>
-                        </if>
-                        group by job_id
-                    )
-                    </script>
-                    """)
+        <script>
+        SELECT t1.id, t1.name, t1.job_id, t1.flow_run_id, t1.user_id, t1.type, t1.version,
+        t1.deploy_mode, t1.exec_mode, t1.host, t1.status, t1.submit_time, t1.stop_time,t1.create_time
+        FROM t_job_run t1,
+        (select max(id) as id from t_job_run where flow_run_id = #{flowRunId}
+            <if test="jobIds != null and jobIds.size() > 0">
+                and job_id in
+                <foreach collection="jobIds" item="jobId" open='(' close=')' separator=','>
+                    #{jobId}
+                </foreach>
+            </if>
+        GROUP BY job_id) t2
+        WHERE t1.id = t2.id
+        </script>
+        """)
     List<JobRunInfo> lastJobRunList(@Param("flowRunId") Long flowRunId, @Param("jobIds") List<Long> jobIds);
 }
