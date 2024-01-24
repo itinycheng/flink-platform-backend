@@ -3,6 +3,7 @@ package com.flink.platform.web.util;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
 import java.time.Duration;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
@@ -18,6 +19,11 @@ public class ThreadUtil {
     public static ThreadPoolExecutor newFixedThreadExecutor(String namePrefix, int threadsNum) {
         ThreadFactory threadFactory = namedThreadFactory(namePrefix, false);
         return (ThreadPoolExecutor) Executors.newFixedThreadPool(threadsNum, threadFactory);
+    }
+
+    public static ExecutorService newVirtualThreadExecutor(String namePrefix) {
+        var factory = Thread.ofVirtual().name(namePrefix + "-", 1).factory();
+        return Executors.newThreadPerTaskExecutor(factory);
     }
 
     public static ThreadPoolExecutor newFixedVirtualThreadExecutor(String namePrefix, int threadsNum) {

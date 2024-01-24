@@ -21,6 +21,7 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Semaphore;
 import java.util.function.Supplier;
 
 import static com.flink.platform.common.enums.ExecutionStatus.RUNNING;
@@ -29,11 +30,13 @@ import static com.flink.platform.common.enums.ExecutionStatus.RUNNING;
 @Slf4j
 public class FlowExecuteThread implements Runnable {
 
+    private static final ExecutorService jobExecService = ThreadUtil.newVirtualThreadExecutor("JobExecuteThread");
+
     private final JobFlowRun jobFlowRun;
 
     private final WorkerConfig workerConfig;
 
-    private final ExecutorService jobExecService;
+    private final Semaphore semaphore;
 
     private final Map<Long, CompletableFuture<Void>> runningJobs = new ConcurrentHashMap<>();
 
@@ -48,8 +51,7 @@ public class FlowExecuteThread implements Runnable {
     public FlowExecuteThread(@Nonnull JobFlowRun jobFlowRun, @Nonnull WorkerConfig workerConfig) {
         this.jobFlowRun = jobFlowRun;
         this.workerConfig = workerConfig;
-        this.jobExecService = ThreadUtil.newFixedVirtualThreadExecutor(
-                String.format("FlowExecThread-flowRunId_%d", jobFlowRun.getId()), workerConfig.getPerFlowExecThreads());
+        this.semaphore = new Semaphore(workerConfig.getPerFlowExecThreads());
     }
 
     @Override
@@ -91,8 +93,7 @@ public class FlowExecuteThread implements Runnable {
 
         // Wait for all jobs complete.
         CompletableFuture.allOf(runningJobs.values().toArray(new CompletableFuture[0]))
-                .thenAccept(unused -> completeAndNotify(flow))
-                .thenAccept(unused -> jobExecService.shutdownNow());
+                .thenAccept(unused -> completeAndNotify(flow));
     }
 
     private void handleTimeout(TimeoutStrategy[] strategies) {
@@ -118,6 +119,8 @@ public class FlowExecuteThread implements Runnable {
         alertSendingService.sendAlerts(jobFlowRun);
     }
 
+    // ! synchronized won't unmount the virtual thread, and thus block both its carrier and the underlying OS thread.
+    // ! This doesn't make an application incorrect, but it might hinder its scalability.
     private synchronized void execVertex(JobVertex jobVertex, JobFlowDag flow) {
         if (!isRunning || AppRunner.isStopped()) {
             return;
@@ -128,7 +131,8 @@ public class FlowExecuteThread implements Runnable {
             return;
         }
 
-        Supplier<JobResponse> runnable = () -> new JobExecuteThread(jobFlowRun.getId(), jobVertex, workerConfig).call();
+        Supplier<JobResponse> runnable =
+                new SemaphoreSupplier(semaphore, new JobExecuteThread(jobFlowRun.getId(), jobVertex, workerConfig));
         CompletableFuture<Void> jobVertexFuture = CompletableFuture.supplyAsync(runnable, jobExecService)
                 .thenAccept(response -> handleResponse(response, jobVertex, flow));
         runningJobs.put(jobVertex.getId(), jobVertexFuture);

@@ -133,7 +133,7 @@ public abstract class FlinkCommandBuilder implements CommandBuilder {
                 .map(s -> s.substring(0, s.lastIndexOf(SLASH)))
                 .distinct()
                 .collect(joining(SEMICOLON));
-        return userLibDirs.length() > 0
+        return !userLibDirs.isEmpty()
                 ? String.join(SEMICOLON, flinkConfig.getLibDirs(), userLibDirs)
                 : flinkConfig.getLibDirs();
     }
