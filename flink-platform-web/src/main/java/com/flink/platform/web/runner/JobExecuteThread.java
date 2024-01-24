@@ -34,7 +34,7 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
-import java.util.concurrent.Callable;
+import java.util.function.Supplier;
 
 import static com.flink.platform.common.enums.ExecutionMode.STREAMING;
 import static com.flink.platform.common.enums.ExecutionStatus.CREATED;
@@ -51,7 +51,7 @@ import static java.util.Objects.nonNull;
 
 /** Execute job in a separate thread. */
 @Slf4j
-public class JobExecuteThread implements Callable<JobResponse> {
+public class JobExecuteThread implements Supplier<JobResponse> {
 
     private final Long flowRunId;
 
@@ -88,7 +88,7 @@ public class JobExecuteThread implements Callable<JobResponse> {
     }
 
     @Override
-    public JobResponse call() {
+    public JobResponse get() {
         int retryTimes;
         Duration retryInterval;
         int retryAttempt;

@@ -12,7 +12,7 @@ import org.quartz.JobDetail;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobKey;
 
-import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.ExecutorService;
 
 import static com.flink.platform.common.enums.ExecutionCondition.AND;
 
@@ -23,7 +23,7 @@ import static com.flink.platform.common.enums.ExecutionCondition.AND;
 @Slf4j
 public class JobRunner implements Job {
 
-    public static final ThreadPoolExecutor EXECUTOR = ThreadUtil.newFixedThreadExecutor("JobRunnerExecutor", 100);
+    public static final ExecutorService EXECUTOR = ThreadUtil.newFixedVirtualThreadExecutor("JobRunnerThread", 100);
 
     private final WorkerConfig workerConfig = SpringContext.getBean(WorkerConfig.class);
 
@@ -37,7 +37,7 @@ public class JobRunner implements Job {
         jobVertex.setPrecondition(AND);
         EXECUTOR.execute(() -> {
             JobExecuteThread callable = new JobExecuteThread(null, jobVertex, workerConfig);
-            JobResponse response = callable.call();
+            JobResponse response = callable.get();
             log.info("The job: {} is processed, result: {}", jobId, response);
         });
     }
