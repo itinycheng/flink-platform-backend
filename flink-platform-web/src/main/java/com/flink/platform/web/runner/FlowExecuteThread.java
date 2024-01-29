@@ -139,6 +139,10 @@ public class FlowExecuteThread implements Runnable {
     }
 
     private void handleResponse(JobResponse jobResponse, JobVertex jobVertex, JobFlowDag flow) {
+        if (jobResponse == null) {
+            return;
+        }
+
         jobVertex.setJobRunId(jobResponse.getJobRunId());
         jobVertex.setJobRunStatus(jobResponse.getStatus());
 
