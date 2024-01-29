@@ -1,5 +1,6 @@
 package com.flink.platform.web.runner;
 
+import com.flink.platform.web.config.AppRunner;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.concurrent.Semaphore;
@@ -21,6 +22,10 @@ public class SemaphoreSupplier implements Supplier<JobResponse> {
         semaphore.acquireUninterruptibly();
 
         try {
+            if (AppRunner.isStopped()) {
+                return null;
+            }
+
             return supplier.get();
         } finally {
             semaphore.release();
