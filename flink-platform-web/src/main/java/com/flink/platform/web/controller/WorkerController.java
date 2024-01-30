@@ -97,7 +97,7 @@ public class WorkerController {
         if (role != null) {
             queryWrapper.eq(Worker::getRole, role);
         } else {
-            queryWrapper.ne(Worker::getRole, INACTIVE);
+            queryWrapper.ne(Worker::getRole, INACTIVE).or().isNull(Worker::getRole);
         }
 
         IPage<Worker> iPage = workerService.page(pager, queryWrapper);
