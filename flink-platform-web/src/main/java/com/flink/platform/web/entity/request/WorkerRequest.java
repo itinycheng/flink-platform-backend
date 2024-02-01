@@ -27,7 +27,7 @@ public class WorkerRequest {
         }
 
         msg = portNotNull();
-        if(msg != null){
+        if (msg != null) {
             return msg;
         }
 
@@ -54,7 +54,7 @@ public class WorkerRequest {
         return requireNotNull(getPort(), "The port cannot be null");
     }
 
-    public String roleNotNull(){
+    public String roleNotNull() {
         return requireNotNull(getRole(), "The role cannot be null");
     }
 }
