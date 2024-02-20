@@ -26,8 +26,6 @@ import static com.flink.platform.common.util.DateUtil.GLOBAL_TIMEZONE;
 @TableName("t_catalog_info")
 public class CatalogInfo implements Serializable {
 
-    private static final long serialVersionUID = 1L;
-
     @TableId(value = "id", type = IdType.AUTO)
     private Long id;
 

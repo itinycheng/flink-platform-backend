@@ -25,8 +25,6 @@ import static com.flink.platform.common.util.DateUtil.GLOBAL_TIMEZONE;
 @TableName("t_job_param")
 public class JobParam implements Serializable {
 
-    private static final long serialVersionUID = 1L;
-
     @TableId(value = "id", type = IdType.AUTO)
     private Long id;
 
