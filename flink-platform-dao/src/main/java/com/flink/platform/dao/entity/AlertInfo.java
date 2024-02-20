@@ -29,8 +29,6 @@ import static com.flink.platform.common.util.DateUtil.GLOBAL_TIMEZONE;
 @TableName(value = "t_alert", autoResultMap = true)
 public class AlertInfo implements Serializable {
 
-    private static final long serialVersionUID = 1L;
-
     @TableId(value = "id", type = IdType.AUTO)
     private Long id;
 
