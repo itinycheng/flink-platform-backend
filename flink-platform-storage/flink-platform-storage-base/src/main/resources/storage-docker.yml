@@ -2,4 +2,3 @@ storage:
   type: local
   username: admin # unused in local storage.
   storageBasePath: flink-platform
-  localBasePath: data_dir

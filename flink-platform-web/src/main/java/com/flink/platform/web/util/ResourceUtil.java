@@ -19,7 +19,7 @@ public class ResourceUtil {
 
     private static final String RESOURCE_DIR = "resource";
 
-    private static final String localRootPath = SpringContext.getBean("localBasePath", String.class);
+    private static final String localRootPath = PathUtil.getWorkRootPath();
 
     private static final String hdfsRootPath = SpringContext.getBean("storageBasePath", String.class);
 
