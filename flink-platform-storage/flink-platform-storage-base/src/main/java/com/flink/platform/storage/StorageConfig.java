@@ -7,15 +7,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import java.io.File;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ServiceLoader;
 import java.util.UUID;
 
 import static com.flink.platform.common.constants.Constant.FILE_SEPARATOR;
-import static com.flink.platform.common.constants.Constant.ROOT_DIR;
-import static com.flink.platform.common.constants.Constant.SLASH;
 import static java.lang.String.format;
 
 /**
@@ -36,23 +31,6 @@ public class StorageConfig {
         }
 
         return null;
-    }
-
-    @Bean("localBasePath")
-    public String createLocalBasePath(StorageProperties properties) {
-        String dataDir = ROOT_DIR + SLASH + properties.getLocalBasePath();
-        Path path = Paths.get(dataDir);
-        File file = path.toFile();
-        if (!file.exists()) {
-            if (file.mkdir()) {
-                log.info("data dir: {} created successfully.", dataDir);
-            } else {
-                throw new RuntimeException("create local data dir failed.");
-            }
-        } else {
-            log.info("data dir: {} already exists", dataDir);
-        }
-        return path.toString();
     }
 
     @Bean("storageBasePath")

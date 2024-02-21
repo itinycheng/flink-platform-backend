@@ -19,6 +19,7 @@ import java.time.Duration;
 
 import static com.flink.platform.common.constants.Constant.DOT;
 import static com.flink.platform.common.constants.Constant.FILE_SEPARATOR;
+import static com.flink.platform.common.enums.JobType.SHELL;
 import static com.flink.platform.web.util.CommandUtil.commandType;
 import static com.flink.platform.web.util.CommandUtil.getShellCommand;
 import static com.flink.platform.web.util.PathUtil.getExecJobDirPath;
@@ -30,7 +31,7 @@ public class ShellCommandBuilder implements CommandBuilder {
 
     @Override
     public boolean isSupported(JobType jobType, String version) {
-        return jobType == JobType.SHELL;
+        return jobType == SHELL;
     }
 
     @Override
@@ -46,7 +47,7 @@ public class ShellCommandBuilder implements CommandBuilder {
             timeout = duration.toMillis();
         }
 
-        String commandDirPath = getExecJobDirPath(jobRun.getUserId(), jobRun.getJobId());
+        String commandDirPath = getExecJobDirPath(jobRun.getUserId(), jobRun.getJobId(), SHELL);
         String commandFileName = String.join(DOT, jobRun.getJobId().toString(), commandType());
         String commandFilePath = String.join(FILE_SEPARATOR, commandDirPath, commandFileName);
         Path commandPath = Paths.get(commandFilePath);

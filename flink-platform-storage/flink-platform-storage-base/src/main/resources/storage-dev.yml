@@ -2,7 +2,6 @@ storage:
   type: hdfs
   username: hdfs
   storageBasePath: hdfs:///flink-platform/
-  localBasePath: data_dir
   properties:
     fs.hdfs.impl: org.apache.hadoop.hdfs.DistributedFileSystem
     fs.defaultFS: hdfs://nameservice1
