@@ -21,15 +21,15 @@ public class PathUtil {
     private static final String USER_DIR_NAME = "user_%d";
 
     public static String getExecJobDirPath(@Nonnull Long userId, @Nonnull Long jobId, @Nonnull JobType jobType) {
-        String userDirPath = getUserDirPath(userId);
-        String jobExecDir = String.format(JOB_WORK_DIR_NAME, jobId);
+        String jobRootPath = getExecJobRootPath();
+        String userDirName = String.format(USER_DIR_NAME, userId);
+        String jobDirName = String.format(JOB_WORK_DIR_NAME, jobId);
         return String.join(
-                FILE_SEPARATOR, userDirPath, JOB_ROOT_DIR_NAME, jobType.name().toLowerCase(), jobExecDir);
+                FILE_SEPARATOR, jobRootPath, userDirName, jobType.name().toLowerCase(), jobDirName);
     }
 
-    public static String getUserDirPath(@Nonnull Long userId) {
-        String userDirName = String.format(USER_DIR_NAME, userId);
-        return String.join(FILE_SEPARATOR, getWorkRootPath(), userDirName);
+    public static String getExecJobRootPath() {
+        return String.join(FILE_SEPARATOR, getWorkRootPath(), JOB_ROOT_DIR_NAME);
     }
 
     public static String getWorkRootPath() {
