@@ -10,11 +10,11 @@ import com.flink.platform.common.util.SqlUtil;
 import com.flink.platform.dao.entity.JobRunInfo;
 import com.flink.platform.dao.entity.task.FlinkJob;
 import com.flink.platform.dao.service.CatalogInfoService;
+import com.flink.platform.web.util.PathUtil;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.ListUtils;
 import org.apache.commons.io.FileUtils;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.io.File;
@@ -24,8 +24,7 @@ import java.util.Map;
 import java.util.regex.Matcher;
 
 import static com.flink.platform.common.constants.Constant.DOT;
-import static com.flink.platform.common.constants.Constant.ROOT_DIR;
-import static com.flink.platform.common.constants.Constant.SLASH;
+import static com.flink.platform.common.constants.Constant.FILE_SEPARATOR;
 import static com.flink.platform.common.constants.JobConstant.JSON_FILE_SUFFIX;
 import static com.flink.platform.common.constants.JobConstant.SQL_PATTERN;
 import static java.util.Collections.emptyList;
@@ -37,9 +36,6 @@ import static java.util.stream.Collectors.toList;
 @Component("sqlContextHelper")
 public class SqlContextHelper {
 
-    @Value("${flink.local.sql-dir}")
-    private String sqlDir;
-
     @Resource
     private CatalogInfoService catalogInfoService;
 
@@ -47,7 +43,10 @@ public class SqlContextHelper {
         SqlContext sqlContext = convertFrom(jobRun);
         long timestamp = System.currentTimeMillis();
         String fileName = String.join(DOT, jobRun.getJobCode(), String.valueOf(timestamp), JSON_FILE_SUFFIX);
-        return saveToFile(fileName, sqlContext);
+        String execJobDirPath = PathUtil.getExecJobDirPath(jobRun.getUserId(), jobRun.getJobId(), jobRun.getType());
+        String localFilePath = String.join(FILE_SEPARATOR, execJobDirPath, fileName);
+        saveToFile(localFilePath, sqlContext);
+        return localFilePath;
     }
 
     public SqlContext convertFrom(JobRunInfo jobRun) {
@@ -95,13 +94,11 @@ public class SqlContextHelper {
         return sqlList;
     }
 
-    public String saveToFile(String fileName, SqlContext sqlContext) {
+    public void saveToFile(String sqlFilePath, SqlContext sqlContext) {
         try {
             String json = JsonUtil.toJsonString(sqlContext);
-            String sqlFilePath = String.join(SLASH, ROOT_DIR, sqlDir, fileName);
             FileUtils.write(new File(sqlFilePath), json, StandardCharsets.UTF_8);
             log.info("serial sql context to local disk successfully, path: {}, data: {}", sqlFilePath, json);
-            return sqlFilePath;
         } catch (Exception e) {
             throw new RuntimeException("serde sql context to local disk failed", e);
         }
