@@ -21,29 +21,33 @@ public class ResourceUtil {
 
     private static final String localRootPath = PathUtil.getWorkRootPath();
 
-    private static final String hdfsRootPath = SpringContext.getBean("storageBasePath", String.class);
+    private static final String storageRootPath = SpringContext.getBean("storageBasePath", String.class);
 
     private static final StorageService STORAGE_SERVICE = SpringContext.getBean(StorageService.class);
 
     public static String getStorageFilePath(String relativePath, Long userId) {
-        String hdfsUserDir = getStorageUserDir(userId);
-        return String.join(SLASH, hdfsUserDir, relativePath);
+        String storageUserDir = getStorageUserDir(userId);
+        return String.join(SLASH, storageUserDir, relativePath);
     }
 
     public static String getAbsoluteStoragePath(String path, Long userId) {
-        if (STORAGE_SERVICE.isAbsolutePath(path)) {
-            return path;
-        } else {
-            return getStorageFilePath(path, userId);
+        try {
+            if (STORAGE_SERVICE.isAbsolutePath(path)) {
+                return STORAGE_SERVICE.normalizePath(path);
+            } else {
+                return getStorageFilePath(path, userId);
+            }
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
     }
 
-    public static String getHdfsRelativePath(String path, Long userId) {
-        String hdfsUserDir = getStorageUserDir(userId);
-        if (path.startsWith(hdfsUserDir)) {
+    public static String getRelativeStoragePath(String path, Long userId) {
+        String storageUserDir = getStorageUserDir(userId);
+        if (path.startsWith(storageUserDir)) {
             throw new RuntimeException("can not found");
         }
-        String relativePath = path.substring(hdfsUserDir.length());
+        String relativePath = path.substring(storageUserDir.length());
         if (relativePath.startsWith(SLASH)) {
             relativePath = relativePath.substring(1);
         }
@@ -75,19 +79,14 @@ public class ResourceUtil {
         Files.copy(file.getInputStream(), dstFile.toPath());
     }
 
-    public static String copyFromStorageToLocal(String hdfsPath) throws IOException {
-        String localPath = hdfsPath.replace(hdfsRootPath, localRootPath);
-        STORAGE_SERVICE.copyFileToLocalIfChanged(hdfsPath, localPath);
+    public static String copyFromStorageToLocal(String storagePath) throws IOException {
+        String localPath = storagePath.replace(storageRootPath, localRootPath);
+        STORAGE_SERVICE.copyFileToLocalIfChanged(storagePath, localPath);
         return localPath;
     }
 
     private static String getStorageUserDir(Long userId) {
         String userDir = "user_id_" + userId;
-        return String.join(SLASH, hdfsRootPath, RESOURCE_DIR, userDir);
-    }
-
-    private static String getLocalUserDir(Long userId) {
-        String userDir = "user_id_" + userId;
-        return String.join(SLASH, localRootPath, RESOURCE_DIR, userDir);
+        return String.join(SLASH, storageRootPath, RESOURCE_DIR, userDir);
     }
 }

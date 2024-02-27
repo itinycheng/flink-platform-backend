@@ -36,6 +36,10 @@ public class StorageService {
         return storageSystem.exists(path);
     }
 
+    public String normalizePath(String path) throws IOException {
+        return storageSystem.normalizePath(path);
+    }
+
     public boolean isAbsolutePath(String path) {
         return storageSystem.isAbsolutePath(path);
     }

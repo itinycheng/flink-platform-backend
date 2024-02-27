@@ -108,8 +108,8 @@ public enum Placeholder {
             }
 
             // filePath.startsWith("hdfs") ? filePath : getStorageFilePath(filePath, jobRun.getUserId());
-            String absoluteHdfsPath = getAbsoluteStoragePath(filePath, jobRun.getUserId());
-            String localPath = copyFromStorageToLocal(absoluteHdfsPath);
+            String absoluteStoragePath = getAbsoluteStoragePath(filePath, jobRun.getUserId());
+            String localPath = copyFromStorageToLocal(absoluteStoragePath);
             result.put(variable, localPath);
 
             // Make the local file readable and executable.
