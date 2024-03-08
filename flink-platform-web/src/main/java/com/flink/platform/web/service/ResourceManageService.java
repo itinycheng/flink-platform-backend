@@ -54,8 +54,9 @@ public class ResourceManageService {
             return false;
         }
 
-        if (storageService.exists(resource.getFullName())) {
-            storageService.delete(resource.getFullName(), false);
+        String fullName = resource.getFullName();
+        if (storageService.exists(fullName)) {
+            storageService.delete(fullName, false);
         }
         return resourceService.removeById(resource.getId());
     }
