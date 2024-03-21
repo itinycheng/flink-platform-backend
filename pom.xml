@@ -58,7 +58,7 @@
 		<hive.version>2.3.9</hive.version>
 		<mybatis-plus.version>3.5.5</mybatis-plus.version>
 		<dynamic-datasource.version>4.3.0</dynamic-datasource.version>
-		<grpc.version>1.60.1</grpc.version>
+		<grpc.version>1.62.2</grpc.version>
 		<auto-service.version>1.1.1</auto-service.version>
 		<javax.annotation.version>1.3.2</javax.annotation.version>
 		<grpc-spring-boot.version>3.0.0.RELEASE</grpc-spring-boot.version>
