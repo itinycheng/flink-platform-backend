@@ -100,7 +100,7 @@ public class JobFlowRunner implements Job {
             jobFlowRun.setHost(Constant.HOST_IP);
             jobFlowRun.setCronExpr(jobFlow.getCronExpr());
             jobFlowRun.setPriority(jobFlow.getPriority());
-            jobFlowRun.setConfig(executionConfig);
+            jobFlowRun.setConfig(executionConfig != null ? executionConfig : jobFlow.getConfig());
             jobFlowRun.setTags(jobFlow.getTags());
             jobFlowRun.setAlerts(jobFlow.getAlerts());
             jobFlowRun.setTimeout(jobFlow.getTimeout());

@@ -150,6 +150,7 @@ public class JobInfoController {
         return success(jobs);
     }
 
+    @Deprecated
     @GetMapping(value = "/schedule/runOnce/{jobId}")
     public ResultInfo<Long> runOnce(@PathVariable long jobId) {
         JobInfo jobInfo = jobInfoService.getById(jobId);
