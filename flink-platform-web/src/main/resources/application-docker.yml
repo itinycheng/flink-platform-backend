@@ -82,6 +82,7 @@ flink:
 worker:
   flowExecThreads: 100
   perFlowExecThreads: 5
+  maxPerFlowExecThreads: 10
   errorRetries: 3
   streamingJobToSuccessMills: 300000
   reactiveExecThreads: 10

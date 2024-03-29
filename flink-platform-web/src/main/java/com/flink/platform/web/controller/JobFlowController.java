@@ -256,6 +256,17 @@ public class JobFlowController {
             return failure(EXIST_UNFINISHED_PROCESS);
         }
 
+        if (config == null) {
+            config = new ExecutionConfig();
+        }
+
+        // set user defined concurrent.
+        ExecutionConfig existedConf = jobFlow.getConfig();
+        if (existedConf != null && config.getParallelism() < 1) {
+            config.setParallelism(existedConf.getParallelism());
+        }
+
+        // run once.
         JobFlowQuartzInfo jobFlowQuartzInfo = new JobFlowQuartzInfo(jobFlow);
         jobFlowQuartzInfo.setConfig(config);
         if (quartzService.runOnce(jobFlowQuartzInfo)) {

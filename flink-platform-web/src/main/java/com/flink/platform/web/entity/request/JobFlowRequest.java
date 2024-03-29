@@ -1,8 +1,11 @@
 package com.flink.platform.web.entity.request;
 
 import com.flink.platform.common.util.DateUtil;
+import com.flink.platform.dao.entity.ExecutionConfig;
 import com.flink.platform.dao.entity.JobFlow;
 import com.flink.platform.dao.entity.alert.AlertConfig;
+import com.flink.platform.web.common.SpringContext;
+import com.flink.platform.web.config.WorkerConfig;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.experimental.Delegate;
@@ -27,6 +30,11 @@ public class JobFlowRequest {
             return msg;
         }
 
+        msg = verifyParallelism();
+        if (msg != null) {
+            return msg;
+        }
+
         return verifyCronExpr();
     }
 
@@ -42,6 +50,11 @@ public class JobFlowRequest {
         }
 
         msg = verifyCronExpr();
+        if (msg != null) {
+            return msg;
+        }
+
+        msg = verifyParallelism();
         if (msg != null) {
             return msg;
         }
@@ -107,5 +120,21 @@ public class JobFlowRequest {
         } catch (Exception e) {
             return "Quartz cron parsing failed";
         }
+    }
+
+    public String verifyParallelism() {
+        ExecutionConfig config = getConfig();
+        if (config == null) {
+            return null;
+        }
+
+        WorkerConfig workerConfig = SpringContext.getBean(WorkerConfig.class);
+        int maxThreads = workerConfig.getMaxPerFlowExecThreads();
+        int parallelism = config.getParallelism();
+        if (parallelism < 1 || parallelism > maxThreads) {
+            return "The range of parallelism is 1 ~ " + maxThreads;
+        }
+
+        return null;
     }
 }

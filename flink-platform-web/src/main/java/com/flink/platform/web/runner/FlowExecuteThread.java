@@ -3,6 +3,7 @@ package com.flink.platform.web.runner;
 import com.flink.platform.common.enums.ExecutionStatus;
 import com.flink.platform.common.enums.TimeoutStrategy;
 import com.flink.platform.common.model.JobVertex;
+import com.flink.platform.dao.entity.ExecutionConfig;
 import com.flink.platform.dao.entity.JobFlowDag;
 import com.flink.platform.dao.entity.JobFlowRun;
 import com.flink.platform.dao.service.JobFlowRunService;
@@ -51,7 +52,7 @@ public class FlowExecuteThread implements Runnable {
     public FlowExecuteThread(@Nonnull JobFlowRun jobFlowRun, @Nonnull WorkerConfig workerConfig) {
         this.jobFlowRun = jobFlowRun;
         this.workerConfig = workerConfig;
-        this.semaphore = new Semaphore(workerConfig.getPerFlowExecThreads());
+        this.semaphore = new Semaphore(getParallelism());
     }
 
     @Override
@@ -164,5 +165,11 @@ public class FlowExecuteThread implements Runnable {
         // TODO：Better to cancel the running jobs?
         // Seems different scenarios have different results.
         runningJobs.values().forEach(future -> future.complete(null));
+    }
+
+    private int getParallelism() {
+        ExecutionConfig config = jobFlowRun.getConfig();
+        int parallelism = config != null ? config.getParallelism() : 0;
+        return parallelism > 0 ? parallelism : workerConfig.getPerFlowExecThreads();
     }
 }
