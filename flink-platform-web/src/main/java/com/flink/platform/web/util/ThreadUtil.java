@@ -4,6 +4,7 @@ import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import lombok.var;
 
 import java.time.Duration;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
@@ -19,6 +20,11 @@ public class ThreadUtil {
     public static ThreadPoolExecutor newFixedThreadExecutor(String namePrefix, int threadsNum) {
         ThreadFactory threadFactory = namedThreadFactory(namePrefix, false);
         return (ThreadPoolExecutor) Executors.newFixedThreadPool(threadsNum, threadFactory);
+    }
+
+    public static ExecutorService newVirtualThreadExecutor(String namePrefix) {
+        var factory = namedThreadFactory(namePrefix + "-", false);
+        return Executors.newCachedThreadPool(factory);
     }
 
     public static ThreadPoolExecutor newFixedVirtualThreadExecutor(

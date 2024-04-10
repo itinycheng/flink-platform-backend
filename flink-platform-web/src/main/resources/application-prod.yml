@@ -54,9 +54,6 @@ grpc:
       negotiationType: plaintext
 
 flink:
-  local:
-    sql-dir: sql_file
-    jar-dir: job_jar
   sql112:
     version: 1.12.0
     command-path: /data0/app/flink-1.12.0/bin/flink

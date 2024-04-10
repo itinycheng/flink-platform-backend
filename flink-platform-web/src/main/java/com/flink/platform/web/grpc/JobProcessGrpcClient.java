@@ -1,7 +1,6 @@
 package com.flink.platform.web.grpc;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import com.flink.platform.common.constants.Constant;
 import com.flink.platform.dao.entity.Worker;
 import com.flink.platform.dao.service.WorkerService;
 import com.flink.platform.grpc.JobGrpcServiceGrpc;
@@ -19,6 +18,8 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
+import static com.flink.platform.common.constants.Constant.HOST_IP;
+import static com.flink.platform.common.constants.Constant.LOCALHOST;
 import static com.flink.platform.grpc.JobGrpcServiceGrpc.JobGrpcServiceBlockingStub;
 
 /** Job processing grpc client. */
@@ -36,9 +37,7 @@ public class JobProcessGrpcClient {
     private final Map<String, ManagedChannel> channelMap = new ConcurrentHashMap<>();
 
     public JobGrpcServiceBlockingStub grpcClient(String ip) {
-        if (StringUtils.isEmpty(ip)
-                || Constant.LOCALHOST.equals(ip)
-                || Constant.HOST_IP.equals(ip)) {
+        if (StringUtils.isEmpty(ip) || LOCALHOST.equals(ip) || HOST_IP.equals(ip)) {
             return localGrpcStub;
         }
 
@@ -53,6 +52,7 @@ public class JobProcessGrpcClient {
         return grpcClient(key, worker);
     }
 
+    // this method is called in the virtual thread.
     private synchronized JobGrpcServiceBlockingStub grpcClient(String key, Worker worker) {
         JobGrpcServiceBlockingStub stub = grpcStubMap.get(key);
         if (stub != null) {

@@ -12,10 +12,10 @@ import com.flink.platform.web.command.SqlContextHelper;
 import com.flink.platform.web.config.FlinkConfig;
 import com.flink.platform.web.external.YarnClientService;
 import com.flink.platform.web.service.StorageService;
+import com.flink.platform.web.util.PathUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.ListUtils;
 import org.apache.hadoop.fs.Path;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Lazy;
 
 import javax.annotation.Nonnull;
@@ -29,7 +29,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-import static com.flink.platform.common.constants.Constant.ROOT_DIR;
 import static com.flink.platform.common.constants.Constant.SEMICOLON;
 import static com.flink.platform.common.constants.Constant.SLASH;
 import static com.flink.platform.common.constants.JobConstant.YARN_APPLICATION_NAME;
@@ -45,9 +44,6 @@ public abstract class FlinkCommandBuilder implements CommandBuilder {
             Arrays.asList(JobType.FLINK_JAR, JobType.FLINK_SQL);
 
     private static final String EXEC_MODE = " %s -t %s -d ";
-
-    @Value("${flink.local.jar-dir}")
-    private String jobJarDir;
 
     @Resource(name = "sqlContextHelper")
     private SqlContextHelper sqlContextHelper;
@@ -70,12 +66,11 @@ public abstract class FlinkCommandBuilder implements CommandBuilder {
     }
 
     @Override
-    public JobCommand buildCommand(Long flowRunId, @Nonnull JobRunInfo jobRunInfo)
-            throws Exception {
-        FlinkJob flinkJob = jobRunInfo.getConfig().unwrap(FlinkJob.class);
+    public JobCommand buildCommand(Long flowRunId, @Nonnull JobRunInfo jobRun) throws Exception {
+        FlinkJob flinkJob = jobRun.getConfig().unwrap(FlinkJob.class);
         initExtJarPaths(flinkJob);
-        DeployMode deployMode = jobRunInfo.getDeployMode();
-        FlinkCommand command = new FlinkCommand(jobRunInfo.getId(), deployMode);
+        DeployMode deployMode = jobRun.getDeployMode();
+        FlinkCommand command = new FlinkCommand(jobRun.getId(), deployMode);
         String execMode = String.format(EXEC_MODE, deployMode.mode, deployMode.target);
         command.setPrefix(flinkConfig.getCommandPath() + execMode);
         // add configurations
@@ -84,16 +79,14 @@ public abstract class FlinkCommandBuilder implements CommandBuilder {
             configs.putAll(flinkJob.getConfigs());
         }
         // add yarn application name
-        configs.put(YARN_APPLICATION_NAME, createAppName(jobRunInfo));
+        configs.put(YARN_APPLICATION_NAME, createAppName(jobRun));
         // add lib dirs and user classpaths
         configs.put(YARN_PROVIDED_LIB_DIRS, getMergedLibDirs(flinkJob.getExtJarPaths()));
-        List<URL> classpaths =
-                getOrCreateClasspaths(jobRunInfo.getJobCode(), flinkJob.getExtJarPaths());
+        List<URL> classpaths = getOrCreateClasspaths(jobRun, flinkJob.getExtJarPaths());
         command.setClasspaths(classpaths);
-        switch (jobRunInfo.getType()) {
+        switch (jobRun.getType()) {
             case FLINK_JAR:
-                String localPathOfMainJar =
-                        getLocalPathOfMainJar(jobRunInfo.getJobCode(), jobRunInfo.getSubject());
+                String localPathOfMainJar = getLocalPathOfMainJar(jobRun);
                 command.setMainJar(localPathOfMainJar);
                 command.setMainArgs(flinkJob.getMainArgs());
                 command.setMainClass(flinkJob.getMainClass());
@@ -101,7 +94,7 @@ public abstract class FlinkCommandBuilder implements CommandBuilder {
                 break;
             case FLINK_SQL:
                 String localJarPath = getLocalPathOfSqlJarFile();
-                String filePath = sqlContextHelper.convertFromAndSaveToFile(jobRunInfo);
+                String filePath = sqlContextHelper.convertFromAndSaveToFile(jobRun);
                 command.setMainArgs(filePath);
                 command.setMainJar(localJarPath);
                 command.setMainClass(flinkConfig.getClassName());
@@ -121,13 +114,14 @@ public abstract class FlinkCommandBuilder implements CommandBuilder {
                 jobName);
     }
 
-    private String getLocalPathOfMainJar(String jobCode, String jarPath) {
+    private String getLocalPathOfMainJar(JobRunInfo jobRun) {
+        String jarPath = jobRun.getSubject();
         if (!jarPath.toLowerCase().startsWith("hdfs")) {
             return jarPath;
         }
 
         String jarName = new Path(jarPath).getName();
-        String localJarPath = String.join(SLASH, ROOT_DIR, jobJarDir, jobCode, jarName);
+        String localJarPath = getLocalFilePath(jobRun, jarName);
         copyToLocalIfChanged(jarPath, localJarPath);
         return localJarPath;
     }
@@ -138,17 +132,17 @@ public abstract class FlinkCommandBuilder implements CommandBuilder {
                         .map(s -> s.substring(0, s.lastIndexOf(SLASH)))
                         .distinct()
                         .collect(joining(SEMICOLON));
-        return userLibDirs.length() > 0
+        return !userLibDirs.isEmpty()
                 ? String.join(SEMICOLON, flinkConfig.getLibDirs(), userLibDirs)
                 : flinkConfig.getLibDirs();
     }
 
-    private List<URL> getOrCreateClasspaths(String jobCode, List<String> extJarList)
+    private List<URL> getOrCreateClasspaths(JobRunInfo jobRun, List<String> extJarList)
             throws Exception {
         List<URL> classpaths = new ArrayList<>(extJarList.size());
         for (String hdfsExtJar : extJarList) {
             String extJarName = new Path(hdfsExtJar).getName();
-            String localPath = String.join(SLASH, ROOT_DIR, jobJarDir, jobCode, extJarName);
+            String localPath = getLocalFilePath(jobRun, extJarName);
             copyToLocalIfChanged(hdfsExtJar, localPath);
             copyToRemoteIfChanged(localPath, hdfsExtJar);
             classpaths.add(Paths.get(localPath).toUri().toURL());
@@ -156,9 +150,16 @@ public abstract class FlinkCommandBuilder implements CommandBuilder {
         return classpaths;
     }
 
+    private String getLocalFilePath(JobRunInfo jobRun, String fileName) {
+        String execJobDirPath =
+                PathUtil.getExecJobDirPath(jobRun.getUserId(), jobRun.getJobId(), jobRun.getType());
+        return String.join(SLASH, execJobDirPath, fileName);
+    }
+
     private String getLocalPathOfSqlJarFile() {
         String sqlJarName = new Path(flinkConfig.getJarFile()).getName();
-        String localFile = String.join(SLASH, ROOT_DIR, jobJarDir, sqlJarName);
+        String jobRootPath = PathUtil.getExecJobRootPath();
+        String localFile = String.join(SLASH, jobRootPath, sqlJarName);
         copyToLocalIfChanged(flinkConfig.getJarFile(), localFile);
         return localFile;
     }

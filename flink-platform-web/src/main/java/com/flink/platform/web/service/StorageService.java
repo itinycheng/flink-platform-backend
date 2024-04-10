@@ -2,6 +2,7 @@ package com.flink.platform.web.service;
 
 import com.flink.platform.storage.base.StorageSystem;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -34,7 +35,18 @@ public class StorageService {
     }
 
     public boolean exists(String path) throws IOException {
+        if (StringUtils.isEmpty(path)) {
+            return false;
+        }
         return storageSystem.exists(path);
+    }
+
+    public String normalizePath(String path) throws IOException {
+        if (StringUtils.isEmpty(path)) {
+            return path;
+        }
+
+        return storageSystem.normalizePath(path);
     }
 
     public boolean isAbsolutePath(String path) {

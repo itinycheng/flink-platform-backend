@@ -54,9 +54,6 @@ grpc:
       negotiationType: plaintext
 
 flink:
-  local:
-    sql-dir: sql_file
-    jar-dir: job_jar
   sql112:
     version: 1.12.0
     command-path: /data0/app/flink-1.12.0/bin/flink
@@ -84,7 +81,8 @@ flink:
 
 worker:
   flowExecThreads: 100
-  perFlowExecThreads: 2
+  perFlowExecThreads: 5
+  maxPerFlowExecThreads: 10
   errorRetries: 3
   streamingJobToSuccessMills: 300000
   reactiveExecThreads: 10

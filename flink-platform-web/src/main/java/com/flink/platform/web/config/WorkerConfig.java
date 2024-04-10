@@ -23,6 +23,9 @@ public class WorkerConfig {
     @Min(1)
     private int perFlowExecThreads;
 
+    @Min(1)
+    private int maxPerFlowExecThreads;
+
     @Min(0)
     private int errorRetries;
 

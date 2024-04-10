@@ -11,6 +11,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /** job quartz info. */
+@Deprecated
 @Data
 public class JobQuartzInfo implements IQuartzInfo {
 

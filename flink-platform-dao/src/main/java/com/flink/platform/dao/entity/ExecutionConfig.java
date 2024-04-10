@@ -6,9 +6,13 @@ import lombok.Data;
 /** JobFlow execution config. */
 @Data
 public class ExecutionConfig {
+
     private ExecutionStrategy strategy;
 
     private Long startJobId;
 
     private boolean visibleToDependent;
+
+    /** Both used in JobFlow and JobFlowRun. */
+    private int parallelism;
 }
