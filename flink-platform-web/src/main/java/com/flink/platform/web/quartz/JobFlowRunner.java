@@ -12,6 +12,7 @@ import com.flink.platform.dao.entity.JobFlowRun;
 import com.flink.platform.dao.service.JobFlowRunService;
 import com.flink.platform.dao.service.JobFlowService;
 import com.flink.platform.web.common.SpringContext;
+import com.flink.platform.web.config.WorkerConfig;
 import com.flink.platform.web.service.AlertSendingService;
 import com.flink.platform.web.service.JobFlowScheduleService;
 import lombok.extern.slf4j.Slf4j;
@@ -44,17 +45,14 @@ public class JobFlowRunner implements Job {
 
     private final AlertSendingService alertSendingService = SpringContext.getBean(AlertSendingService.class);
 
+    private final WorkerConfig workerConfig = SpringContext.getBean(WorkerConfig.class);
+
     @Override
     public void execute(JobExecutionContext context) {
         JobDetail detail = context.getJobDetail();
         JobKey key = detail.getKey();
         String code = key.getName();
         JobDataMap dataMap = detail.getJobDataMap();
-        ExecutionConfig executionConfig = null;
-        if (dataMap.containsKey(CONFIG)) {
-            String config = dataMap.getString(CONFIG);
-            executionConfig = JsonUtil.toBean(config, ExecutionConfig.class);
-        }
 
         synchronized (getProcessLock(code)) {
             // Get job flow info.
@@ -100,7 +98,7 @@ public class JobFlowRunner implements Job {
             jobFlowRun.setHost(Constant.HOST_IP);
             jobFlowRun.setCronExpr(jobFlow.getCronExpr());
             jobFlowRun.setPriority(jobFlow.getPriority());
-            jobFlowRun.setConfig(executionConfig != null ? executionConfig : jobFlow.getConfig());
+            jobFlowRun.setConfig(getOrMergeExecutionConfig(dataMap, jobFlow));
             jobFlowRun.setTags(jobFlow.getTags());
             jobFlowRun.setAlerts(jobFlow.getAlerts());
             jobFlowRun.setTimeout(jobFlow.getTimeout());
@@ -115,6 +113,20 @@ public class JobFlowRunner implements Job {
                     code,
                     System.currentTimeMillis());
         }
+    }
+
+    private ExecutionConfig getOrMergeExecutionConfig(JobDataMap dataMap, JobFlow jobFlow) {
+        ExecutionConfig baseConfig = JsonUtil.toBean(dataMap.getString(CONFIG), ExecutionConfig.class);
+        if (baseConfig == null) {
+            baseConfig = new ExecutionConfig();
+        }
+
+        ExecutionConfig templateConfig = jobFlow.getConfig();
+        int parallelism = templateConfig != null && templateConfig.getParallelism() > 0
+                ? templateConfig.getParallelism()
+                : workerConfig.getPerFlowExecThreads();
+        baseConfig.setParallelism(parallelism);
+        return baseConfig;
     }
 
     private Object getProcessLock(String code) {
