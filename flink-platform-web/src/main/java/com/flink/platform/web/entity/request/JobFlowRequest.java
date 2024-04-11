@@ -1,5 +1,6 @@
 package com.flink.platform.web.entity.request;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.flink.platform.common.util.DateUtil;
 import com.flink.platform.dao.entity.ExecutionConfig;
 import com.flink.platform.dao.entity.JobFlow;
@@ -20,6 +21,8 @@ import java.util.List;
 @Getter
 @NoArgsConstructor
 public class JobFlowRequest {
+
+    private static WorkerConfig workerConfig_;
 
     @Delegate
     private final JobFlow jobFlow = new JobFlow();
@@ -128,7 +131,7 @@ public class JobFlowRequest {
             return null;
         }
 
-        WorkerConfig workerConfig = SpringContext.getBean(WorkerConfig.class);
+        WorkerConfig workerConfig = getOrInitWorkerConfig();
         int maxThreads = workerConfig.getMaxPerFlowExecThreads();
         int parallelism = config.getParallelism();
         if (parallelism < 1 || parallelism > maxThreads) {
@@ -136,5 +139,26 @@ public class JobFlowRequest {
         }
 
         return null;
+    }
+
+    public void setConfig(ExecutionConfig config) {
+        if (config == null) {
+            config = new ExecutionConfig();
+        }
+
+        if (config.getParallelism() < 1) {
+            WorkerConfig workerConfig = getOrInitWorkerConfig();
+            config.setParallelism(workerConfig.getPerFlowExecThreads());
+        }
+        this.getJobFlow().setConfig(config);
+    }
+
+    @JsonIgnore
+    public WorkerConfig getOrInitWorkerConfig() {
+        if (workerConfig_ == null) {
+            workerConfig_ = SpringContext.getBean(WorkerConfig.class);
+        }
+
+        return workerConfig_;
     }
 }
