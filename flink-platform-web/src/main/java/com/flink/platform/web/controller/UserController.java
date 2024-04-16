@@ -25,6 +25,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import javax.servlet.http.HttpServletRequest;
+
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -114,13 +116,12 @@ public class UserController {
     }
 
     @GetMapping(value = "/info")
-    public ResultInfo<Map<String, Object>> info(
-            @RequestAttribute(value = Constant.SESSION_USER) User loginUser) {
+    public ResultInfo<Map<String, Object>> info(HttpServletRequest request) {
         Map<String, Object> result = new HashMap<>();
         result.put("roles", Arrays.asList("admin", "common"));
         result.put("introduction", "A fixed user given by the backend");
         result.put("avatar", "https://wpimg.wallstcn.com/f778738c-e4f8-4870-b634-56703b4acafe.gif");
-        result.put("name", loginUser.getUsername());
+        result.put("name", request.getHeader("X-Token"));
         return success(result);
     }
 
