@@ -86,7 +86,7 @@ public class UserController {
             return failure(ERROR_PARAMETER, errorMsg);
         }
 
-        if (!Objects.equals(userRequest.getId(), loginUser.getId()) 
+        if (!Objects.equals(userRequest.getId(), loginUser.getId())
                 || loginUser.getType() != ADMIN) {
             return failure(USER_HAVE_NO_PERMISSION);
         }
