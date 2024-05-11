@@ -40,6 +40,7 @@ public class LoginInterceptor implements HandlerInterceptor {
                         new QueryWrapper<User>()
                                 .lambda()
                                 .like(User::getEmail, token.trim())
+                                .orderByDesc(User::getId)
                                 .last("LIMIT 1"));
         if (user == null) {
             return false;
