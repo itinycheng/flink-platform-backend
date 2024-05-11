@@ -87,7 +87,7 @@ public class UserController {
         }
 
         if (!Objects.equals(userRequest.getId(), loginUser.getId())
-                || loginUser.getType() != ADMIN) {
+                && loginUser.getType() != ADMIN) {
             return failure(USER_HAVE_NO_PERMISSION);
         }
 
