@@ -15,6 +15,8 @@ updates:
     labels:
       - "dependencies"
     ignore:
+      # Version of grpc must be consistent with grpc-spring-boot-starter
+      - dependency-name: "io.grpc:*"
       - dependency-name: "ru.yandex.clickhouse:clickhouse-jdbc"
       - dependency-name: "org.apache.flink:*"
       - dependency-name: "org.apache.hadoop:*"
