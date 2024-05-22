@@ -22,4 +22,4 @@ jobs:
           distribution: 'adopt'
           cache: maven
       - name: Build with Maven
-        run: ./mvnw clean verify -Dskip.frontend=true
+        run: './mvnw clean verify -Dskip.frontend=true'
