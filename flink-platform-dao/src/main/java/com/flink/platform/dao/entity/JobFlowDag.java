@@ -17,13 +17,13 @@ import java.util.Map;
 
 /** Job flow dag. */
 @Getter
+@Setter
 public class JobFlowDag extends DAG<Long, JobVertex, JobEdge> {
 
-    private final Map<Long, NodeLayout> nodeLayouts;
+    private Map<Long, NodeLayout> nodeLayouts;
 
-    private final Map<Long, EdgeLayout> edgeLayouts;
+    private Map<Long, EdgeLayout> edgeLayouts;
 
-    @Setter
     @JsonIgnore
     private transient ExecutionConfig config;
 
@@ -118,7 +118,7 @@ public class JobFlowDag extends DAG<Long, JobVertex, JobEdge> {
 
     @Data
     @NoArgsConstructor
-    static class NodeLayout {
+    public static class NodeLayout {
         private String id;
         private String type;
         private int x;
@@ -127,7 +127,7 @@ public class JobFlowDag extends DAG<Long, JobVertex, JobEdge> {
 
     @Data
     @NoArgsConstructor
-    static class EdgeLayout {
+    public static class EdgeLayout {
         private String id;
     }
 }
