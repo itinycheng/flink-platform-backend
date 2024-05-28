@@ -3,10 +3,11 @@ package com.flink.platform.dao.service;
 import com.baomidou.dynamic.datasource.annotation.DS;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.flink.platform.common.model.JobVertex;
 import com.flink.platform.common.util.UuidGenerator;
 import com.flink.platform.dao.entity.JobFlow;
 import com.flink.platform.dao.entity.JobFlowDag;
+import com.flink.platform.dao.entity.JobFlowDag.EdgeLayout;
+import com.flink.platform.dao.entity.JobFlowDag.NodeLayout;
 import com.flink.platform.dao.entity.JobFlowRun;
 import com.flink.platform.dao.entity.JobInfo;
 import com.flink.platform.dao.entity.JobRunInfo;
@@ -16,6 +17,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashMap;
 import java.util.List;
 
 import static com.flink.platform.common.enums.JobFlowStatus.OFFLINE;
@@ -38,22 +40,58 @@ public class JobFlowService extends ServiceImpl<JobFlowMapper, JobFlow> {
 
     @Transactional
     public JobFlow cloneJobFlow(long flowId) {
+        var jobFlow = getById(flowId);
+
+        // clone jobs.
+        var flow = jobFlow.getFlow();
+        var vertices = flow.getVertices();
+        var newIdMap = new HashMap<Long, Long>(vertices.size());
+        for (var vertex : vertices) {
+            var jobInfo = jobInfoService.getById(vertex.getJobId());
+            jobInfo.setId(null);
+            jobInfo.setName(format("%s-copy", jobInfo.getName()));
+            jobInfoService.save(jobInfo);
+            newIdMap.put(vertex.getJobId(), jobInfo.getId());
+        }
+
+        // update vertices.
+        for (var vertex : flow.getVertices()) {
+            var newJobId = newIdMap.get(vertex.getJobId());
+            vertex.setId(newJobId);
+            vertex.setJobId(newJobId);
+        }
+
+        // update edges.
+        for (var edge : flow.getEdges()) {
+            edge.setFromVId(newIdMap.get(edge.getFromVId()));
+            edge.setToVId(newIdMap.get(edge.getToVId()));
+        }
+
+        // update nodeLayouts.
+        var nodeLayouts = flow.getNodeLayouts();
+        var newNodeLayouts = new HashMap<Long, NodeLayout>(nodeLayouts.size());
+        for (var entry : nodeLayouts.entrySet()) {
+            var newId = newIdMap.get(entry.getKey());
+            newNodeLayouts.put(newId, entry.getValue());
+        }
+        flow.setNodeLayouts(newNodeLayouts);
+
+        // update edgeLayouts.
+        var edgeLayouts = flow.getEdgeLayouts();
+        var newEdgeLayouts = new HashMap<Long, EdgeLayout>(edgeLayouts.size());
+        for (var entry : edgeLayouts.entrySet()) {
+            var newId = newIdMap.get(entry.getKey());
+            newEdgeLayouts.put(newId, entry.getValue());
+        }
+        flow.setEdgeLayouts(newEdgeLayouts);
+
         // clone jobFlow.
-        JobFlow jobFlow = getById(flowId);
         jobFlow.setId(null);
         jobFlow.setName(format("%s-copy_%d", jobFlow.getName(), System.currentTimeMillis()));
         jobFlow.setCode(UuidGenerator.generateShortUuid());
         jobFlow.setStatus(OFFLINE);
+        jobFlow.setFlow(flow);
         save(jobFlow);
-
-        // clone jobs.
-        JobFlowDag flow = jobFlow.getFlow();
-        for (JobVertex vertex : flow.getVertices()) {
-            JobInfo jobInfo = jobInfoService.getById(vertex.getJobId());
-            jobInfo.setId(null);
-            jobInfoService.save(jobInfo);
-        }
-
         return jobFlow;
     }
 
