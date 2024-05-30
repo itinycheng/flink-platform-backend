@@ -16,8 +16,9 @@
 
 	<properties>
 		<frontend-maven-plugin.version>1.15.0</frontend-maven-plugin.version>
+		<skip.frontend>false</skip.frontend>
 	</properties>
-	
+
 	<build>
 		<plugins>
 			<plugin>
@@ -27,6 +28,7 @@
 				<configuration>
 					<workingDirectory>${basedir}/frontend</workingDirectory>
 					<nodeVersion>v16.17.1</nodeVersion>
+					<skip>${skip.frontend}</skip>
 				</configuration>
 				<executions>
 					<execution>
