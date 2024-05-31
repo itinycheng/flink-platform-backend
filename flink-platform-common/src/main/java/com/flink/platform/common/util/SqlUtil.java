@@ -30,7 +30,10 @@ public class SqlUtil {
         Matcher matcher = SQL_PATTERN.matcher(statements);
         while (matcher.find()) {
             String statement = matcher.group();
-            sqlList.add(SqlType.parse(statement));
+            Sql sql = SqlType.parse(statement);
+            if (sql != null) {
+                sqlList.add(sql);
+            }
         }
         return sqlList;
     }
