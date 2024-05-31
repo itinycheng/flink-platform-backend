@@ -4,6 +4,7 @@ import com.flink.platform.common.constants.JobConstant;
 import com.flink.platform.common.exception.FlinkJobGenException;
 import com.flink.platform.common.job.Sql;
 import com.flink.platform.common.util.SqlUtil;
+import org.apache.commons.lang3.StringUtils;
 
 import java.util.Arrays;
 import java.util.Optional;
@@ -112,6 +113,10 @@ public enum SqlType {
     public static Sql parse(String statement) {
         // delete the comment and semicolon at the end of sql
         String stmt = SqlUtil.stripUselessCharsFromSql(statement);
+        if (StringUtils.isBlank(stmt)) {
+            return null;
+        }
+
         // parse sql
         for (SqlType type : values()) {
             Matcher matcher = type.pattern.matcher(stmt);
