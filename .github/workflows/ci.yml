@@ -22,6 +22,7 @@ jobs:
           distribution: 'adopt'
           cache: maven
       - name: Build with Maven
+        shell: bash
         run: |
           if [[ "${{ runner.os }}" == "Windows" ]]; then
             ./mvnw.cmd clean verify -Dskip.frontend=true
