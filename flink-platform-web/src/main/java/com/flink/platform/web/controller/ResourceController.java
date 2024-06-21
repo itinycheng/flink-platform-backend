@@ -14,9 +14,12 @@ import com.flink.platform.web.entity.response.ResultInfo;
 import com.flink.platform.web.service.ResourceManageService;
 import com.flink.platform.web.service.StorageService;
 import com.flink.platform.web.util.ResourceUtil;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.fs.Path;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -34,10 +37,12 @@ import java.util.List;
 import java.util.Objects;
 
 import static com.flink.platform.common.enums.ResponseStatus.ERROR_PARAMETER;
+import static com.flink.platform.common.enums.ResponseStatus.FILE_EXISTS;
 import static com.flink.platform.web.entity.response.ResultInfo.failure;
 import static com.flink.platform.web.entity.response.ResultInfo.success;
 
 /** Resource controller. */
+@Slf4j
 @RestController
 @RequestMapping("/resource")
 public class ResourceController {
@@ -135,8 +140,9 @@ public class ResourceController {
     }
 
     @PostMapping("/upload")
-    public ResultInfo<Resource> upload(
+    public ResponseEntity<Object> upload(
             @RequestAttribute(value = Constant.SESSION_USER) User loginUser,
+            @RequestParam(name = "id", required = false) Long id,
             @RequestParam(name = "pid") Long pid,
             @RequestParam(name = "file") MultipartFile file)
             throws Exception {
@@ -147,22 +153,27 @@ public class ResourceController {
                 Resource resource = resourceService.getById(pid);
                 parentDir = resource.getFullName();
             }
-            localFileName = ResourceUtil.randomLocalTmpFile();
-            String fullHdfsFileName =
+            String fullStorageFileName =
                     ResourceUtil.getFullStorageFilePath(loginUser.getId(), parentDir, file.getOriginalFilename());
+            if (id == null && storageService.exists(fullStorageFileName)) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(FILE_EXISTS.getDesc());
+            }
+
+            localFileName = ResourceUtil.randomLocalTmpFile();
             ResourceUtil.copyToLocal(file, localFileName);
-            storageService.copyFromLocal(localFileName, fullHdfsFileName, true, true);
+            storageService.copyFromLocal(localFileName, fullStorageFileName, true, true);
 
             Resource resource = new Resource();
-            resource.setFullName(fullHdfsFileName);
-            resource.setName(new Path(fullHdfsFileName).getName());
-            return success(resource);
+            resource.setFullName(fullStorageFileName);
+            resource.setName(new Path(fullStorageFileName).getName());
+            return ResponseEntity.status(HttpStatus.OK).body(success(resource));
         } catch (Exception e) {
+            log.error("upload file error", e);
             if (StringUtils.isNotBlank(localFileName)) {
                 new File(localFileName).delete();
             }
 
-            throw e;
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
         }
     }
 
