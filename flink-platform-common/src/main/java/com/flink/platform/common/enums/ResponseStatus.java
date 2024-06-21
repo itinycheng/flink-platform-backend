@@ -26,7 +26,8 @@ public enum ResponseStatus {
     JOB_ALREADY_TERMINATED(10021, "Job already terminated"),
     KILL_FLOW_EXCEPTION_FOUND(10022, "Exception raised when terminating workflow"),
     NO_RUNNING_JOB_FOUND(10023, "No running job found"),
-    OPERATION_NOT_ALLOWED(10024, "illegal operation");
+    OPERATION_NOT_ALLOWED(10024, "illegal operation"),
+    FILE_EXISTS(10025, "file already exists");
 
     private final int code;
     private final String desc;
