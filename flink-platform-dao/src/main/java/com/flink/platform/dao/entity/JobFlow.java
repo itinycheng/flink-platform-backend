@@ -8,6 +8,7 @@ import com.baomidou.mybatisplus.annotation.TableName;
 import com.baomidou.mybatisplus.extension.handlers.JacksonTypeHandler;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.flink.platform.common.enums.JobFlowStatus;
+import com.flink.platform.common.enums.JobFlowType;
 import com.flink.platform.dao.entity.alert.AlertConfigList;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -39,6 +40,8 @@ public class JobFlow {
 
     /** job flow description. */
     private String description;
+
+    private JobFlowType type;
 
     /** crontab. */
     private String cronExpr;

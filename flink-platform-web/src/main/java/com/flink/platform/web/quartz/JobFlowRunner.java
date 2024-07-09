@@ -96,6 +96,7 @@ public class JobFlowRunner implements Job {
             jobFlowRun.setFlow(jobFlow.getFlow());
             jobFlowRun.setUserId(jobFlow.getUserId());
             jobFlowRun.setHost(Constant.HOST_IP);
+            jobFlowRun.setType(jobFlow.getType());
             jobFlowRun.setCronExpr(jobFlow.getCronExpr());
             jobFlowRun.setPriority(jobFlow.getPriority());
             jobFlowRun.setConfig(getOrMergeExecutionConfig(dataMap, jobFlow));

@@ -38,8 +38,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static com.flink.platform.common.enums.JobFlowStatus.SCHEDULING;
+import static com.flink.platform.common.enums.JobFlowType.JOB_LIST;
 import static com.flink.platform.common.enums.ResponseStatus.ERROR_PARAMETER;
 import static com.flink.platform.common.enums.ResponseStatus.EXIST_UNFINISHED_PROCESS;
+import static com.flink.platform.common.enums.ResponseStatus.FLOW_ALREADY_SCHEDULED;
+import static com.flink.platform.common.enums.ResponseStatus.JOB_LIST_NOT_SUPPORT_SCHEDULING;
 import static com.flink.platform.common.enums.ResponseStatus.NOT_RUNNABLE_STATUS;
 import static com.flink.platform.common.enums.ResponseStatus.NO_CRONTAB_SET;
 import static com.flink.platform.common.enums.ResponseStatus.SERVICE_ERROR;
@@ -202,11 +206,20 @@ public class JobFlowController {
             return failure(ERROR_PARAMETER, errorMsg);
         }
 
-        JobFlow jobFlow = jobFlowService.getById(jobFlowRequest.getId());
+        JobFlow jobFlow = jobFlowService.getById(flowId);
+        if (JOB_LIST.equals(jobFlow.getType())) {
+            return failure(JOB_LIST_NOT_SUPPORT_SCHEDULING);
+        }
+
         JobFlowStatus status = jobFlow.getStatus();
         if (status == null || !status.isRunnable()) {
             return failure(NOT_RUNNABLE_STATUS);
         }
+
+        if (SCHEDULING.equals(status)) {
+            return failure(FLOW_ALREADY_SCHEDULED);
+        }
+
         if (StringUtils.isEmpty(jobFlow.getCronExpr())) {
             return failure(NO_CRONTAB_SET);
         }
@@ -241,6 +254,10 @@ public class JobFlowController {
     @PostMapping(value = "/schedule/runOnce/{flowId}")
     public ResultInfo<Long> runOnce(@PathVariable Long flowId, @RequestBody(required = false) ExecutionConfig config) {
         JobFlow jobFlow = jobFlowService.getById(flowId);
+        if (JOB_LIST.equals(jobFlow.getType())) {
+            return failure(JOB_LIST_NOT_SUPPORT_SCHEDULING);
+        }
+
         JobFlowStatus status = jobFlow.getStatus();
         if (status == null || !status.isRunnable()) {
             return failure(NOT_RUNNABLE_STATUS);
