@@ -19,6 +19,7 @@ import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 
 import static com.flink.platform.common.enums.ExecutionStatus.FAILURE;
+import static com.flink.platform.common.enums.JobFlowType.JOB_LIST;
 
 /** Schedule job flow. */
 @Slf4j
@@ -74,7 +75,7 @@ public class JobFlowScheduleService {
         }
 
         JobFlowDag flow = jobFlowRun.getFlow();
-        if (flow == null || CollectionUtils.isEmpty(flow.getVertices())) {
+        if (!JOB_LIST.equals(jobFlowRun.getType()) && (flow == null || CollectionUtils.isEmpty(flow.getVertices()))) {
             log.warn("No JobVertex found, no scheduling required, flow run id: {}", jobFlowRun.getId());
             failAndUpdateJobFlowRun(jobFlowRun);
             alertSendingService.sendAlerts(jobFlowRun, "No job vertex found");
