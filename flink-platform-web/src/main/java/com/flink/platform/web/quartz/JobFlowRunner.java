@@ -2,15 +2,16 @@ package com.flink.platform.web.quartz;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.flink.platform.common.constants.Constant;
-import com.flink.platform.common.graph.DAG;
-import com.flink.platform.common.model.JobEdge;
 import com.flink.platform.common.model.JobVertex;
 import com.flink.platform.common.util.JsonUtil;
 import com.flink.platform.dao.entity.ExecutionConfig;
 import com.flink.platform.dao.entity.JobFlow;
+import com.flink.platform.dao.entity.JobFlowDag;
 import com.flink.platform.dao.entity.JobFlowRun;
+import com.flink.platform.dao.entity.JobRunInfo;
 import com.flink.platform.dao.service.JobFlowRunService;
 import com.flink.platform.dao.service.JobFlowService;
+import com.flink.platform.dao.service.JobRunInfoService;
 import com.flink.platform.web.common.SpringContext;
 import com.flink.platform.web.config.WorkerConfig;
 import com.flink.platform.web.service.AlertSendingService;
@@ -30,6 +31,7 @@ import static com.flink.platform.common.enums.ExecutionStatus.SUBMITTED;
 import static com.flink.platform.common.enums.ExecutionStatus.getNonTerminals;
 import static com.flink.platform.common.enums.JobFlowStatus.ONLINE;
 import static com.flink.platform.common.enums.JobFlowStatus.SCHEDULING;
+import static com.flink.platform.common.enums.JobFlowType.JOB_LIST;
 
 /** submit job flow. */
 @Slf4j
@@ -40,6 +42,8 @@ public class JobFlowRunner implements Job {
     private final JobFlowService jobFlowService = SpringContext.getBean(JobFlowService.class);
 
     private final JobFlowRunService jobFlowRunService = SpringContext.getBean(JobFlowRunService.class);
+
+    private final JobRunInfoService jobRunService = SpringContext.getBean(JobRunInfoService.class);
 
     private final JobFlowScheduleService jobFlowScheduleService = SpringContext.getBean(JobFlowScheduleService.class);
 
@@ -65,27 +69,38 @@ public class JobFlowRunner implements Job {
                 return;
             }
 
-            // Validate flow json.
-            DAG<Long, JobVertex, JobEdge> flow = jobFlow.getFlow();
-            if (flow == null || flow.getVertices().isEmpty()) {
-                log.warn("The job flow: {} doesn't contain any vertices", jobFlow.getName());
-                alertSendingService.sendErrAlerts(jobFlow, "No executable job found");
-                return;
-            }
-
-            // Avoid preforming the same job flow multiple times at the same time.
+            // execution config.
+            ExecutionConfig executionConfig = getOrMergeExecutionConfig(dataMap, jobFlow);
             JobFlowRun jobFlowRun = jobFlowRunService.getOne(new QueryWrapper<JobFlowRun>()
                     .lambda()
                     .eq(JobFlowRun::getFlowId, jobFlow.getId())
                     .in(JobFlowRun::getStatus, getNonTerminals()));
+
             if (jobFlowRun != null) {
-                log.warn(
-                        "The job flow: {} is in non-terminal status, run id: {}",
-                        jobFlow.getName(),
-                        jobFlowRun.getId());
-                alertSendingService.sendErrAlerts(
-                        jobFlow, "There is already a running jobFlowRun: " + jobFlowRun.getId());
-                return;
+                if (JOB_LIST.equals(jobFlowRun.getType())) {
+                    JobRunInfo unfinishedJob = jobRunService.getOne(new QueryWrapper<JobRunInfo>()
+                            .lambda()
+                            .eq(JobRunInfo::getJobId, executionConfig.getStartJobId())
+                            .in(JobRunInfo::getStatus, getNonTerminals())
+                            .last("limit 1"));
+                    if (unfinishedJob != null) {
+                        log.warn(
+                                "The job: {} is in non-terminal status, job run id: {}",
+                                unfinishedJob.getName(),
+                                unfinishedJob.getId());
+                        alertSendingService.sendErrAlerts(
+                                jobFlow, "There is already a running job: " + unfinishedJob.getId());
+                        return;
+                    }
+                } else {
+                    log.warn(
+                            "The job flow: {} is in non-terminal status, run id: {}",
+                            jobFlow.getName(),
+                            jobFlowRun.getId());
+                    alertSendingService.sendErrAlerts(
+                            jobFlow, "There is already a running jobFlowRun: " + jobFlowRun.getId());
+                    return;
+                }
             }
 
             // Create job flow run instance.
@@ -93,13 +108,17 @@ public class JobFlowRunner implements Job {
             jobFlowRun.setFlowId(jobFlow.getId());
             jobFlowRun.setName(
                     String.join("-", jobFlow.getName(), jobFlow.getCode(), String.valueOf(System.currentTimeMillis())));
-            jobFlowRun.setFlow(jobFlow.getFlow());
+            if (JOB_LIST.equals(jobFlow.getType())) {
+                jobFlowRun.setFlow(createFlowFromConfig(executionConfig));
+            } else {
+                jobFlowRun.setFlow(jobFlow.getFlow());
+            }
             jobFlowRun.setUserId(jobFlow.getUserId());
             jobFlowRun.setHost(Constant.HOST_IP);
             jobFlowRun.setType(jobFlow.getType());
             jobFlowRun.setCronExpr(jobFlow.getCronExpr());
             jobFlowRun.setPriority(jobFlow.getPriority());
-            jobFlowRun.setConfig(getOrMergeExecutionConfig(dataMap, jobFlow));
+            jobFlowRun.setConfig(executionConfig);
             jobFlowRun.setTags(jobFlow.getTags());
             jobFlowRun.setAlerts(jobFlow.getAlerts());
             jobFlowRun.setTimeout(jobFlow.getTimeout());
@@ -114,6 +133,12 @@ public class JobFlowRunner implements Job {
                     code,
                     System.currentTimeMillis());
         }
+    }
+
+    private JobFlowDag createFlowFromConfig(ExecutionConfig executionConfig) {
+        JobFlowDag flow = new JobFlowDag();
+        flow.addVertex(new JobVertex(executionConfig.getStartJobId()));
+        return flow;
     }
 
     private ExecutionConfig getOrMergeExecutionConfig(JobDataMap dataMap, JobFlow jobFlow) {

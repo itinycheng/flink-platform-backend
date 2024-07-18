@@ -98,6 +98,11 @@ public class AttrsController {
         return success(JobType.from(type));
     }
 
+    @GetMapping(value = "/nodeClassification")
+    public ResultInfo<String> nodeClassification(JobType jobType) {
+        return success(jobType.getClassification());
+    }
+
     @GetMapping(value = "/edgeStates")
     public ResultInfo<List<ExecutionStatus>> edgeStates(Long jobId) {
         // Add RUNNING status for STREAMING job ?

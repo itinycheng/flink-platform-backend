@@ -5,7 +5,6 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.flink.platform.common.constants.Constant;
-import com.flink.platform.common.enums.ExecutionStatus;
 import com.flink.platform.common.enums.JobFlowStatus;
 import com.flink.platform.common.enums.JobStatus;
 import com.flink.platform.common.model.JobVertex;
@@ -36,6 +35,7 @@ import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
 
+import static com.flink.platform.common.enums.ExecutionStatus.getNonTerminals;
 import static com.flink.platform.common.enums.JobStatus.ONLINE;
 import static com.flink.platform.common.enums.ResponseStatus.ERROR_PARAMETER;
 import static com.flink.platform.common.enums.ResponseStatus.EXIST_UNFINISHED_PROCESS;
@@ -185,17 +185,17 @@ public class JobInfoController {
             return failure(NOT_RUNNABLE_STATUS);
         }
 
-        List<JobRunInfo> notFinishedList = jobRunService.list(new QueryWrapper<JobRunInfo>()
+        JobRunInfo unfinishedJob = jobRunService.getOne(new QueryWrapper<JobRunInfo>()
                 .lambda()
                 .eq(JobRunInfo::getJobId, jobId)
-                .in(JobRunInfo::getStatus, ExecutionStatus.getNonTerminals())
-                .gt(JobRunInfo::getCreateTime, LocalDateTime.now().minusDays(1)));
-        if (isNotEmpty(notFinishedList)) {
+                .in(JobRunInfo::getStatus, getNonTerminals())
+                .last("limit 1"));
+        if (unfinishedJob != null) {
             return failure(EXIST_UNFINISHED_PROCESS);
         }
 
-        JobQuartzInfo jobQuartzInfo = new JobQuartzInfo(jobInfo);
-        if (quartzService.runOnce(jobQuartzInfo)) {
+        JobQuartzInfo quartzInfo = new JobQuartzInfo(jobInfo);
+        if (quartzService.runOnce(quartzInfo)) {
             return success(jobId);
         } else {
             return failure(SERVICE_ERROR);
