@@ -1,10 +1,13 @@
 package com.flink.platform.web.controller;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.flink.platform.common.constants.Constant;
 import com.flink.platform.common.enums.ExecutionStatus;
+import com.flink.platform.common.enums.JobFlowStatus;
+import com.flink.platform.common.enums.JobStatus;
 import com.flink.platform.common.model.JobVertex;
 import com.flink.platform.dao.entity.JobFlow;
 import com.flink.platform.dao.entity.JobInfo;
@@ -19,6 +22,7 @@ import com.flink.platform.web.entity.response.ResultInfo;
 import com.flink.platform.web.service.QuartzService;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -37,6 +41,7 @@ import static com.flink.platform.common.enums.ResponseStatus.ERROR_PARAMETER;
 import static com.flink.platform.common.enums.ResponseStatus.EXIST_UNFINISHED_PROCESS;
 import static com.flink.platform.common.enums.ResponseStatus.NOT_RUNNABLE_STATUS;
 import static com.flink.platform.common.enums.ResponseStatus.SERVICE_ERROR;
+import static com.flink.platform.common.util.DateUtil.GLOBAL_DATE_TIME_FORMAT;
 import static com.flink.platform.dao.entity.JobInfo.LARGE_FIELDS;
 import static com.flink.platform.web.entity.response.ResultInfo.failure;
 import static com.flink.platform.web.entity.response.ResultInfo.success;
@@ -107,12 +112,34 @@ public class JobInfoController {
     public ResultInfo<IPage<JobInfo>> page(
             @RequestParam(name = "page", required = false, defaultValue = "1") Integer page,
             @RequestParam(name = "size", required = false, defaultValue = "20") Integer size,
-            @RequestParam(name = "name", required = false) String name) {
-        Page<JobInfo> pager = new Page<>(page, size);
-        IPage<JobInfo> iPage = jobInfoService.page(
-                pager, new QueryWrapper<JobInfo>().lambda().like(nonNull(name), JobInfo::getName, name));
+            @RequestParam(name = "id", required = false) Long id,
+            @RequestParam(name = "flowId", required = false) Long flowId,
+            @RequestParam(name = "name", required = false) String name,
+            @RequestParam(name = "status", required = false) JobStatus status,
+            @DateTimeFormat(pattern = GLOBAL_DATE_TIME_FORMAT) @RequestParam(name = "startTime", required = false)
+                    LocalDateTime startTime,
+            @DateTimeFormat(pattern = GLOBAL_DATE_TIME_FORMAT) @RequestParam(name = "endTime", required = false)
+                    LocalDateTime endTime,
+            @RequestParam(name = "sort", required = false) String sort) {
+        LambdaQueryWrapper<JobInfo> queryWrapper = new QueryWrapper<JobInfo>()
+                .lambda()
+                .eq(nonNull(id), JobInfo::getId, id)
+                .eq(nonNull(flowId), JobInfo::getFlowId, flowId)
+                .like(nonNull(name), JobInfo::getName, name)
+                .between(nonNull(startTime) && nonNull(endTime), JobInfo::getCreateTime, startTime, endTime);
 
-        return success(iPage);
+        if (status != null) {
+            queryWrapper.eq(JobInfo::getStatus, status);
+        } else {
+            queryWrapper.ne(JobInfo::getStatus, JobFlowStatus.DELETE);
+        }
+
+        if ("-id".equals(sort)) {
+            queryWrapper.orderByDesc(JobInfo::getId);
+        }
+
+        Page<JobInfo> pager = new Page<>(page, size);
+        return success(jobInfoService.page(pager, queryWrapper));
     }
 
     @GetMapping(value = "/list")

@@ -76,9 +76,11 @@ public class JobInfoRequest {
             }
         }
 
-        msg = verifyWorker();
-        if (msg != null) {
-            return msg;
+        if (getRouteUrl() != null) {
+            msg = verifyWorker();
+            if (msg != null) {
+                return msg;
+            }
         }
 
         msg = verifyConfig();
@@ -120,6 +122,10 @@ public class JobInfoRequest {
 
     private String verifyConfig() {
         BaseJob config = getConfig();
+        if (config == null) {
+            return null;
+        }
+
         if (config.getRetryTimes() < 0) {
             return "The retry times cannot be negative";
         }
