@@ -19,6 +19,7 @@ import com.flink.platform.web.entity.JobQuartzInfo;
 import com.flink.platform.web.entity.request.JobInfoRequest;
 import com.flink.platform.web.entity.response.ResultInfo;
 import com.flink.platform.web.service.QuartzService;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -34,6 +35,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 import static com.flink.platform.common.enums.ExecutionStatus.getNonTerminals;
 import static com.flink.platform.common.enums.JobStatus.ONLINE;
@@ -47,6 +49,7 @@ import static com.flink.platform.web.entity.response.ResultInfo.failure;
 import static com.flink.platform.web.entity.response.ResultInfo.success;
 import static java.util.Objects.nonNull;
 import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toMap;
 import static org.apache.commons.collections4.CollectionUtils.isEmpty;
 import static org.apache.commons.collections4.CollectionUtils.isNotEmpty;
 
@@ -116,6 +119,7 @@ public class JobInfoController {
             @RequestParam(name = "flowId", required = false) Long flowId,
             @RequestParam(name = "name", required = false) String name,
             @RequestParam(name = "status", required = false) JobStatus status,
+            @RequestParam(name = "includeJobRuns", required = false, defaultValue = "false") boolean includeJobRuns,
             @DateTimeFormat(pattern = GLOBAL_DATE_TIME_FORMAT) @RequestParam(name = "startTime", required = false)
                     LocalDateTime startTime,
             @DateTimeFormat(pattern = GLOBAL_DATE_TIME_FORMAT) @RequestParam(name = "endTime", required = false)
@@ -139,7 +143,24 @@ public class JobInfoController {
         }
 
         Page<JobInfo> pager = new Page<>(page, size);
-        return success(jobInfoService.page(pager, queryWrapper));
+        Page<JobInfo> result = jobInfoService.page(pager, queryWrapper);
+
+        // Add jobRun info.
+        if (includeJobRuns && CollectionUtils.isNotEmpty(result.getRecords())) {
+            List<Long> jobIds = result.getRecords().stream().map(JobInfo::getId).collect(toList());
+            Map<Long, JobRunInfo> runningJobsMap = jobRunService.listLastWithoutLargeFields(null, jobIds).stream()
+                    .collect(toMap(JobRunInfo::getJobId, jobRun -> jobRun));
+            result.getRecords().forEach(jobInfo -> {
+                JobRunInfo jobRun = runningJobsMap.get(jobInfo.getId());
+                if (jobRun != null) {
+                    jobInfo.setJobRunId(jobRun.getId());
+                    jobInfo.setJobRunStatus(jobRun.getStatus());
+                    jobInfo.setFlowRunId(jobRun.getFlowRunId());
+                }
+            });
+        }
+
+        return success(result);
     }
 
     @GetMapping(value = "/list")
