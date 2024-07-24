@@ -5,6 +5,7 @@ import com.flink.platform.common.graph.DAG;
 import com.flink.platform.common.model.JobEdge;
 import com.flink.platform.common.model.JobVertex;
 import com.flink.platform.dao.util.JobFlowDagHelper;
+import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -118,6 +119,7 @@ public class JobFlowDag extends DAG<Long, JobVertex, JobEdge> {
 
     @Data
     @NoArgsConstructor
+    @AllArgsConstructor
     public static class NodeLayout {
         private String id;
         private String type;

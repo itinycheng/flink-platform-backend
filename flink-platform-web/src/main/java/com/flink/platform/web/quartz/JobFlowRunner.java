@@ -7,10 +7,13 @@ import com.flink.platform.common.util.JsonUtil;
 import com.flink.platform.dao.entity.ExecutionConfig;
 import com.flink.platform.dao.entity.JobFlow;
 import com.flink.platform.dao.entity.JobFlowDag;
+import com.flink.platform.dao.entity.JobFlowDag.NodeLayout;
 import com.flink.platform.dao.entity.JobFlowRun;
+import com.flink.platform.dao.entity.JobInfo;
 import com.flink.platform.dao.entity.JobRunInfo;
 import com.flink.platform.dao.service.JobFlowRunService;
 import com.flink.platform.dao.service.JobFlowService;
+import com.flink.platform.dao.service.JobInfoService;
 import com.flink.platform.dao.service.JobRunInfoService;
 import com.flink.platform.web.common.SpringContext;
 import com.flink.platform.web.config.WorkerConfig;
@@ -42,6 +45,8 @@ public class JobFlowRunner implements Job {
     private final JobFlowService jobFlowService = SpringContext.getBean(JobFlowService.class);
 
     private final JobFlowRunService jobFlowRunService = SpringContext.getBean(JobFlowRunService.class);
+
+    private final JobInfoService jobInfoService = SpringContext.getBean(JobInfoService.class);
 
     private final JobRunInfoService jobRunService = SpringContext.getBean(JobRunInfoService.class);
 
@@ -137,7 +142,13 @@ public class JobFlowRunner implements Job {
 
     private JobFlowDag createFlowFromConfig(ExecutionConfig executionConfig) {
         JobFlowDag flow = new JobFlowDag();
-        flow.addVertex(new JobVertex(executionConfig.getStartJobId()));
+        Long startJobId = executionConfig.getStartJobId();
+        flow.addVertex(new JobVertex(startJobId));
+        // node layouts.
+        JobInfo jobInfo = jobInfoService.getById(startJobId);
+        String classification = jobInfo.getType().getClassification();
+        Map<Long, NodeLayout> nodeLayouts = flow.getNodeLayouts();
+        nodeLayouts.put(startJobId, new NodeLayout(null, classification, 0, 0));
         return flow;
     }
 

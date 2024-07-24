@@ -7,8 +7,10 @@ ALTER TABLE platform.t_job_flow_run ADD COLUMN config varchar(255) AFTER priorit
 CREATE INDEX t_job_run_flow_run_id_idx USING BTREE ON platform.t_job_run (flow_run_id);
 
 -- 2024-07-09
-ALTER TABLE platform.t_job_flow ADD COLUMN `type` varchar(64) AFTER description;
-ALTER TABLE platform.t_job_flow_run ADD COLUMN `type` varchar(64) AFTER flow_id;
+ALTER TABLE platform.t_job_flow ADD COLUMN `type` varchar(64) NOT NULL AFTER description;
+ALTER TABLE platform.t_job_flow_run ADD COLUMN `type` varchar(64) NOT NULL AFTER flow_id;
+UPDATE platform.t_job_flow SET `type` = 'JOB_FLOW' WHERE `type` is null;
+UPDATE platform.t_job_flow_run SET `type` = 'JOB_FLOW' WHERE `type` is null;
 
 CREATE INDEX t_job_flow_run_flow_id_idx USING BTREE ON platform.t_job_flow_run (flow_id);
 CREATE INDEX t_job_run_job_id_idx USING BTREE ON platform.t_job_run (job_id);

@@ -9,6 +9,7 @@ import com.baomidou.mybatisplus.extension.handlers.JacksonTypeHandler;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.flink.platform.common.enums.DeployMode;
 import com.flink.platform.common.enums.ExecutionMode;
+import com.flink.platform.common.enums.ExecutionStatus;
 import com.flink.platform.common.enums.JobStatus;
 import com.flink.platform.common.enums.JobType;
 import com.flink.platform.dao.entity.task.BaseJob;
@@ -75,8 +76,7 @@ public class JobInfo implements Serializable {
     private String subject;
 
     /**
-     * route url. <br>
-     * refer to: t_worker
+     * route url. <br> refer to: t_worker
      */
     @TableField(typeHandler = JacksonTypeHandler.class)
     private LongArrayList routeUrl;
@@ -94,4 +94,20 @@ public class JobInfo implements Serializable {
     @JsonFormat(pattern = GLOBAL_DATE_TIME_FORMAT, timezone = GLOBAL_TIMEZONE)
     @TableField(update = "now()", updateStrategy = FieldStrategy.ALWAYS)
     private LocalDateTime updateTime;
+
+    /** job run id. */
+    @TableField(exist = false)
+    private transient Long jobRunId;
+
+    /**
+     * flow run id.
+     */
+    @TableField(exist = false)
+    private transient Long flowRunId;
+
+    /**
+     * job run status.
+     */
+    @TableField(exist = false)
+    private transient ExecutionStatus jobRunStatus;
 }
