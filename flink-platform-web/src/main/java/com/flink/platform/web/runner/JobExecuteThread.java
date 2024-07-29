@@ -22,7 +22,7 @@ import com.flink.platform.grpc.ProcessJobRequest;
 import com.flink.platform.web.common.SpringContext;
 import com.flink.platform.web.config.AppRunner;
 import com.flink.platform.web.config.WorkerConfig;
-import com.flink.platform.web.grpc.JobProcessGrpcClient;
+import com.flink.platform.web.grpc.JobGrpcClient;
 import com.flink.platform.web.monitor.StatusInfo;
 import com.flink.platform.web.service.JobRunExtraService;
 import com.flink.platform.web.util.ThreadUtil;
@@ -69,7 +69,7 @@ public class JobExecuteThread implements Supplier<JobResponse> {
 
     private final JobFlowRunService jobFlowRunService;
 
-    private final JobProcessGrpcClient jobProcessGrpcClient;
+    private final JobGrpcClient jobGrpcClient;
 
     private Long jobRunId;
 
@@ -84,7 +84,7 @@ public class JobExecuteThread implements Supplier<JobResponse> {
         this.jobRunInfoService = SpringContext.getBean(JobRunInfoService.class);
         this.jobRunExtraService = SpringContext.getBean(JobRunExtraService.class);
         this.jobFlowRunService = SpringContext.getBean(JobFlowRunService.class);
-        this.jobProcessGrpcClient = SpringContext.getBean(JobProcessGrpcClient.class);
+        this.jobGrpcClient = SpringContext.getBean(JobGrpcClient.class);
     }
 
     @Override
@@ -169,7 +169,7 @@ public class JobExecuteThread implements Supplier<JobResponse> {
             jobRunStatus = jobRun.getStatus();
 
             // Get a grpc client.
-            JobGrpcServiceBlockingStub stub = jobProcessGrpcClient.grpcClient(jobRun.getHost());
+            JobGrpcServiceBlockingStub stub = jobGrpcClient.grpcClient(jobRun.getHost());
 
             // Process job.
             if (CREATED.equals(jobRunStatus)) {

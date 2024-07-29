@@ -9,6 +9,9 @@ import com.flink.platform.grpc.KillJobReply;
 import com.flink.platform.grpc.KillJobRequest;
 import com.flink.platform.grpc.ProcessJobReply;
 import com.flink.platform.grpc.ProcessJobRequest;
+import com.flink.platform.grpc.SavepointReply;
+import com.flink.platform.grpc.SavepointRequest;
+import com.flink.platform.web.service.FlinkJobService;
 import com.flink.platform.web.service.KillJobService;
 import com.flink.platform.web.service.ProcessJobService;
 import com.flink.platform.web.service.ProcessJobStatusService;
@@ -21,7 +24,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 /** Job process grpc service. */
 @Slf4j
 @GrpcService
-public class JobProcessGrpcServer extends JobGrpcServiceGrpc.JobGrpcServiceImplBase {
+public class JobGrpcServer extends JobGrpcServiceGrpc.JobGrpcServiceImplBase {
 
     @Autowired
     private ProcessJobService processJobService;
@@ -31,6 +34,9 @@ public class JobProcessGrpcServer extends JobGrpcServiceGrpc.JobGrpcServiceImplB
 
     @Autowired
     private KillJobService killJobService;
+
+    @Autowired
+    private FlinkJobService flinkJobService;
 
     @Override
     public void processJob(ProcessJobRequest request, StreamObserver<ProcessJobReply> responseObserver) {
@@ -68,6 +74,21 @@ public class JobProcessGrpcServer extends JobGrpcServiceGrpc.JobGrpcServiceImplB
             responseObserver.onNext(reply);
         } catch (Exception e) {
             log.error("kill job via grpc failed", e);
+            responseObserver.onError(buildGrpcException(e));
+        }
+        responseObserver.onCompleted();
+    }
+
+    @Override
+    public void savepointJob(SavepointRequest request, StreamObserver<SavepointReply> responseObserver) {
+        try {
+            flinkJobService.savepoint(request.getJobRunId());
+            SavepointReply reply = SavepointReply.newBuilder()
+                    .setJobRunId(request.getJobRunId())
+                    .build();
+            responseObserver.onNext(reply);
+        } catch (Exception e) {
+            log.error("flink job savepoint via grpc failed", e);
             responseObserver.onError(buildGrpcException(e));
         }
         responseObserver.onCompleted();

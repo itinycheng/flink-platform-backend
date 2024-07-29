@@ -28,8 +28,9 @@ public class ResultInfo<T> {
     /** 自定义异常返回的结果. */
     public static <T> ResultInfo<T> defineError(DefinitionException de) {
         ResultInfo<T> result = new ResultInfo<>();
-        result.setCode(de.getCode());
-        result.setDesc(de.getMsg());
+        ResponseStatus status = de.getStatus();
+        result.setCode(status.getCode());
+        result.setDesc(status.getDesc());
         return result;
     }
 

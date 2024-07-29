@@ -24,7 +24,7 @@ import static com.flink.platform.grpc.JobGrpcServiceGrpc.JobGrpcServiceBlockingS
 /** Job processing grpc client. */
 @Slf4j
 @Service
-public class JobProcessGrpcClient {
+public class JobGrpcClient {
 
     @Autowired
     private WorkerService workerService;
