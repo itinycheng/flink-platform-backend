@@ -1,5 +1,6 @@
 package com.flink.platform.web.common;
 
+import lombok.Getter;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -13,17 +14,13 @@ import java.util.List;
 public class SpringContext implements ApplicationContextAware {
 
     /** Spring application context. */
+    @Getter
     private static ApplicationContext applicationContext;
 
     /** set application context. */
     @Override
     public void setApplicationContext(ApplicationContext applicationContext) {
         SpringContext.applicationContext = applicationContext;
-    }
-
-    /** return ApplicationContext. */
-    public static ApplicationContext getApplicationContext() {
-        return applicationContext;
     }
 
     /** get bean from applicationContext. */

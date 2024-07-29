@@ -32,6 +32,10 @@ public class CommandUtil {
 
     private static final int MAX_LOG_ROWS = 50000;
 
+    public static ShellCallback exec(String command) throws IOException, InterruptedException {
+        return exec(command, null, -1);
+    }
+
     public static ShellCallback exec(String command, String[] envProps, long timeoutMills)
             throws IOException, InterruptedException {
         List<String> stdList = Collections.synchronizedList(new ArrayList<>());
@@ -81,7 +85,12 @@ public class CommandUtil {
                 log.error("Start log collection thread failed", e);
             }
 
-            boolean status = process.waitFor(timeoutMills, MILLISECONDS);
+            boolean status;
+            if (timeoutMills <= 0) {
+                status = process.waitFor() == EXIT_CODE_SUCCESS;
+            } else {
+                status = process.waitFor(timeoutMills, MILLISECONDS);
+            }
             int exitValue = status ? process.exitValue() : EXIT_CODE_FAILURE;
 
             try {

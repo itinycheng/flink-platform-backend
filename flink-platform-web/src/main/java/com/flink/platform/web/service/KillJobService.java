@@ -10,7 +10,7 @@ import com.flink.platform.dao.service.JobRunInfoService;
 import com.flink.platform.grpc.JobGrpcServiceGrpc;
 import com.flink.platform.grpc.KillJobRequest;
 import com.flink.platform.web.command.CommandExecutor;
-import com.flink.platform.web.grpc.JobProcessGrpcClient;
+import com.flink.platform.web.grpc.JobGrpcClient;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,7 +28,7 @@ import static com.flink.platform.common.enums.ExecutionStatus.getNonTerminals;
 @Service
 public class KillJobService {
 
-    private final JobProcessGrpcClient jobProcessGrpcClient;
+    private final JobGrpcClient jobGrpcClient;
 
     private final JobRunInfoService jobRunInfoService;
 
@@ -40,11 +40,11 @@ public class KillJobService {
     public KillJobService(
             JobRunInfoService jobRunInfoService,
             List<CommandExecutor> jobCommandExecutors,
-            JobProcessGrpcClient jobProcessGrpcClient,
+            JobGrpcClient jobGrpcClient,
             JobFlowRunService jobFlowRunService) {
         this.jobRunInfoService = jobRunInfoService;
         this.jobCommandExecutors = jobCommandExecutors;
-        this.jobProcessGrpcClient = jobProcessGrpcClient;
+        this.jobGrpcClient = jobGrpcClient;
         this.jobFlowRunService = jobFlowRunService;
     }
 
@@ -81,7 +81,7 @@ public class KillJobService {
 
     public boolean killRemoteJob(JobRunInfo jobRun) {
         String host = jobRun.getHost();
-        JobGrpcServiceGrpc.JobGrpcServiceBlockingStub stub = jobProcessGrpcClient.grpcClient(host);
+        JobGrpcServiceGrpc.JobGrpcServiceBlockingStub stub = jobGrpcClient.grpcClient(host);
         KillJobRequest request =
                 KillJobRequest.newBuilder().setJobRunId(jobRun.getId()).build();
         stub.killJob(request);
