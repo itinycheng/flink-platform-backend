@@ -45,44 +45,10 @@ import static com.flink.platform.web.util.ResourceUtil.getAbsoluteStoragePath;
 /** placeholder in subject field of job. */
 @Slf4j
 public enum Placeholder {
-
-    /** placeholders. */
-
-    // ${time:yyyyMMdd[curDate-3d]}
-    TIME("${time", (@Nonnull Object obj) -> {
-        JobRunInfo jobRun = ((JobRunInfo) obj);
-        Matcher matcher = TIME_PLACEHOLDER_PATTERN.matcher(jobRun.getSubject());
-        Map<String, Object> result = new HashMap<>();
-        while (matcher.find()) {
-            String variable = matcher.group();
-            if (result.containsKey(variable)) {
-                continue;
-            }
-
-            String format = checkNotNull(matcher.group("format"));
-            String baseTime = checkNotNull(matcher.group("baseTime"));
-            String operator = matcher.group("operator");
-            String duration = matcher.group("duration");
-            BaseTimeUnit baseTimeUnit = BaseTimeUnit.of(baseTime);
-            LocalDateTime destTime = baseTimeUnit.provider.get();
-            // dest time plus duration.
-            if (StringUtils.isNotBlank(duration)) {
-                Duration parsedDuration = DurationUtil.parse(duration);
-                if ("-".equals(operator)) {
-                    parsedDuration = parsedDuration.negated();
-                }
-                destTime = destTime.plus(parsedDuration);
-            }
-
-            result.put(variable, DateUtil.format(destTime, format));
-        }
-        return result;
-    }),
-
     JOB_RUN("${jobRun", (Object obj) -> {
         JobRunInfo jobRun = ((JobRunInfo) obj);
-        Matcher matcher = JOB_RUN_PLACEHOLDER_PATTERN.matcher(jobRun.getSubject());
         Map<String, Object> result = new HashMap<>();
+        Matcher matcher = JOB_RUN_PLACEHOLDER_PATTERN.matcher(jobRun.getSubject());
         while (matcher.find()) {
             String field = matcher.group("field");
             Object value = null;
@@ -141,6 +107,37 @@ public enum Placeholder {
                 result.put(param, jobParam.getParamValue());
             }
         });
+        return result;
+    }),
+
+    // ${time:yyyyMMdd[curDate-3d]}
+    TIME("${time", (@Nonnull Object obj) -> {
+        JobRunInfo jobRun = ((JobRunInfo) obj);
+        Map<String, Object> result = new HashMap<>();
+        Matcher matcher = TIME_PLACEHOLDER_PATTERN.matcher(jobRun.getSubject());
+        while (matcher.find()) {
+            String variable = matcher.group();
+            if (result.containsKey(variable)) {
+                continue;
+            }
+
+            String format = checkNotNull(matcher.group("format"));
+            String baseTime = checkNotNull(matcher.group("baseTime"));
+            String operator = matcher.group("operator");
+            String duration = matcher.group("duration");
+            BaseTimeUnit baseTimeUnit = BaseTimeUnit.of(baseTime);
+            LocalDateTime destTime = baseTimeUnit.provider.get();
+            // dest time plus duration.
+            if (StringUtils.isNotBlank(duration)) {
+                Duration parsedDuration = DurationUtil.parse(duration);
+                if ("-".equals(operator)) {
+                    parsedDuration = parsedDuration.negated();
+                }
+                destTime = destTime.plus(parsedDuration);
+            }
+
+            result.put(variable, DateUtil.format(destTime, format));
+        }
         return result;
     }),
 
