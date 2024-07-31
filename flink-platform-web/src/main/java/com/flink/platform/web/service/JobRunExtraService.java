@@ -3,18 +3,18 @@ package com.flink.platform.web.service;
 import com.flink.platform.common.constants.Constant;
 import com.flink.platform.dao.entity.JobInfo;
 import com.flink.platform.dao.entity.JobRunInfo;
-import com.flink.platform.dao.entity.Worker;
 import com.flink.platform.dao.service.JobRunInfoService;
 import com.flink.platform.web.enums.Placeholder;
 import com.flink.platform.web.enums.Variable;
 import org.apache.commons.collections4.MapUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import static com.flink.platform.common.enums.ExecutionStatus.CREATED;
 
@@ -29,29 +29,28 @@ public class JobRunExtraService {
     private WorkerApplyService workerApplyService;
 
     public Long createJobRun(JobInfo jobInfo, Long flowRunId) {
-        Worker worker = workerApplyService.randomWorker(jobInfo.getRouteUrl());
-        String host = worker != null ? worker.getIp() : Constant.HOST_IP;
+        var worker = workerApplyService.randomWorker(jobInfo.getRouteUrl());
+        var host = worker != null ? worker.getIp() : Constant.HOST_IP;
         return _parseVarsAndSave(jobInfo, flowRunId, host);
     }
 
     @Transactional
     public Long _parseVarsAndSave(JobInfo jobInfo, Long flowRunId, String host) {
         // Save jobRun, generate an id.
-        JobRunInfo jobRun = createFrom(jobInfo, flowRunId, host);
+        var jobRun = createFrom(jobInfo, flowRunId, host);
         jobRunService.save(jobRun);
         // Update variables/subject in jobRun.
-        Map<String, Object> variableMap = parseVariables(jobRun);
-        String plainSubject = getPlainSubject(jobRun.getSubject(), variableMap);
-        JobRunInfo newJobRun = new JobRunInfo();
+        var pair = replaceVarsInSubject(jobRun);
+        var newJobRun = new JobRunInfo();
         newJobRun.setId(jobRun.getId());
-        newJobRun.setVariables(variableMap);
-        newJobRun.setSubject(plainSubject);
+        newJobRun.setVariables(pair.getRight());
+        newJobRun.setSubject(pair.getLeft());
         jobRunService.updateById(newJobRun);
         return jobRun.getId();
     }
 
     public JobRunInfo createFrom(JobInfo jobInfo, Long flowRunId, String host) {
-        JobRunInfo jobRun = new JobRunInfo();
+        var jobRun = new JobRunInfo();
         jobRun.setName(jobInfo.getName() + "-" + System.currentTimeMillis());
         jobRun.setJobId(jobInfo.getId());
         jobRun.setFlowRunId(flowRunId);
@@ -69,24 +68,37 @@ public class JobRunExtraService {
         return jobRun;
     }
 
-    private Map<String, Object> parseVariables(JobRunInfo jobRun) {
-        Map<String, Object> variableMap = new HashMap<>();
-        Arrays.stream(Placeholder.values())
-                .filter(placeholder -> jobRun.getSubject().contains(placeholder.wildcard))
-                .map(placeholder -> placeholder.provider.apply(jobRun))
-                .forEach(variableMap::putAll);
+    public static Pair<String, Map<String, Object>> replaceVarsInSubject(JobRunInfo jobRun) {
+        var variableMap = new HashMap<String, Object>();
 
-        MapUtils.emptyIfNull(jobRun.getVariables()).forEach((name, value) -> {
-            Variable sqlVar = Variable.matchPrefix(name);
-            variableMap.put(name, sqlVar.provider.apply(value));
-        });
-        return variableMap;
-    }
+        for (Placeholder placeholder : Placeholder.values()) {
+            var subject = jobRun.getSubject();
+            if (!subject.contains(placeholder.wildcard)) {
+                continue;
+            }
 
-    public static String getPlainSubject(String subject, Map<String, Object> variableMap) {
-        for (Map.Entry<String, Object> entry : variableMap.entrySet()) {
-            subject = subject.replace(entry.getKey(), entry.getValue().toString());
+            var vars = placeholder.provider.apply(jobRun);
+            variableMap.putAll(vars);
+
+            for (Map.Entry<String, Object> entry : vars.entrySet()) {
+                subject = subject.replace(entry.getKey(), entry.getValue().toString());
+            }
+
+            jobRun.setSubject(subject);
         }
-        return subject;
+
+        var content = jobRun.getSubject();
+        var variables = jobRun.getVariables();
+        if (MapUtils.isNotEmpty(variables)) {
+            for (Entry<String, Object> entry : variables.entrySet()) {
+                var name = entry.getKey();
+                var sqlVar = Variable.matchPrefix(name);
+                var value = sqlVar.provider.apply(entry.getValue());
+                variableMap.put(name, value);
+                content = content.replace(name, value.toString());
+            }
+        }
+
+        return Pair.of(content, variableMap);
     }
 }
