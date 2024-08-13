@@ -14,7 +14,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Map.Entry;
 
 import static com.flink.platform.common.enums.ExecutionStatus.CREATED;
 
@@ -80,7 +79,7 @@ public class JobRunExtraService {
             var vars = placeholder.provider.apply(jobRun);
             variableMap.putAll(vars);
 
-            for (Map.Entry<String, Object> entry : vars.entrySet()) {
+            for (var entry : vars.entrySet()) {
                 subject = subject.replace(entry.getKey(), entry.getValue().toString());
             }
 
@@ -90,7 +89,7 @@ public class JobRunExtraService {
         var content = jobRun.getSubject();
         var variables = jobRun.getVariables();
         if (MapUtils.isNotEmpty(variables)) {
-            for (Entry<String, Object> entry : variables.entrySet()) {
+            for (var entry : variables.entrySet()) {
                 var name = entry.getKey();
                 var sqlVar = Variable.matchPrefix(name);
                 var value = sqlVar.provider.apply(entry.getValue());
