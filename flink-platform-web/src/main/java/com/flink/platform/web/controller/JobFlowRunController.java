@@ -96,7 +96,7 @@ public class JobFlowRunController {
                 .eq(JobFlowRun::getUserId, loginUser.getId())
                 .eq(nonNull(id), JobFlowRun::getId, id)
                 .eq(nonNull(status), JobFlowRun::getStatus, status)
-                .like(isNotEmpty(name), JobFlowRun::getName, name)
+                .likeRight(isNotEmpty(name), JobFlowRun::getName, name)
                 .like(isNotEmpty(tagCode), JobFlowRun::getTags, tagCode)
                 .between(nonNull(startTime) && nonNull(endTime), JobFlowRun::getCreateTime, startTime, endTime);
         if ("-id".equals(sort)) {

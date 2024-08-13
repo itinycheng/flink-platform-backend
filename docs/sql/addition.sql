@@ -14,3 +14,6 @@ UPDATE platform.t_job_flow_run SET `type` = 'JOB_FLOW' WHERE `type` is null;
 
 CREATE INDEX t_job_flow_run_flow_id_idx USING BTREE ON platform.t_job_flow_run (flow_id);
 CREATE INDEX t_job_run_job_id_idx USING BTREE ON platform.t_job_run (job_id);
+
+CREATE INDEX t_job_flow_run_name_idx USING BTREE ON platform.t_job_flow_run (name);
+CREATE INDEX t_job_run_name_idx USING BTREE ON platform.t_job_run (name);
