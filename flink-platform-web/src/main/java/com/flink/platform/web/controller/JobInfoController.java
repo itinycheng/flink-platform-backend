@@ -120,6 +120,8 @@ public class JobInfoController {
             @RequestParam(name = "name", required = false) String name,
             @RequestParam(name = "status", required = false) JobStatus status,
             @RequestParam(name = "includeJobRuns", required = false, defaultValue = "false") boolean includeJobRuns,
+            @RequestParam(name = "excludeJobsInFlow", required = false, defaultValue = "false")
+                    boolean excludeJobsInFlow,
             @DateTimeFormat(pattern = GLOBAL_DATE_TIME_FORMAT) @RequestParam(name = "startTime", required = false)
                     LocalDateTime startTime,
             @DateTimeFormat(pattern = GLOBAL_DATE_TIME_FORMAT) @RequestParam(name = "endTime", required = false)
@@ -140,6 +142,12 @@ public class JobInfoController {
 
         if ("-id".equals(sort)) {
             queryWrapper.orderByDesc(JobInfo::getId);
+        }
+
+        // exclude jobs in workflow dag.
+        if (excludeJobsInFlow && flowId != null) {
+            List<Long> jobIds = getJobIdsInFlow(flowId);
+            queryWrapper.notIn(isNotEmpty(jobIds), JobInfo::getId, jobIds);
         }
 
         Page<JobInfo> pager = new Page<>(page, size);
@@ -169,12 +177,7 @@ public class JobInfoController {
             @RequestParam(name = "flag", defaultValue = "all") String flag) {
         List<Long> jobIds = null;
         if ("flow".equals(flag)) {
-            JobFlow jobFlow = jobFlowService.getById(flowId);
-            if (jobFlow != null && jobFlow.getFlow() != null) {
-                jobIds = jobFlow.getFlow().getVertices().stream()
-                        .map(JobVertex::getJobId)
-                        .collect(toList());
-            }
+            jobIds = getJobIdsInFlow(flowId);
         }
 
         List<JobInfo> list = jobInfoService.list(new QueryWrapper<JobInfo>()
@@ -220,6 +223,21 @@ public class JobInfoController {
             return success(jobId);
         } else {
             return failure(SERVICE_ERROR);
+        }
+    }
+
+    private List<Long> getJobIdsInFlow(Long flowId) {
+        if (flowId == null) {
+            return Collections.emptyList();
+        }
+
+        JobFlow jobFlow = jobFlowService.getById(flowId);
+        if (jobFlow != null && jobFlow.getFlow() != null) {
+            return jobFlow.getFlow().getVertices().stream()
+                    .map(JobVertex::getJobId)
+                    .collect(toList());
+        } else {
+            return Collections.emptyList();
         }
     }
 }
