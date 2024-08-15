@@ -42,7 +42,9 @@ import static com.flink.platform.common.enums.JobStatus.ONLINE;
 import static com.flink.platform.common.enums.ResponseStatus.ERROR_PARAMETER;
 import static com.flink.platform.common.enums.ResponseStatus.EXIST_UNFINISHED_PROCESS;
 import static com.flink.platform.common.enums.ResponseStatus.NOT_RUNNABLE_STATUS;
+import static com.flink.platform.common.enums.ResponseStatus.OPERATION_NOT_ALLOWED;
 import static com.flink.platform.common.enums.ResponseStatus.SERVICE_ERROR;
+import static com.flink.platform.common.enums.ResponseStatus.USER_HAVE_NO_PERMISSION;
 import static com.flink.platform.common.util.DateUtil.GLOBAL_DATE_TIME_FORMAT;
 import static com.flink.platform.dao.entity.JobInfo.LARGE_FIELDS;
 import static com.flink.platform.web.entity.response.ResultInfo.failure;
@@ -239,5 +241,29 @@ public class JobInfoController {
         } else {
             return Collections.emptyList();
         }
+    }
+
+    @GetMapping(value = "/purge/{jobId}")
+    public ResultInfo<Long> purge(
+            @RequestAttribute(value = Constant.SESSION_USER) User loginUser, @PathVariable long jobId) {
+        JobInfo jobInfo = jobInfoService.getById(jobId);
+        if (jobInfo == null) {
+            return failure(ERROR_PARAMETER);
+        }
+
+        if (!loginUser.getId().equals(jobInfo.getUserId())) {
+            return failure(USER_HAVE_NO_PERMISSION);
+        }
+
+        Long flowId = jobInfo.getFlowId();
+        JobFlow jobFlow = jobFlowService.getById(flowId);
+        if (jobFlow != null && jobFlow.getFlow() != null) {
+            if (jobFlow.getFlow().containsVertex(jobId)) {
+                return failure(OPERATION_NOT_ALLOWED, "Job is in flow, can't be deleted");
+            }
+        }
+
+        jobInfoService.deleteAllById(jobId);
+        return success(jobId);
     }
 }

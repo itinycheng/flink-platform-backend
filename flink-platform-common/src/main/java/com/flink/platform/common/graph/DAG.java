@@ -175,6 +175,10 @@ public class DAG<VId, V extends Vertex<VId>, E extends Edge<VId>> {
         throw new IllegalArgumentException("No edge found");
     }
 
+    public boolean containsVertex(VId vertexId) {
+        return vertices.stream().anyMatch(v -> v.getId().equals(vertexId));
+    }
+
     private boolean isLegalEdge(E edge) {
         if (!vertices.contains(getVertex(edge.getFromVId()))) {
             log.error("Edge fromVertex[{}] not found", edge.getFromVId());
