@@ -1,10 +1,13 @@
 package com.flink.platform.alert;
 
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.flink.platform.common.util.JsonUtil;
 import com.flink.platform.dao.entity.AlertInfo;
 import com.flink.platform.dao.entity.JobFlowRun;
+import com.flink.platform.dao.entity.JobRunInfo;
 import com.flink.platform.dao.entity.alert.FeiShuAlert;
 import com.flink.platform.dao.service.AlertService;
+import com.flink.platform.dao.service.JobRunInfoService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpEntity;
@@ -13,12 +16,16 @@ import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
+import java.util.List;
+
 /** Alert sender. */
 @Slf4j
 @Component
 public class AlertSender {
 
     @Autowired private AlertService alertService;
+
+    @Autowired private JobRunInfoService jobRunInfoService;
 
     @Autowired private RestTemplate restTemplate;
 
@@ -48,6 +55,9 @@ public class AlertSender {
                             .replace("${name}", jobFlowRun.getName())
                             .replace("${status}", jobFlowRun.getStatus().name())
                             .replace("${alertMsg}", alertMsg);
+            if (content.contains("${jobRunDetails}")) {
+                content = content.replace("${jobRunDetails}", getJobRunDetails(jobFlowRun.getId()));
+            }
             FeiShuAlert feiShuAlert = new FeiShuAlert(alert.getWebhook(), JsonUtil.toMap(content));
             String message = sendToFeiShu(feiShuAlert);
             log.info(
@@ -59,6 +69,24 @@ public class AlertSender {
             log.error("send alert info to feiShu failed.", e);
             return false;
         }
+    }
+
+    private String getJobRunDetails(Long flowRunId) {
+        List<JobRunInfo> jobRuns =
+                jobRunInfoService.list(
+                        new QueryWrapper<JobRunInfo>()
+                                .lambda()
+                                .select(JobRunInfo::getName, JobRunInfo::getStatus)
+                                .eq(JobRunInfo::getFlowRunId, flowRunId));
+
+        StringBuilder buffer = new StringBuilder();
+        jobRuns.forEach(
+                jobRun ->
+                        buffer.append(String.format("%-10s", jobRun.getStatus().name()))
+                                .append(" : ")
+                                .append(jobRun.getName())
+                                .append("\n"));
+        return buffer.toString();
     }
 
     public String sendToFeiShu(FeiShuAlert alert) {

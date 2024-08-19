@@ -1,5 +1,6 @@
 package com.flink.platform.web.config;
 
+import com.flink.platform.common.exception.DefinitionException;
 import com.flink.platform.common.exception.UncaughtException;
 import com.flink.platform.web.entity.response.ResultInfo;
 import lombok.extern.slf4j.Slf4j;
@@ -20,6 +21,11 @@ public class ApiExceptionHandler {
     public ResultInfo<Object> exceptionHandler(Exception e) {
         if (e instanceof UncaughtException) {
             throw (UncaughtException) e;
+        }
+
+        if (e instanceof DefinitionException) {
+            DefinitionException exception = (DefinitionException) e;
+            return failure(exception.getStatus());
         }
 
         log.error("Exception: ", e);

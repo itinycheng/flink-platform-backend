@@ -5,16 +5,17 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.flink.platform.common.constants.Constant;
-import com.flink.platform.common.enums.ExecutionStatus;
 import com.flink.platform.common.enums.JobFlowStatus;
 import com.flink.platform.common.util.UuidGenerator;
 import com.flink.platform.dao.entity.ExecutionConfig;
 import com.flink.platform.dao.entity.JobFlow;
 import com.flink.platform.dao.entity.JobFlowDag;
 import com.flink.platform.dao.entity.JobFlowRun;
+import com.flink.platform.dao.entity.JobRunInfo;
 import com.flink.platform.dao.entity.User;
 import com.flink.platform.dao.service.JobFlowRunService;
 import com.flink.platform.dao.service.JobFlowService;
+import com.flink.platform.dao.service.JobRunInfoService;
 import com.flink.platform.web.config.annotation.ApiException;
 import com.flink.platform.web.entity.JobFlowQuartzInfo;
 import com.flink.platform.web.entity.request.JobFlowRequest;
@@ -33,13 +34,17 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static com.flink.platform.common.enums.ExecutionStatus.getNonTerminals;
+import static com.flink.platform.common.enums.JobFlowStatus.SCHEDULING;
+import static com.flink.platform.common.enums.JobFlowType.JOB_LIST;
 import static com.flink.platform.common.enums.ResponseStatus.ERROR_PARAMETER;
 import static com.flink.platform.common.enums.ResponseStatus.EXIST_UNFINISHED_PROCESS;
+import static com.flink.platform.common.enums.ResponseStatus.FLOW_ALREADY_SCHEDULED;
+import static com.flink.platform.common.enums.ResponseStatus.JOB_LIST_NOT_SUPPORT_SCHEDULING;
 import static com.flink.platform.common.enums.ResponseStatus.NOT_RUNNABLE_STATUS;
 import static com.flink.platform.common.enums.ResponseStatus.NO_CRONTAB_SET;
 import static com.flink.platform.common.enums.ResponseStatus.SERVICE_ERROR;
@@ -64,6 +69,8 @@ public class JobFlowController {
 
     @Autowired private QuartzService quartzService;
 
+    @Autowired private JobRunInfoService jobRunService;
+
     @ApiException
     @PostMapping(value = "/create")
     public ResultInfo<Long> create(
@@ -79,6 +86,10 @@ public class JobFlowController {
         jobFlow.setCode(UuidGenerator.generateShortUuid());
         jobFlow.setUserId(loginUser.getId());
         jobFlow.setStatus(JobFlowStatus.OFFLINE);
+        if (JOB_LIST.equals(jobFlow.getType())) {
+            jobFlow.setStatus(JobFlowStatus.ONLINE);
+            jobFlow.setFlow(new JobFlowDag());
+        }
         jobFlowService.save(jobFlow);
         return success(jobFlowRequest.getId());
     }
@@ -206,11 +217,20 @@ public class JobFlowController {
             return failure(ERROR_PARAMETER, errorMsg);
         }
 
-        JobFlow jobFlow = jobFlowService.getById(jobFlowRequest.getId());
+        JobFlow jobFlow = jobFlowService.getById(flowId);
+        if (JOB_LIST.equals(jobFlow.getType())) {
+            return failure(JOB_LIST_NOT_SUPPORT_SCHEDULING);
+        }
+
         JobFlowStatus status = jobFlow.getStatus();
         if (status == null || !status.isRunnable()) {
             return failure(NOT_RUNNABLE_STATUS);
         }
+
+        if (SCHEDULING.equals(status)) {
+            return failure(FLOW_ALREADY_SCHEDULED);
+        }
+
         if (StringUtils.isEmpty(jobFlow.getCronExpr())) {
             return failure(NO_CRONTAB_SET);
         }
@@ -251,22 +271,40 @@ public class JobFlowController {
             return failure(NOT_RUNNABLE_STATUS);
         }
 
-        // TODO better in sync lock.
-        List<JobFlowRun> notFinishedList =
-                jobFlowRunService.list(
-                        new QueryWrapper<JobFlowRun>()
-                                .lambda()
-                                .eq(JobFlowRun::getFlowId, flowId)
-                                .in(JobFlowRun::getStatus, ExecutionStatus.getNonTerminals())
-                                .gt(JobFlowRun::getCreateTime, LocalDateTime.now().minusDays(1)));
-        if (CollectionUtils.isNotEmpty(notFinishedList)) {
-            return failure(EXIST_UNFINISHED_PROCESS);
+        // TODO: better in sync lock.
+        if (JOB_LIST.equals(jobFlow.getType())) {
+            // scheduling of job list is unsupported.
+            if (config == null || config.getStartJobId() == null) {
+                return failure(JOB_LIST_NOT_SUPPORT_SCHEDULING);
+            }
+
+            // check if the start job is finished.
+            JobRunInfo unfinishedJob =
+                    jobRunService.getOne(
+                            new QueryWrapper<JobRunInfo>()
+                                    .lambda()
+                                    .eq(JobRunInfo::getJobId, config.getStartJobId())
+                                    .in(JobRunInfo::getStatus, getNonTerminals())
+                                    .last("limit 1"));
+            if (unfinishedJob != null) {
+                return failure(EXIST_UNFINISHED_PROCESS);
+            }
+        } else {
+            List<JobFlowRun> notFinishedList =
+                    jobFlowRunService.list(
+                            new QueryWrapper<JobFlowRun>()
+                                    .lambda()
+                                    .eq(JobFlowRun::getFlowId, flowId)
+                                    .in(JobFlowRun::getStatus, getNonTerminals()));
+            if (CollectionUtils.isNotEmpty(notFinishedList)) {
+                return failure(EXIST_UNFINISHED_PROCESS);
+            }
         }
 
         // run once.
-        JobFlowQuartzInfo jobFlowQuartzInfo = new JobFlowQuartzInfo(jobFlow);
-        jobFlowQuartzInfo.setConfig(config);
-        if (quartzService.runOnce(jobFlowQuartzInfo)) {
+        JobFlowQuartzInfo quartzInfo = new JobFlowQuartzInfo(jobFlow);
+        quartzInfo.setConfig(config);
+        if (quartzService.runOnce(quartzInfo)) {
             return success(flowId);
         } else {
             return failure(SERVICE_ERROR);

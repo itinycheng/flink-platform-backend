@@ -2,7 +2,7 @@ syntax = "proto3";
 
 option java_multiple_files = true;
 option java_package = "com.flink.platform.grpc";
-option java_outer_classname = "HelloWorldProto";
+option java_outer_classname = "JobProto";
 
 import public "google/protobuf/timestamp.proto";
 import public "google/protobuf/empty.proto";
@@ -19,6 +19,10 @@ service JobGrpcService {
 
   // kill job.
   rpc KillJob (KillJobRequest) returns (KillJobReply) {
+  }
+
+  // savepoint job.
+  rpc SavepointJob (SavepointRequest) returns (SavepointReply) {
   }
 }
 
@@ -48,5 +52,13 @@ message KillJobRequest {
 }
 
 message KillJobReply {
+  int64 jobRunId = 1;
+}
+
+message SavepointRequest {
+  int64 jobRunId = 1;
+}
+
+message SavepointReply {
   int64 jobRunId = 1;
 }

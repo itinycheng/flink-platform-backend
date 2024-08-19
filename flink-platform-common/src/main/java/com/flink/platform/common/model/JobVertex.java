@@ -29,4 +29,8 @@ public class JobVertex extends Vertex<Long> {
         super(id);
         this.jobId = Preconditions.checkNotNull(jobId);
     }
+
+    public JobVertex(Long jobId) {
+        this(jobId, jobId);
+    }
 }

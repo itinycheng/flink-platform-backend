@@ -34,7 +34,7 @@ public class JobRunner implements Job {
         JobKey key = detail.getKey();
         Long jobId = Long.parseLong(key.getName());
 
-        JobVertex jobVertex = new JobVertex(jobId, jobId);
+        JobVertex jobVertex = new JobVertex(jobId);
         jobVertex.setPrecondition(AND);
         EXECUTOR.execute(
                 () -> {
