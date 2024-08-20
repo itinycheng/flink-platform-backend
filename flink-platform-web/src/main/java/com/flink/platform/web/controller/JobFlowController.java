@@ -39,6 +39,8 @@ import java.util.List;
 import java.util.Map;
 
 import static com.flink.platform.common.enums.ExecutionStatus.getNonTerminals;
+import static com.flink.platform.common.enums.JobFlowStatus.OFFLINE;
+import static com.flink.platform.common.enums.JobFlowStatus.ONLINE;
 import static com.flink.platform.common.enums.JobFlowStatus.SCHEDULING;
 import static com.flink.platform.common.enums.JobFlowType.JOB_LIST;
 import static com.flink.platform.common.enums.ResponseStatus.ERROR_PARAMETER;
@@ -90,9 +92,9 @@ public class JobFlowController {
         jobFlow.setId(null);
         jobFlow.setCode(UuidGenerator.generateShortUuid());
         jobFlow.setUserId(loginUser.getId());
-        jobFlow.setStatus(JobFlowStatus.OFFLINE);
+        jobFlow.setStatus(OFFLINE);
         if (JOB_LIST.equals(jobFlow.getType())) {
-            jobFlow.setStatus(JobFlowStatus.ONLINE);
+            jobFlow.setStatus(ONLINE);
             jobFlow.setFlow(new JobFlowDag());
         }
         jobFlowService.save(jobFlow);
@@ -109,6 +111,14 @@ public class JobFlowController {
 
         jobFlowRequest.setCode(null);
         jobFlowRequest.setUserId(null);
+
+        if (JOB_LIST.equals(jobFlowRequest.getType())) {
+            JobFlow jobFlow = jobFlowService.getById(jobFlowRequest.getId());
+            if (OFFLINE.equals(jobFlow.getStatus())) {
+                jobFlowRequest.setStatus(ONLINE);
+            }
+        }
+
         jobFlowService.updateById(jobFlowRequest.getJobFlow());
         return success(jobFlowRequest.getId());
     }
