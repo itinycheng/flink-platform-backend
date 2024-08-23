@@ -3,6 +3,7 @@ package com.flink.platform.dao.service;
 import com.baomidou.dynamic.datasource.annotation.DS;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.flink.platform.common.model.JobVertex;
 import com.flink.platform.common.util.UuidGenerator;
 import com.flink.platform.dao.entity.JobFlow;
 import com.flink.platform.dao.entity.JobFlowDag;
@@ -12,7 +13,6 @@ import com.flink.platform.dao.entity.JobFlowRun;
 import com.flink.platform.dao.entity.JobInfo;
 import com.flink.platform.dao.entity.JobRunInfo;
 import com.flink.platform.dao.mapper.JobFlowMapper;
-import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,8 +21,10 @@ import java.util.HashMap;
 import java.util.List;
 
 import static com.flink.platform.common.enums.JobFlowStatus.OFFLINE;
+import static com.flink.platform.common.enums.JobFlowType.JOB_LIST;
 import static java.lang.String.format;
 import static java.util.stream.Collectors.toList;
+import static org.apache.commons.collections4.CollectionUtils.isNotEmpty;
 
 /** job config info. */
 @Service
@@ -40,15 +42,26 @@ public class JobFlowService extends ServiceImpl<JobFlowMapper, JobFlow> {
 
     @Transactional
     public JobFlow cloneJobFlow(long flowId) {
-        var jobFlow = getById(flowId);
+        // clone jobFlow.
+        final var jobFlow = getById(flowId);
+        jobFlow.setId(null);
+        jobFlow.setName(format("%s-copy_%d", jobFlow.getName(), System.currentTimeMillis()));
+        jobFlow.setCode(UuidGenerator.generateShortUuid());
+        jobFlow.setStatus(OFFLINE);
+        save(jobFlow);
 
-        // clone jobs.
         var flow = jobFlow.getFlow();
+        if (flow == null) {
+            flow = new JobFlowDag();
+        }
+
+        // clone jobs in workflow.
         var vertices = flow.getVertices();
         var newIdMap = new HashMap<Long, Long>(vertices.size());
         for (var vertex : vertices) {
             var jobInfo = jobInfoService.getById(vertex.getJobId());
             jobInfo.setId(null);
+            jobInfo.setFlowId(jobFlow.getId());
             jobInfo.setName(format("%s-copy", jobInfo.getName()));
             jobInfoService.save(jobInfo);
             newIdMap.put(vertex.getJobId(), jobInfo.getId());
@@ -85,13 +98,25 @@ public class JobFlowService extends ServiceImpl<JobFlowMapper, JobFlow> {
         }
         flow.setEdgeLayouts(newEdgeLayouts);
 
-        // clone jobFlow.
-        jobFlow.setId(null);
-        jobFlow.setName(format("%s-copy_%d", jobFlow.getName(), System.currentTimeMillis()));
-        jobFlow.setCode(UuidGenerator.generateShortUuid());
-        jobFlow.setStatus(OFFLINE);
+        // copy jobs not in workflow.
+        if (JOB_LIST.equals(jobFlow.getType())) {
+            List<Long> jobIds = vertices.stream().map(JobVertex::getJobId).toList();
+            jobInfoService
+                    .list(new QueryWrapper<JobInfo>()
+                            .lambda()
+                            .eq(JobInfo::getFlowId, flowId)
+                            .in(isNotEmpty(jobIds), JobInfo::getId, jobIds))
+                    .forEach(jobInfo -> {
+                        jobInfo.setId(null);
+                        jobInfo.setFlowId(jobFlow.getId());
+                        jobInfo.setName(format("%s-copy", jobInfo.getName()));
+                        jobInfoService.save(jobInfo);
+                    });
+        }
+
+        // update workflow.
         jobFlow.setFlow(flow);
-        save(jobFlow);
+        updateFlowById(jobFlow);
         return jobFlow;
     }
 
@@ -101,7 +126,7 @@ public class JobFlowService extends ServiceImpl<JobFlowMapper, JobFlow> {
                 .lambda()
                 .eq(JobInfo::getFlowId, flowId)
                 .eq(JobInfo::getUserId, userId));
-        if (CollectionUtils.isNotEmpty(jobInfoList)) {
+        if (isNotEmpty(jobInfoList)) {
             List<Long> jobIds = jobInfoList.stream().map(JobInfo::getId).collect(toList());
             jobRunInfoService.remove(new QueryWrapper<JobRunInfo>().lambda().in(JobRunInfo::getJobId, jobIds));
             jobInfoService.remove(new QueryWrapper<JobInfo>().lambda().in(JobInfo::getId, jobIds));
