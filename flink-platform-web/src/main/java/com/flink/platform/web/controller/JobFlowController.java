@@ -10,8 +10,6 @@ import com.flink.platform.common.util.UuidGenerator;
 import com.flink.platform.dao.entity.ExecutionConfig;
 import com.flink.platform.dao.entity.JobFlow;
 import com.flink.platform.dao.entity.JobFlowDag;
-import com.flink.platform.dao.entity.JobFlowRun;
-import com.flink.platform.dao.entity.JobRunInfo;
 import com.flink.platform.dao.entity.User;
 import com.flink.platform.dao.service.JobFlowRunService;
 import com.flink.platform.dao.service.JobFlowService;
@@ -38,7 +36,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static com.flink.platform.common.enums.ExecutionStatus.getNonTerminals;
 import static com.flink.platform.common.enums.JobFlowStatus.OFFLINE;
 import static com.flink.platform.common.enums.JobFlowStatus.ONLINE;
 import static com.flink.platform.common.enums.JobFlowStatus.SCHEDULING;
@@ -271,8 +268,8 @@ public class JobFlowController {
 
     @PostMapping(value = "/schedule/runOnce/{flowId}")
     public ResultInfo<Long> runOnce(@PathVariable Long flowId, @RequestBody(required = false) ExecutionConfig config) {
-        JobFlow jobFlow = jobFlowService.getById(flowId);
-        JobFlowStatus status = jobFlow.getStatus();
+        var jobFlow = jobFlowService.getById(flowId);
+        var status = jobFlow.getStatus();
         if (status == null || !status.isRunnable()) {
             return failure(NOT_RUNNABLE_STATUS);
         }
@@ -285,26 +282,17 @@ public class JobFlowController {
             }
 
             // check if the start job is finished.
-            JobRunInfo unfinishedJob = jobRunService.getOne(new QueryWrapper<JobRunInfo>()
-                    .lambda()
-                    .eq(JobRunInfo::getJobId, config.getStartJobId())
-                    .in(JobRunInfo::getStatus, getNonTerminals())
-                    .last("limit 1"));
-            if (unfinishedJob != null) {
+            if (jobRunService.findRunningJob(config.getStartJobId()) != null) {
                 return failure(EXIST_UNFINISHED_PROCESS);
             }
         } else {
-            List<JobFlowRun> notFinishedList = jobFlowRunService.list(new QueryWrapper<JobFlowRun>()
-                    .lambda()
-                    .eq(JobFlowRun::getFlowId, flowId)
-                    .in(JobFlowRun::getStatus, getNonTerminals()));
-            if (CollectionUtils.isNotEmpty(notFinishedList)) {
+            if (jobFlowRunService.findRunningFlow(flowId, config) != null) {
                 return failure(EXIST_UNFINISHED_PROCESS);
             }
         }
 
         // run once.
-        JobFlowQuartzInfo quartzInfo = new JobFlowQuartzInfo(jobFlow);
+        var quartzInfo = new JobFlowQuartzInfo(jobFlow);
         quartzInfo.setConfig(config);
         if (quartzService.runOnce(quartzInfo)) {
             return success(flowId);

@@ -10,7 +10,6 @@ import com.flink.platform.dao.entity.JobFlowDag;
 import com.flink.platform.dao.entity.JobFlowDag.NodeLayout;
 import com.flink.platform.dao.entity.JobFlowRun;
 import com.flink.platform.dao.entity.JobInfo;
-import com.flink.platform.dao.entity.JobRunInfo;
 import com.flink.platform.dao.service.JobFlowRunService;
 import com.flink.platform.dao.service.JobFlowService;
 import com.flink.platform.dao.service.JobInfoService;
@@ -22,16 +21,13 @@ import com.flink.platform.web.service.JobFlowScheduleService;
 import lombok.extern.slf4j.Slf4j;
 import org.quartz.Job;
 import org.quartz.JobDataMap;
-import org.quartz.JobDetail;
 import org.quartz.JobExecutionContext;
-import org.quartz.JobKey;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static com.flink.platform.common.constants.JobConstant.CONFIG;
 import static com.flink.platform.common.enums.ExecutionStatus.SUBMITTED;
-import static com.flink.platform.common.enums.ExecutionStatus.getNonTerminals;
 import static com.flink.platform.common.enums.JobFlowStatus.ONLINE;
 import static com.flink.platform.common.enums.JobFlowStatus.SCHEDULING;
 import static com.flink.platform.common.enums.JobFlowType.JOB_LIST;
@@ -58,14 +54,14 @@ public class JobFlowRunner implements Job {
 
     @Override
     public void execute(JobExecutionContext context) {
-        JobDetail detail = context.getJobDetail();
-        JobKey key = detail.getKey();
-        String code = key.getName();
-        JobDataMap dataMap = detail.getJobDataMap();
+        var detail = context.getJobDetail();
+        var key = detail.getKey();
+        var code = key.getName();
+        var dataMap = detail.getJobDataMap();
 
         synchronized (getProcessLock(code)) {
             // Get job flow info.
-            JobFlow jobFlow = jobFlowService.getOne(new QueryWrapper<JobFlow>()
+            var jobFlow = jobFlowService.getOne(new QueryWrapper<JobFlow>()
                     .lambda()
                     .eq(JobFlow::getCode, code)
                     .in(JobFlow::getStatus, ONLINE, SCHEDULING));
@@ -75,41 +71,33 @@ public class JobFlowRunner implements Job {
             }
 
             // execution config.
-            ExecutionConfig executionConfig = getOrMergeExecutionConfig(dataMap, jobFlow);
-            JobFlowRun jobFlowRun = jobFlowRunService.getOne(new QueryWrapper<JobFlowRun>()
-                    .lambda()
-                    .eq(JobFlowRun::getFlowId, jobFlow.getId())
-                    .in(JobFlowRun::getStatus, getNonTerminals()));
+            var executionConfig = getOrMergeExecutionConfig(dataMap, jobFlow);
 
-            if (jobFlowRun != null) {
-                if (JOB_LIST.equals(jobFlowRun.getType())) {
-                    JobRunInfo unfinishedJob = jobRunService.getOne(new QueryWrapper<JobRunInfo>()
-                            .lambda()
-                            .eq(JobRunInfo::getJobId, executionConfig.getStartJobId())
-                            .in(JobRunInfo::getStatus, getNonTerminals())
-                            .last("limit 1"));
-                    if (unfinishedJob != null) {
-                        log.warn(
-                                "The job: {} is in non-terminal status, job run id: {}",
-                                unfinishedJob.getName(),
-                                unfinishedJob.getId());
-                        alertSendingService.sendErrAlerts(
-                                jobFlow, "There is already a running job: " + unfinishedJob.getId());
-                        return;
-                    }
-                } else {
+            if (JOB_LIST.equals(jobFlow.getType())) {
+                var runningJob = jobRunService.findRunningJob(executionConfig.getStartJobId());
+                if (runningJob != null) {
+                    log.warn(
+                            "The job: {} is in non-terminal status, job run id: {}",
+                            runningJob.getName(),
+                            runningJob.getId());
+                    alertSendingService.sendErrAlerts(jobFlow, "There is already a running job: " + runningJob.getId());
+                    return;
+                }
+            } else {
+                var runningFlow = jobFlowRunService.findRunningFlow(jobFlow.getId(), executionConfig);
+                if (runningFlow != null) {
                     log.warn(
                             "The job flow: {} is in non-terminal status, run id: {}",
                             jobFlow.getName(),
-                            jobFlowRun.getId());
+                            runningFlow.getId());
                     alertSendingService.sendErrAlerts(
-                            jobFlow, "There is already a running jobFlowRun: " + jobFlowRun.getId());
+                            jobFlow, "There is already a running jobFlowRun: " + runningFlow.getId());
                     return;
                 }
             }
 
             // Create job flow run instance.
-            jobFlowRun = new JobFlowRun();
+            var jobFlowRun = new JobFlowRun();
             jobFlowRun.setFlowId(jobFlow.getId());
             jobFlowRun.setName(
                     String.join("-", jobFlow.getName(), jobFlow.getCode(), String.valueOf(System.currentTimeMillis())));
