@@ -193,12 +193,14 @@ public class JobFlowController {
 
     @GetMapping(value = "/idNameMapList")
     public ResultInfo<List<Map<String, Object>>> idNameMapList(
+            @RequestAttribute(value = Constant.SESSION_USER) User loginUser,
             @RequestParam(name = "name", required = false) String name,
             @RequestParam(name = "status", required = false) List<JobFlowStatus> status) {
         List<Map<String, Object>> listMap = jobFlowService
                 .list(new QueryWrapper<JobFlow>()
                         .lambda()
                         .select(JobFlow::getId, JobFlow::getName)
+                        .eq(JobFlow::getUserId, loginUser.getId())
                         .like(isNotBlank(name), JobFlow::getName, name)
                         .in(CollectionUtils.isNotEmpty(status), JobFlow::getStatus, status))
                 .stream()
