@@ -10,8 +10,6 @@ import com.flink.platform.common.util.UuidGenerator;
 import com.flink.platform.dao.entity.ExecutionConfig;
 import com.flink.platform.dao.entity.JobFlow;
 import com.flink.platform.dao.entity.JobFlowDag;
-import com.flink.platform.dao.entity.JobFlowRun;
-import com.flink.platform.dao.entity.JobRunInfo;
 import com.flink.platform.dao.entity.User;
 import com.flink.platform.dao.service.JobFlowRunService;
 import com.flink.platform.dao.service.JobFlowService;
@@ -22,6 +20,7 @@ import com.flink.platform.web.entity.request.JobFlowRequest;
 import com.flink.platform.web.entity.response.ResultInfo;
 import com.flink.platform.web.service.JobFlowQuartzService;
 import com.flink.platform.web.service.QuartzService;
+import lombok.var;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -38,7 +37,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static com.flink.platform.common.enums.ExecutionStatus.getNonTerminals;
+import static com.flink.platform.common.enums.JobFlowStatus.OFFLINE;
+import static com.flink.platform.common.enums.JobFlowStatus.ONLINE;
 import static com.flink.platform.common.enums.JobFlowStatus.SCHEDULING;
 import static com.flink.platform.common.enums.JobFlowType.JOB_LIST;
 import static com.flink.platform.common.enums.ResponseStatus.ERROR_PARAMETER;
@@ -85,9 +85,9 @@ public class JobFlowController {
         jobFlow.setId(null);
         jobFlow.setCode(UuidGenerator.generateShortUuid());
         jobFlow.setUserId(loginUser.getId());
-        jobFlow.setStatus(JobFlowStatus.OFFLINE);
+        jobFlow.setStatus(OFFLINE);
         if (JOB_LIST.equals(jobFlow.getType())) {
-            jobFlow.setStatus(JobFlowStatus.ONLINE);
+            jobFlow.setStatus(ONLINE);
             jobFlow.setFlow(new JobFlowDag());
         }
         jobFlowService.save(jobFlow);
@@ -104,6 +104,14 @@ public class JobFlowController {
 
         jobFlowRequest.setCode(null);
         jobFlowRequest.setUserId(null);
+
+        if (JOB_LIST.equals(jobFlowRequest.getType())) {
+            JobFlow jobFlow = jobFlowService.getById(jobFlowRequest.getId());
+            if (OFFLINE.equals(jobFlow.getStatus())) {
+                jobFlowRequest.setStatus(ONLINE);
+            }
+        }
+
         jobFlowService.updateById(jobFlowRequest.getJobFlow());
         return success(jobFlowRequest.getId());
     }
@@ -183,6 +191,7 @@ public class JobFlowController {
 
     @GetMapping(value = "/idNameMapList")
     public ResultInfo<List<Map<String, Object>>> idNameMapList(
+            @RequestAttribute(value = Constant.SESSION_USER) User loginUser,
             @RequestParam(name = "name", required = false) String name,
             @RequestParam(name = "status", required = false) List<JobFlowStatus> status) {
         List<Map<String, Object>> listMap =
@@ -191,6 +200,7 @@ public class JobFlowController {
                                 new QueryWrapper<JobFlow>()
                                         .lambda()
                                         .select(JobFlow::getId, JobFlow::getName)
+                                        .eq(JobFlow::getUserId, loginUser.getId())
                                         .like(isNotBlank(name), JobFlow::getName, name)
                                         .in(
                                                 CollectionUtils.isNotEmpty(status),
@@ -265,8 +275,8 @@ public class JobFlowController {
     @PostMapping(value = "/schedule/runOnce/{flowId}")
     public ResultInfo<Long> runOnce(
             @PathVariable Long flowId, @RequestBody(required = false) ExecutionConfig config) {
-        JobFlow jobFlow = jobFlowService.getById(flowId);
-        JobFlowStatus status = jobFlow.getStatus();
+        var jobFlow = jobFlowService.getById(flowId);
+        var status = jobFlow.getStatus();
         if (status == null || !status.isRunnable()) {
             return failure(NOT_RUNNABLE_STATUS);
         }
@@ -279,30 +289,17 @@ public class JobFlowController {
             }
 
             // check if the start job is finished.
-            JobRunInfo unfinishedJob =
-                    jobRunService.getOne(
-                            new QueryWrapper<JobRunInfo>()
-                                    .lambda()
-                                    .eq(JobRunInfo::getJobId, config.getStartJobId())
-                                    .in(JobRunInfo::getStatus, getNonTerminals())
-                                    .last("limit 1"));
-            if (unfinishedJob != null) {
+            if (jobRunService.findRunningJob(config.getStartJobId()) != null) {
                 return failure(EXIST_UNFINISHED_PROCESS);
             }
         } else {
-            List<JobFlowRun> notFinishedList =
-                    jobFlowRunService.list(
-                            new QueryWrapper<JobFlowRun>()
-                                    .lambda()
-                                    .eq(JobFlowRun::getFlowId, flowId)
-                                    .in(JobFlowRun::getStatus, getNonTerminals()));
-            if (CollectionUtils.isNotEmpty(notFinishedList)) {
+            if (jobFlowRunService.findRunningFlow(flowId, config) != null) {
                 return failure(EXIST_UNFINISHED_PROCESS);
             }
         }
 
         // run once.
-        JobFlowQuartzInfo quartzInfo = new JobFlowQuartzInfo(jobFlow);
+        var quartzInfo = new JobFlowQuartzInfo(jobFlow);
         quartzInfo.setConfig(config);
         if (quartzService.runOnce(quartzInfo)) {
             return success(flowId);
