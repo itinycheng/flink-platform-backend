@@ -10,7 +10,6 @@ import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -30,21 +29,8 @@ public class JobRunExtraService {
     public Long createJobRun(JobInfo jobInfo, Long flowRunId) {
         var worker = workerApplyService.randomWorker(jobInfo.getRouteUrl());
         var host = worker != null ? worker.getIp() : Constant.HOST_IP;
-        return _parseVarsAndSave(jobInfo, flowRunId, host);
-    }
-
-    @Transactional
-    public Long _parseVarsAndSave(JobInfo jobInfo, Long flowRunId, String host) {
-        // Save jobRun, generate an id.
         var jobRun = createFrom(jobInfo, flowRunId, host);
         jobRunService.save(jobRun);
-        // Update variables/subject in jobRun.
-        var pair = replaceVarsInSubject(jobRun);
-        var newJobRun = new JobRunInfo();
-        newJobRun.setId(jobRun.getId());
-        newJobRun.setVariables(pair.getRight());
-        newJobRun.setSubject(pair.getLeft());
-        jobRunService.updateById(newJobRun);
         return jobRun.getId();
     }
 
@@ -67,7 +53,7 @@ public class JobRunExtraService {
         return jobRun;
     }
 
-    public static Pair<String, Map<String, Object>> replaceVarsInSubject(JobRunInfo jobRun) {
+    public Pair<String, Map<String, Object>> parseVarsAndContent(JobRunInfo jobRun) {
         var variableMap = new HashMap<String, Object>();
 
         for (Placeholder placeholder : Placeholder.values()) {
