@@ -11,6 +11,7 @@ import com.flink.platform.web.command.CommandExecutor;
 import com.flink.platform.web.command.JobCommand;
 import com.flink.platform.web.command.flink.FlinkCommand;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -18,6 +19,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 import static com.flink.platform.common.constants.Constant.HOST_IP;
 
@@ -28,6 +30,8 @@ public class ProcessJobService {
 
     private final JobRunInfoService jobRunInfoService;
 
+    private final JobRunExtraService jobRunExtraService;
+
     private final List<CommandBuilder> jobCommandBuilders;
 
     private final List<CommandExecutor> jobCommandExecutors;
@@ -35,9 +39,11 @@ public class ProcessJobService {
     @Autowired
     public ProcessJobService(
             JobRunInfoService jobRunInfoService,
+            JobRunExtraService jobRunExtraService,
             List<CommandBuilder> jobCommandBuilders,
             List<CommandExecutor> jobCommandExecutors) {
         this.jobRunInfoService = jobRunInfoService;
+        this.jobRunExtraService = jobRunExtraService;
         this.jobCommandBuilders = jobCommandBuilders;
         this.jobCommandExecutors = jobCommandExecutors;
     }
@@ -53,9 +59,15 @@ public class ProcessJobService {
                 throw new UnrecoverableException(String.format("The job run: %s is no longer exists.", jobRunId));
             }
 
-            // step 2: Update jobRun info before execution.
+            // step 2: Update jobRun and prepare environment before execution.
+            Pair<String, Map<String, Object>> pair = jobRunExtraService.parseVarsAndContent(jobRunInfo);
+            jobRunInfo.setVariables(pair.getRight());
+            jobRunInfo.setSubject(pair.getLeft());
+
             JobRunInfo newJobRun = new JobRunInfo();
             newJobRun.setId(jobRunInfo.getId());
+            newJobRun.setVariables(pair.getRight());
+            newJobRun.setSubject(pair.getLeft());
             newJobRun.setHost(HOST_IP);
             jobRunInfoService.updateById(newJobRun);
 
