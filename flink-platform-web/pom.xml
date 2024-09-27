@@ -13,6 +13,19 @@
 	<name>flink-platform-web</name>
 	<packaging>jar</packaging>
 
+	<profiles>
+		<profile>
+			<id>apollo</id>
+			<dependencies>
+				<dependency>
+					<groupId>com.flink.platform</groupId>
+					<artifactId>flink-platform-plugin-apollo</artifactId>
+					<version>${project.version}</version>
+				</dependency>
+			</dependencies>
+		</profile>
+	</profiles>
+
 	<dependencies>
 		<dependency>
 			<groupId>com.flink.platform</groupId>

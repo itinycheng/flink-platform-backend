@@ -1,0 +1,20 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<parent>
+		<groupId>com.flink.platform</groupId>
+		<artifactId>flink-platform-backend</artifactId>
+		<version>0.0.1</version>
+	</parent>
+
+	<artifactId>flink-platform-plugin</artifactId>
+	<packaging>pom</packaging>
+
+	<name>flink-platform-plugin</name>
+	<url>http://maven.apache.org</url>
+	
+	<modules>
+		<module>flink-platform-plugin-apollo</module>
+	</modules>
+</project>

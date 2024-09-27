@@ -419,5 +419,6 @@
 		<module>flink-platform-ui</module>
 		<module>flink-platform-storage</module>
 		<module>flink-platform-web</module>
+		<module>flink-platform-plugin</module>
 	</modules>
 </project>
