@@ -24,8 +24,6 @@ public class JobConstant {
 
     public static final String TMP_FILE_SUFFIX = "tmp";
 
-    public static final String JOB_CODE_VAR = "${jobCode}";
-
     public static final String CURRENT_TIMESTAMP_VAR = "${currentTimestamp}";
 
     public static final String TODAY_YYYY_MM_DD_VAR = "${today_yyyyMMdd}";
