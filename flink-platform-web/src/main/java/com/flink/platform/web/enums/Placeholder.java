@@ -8,6 +8,7 @@ import com.flink.platform.dao.entity.JobParam;
 import com.flink.platform.dao.entity.JobRunInfo;
 import com.flink.platform.dao.service.JobParamService;
 import com.flink.platform.web.common.SpringContext;
+import com.flink.platform.web.service.PluginService;
 import jakarta.annotation.Nonnull;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
@@ -29,6 +30,8 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.regex.Matcher;
 
+import static com.flink.platform.common.constants.JobConstant.APOLLO_CONF_PATTERN;
+import static com.flink.platform.common.constants.JobConstant.APOLLO_CONF_PREFIX;
 import static com.flink.platform.common.constants.JobConstant.CURRENT_TIMESTAMP_VAR;
 import static com.flink.platform.common.constants.JobConstant.JOB_RUN_PLACEHOLDER_PATTERN;
 import static com.flink.platform.common.constants.JobConstant.PARAM_FORMAT;
@@ -60,6 +63,22 @@ public enum Placeholder {
         }
         return result;
     }),
+
+    APOLLO(APOLLO_CONF_PREFIX, uncheckedFunction(obj -> {
+        JobRunInfo jobRun = (JobRunInfo) obj;
+        PluginService pluginService = SpringContext.getBean(PluginService.class);
+        Map<String, Object> result = new HashMap<>();
+        Matcher matcher = APOLLO_CONF_PATTERN.matcher(jobRun.getSubject());
+        while (matcher.find()) {
+            String paramName = matcher.group();
+            String namespace = matcher.group("namespace");
+            String key = matcher.group("key");
+            if (StringUtils.isNotBlank(namespace) && StringUtils.isNotBlank(key)) {
+                result.put(paramName, pluginService.getApolloConfig(namespace, key));
+            }
+        }
+        return result;
+    })),
 
     RESOURCE("${resource", uncheckedFunction(obj -> {
         JobRunInfo jobRun = (JobRunInfo) obj;
