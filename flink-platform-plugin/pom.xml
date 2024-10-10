@@ -16,5 +16,6 @@
 	
 	<modules>
 		<module>flink-platform-plugin-apollo</module>
+		<module>flink-platform-plugin-base</module>
 	</modules>
 </project>

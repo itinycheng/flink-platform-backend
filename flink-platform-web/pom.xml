@@ -23,10 +23,18 @@
 					<version>${project.version}</version>
 				</dependency>
 			</dependencies>
+			<activation>
+				<activeByDefault>true</activeByDefault>
+			</activation>
 		</profile>
 	</profiles>
 
 	<dependencies>
+		<dependency>
+			<groupId>com.flink.platform</groupId>
+			<artifactId>flink-platform-plugin-base</artifactId>
+			<version>${project.version}</version>
+		</dependency>
 		<dependency>
 			<groupId>com.flink.platform</groupId>
 			<artifactId>flink-platform-grpc</artifactId>
@@ -114,24 +122,18 @@
 	<build>
 		<resources>
 			<resource>
-				<directory>src/main/profiles/${env}</directory>
+				<directory>src/main/resources</directory>
+				<includes>
+					<include>static/**</include>
+				</includes>
+				<filtering>false</filtering>
 			</resource>
 			<resource>
 				<directory>src/main/resources</directory>
-			</resource>
-			<resource>
-				<directory>src/main/java</directory>
-				<includes>
-					<include>**/*.xml</include>
-				</includes>
 				<filtering>true</filtering>
-			</resource>
-			<resource>
-				<directory>lib</directory>
-				<targetPath>BOOT-INF/lib/</targetPath>
-				<includes>
-					<include>**/*.jar</include>
-				</includes>
+				<excludes>
+					<exclude>static/**</exclude>
+				</excludes>
 			</resource>
 		</resources>
 
