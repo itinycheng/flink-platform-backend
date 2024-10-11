@@ -8,6 +8,7 @@ import com.flink.platform.dao.entity.JobParam;
 import com.flink.platform.dao.entity.JobRunInfo;
 import com.flink.platform.dao.service.JobParamService;
 import com.flink.platform.web.common.SpringContext;
+import com.flink.platform.web.service.PluginService;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
@@ -30,8 +31,9 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.regex.Matcher;
 
+import static com.flink.platform.common.constants.JobConstant.APOLLO_CONF_PATTERN;
+import static com.flink.platform.common.constants.JobConstant.APOLLO_CONF_PREFIX;
 import static com.flink.platform.common.constants.JobConstant.CURRENT_TIMESTAMP_VAR;
-import static com.flink.platform.common.constants.JobConstant.JOB_CODE_VAR;
 import static com.flink.platform.common.constants.JobConstant.JOB_RUN_PLACEHOLDER_PATTERN;
 import static com.flink.platform.common.constants.JobConstant.PARAM_FORMAT;
 import static com.flink.platform.common.constants.JobConstant.RESOURCE_PATTERN;
@@ -64,6 +66,29 @@ public enum Placeholder {
                 }
                 return result;
             }),
+
+    APOLLO(
+            APOLLO_CONF_PREFIX,
+            uncheckedFunction(
+                    obj -> {
+                        String content =
+                                obj instanceof JobRunInfo
+                                        ? ((JobRunInfo) obj).getSubject()
+                                        : (String) obj;
+                        PluginService pluginService = SpringContext.getBean(PluginService.class);
+                        Map<String, Object> result = new HashMap<>();
+                        Matcher matcher = APOLLO_CONF_PATTERN.matcher(content);
+                        while (matcher.find()) {
+                            String paramName = matcher.group();
+                            String namespace = matcher.group("namespace");
+                            String key = matcher.group("key");
+                            if (StringUtils.isNotBlank(namespace) && StringUtils.isNotBlank(key)) {
+                                result.put(
+                                        paramName, pluginService.getApolloConfig(namespace, key));
+                            }
+                        }
+                        return result;
+                    })),
 
     RESOURCE(
             "${resource",
@@ -152,16 +177,6 @@ public enum Placeholder {
 
                     result.put(variable, DateUtil.format(destTime, format));
                 }
-                return result;
-            }),
-
-    @Deprecated
-    JOB_CODE(
-            JOB_CODE_VAR,
-            (Object obj) -> {
-                String jobCode = ((JobRunInfo) obj).getJobCode();
-                Map<String, Object> result = new HashMap<>(1);
-                result.put(JOB_CODE_VAR, jobCode);
                 return result;
             }),
 

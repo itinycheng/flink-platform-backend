@@ -25,8 +25,6 @@ public class JobConstant {
 
     public static final String TMP_FILE_SUFFIX = "tmp";
 
-    public static final String JOB_CODE_VAR = "${jobCode}";
-
     public static final String CURRENT_TIMESTAMP_VAR = "${currentTimestamp}";
 
     public static final String TODAY_YYYY_MM_DD_VAR = "${today_yyyyMMdd}";
@@ -82,6 +80,13 @@ public class JobConstant {
                     Pattern.CASE_INSENSITIVE | Pattern.MULTILINE);
 
     public static final String PARAM_FORMAT = "${param:%s}";
+
+    public static final String APOLLO_CONF_PREFIX = "${apollo";
+    // ${apollo:namespace:key}
+    public static final Pattern APOLLO_CONF_PATTERN =
+            Pattern.compile(
+                    "\\$\\{\\s*apollo:(?<namespace>\\S+)\\s*:\\s*(?<key>\\S+)\\s*}",
+                    Pattern.CASE_INSENSITIVE | Pattern.MULTILINE);
 
     public static final String CONFIG = "config";
 }
