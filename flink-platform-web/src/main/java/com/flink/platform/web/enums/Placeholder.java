@@ -65,10 +65,10 @@ public enum Placeholder {
     }),
 
     APOLLO(APOLLO_CONF_PREFIX, uncheckedFunction(obj -> {
-        JobRunInfo jobRun = (JobRunInfo) obj;
+        String content = obj instanceof JobRunInfo ? ((JobRunInfo) obj).getSubject() : (String) obj;
         PluginService pluginService = SpringContext.getBean(PluginService.class);
         Map<String, Object> result = new HashMap<>();
-        Matcher matcher = APOLLO_CONF_PATTERN.matcher(jobRun.getSubject());
+        Matcher matcher = APOLLO_CONF_PATTERN.matcher(content);
         while (matcher.find()) {
             String paramName = matcher.group();
             String namespace = matcher.group("namespace");

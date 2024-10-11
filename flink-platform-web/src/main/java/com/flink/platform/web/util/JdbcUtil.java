@@ -22,9 +22,10 @@ public class JdbcUtil {
             case CLICKHOUSE:
             case MYSQL:
             case HIVE:
-                properties.setProperty("user", params.getUsername());
-                if (params.getPassword() != null) {
-                    properties.setProperty("password", params.getPassword());
+                properties.setProperty("user", PlaceholderUtil.apolloConfig(params.getUsername()));
+                String password = PlaceholderUtil.apolloConfig(params.getPassword());
+                if (password != null) {
+                    properties.setProperty("password", password);
                 }
                 break;
             default:

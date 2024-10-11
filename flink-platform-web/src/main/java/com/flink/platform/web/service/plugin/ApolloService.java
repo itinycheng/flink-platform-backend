@@ -6,6 +6,7 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Objects;
 
 @Lazy
 @Service
@@ -29,8 +30,10 @@ public class ApolloService {
         return namespaceBeans.stream()
                 .filter(ns -> ns.namespace().equals(namespace))
                 .map(ns -> ns.getConfig(key))
+                .filter(Objects::nonNull)
                 .findAny()
-                .orElseThrow(() -> new IllegalArgumentException("Apollo namespace not found: " + namespace));
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "Apollo config not found: namespace: " + namespace + ", key: " + key));
     }
 
     private void checkPluginEnabled() {
