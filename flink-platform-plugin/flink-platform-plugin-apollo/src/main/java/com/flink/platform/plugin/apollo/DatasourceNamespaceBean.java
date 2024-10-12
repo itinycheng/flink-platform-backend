@@ -4,6 +4,7 @@ import com.ctrip.framework.apollo.Config;
 import com.ctrip.framework.apollo.model.ConfigChangeEvent;
 import com.ctrip.framework.apollo.spring.annotation.ApolloConfig;
 import com.ctrip.framework.apollo.spring.annotation.ApolloConfigChangeListener;
+import com.flink.platform.plugin.apollo.util.JasyptUtil;
 import jakarta.annotation.Nonnull;
 import lombok.extern.slf4j.Slf4j;
 
@@ -14,8 +15,14 @@ public class DatasourceNamespaceBean implements NamespaceBean {
 
     private static final String NAMESPACE = "datasource";
 
+    private final String password;
+
     @ApolloConfig(NAMESPACE)
     private Config config;
+
+    public DatasourceNamespaceBean(String password) {
+        this.password = password;
+    }
 
     @ApolloConfigChangeListener(NAMESPACE)
     private void applicationOnChange(ConfigChangeEvent changeEvent) {
@@ -33,6 +40,7 @@ public class DatasourceNamespaceBean implements NamespaceBean {
 
     @Override
     public String getConfig(String key) {
-        return config.getProperty(key, null);
+        String value = config.getProperty(key, null);
+        return JasyptUtil.isJasyptValue(value) ? JasyptUtil.decrypt(value, password) : value;
     }
 }
