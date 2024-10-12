@@ -57,6 +57,7 @@
 		<clickhouse-jdbc.version>0.3.1</clickhouse-jdbc.version>
 		<hadoop.version>3.3.5</hadoop.version>
 		<hive.version>2.3.9</hive.version>
+		<zookeeper.version>3.5.9</zookeeper.version>
 		<mybatis-plus.version>3.5.7</mybatis-plus.version>
 		<dynamic-datasource.version>4.3.1</dynamic-datasource.version>
 		<grpc.version>1.63.0</grpc.version>
@@ -284,6 +285,11 @@
 						<groupId>org.apache.logging.log4j</groupId>
 					</exclusion>
 				</exclusions>
+			</dependency>
+			<dependency>
+				<groupId>org.apache.zookeeper</groupId>
+				<artifactId>zookeeper</artifactId>
+				<version>${zookeeper.version}</version>
 			</dependency>
 		</dependencies>
 	</dependencyManagement>

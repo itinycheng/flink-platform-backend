@@ -36,6 +36,8 @@ public class JdbcUtil {
             properties.putAll(params.getProperties());
         }
 
+        // avoid hive connection creation timeout.
+        DriverManager.setLoginTimeout(600);
         return DriverManager.getConnection(params.getUrl(), properties);
     }
 
