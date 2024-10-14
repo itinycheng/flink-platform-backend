@@ -111,23 +111,21 @@ public class JobExecuteThread implements Supplier<JobResponse> {
             return new JobResponse(jobId, jobRunId, ERROR);
         }
 
-        // 3. return if last job was successful.
-        if (SUCCESS.equals(jobRunStatus)) {
-            return new JobResponse(jobId, jobRunId, SUCCESS);
-        }
+        // 3. execute job if possible.
+        while (AppRunner.isRunning()) {
+            if (SUCCESS.equals(jobRunStatus)) {
+                return new JobResponse(jobId, jobRunId, SUCCESS);
+            }
 
-        // 4. check status or execute job.
-        boolean unfinishedJob = jobRunStatus != null && !jobRunStatus.isTerminalState();
-        while (AppRunner.isRunning() && (unfinishedJob || ++retryAttempt <= retryTimes)) {
+            if (noJobsRunning() && ++retryAttempt > retryTimes) {
+                return new JobResponse(jobId, jobRunId, jobRunStatus);
+            }
+
             if (isFlowRunStopped()) {
                 return new JobResponse(jobId, jobRunId, KILLED);
             }
 
             callOnce();
-            if (SUCCESS.equals(jobRunStatus)) {
-                return new JobResponse(jobId, jobRunId, SUCCESS);
-            }
-
             log.warn("Execute jobRun: {} and wait for complete failed, retry attempt: {}.", jobRunId, retryAttempt);
             // sleep and retry if exception found or status isn't success.
             if (retryAttempt < retryTimes) {
@@ -380,5 +378,9 @@ public class JobExecuteThread implements Supplier<JobResponse> {
             log.error("Get flow run: {} status failed", flowRunId, exception);
             return false;
         }
+    }
+
+    private boolean noJobsRunning() {
+        return jobRunStatus == null || jobRunStatus.isTerminalState();
     }
 }
