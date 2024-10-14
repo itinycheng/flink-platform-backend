@@ -13,7 +13,6 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.Objects;
 import java.util.Properties;
-import java.util.StringJoiner;
 
 /** Jdbc util. */
 @Slf4j
@@ -43,50 +42,15 @@ public class JdbcUtil {
             properties.putAll(params.getProperties());
         }
 
-        String url = addAppName(params.getUrl(), jobRunInfo);
+        String url = params.getUrl();
+        if (Objects.equals(dbType, DbType.HIVE)) {
+            url = addAppName(params.getUrl(), jobRunInfo);
+        }
         log.info("create connection url: {}", url);
 
         // avoid hive connection creation timeout.
         DriverManager.setLoginTimeout(600);
         return DriverManager.getConnection(url, properties);
-    }
-
-    private static String addAppName(String url, JobRunInfo jobRunInfo) {
-        if (StringUtils.isBlank(url) || Objects.isNull(jobRunInfo)) {
-            return url;
-        }
-        // only handle kyuubi type url.
-        String[] ss = StringUtils.split(url, "#");
-        if (!StringUtils.containsIgnoreCase(ss[0], "kyuubi")) {
-            return url;
-        }
-        String sparkAppName = createAppName(jobRunInfo);
-        if (ss.length == 1) {
-            return url + "#spark.app.name=" + sparkAppName;
-        }
-        String[] params = StringUtils.split(ss[1], ";");
-        boolean hasAppNameConfig = false;
-        StringJoiner sj = new StringJoiner(";", ss[0] + "#", "");
-        for (String param : params) {
-            sj.add(param);
-            if (StringUtils.startsWith(param, "spark.app.name")) {
-                hasAppNameConfig = true;
-            }
-        }
-        if (!hasAppNameConfig) {
-            sj.add("spark.app.name=" + sparkAppName);
-        }
-        return sj.toString();
-    }
-
-    private static String createAppName(JobRunInfo jobRun) {
-        String jobName = jobRun.getName().replaceAll("\\s+", "");
-        return String.join(
-                "-",
-                jobRun.getExecMode().name(),
-                jobRun.getJobCode() + "_" + jobRun.getFlowRunId(),
-                jobName,
-                String.valueOf(jobRun.getUserId()));
     }
 
     public static Object toJavaObject(Object dbObject, DbType dbType) throws SQLException {
@@ -108,5 +72,26 @@ public class JdbcUtil {
             default:
                 return dbObject;
         }
+    }
+
+    private static String addAppName(String url, JobRunInfo jobRunInfo) {
+        if (StringUtils.isBlank(url) || Objects.isNull(jobRunInfo)) {
+            return url;
+        }
+        String sparkAppName = createAppName(jobRunInfo);
+        if (StringUtils.contains(url, "#")) {
+            return url + ";spark.app.name=" + sparkAppName;
+        }
+        return url + "#spark.app.name=" + sparkAppName;
+    }
+
+    private static String createAppName(JobRunInfo jobRun) {
+        String jobName = jobRun.getName().replaceAll("\\s+", "");
+        return String.join(
+                "-",
+                jobRun.getExecMode().name(),
+                jobRun.getJobCode() + "_" + jobRun.getFlowRunId(),
+                jobName,
+                String.valueOf(jobRun.getUserId()));
     }
 }
