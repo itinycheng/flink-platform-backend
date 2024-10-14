@@ -11,6 +11,7 @@ import java.sql.Array;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
+import java.util.Objects;
 import java.util.Properties;
 import java.util.StringJoiner;
 
@@ -51,7 +52,7 @@ public class JdbcUtil {
     }
 
     private static String addAppName(String url, JobRunInfo jobRunInfo) {
-        if (StringUtils.isBlank(url)) {
+        if (StringUtils.isBlank(url) || Objects.isNull(jobRunInfo)) {
             return url;
         }
         // only handle kyuubi type url.
