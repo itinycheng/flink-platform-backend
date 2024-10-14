@@ -2,12 +2,15 @@ package com.flink.platform.web.command.sql;
 
 import com.flink.platform.common.enums.JobType;
 import com.flink.platform.dao.entity.Datasource;
+import com.flink.platform.dao.entity.JobRunInfo;
 import com.flink.platform.dao.entity.result.JobCallback;
 import com.flink.platform.dao.service.DatasourceService;
+import com.flink.platform.dao.service.JobRunInfoService;
 import com.flink.platform.web.command.AbstractTask;
 import com.flink.platform.web.command.CommandExecutor;
 import com.flink.platform.web.command.JobCommand;
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -24,6 +27,9 @@ public class SqlCommandExecutor implements CommandExecutor {
     @Autowired
     private DatasourceService datasourceService;
 
+    @Resource
+    private JobRunInfoService jobRunInfoService;
+
     @Override
     public boolean isSupported(JobType jobType) {
         return jobType == CLICKHOUSE_SQL || jobType == MYSQL_SQL || jobType == HIVE_SQL;
@@ -34,10 +40,10 @@ public class SqlCommandExecutor implements CommandExecutor {
     public JobCallback execCommand(@Nonnull JobCommand command) throws Exception {
         SqlCommand sqlCommand = (SqlCommand) command;
         Datasource datasource = datasourceService.getById(sqlCommand.getDsId());
-        SqlTask task = new SqlTask(sqlCommand.getJobRunId(), sqlCommand.getSqls(), datasource);
+        JobRunInfo jobRunInfo = jobRunInfoService.getById(sqlCommand.getJobRunId());
+        SqlTask task = new SqlTask(jobRunInfo, sqlCommand.getSqls(), datasource);
         sqlCommand.setTask(task);
         task.run();
-
         return task.buildResult();
     }
 

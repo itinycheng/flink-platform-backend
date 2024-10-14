@@ -4,6 +4,7 @@ import com.flink.platform.common.enums.DbType;
 import com.flink.platform.common.util.ExceptionUtil;
 import com.flink.platform.common.util.JsonUtil;
 import com.flink.platform.dao.entity.Datasource;
+import com.flink.platform.dao.entity.JobRunInfo;
 import com.flink.platform.dao.entity.result.JobCallback;
 import com.flink.platform.web.command.AbstractTask;
 import jakarta.annotation.Nonnull;
@@ -35,6 +36,8 @@ public class SqlTask extends AbstractTask {
 
     private final Datasource datasource;
 
+    private final JobRunInfo jobRunInfo;
+
     private final List<String> sqlList;
 
     private volatile Statement statement;
@@ -45,17 +48,18 @@ public class SqlTask extends AbstractTask {
 
     private String sqlResult;
 
-    public SqlTask(long jobRunId, @Nonnull List<String> sqlList, @Nonnull Datasource datasource) {
-        super(jobRunId);
+    public SqlTask(JobRunInfo jobRunInfo, @Nonnull List<String> sqlList, @Nonnull Datasource datasource) {
+        super(checkNotNull(jobRunInfo).getId());
         this.sqlList = checkNotNull(sqlList);
         this.datasource = checkNotNull(datasource);
+        this.jobRunInfo = checkNotNull(jobRunInfo);
     }
 
     @Override
     public void run() throws Exception {
         Exception exception = null;
         List<Map<String, Object>> dataList = new ArrayList<>();
-        try (Connection connection = createConnection(datasource.getType(), datasource.getParams());
+        try (Connection connection = createConnection(datasource.getType(), datasource.getParams(), jobRunInfo);
                 Statement stmt = connection.createStatement()) {
             this.statement = stmt;
 
