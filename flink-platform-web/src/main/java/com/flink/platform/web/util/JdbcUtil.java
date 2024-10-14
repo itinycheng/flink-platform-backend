@@ -19,7 +19,8 @@ import java.util.StringJoiner;
 public class JdbcUtil {
 
     /** create datasource. */
-    public static Connection createConnection(DbType dbType, DatasourceParam params, JobRunInfo jobRunInfo) throws Exception {
+    public static Connection createConnection(DbType dbType, DatasourceParam params, JobRunInfo jobRunInfo)
+            throws Exception {
         Class.forName(dbType.getDriver());
         Properties properties = new Properties();
 
@@ -80,8 +81,11 @@ public class JdbcUtil {
     private static String createAppName(JobRunInfo jobRun) {
         String jobName = jobRun.getName().replaceAll("\\s+", "");
         return String.join(
-                "-", jobRun.getExecMode().name(), jobRun.getJobCode() + "_" + jobRun.getFlowRunId(),
-                jobName, String.valueOf(jobRun.getUserId()));
+                "-",
+                jobRun.getExecMode().name(),
+                jobRun.getJobCode() + "_" + jobRun.getFlowRunId(),
+                jobName,
+                String.valueOf(jobRun.getUserId()));
     }
 
     public static Object toJavaObject(Object dbObject, DbType dbType) throws SQLException {
