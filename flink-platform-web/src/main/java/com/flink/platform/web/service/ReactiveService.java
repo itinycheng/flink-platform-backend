@@ -103,7 +103,7 @@ public class ReactiveService {
         }
 
         String statement = sqls.get(0).toSqlString();
-        try (Connection connection = createConnection(datasource.getType(), datasource.getParams());
+        try (Connection connection = createConnection(datasource.getType(), datasource.getParams(), null);
                 Statement stmt = connection.createStatement()) {
             String[] columnNames;
             List<Object[]> dataList = new ArrayList<>();

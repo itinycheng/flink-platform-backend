@@ -232,10 +232,6 @@
 						<groupId>jline</groupId>
 					</exclusion>
 					<exclusion>
-						<groupId>org.apache.zookeeper</groupId>
-						<artifactId>zookeeper</artifactId>
-					</exclusion>
-					<exclusion>
 						<artifactId>curator-recipes</artifactId>
 						<groupId>org.apache.curator</groupId>
 					</exclusion>
