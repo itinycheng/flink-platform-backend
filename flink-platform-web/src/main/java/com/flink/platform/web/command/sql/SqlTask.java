@@ -58,6 +58,7 @@ public class SqlTask extends AbstractTask {
         try (Connection connection = createConnection(datasource.getType(), datasource.getParams());
                 Statement stmt = connection.createStatement()) {
             this.statement = stmt;
+            this.beforeExecSql();
 
             String executingSql = null;
             try {
@@ -127,4 +128,6 @@ public class SqlTask extends AbstractTask {
                 isSucceed ? sqlResult : String.join(LINE_SEPARATOR, sqlResult, exceptionStack),
                 isSucceed ? SUCCESS : FAILURE);
     }
+
+    public void beforeExecSql() {}
 }

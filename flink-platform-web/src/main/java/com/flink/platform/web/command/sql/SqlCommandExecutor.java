@@ -13,7 +13,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import static com.flink.platform.common.enums.JobType.CLICKHOUSE_SQL;
-import static com.flink.platform.common.enums.JobType.HIVE_SQL;
 import static com.flink.platform.common.enums.JobType.MYSQL_SQL;
 
 /** SQL command executor. */
@@ -22,11 +21,11 @@ import static com.flink.platform.common.enums.JobType.MYSQL_SQL;
 public class SqlCommandExecutor implements CommandExecutor {
 
     @Autowired
-    private DatasourceService datasourceService;
+    protected DatasourceService datasourceService;
 
     @Override
     public boolean isSupported(JobType jobType) {
-        return jobType == CLICKHOUSE_SQL || jobType == MYSQL_SQL || jobType == HIVE_SQL;
+        return jobType == CLICKHOUSE_SQL || jobType == MYSQL_SQL;
     }
 
     @Nonnull
