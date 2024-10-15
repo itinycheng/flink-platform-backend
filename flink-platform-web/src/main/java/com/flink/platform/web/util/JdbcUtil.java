@@ -37,6 +37,11 @@ public class JdbcUtil {
             properties.putAll(params.getProperties());
         }
 
+        // temporary solution for hive `java.net.SocketTimeoutException: Read timed out`.
+        if (DbType.HIVE.equals(dbType)) {
+            DriverManager.setLoginTimeout(600);
+        }
+
         return DriverManager.getConnection(params.getUrl(), properties);
     }
 
