@@ -276,20 +276,9 @@ public class JobExecuteThread implements Supplier<JobResponse> {
         int retryTimes = 0;
         while (AppRunner.isRunning()) {
             try {
-                // Build status request.
-                JobStatusRequest.Builder builder = JobStatusRequest.newBuilder()
-                        .setJobRunId(jobRun.getId())
-                        .setDeployMode(jobRun.getDeployMode().name())
-                        .setRetries(errorRetries);
-
-                JobCallback callback = jobRun.getBackInfo();
-                if (callback != null) {
-                    callback = callback.cloneWithoutMsg();
-                    builder.setBackInfo(JsonUtil.toJsonString(callback));
-                }
-
                 // Get and correct job status.
-                JobStatusReply jobStatusReply = stub.getJobStatus(builder.build());
+                JobStatusRequest request = buildJobStatusRequest(jobRun);
+                JobStatusReply jobStatusReply = stub.getJobStatus(request);
                 StatusInfo statusInfo = StatusInfo.fromReplay(jobStatusReply);
                 if (STREAMING.equals(jobRun.getExecMode())) {
                     // Interim solution: finite data streams can also use streaming mode.
@@ -319,6 +308,21 @@ public class JobExecuteThread implements Supplier<JobResponse> {
         }
 
         return null;
+    }
+
+    private JobStatusRequest buildJobStatusRequest(JobRunInfo jobRun) {
+        JobStatusRequest.Builder builder = JobStatusRequest.newBuilder()
+                .setJobRunId(jobRun.getId())
+                .setDeployMode(jobRun.getDeployMode().name())
+                .setRetries(errorRetries);
+
+        JobCallback callback = jobRun.getBackInfo();
+        if (callback != null) {
+            callback = callback.cloneWithoutMsg();
+            builder.setBackInfo(JsonUtil.toJsonString(callback));
+        }
+
+        return builder.build();
     }
 
     private StatusInfo correctStreamJobStatus(StatusInfo statusInfo, LocalDateTime startTime) {
