@@ -2,6 +2,7 @@ package com.flink.platform.web.util;
 
 import com.flink.platform.common.enums.DbType;
 import com.flink.platform.dao.entity.ds.DatasourceParam;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.MapUtils;
 
 import java.sql.Array;
@@ -11,10 +12,12 @@ import java.sql.SQLException;
 import java.util.Properties;
 
 /** Jdbc util. */
+@Slf4j
 public class JdbcUtil {
 
     /** create datasource. */
     public static Connection createConnection(DbType dbType, DatasourceParam params) throws Exception {
+        log.info("create connection. dbType: {}, params: {}", dbType, params);
         Class.forName(dbType.getDriver());
         Properties properties = new Properties();
 
