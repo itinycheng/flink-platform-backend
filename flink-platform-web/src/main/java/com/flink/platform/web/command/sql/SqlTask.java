@@ -78,7 +78,7 @@ public class SqlTask extends AbstractTask {
                         var metaData = resultSet.getMetaData();
                         var num = metaData.getColumnCount();
                         var columnNames = new String[num];
-                        for (int i = 1; i <= num; i++) {
+                        for (var i = 1; i <= num; i++) {
                             columnNames[i - 1] = metaData.getColumnName(i);
                         }
 
@@ -87,7 +87,7 @@ public class SqlTask extends AbstractTask {
                         var count = 0;
                         while (resultSet.next() && count++ < 2000) {
                             var itemMap = new HashMap<String, Object>(num);
-                            for (int i = 1; i <= num; i++) {
+                            for (var i = 1; i <= num; i++) {
                                 itemMap.put(columnNames[i - 1], toJavaObject(resultSet.getObject(i), dbType));
                             }
                             dataList.add(itemMap);
