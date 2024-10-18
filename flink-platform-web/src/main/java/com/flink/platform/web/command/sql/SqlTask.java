@@ -4,6 +4,7 @@ import com.flink.platform.common.enums.DbType;
 import com.flink.platform.common.util.ExceptionUtil;
 import com.flink.platform.common.util.JsonUtil;
 import com.flink.platform.dao.entity.Datasource;
+import com.flink.platform.dao.entity.ds.DatasourceParam;
 import com.flink.platform.dao.entity.result.JobCallback;
 import com.flink.platform.web.command.AbstractTask;
 import jakarta.annotation.Nonnull;
@@ -55,7 +56,7 @@ public class SqlTask extends AbstractTask {
     public void run() throws Exception {
         Exception exception = null;
         List<Map<String, Object>> dataList = new ArrayList<>();
-        try (Connection connection = createConnection(datasource.getType(), datasource.getParams());
+        try (Connection connection = createConnection(datasource.getType(), getDatasourceParam());
                 Statement stmt = connection.createStatement()) {
             this.statement = stmt;
             this.beforeExecSql();
@@ -130,4 +131,8 @@ public class SqlTask extends AbstractTask {
     }
 
     public void beforeExecSql() {}
+
+    public DatasourceParam getDatasourceParam() {
+        return datasource.getParams();
+    }
 }
