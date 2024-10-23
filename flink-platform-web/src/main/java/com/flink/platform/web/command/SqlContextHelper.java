@@ -10,10 +10,11 @@ import com.flink.platform.common.util.SqlUtil;
 import com.flink.platform.dao.entity.JobRunInfo;
 import com.flink.platform.dao.entity.task.FlinkJob;
 import com.flink.platform.dao.service.CatalogInfoService;
+import com.flink.platform.web.enums.Placeholder;
 import com.flink.platform.web.util.PathUtil;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.collections4.ListUtils;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.io.FileUtils;
 import org.springframework.stereotype.Component;
 
@@ -68,13 +69,22 @@ public class SqlContextHelper {
     }
 
     private List<Catalog> toCatalogs(List<Long> catalogs, Map<String, Object> variables) {
-        return ListUtils.defaultIfNull(catalogs, emptyList()).stream()
+        if (CollectionUtils.isEmpty(catalogs)) {
+            return emptyList();
+        }
+        return catalogs.stream()
                 .map(id -> catalogInfoService.getById(id))
                 .map(catalogInfo -> {
                     String createSql = catalogInfo.getCreateSql();
-                    for (Map.Entry<String, Object> variable : variables.entrySet()) {
+                    for (var variable : variables.entrySet()) {
                         createSql = createSql.replace(
                                 variable.getKey(), variable.getValue().toString());
+                    }
+
+                    for (var entry :
+                            Placeholder.APOLLO.provider.apply(createSql).entrySet()) {
+                        createSql = createSql.replace(
+                                entry.getKey(), entry.getValue().toString());
                     }
 
                     return new Catalog(catalogInfo.getName(), catalogInfo.getType(), createSql);
