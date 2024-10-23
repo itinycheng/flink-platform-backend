@@ -1,7 +1,10 @@
 package com.flink.platform.web.common;
 
+import jakarta.annotation.Nonnull;
 import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.DisposableBean;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.stereotype.Component;
@@ -10,8 +13,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 /** Spring context. */
+@Slf4j
 @Component
-public class SpringContext implements ApplicationContextAware {
+public class SpringContext implements ApplicationContextAware, DisposableBean {
 
     /** Spring application context. */
     @Getter
@@ -19,7 +23,7 @@ public class SpringContext implements ApplicationContextAware {
 
     /** set application context. */
     @Override
-    public void setApplicationContext(ApplicationContext applicationContext) {
+    public void setApplicationContext(@Nonnull ApplicationContext applicationContext) {
         SpringContext.applicationContext = applicationContext;
     }
 
@@ -46,5 +50,11 @@ public class SpringContext implements ApplicationContextAware {
 
     public static String getServerPort() {
         return applicationContext.getEnvironment().getProperty("server.port");
+    }
+
+    @Override
+    public void destroy() throws Exception {
+        log.info("Clean ApplicationContext instance in SpringContext class");
+        applicationContext = null;
     }
 }
