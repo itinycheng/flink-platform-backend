@@ -78,9 +78,10 @@ public class JobRunInfo implements Serializable {
     @JsonFormat(pattern = GLOBAL_DATE_TIME_FORMAT, timezone = GLOBAL_TIMEZONE)
     private LocalDateTime submitTime;
 
-    /** stop time. */
+    /** end time. */
+    @TableField("stop_time")
     @JsonFormat(pattern = GLOBAL_DATE_TIME_FORMAT, timezone = GLOBAL_TIMEZONE)
-    private LocalDateTime stopTime;
+    private LocalDateTime endTime;
 
     @JsonFormat(pattern = GLOBAL_DATE_TIME_FORMAT, timezone = GLOBAL_TIMEZONE)
     private LocalDateTime createTime;
@@ -91,12 +92,12 @@ public class JobRunInfo implements Serializable {
     }
 
     public String getDuration() {
-        if (submitTime == null || stopTime == null) {
+        if (submitTime == null || endTime == null) {
             return EMPTY;
         }
 
         try {
-            Duration duration = Duration.between(submitTime, stopTime);
+            Duration duration = Duration.between(submitTime, endTime);
             return DurationFormatUtils.formatDuration(duration.toMillis(), "HH:mm:ss");
         } catch (Exception e) {
             return null;

@@ -117,7 +117,7 @@ public class KillJobService {
             JobRunInfo newJobRun = new JobRunInfo();
             newJobRun.setId(jobRunId);
             newJobRun.setStatus(KILLED);
-            newJobRun.setStopTime(LocalDateTime.now());
+            newJobRun.setEndTime(LocalDateTime.now());
             jobRunInfoService.updateById(newJobRun);
             log.info("Kill job run: {} finished, time: {}", jobRunId, System.currentTimeMillis());
         }

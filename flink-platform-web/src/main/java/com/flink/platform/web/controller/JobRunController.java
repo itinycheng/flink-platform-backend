@@ -84,7 +84,7 @@ public class JobRunController {
                 .eq(nonNull(jobId), JobRunInfo::getJobId, jobId)
                 .eq(nonNull(status), JobRunInfo::getStatus, status)
                 .likeRight(nonNull(name), JobRunInfo::getName, name)
-                .between(nonNull(startTime) && nonNull(endTime), JobRunInfo::getCreateTime, startTime, endTime);
+                .between(nonNull(startTime) && nonNull(endTime), JobRunInfo::getEndTime, startTime, endTime);
         if ("-id".equals(sort)) {
             queryWrapper.orderByDesc(JobRunInfo::getId);
         }
