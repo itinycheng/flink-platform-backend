@@ -356,7 +356,7 @@ public class JobExecuteThread implements Supplier<JobResponse> {
                 if (endTime == null) {
                     endTime = LocalDateTime.now();
                 }
-                newJobRun.setStopTime(endTime);
+                newJobRun.setEndTime(endTime);
             }
             if (exception != null) {
                 String exceptionMsg = ExceptionUtil.stackTrace(exception);
