@@ -36,15 +36,13 @@ public class JobFlowQuartzService {
     }
 
     @Transactional(rollbackFor = Exception.class)
-    public boolean stopJob(JobFlow jobFlow) {
-        JobFlowQuartzInfo jobFlowQuartzInfo = new JobFlowQuartzInfo(jobFlow);
-        quartzService.removeJob(jobFlowQuartzInfo);
+    public void stopJob(JobFlow jobFlow) {
+        JobFlowQuartzInfo quartzInfo = new JobFlowQuartzInfo(jobFlow);
+        quartzService.removeJob(quartzInfo);
 
         JobFlow newJobFlow = new JobFlow();
         newJobFlow.setId(jobFlow.getId());
         newJobFlow.setStatus(ONLINE);
         jobFlowService.updateById(newJobFlow);
-
-        return true;
     }
 }

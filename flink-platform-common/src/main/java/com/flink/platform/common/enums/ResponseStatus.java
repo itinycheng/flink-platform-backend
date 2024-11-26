@@ -18,7 +18,7 @@ public enum ResponseStatus {
     NOT_RUNNABLE_STATUS(10014, "not runnable status"),
     NO_CRONTAB_SET(10015, "no crontab set"),
     INVALID_CRONTAB_EXPR(10015, "invalid quartz crontab expression"),
-    UNABLE_SCHEDULE_STREAMING_JOB_FLOW(10016, "unable to schedule streaming job flow for now"),
+    UNABLE_SCHEDULING_JOB_FLOW(10016, "unable to schedule job flow for now"),
     FILE_NOT_FOUND(10017, "file not found"),
     EXIST_UNFINISHED_PROCESS(10018, "There is an unfinished job or flow"),
     DATASOURCE_NOT_FOUND(10019, "Datasource not found"),
@@ -30,6 +30,7 @@ public enum ResponseStatus {
     FILE_EXISTS(10025, "file already exists"),
     JOB_LIST_NOT_SUPPORT_SCHEDULING(10026, "Job list does not support scheduling"),
     FLOW_ALREADY_SCHEDULED(10027, "Workflow already being scheduled"),
+    INVALID_WORKFLOW_TYPE(10028, "invalid workflow type"),
     ;
 
     private final int code;

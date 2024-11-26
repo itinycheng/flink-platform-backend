@@ -20,6 +20,7 @@ import com.flink.platform.web.entity.request.JobFlowRequest;
 import com.flink.platform.web.entity.response.ResultInfo;
 import com.flink.platform.web.service.JobFlowQuartzService;
 import com.flink.platform.web.service.QuartzService;
+import lombok.RequiredArgsConstructor;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -39,15 +40,17 @@ import java.util.Map;
 import static com.flink.platform.common.enums.JobFlowStatus.OFFLINE;
 import static com.flink.platform.common.enums.JobFlowStatus.ONLINE;
 import static com.flink.platform.common.enums.JobFlowStatus.SCHEDULING;
+import static com.flink.platform.common.enums.JobFlowType.JOB_FLOW;
 import static com.flink.platform.common.enums.JobFlowType.JOB_LIST;
 import static com.flink.platform.common.enums.ResponseStatus.ERROR_PARAMETER;
 import static com.flink.platform.common.enums.ResponseStatus.EXIST_UNFINISHED_PROCESS;
 import static com.flink.platform.common.enums.ResponseStatus.FLOW_ALREADY_SCHEDULED;
+import static com.flink.platform.common.enums.ResponseStatus.INVALID_WORKFLOW_TYPE;
 import static com.flink.platform.common.enums.ResponseStatus.JOB_LIST_NOT_SUPPORT_SCHEDULING;
 import static com.flink.platform.common.enums.ResponseStatus.NOT_RUNNABLE_STATUS;
 import static com.flink.platform.common.enums.ResponseStatus.NO_CRONTAB_SET;
 import static com.flink.platform.common.enums.ResponseStatus.SERVICE_ERROR;
-import static com.flink.platform.common.enums.ResponseStatus.UNABLE_SCHEDULE_STREAMING_JOB_FLOW;
+import static com.flink.platform.common.enums.ResponseStatus.UNABLE_SCHEDULING_JOB_FLOW;
 import static com.flink.platform.common.enums.ResponseStatus.USER_HAVE_NO_PERMISSION;
 import static com.flink.platform.web.entity.response.ResultInfo.failure;
 import static com.flink.platform.web.entity.response.ResultInfo.success;
@@ -58,22 +61,18 @@ import static org.apache.commons.lang3.StringUtils.isNotEmpty;
 /** crud job flow. */
 @RestController
 @RequestMapping("/jobFlow")
+@RequiredArgsConstructor(onConstructor_ = @Autowired)
 public class JobFlowController {
 
-    @Autowired
-    private JobFlowService jobFlowService;
+    private final JobFlowService jobFlowService;
 
-    @Autowired
-    private JobFlowRunService jobFlowRunService;
+    private final JobFlowRunService jobFlowRunService;
 
-    @Autowired
-    private JobFlowQuartzService jobFlowQuartzService;
+    private final JobFlowQuartzService jobFlowQuartzService;
 
-    @Autowired
-    private QuartzService quartzService;
+    private final QuartzService quartzService;
 
-    @Autowired
-    private JobRunInfoService jobRunService;
+    private final JobRunInfoService jobRunService;
 
     @ApiException
     @PostMapping(value = "/create")
@@ -224,10 +223,6 @@ public class JobFlowController {
         }
 
         JobFlow jobFlow = jobFlowService.getById(flowId);
-        if (JOB_LIST.equals(jobFlow.getType())) {
-            return failure(JOB_LIST_NOT_SUPPORT_SCHEDULING);
-        }
-
         JobFlowStatus status = jobFlow.getStatus();
         if (status == null || !status.isRunnable()) {
             return failure(NOT_RUNNABLE_STATUS);
@@ -237,16 +232,31 @@ public class JobFlowController {
             return failure(FLOW_ALREADY_SCHEDULED);
         }
 
-        if (StringUtils.isEmpty(jobFlow.getCronExpr())) {
-            return failure(NO_CRONTAB_SET);
+        if (JOB_FLOW.equals(jobFlow.getType())) {
+            if (StringUtils.isEmpty(jobFlow.getCronExpr())) {
+                return failure(NO_CRONTAB_SET);
+            }
+
+            JobFlowDag flow = jobFlow.getFlow();
+            if (flow == null || CollectionUtils.isEmpty(flow.getVertices())) {
+                return failure(UNABLE_SCHEDULING_JOB_FLOW);
+            }
         }
 
-        JobFlowDag flow = jobFlow.getFlow();
-        if (flow == null || CollectionUtils.isEmpty(flow.getVertices())) {
-            return failure(UNABLE_SCHEDULE_STREAMING_JOB_FLOW);
+        switch (jobFlow.getType()) {
+            case JOB_LIST:
+                JobFlow newJobFlow = new JobFlow();
+                newJobFlow.setId(jobFlow.getId());
+                newJobFlow.setStatus(SCHEDULING);
+                jobFlowService.updateById(newJobFlow);
+                break;
+            case JOB_FLOW:
+                jobFlowQuartzService.scheduleJob(jobFlow);
+                break;
+            default:
+                return failure(INVALID_WORKFLOW_TYPE);
         }
 
-        jobFlowQuartzService.scheduleJob(jobFlow);
         return success(flowId);
     }
 
