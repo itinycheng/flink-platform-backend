@@ -1,11 +1,11 @@
-package com.flink.platform.web.service;
+package com.flink.platform.alert;
 
-import com.flink.platform.alert.AlertSender;
 import com.flink.platform.common.enums.ExecutionStatus;
 import com.flink.platform.dao.entity.JobFlow;
 import com.flink.platform.dao.entity.JobFlowRun;
 import com.flink.platform.dao.entity.alert.AlertConfig;
 import com.flink.platform.dao.service.JobFlowService;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,13 +19,12 @@ import static com.flink.platform.common.enums.ExecutionStatus.FAILURE;
 /** Alert sending service. */
 @Slf4j
 @Service
+@RequiredArgsConstructor(onConstructor_ = @Autowired)
 public class AlertSendingService {
 
-    @Autowired
-    private AlertSender alertSender;
+    private final AlertSender alertSender;
 
-    @Autowired
-    private JobFlowService jobFlowService;
+    private final JobFlowService jobFlowService;
 
     public void sendAlerts(JobFlowRun jobFlowRun) {
         sendAlerts(jobFlowRun, EMPTY);

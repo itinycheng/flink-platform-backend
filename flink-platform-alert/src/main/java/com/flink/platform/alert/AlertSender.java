@@ -8,6 +8,7 @@ import com.flink.platform.dao.entity.JobRunInfo;
 import com.flink.platform.dao.entity.alert.FeiShuAlert;
 import com.flink.platform.dao.service.AlertService;
 import com.flink.platform.dao.service.JobRunInfoService;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpEntity;
@@ -21,16 +22,14 @@ import java.util.List;
 /** Alert sender. */
 @Slf4j
 @Component
+@RequiredArgsConstructor(onConstructor_ = @Autowired)
 public class AlertSender {
 
-    @Autowired
-    private AlertService alertService;
+    private final AlertService alertService;
 
-    @Autowired
-    private JobRunInfoService jobRunInfoService;
+    private final JobRunInfoService jobRunInfoService;
 
-    @Autowired
-    private RestTemplate restTemplate;
+    private final RestTemplate restTemplate;
 
     public boolean sendAlert(Long alertId, JobFlowRun jobFlowRun, String alertMsg) {
         AlertInfo alertInfo = alertService.getById(alertId);

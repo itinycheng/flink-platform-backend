@@ -27,10 +27,13 @@ public enum ExecutionStatus {
     /** ! Only for jobFlow final status. */
     EXPECTED_FAILURE(10, TerminalState.TERMINAL);
 
-    private enum TerminalState {
-        TERMINAL,
-        NON_TERMINAL
-    }
+    public static final List<ExecutionStatus> UNEXPECTED = Arrays.asList(
+            ExecutionStatus.FAILURE,
+            ExecutionStatus.KILLED,
+            ExecutionStatus.ABNORMAL,
+            ExecutionStatus.ERROR,
+            ExecutionStatus.NOT_EXIST,
+            ExecutionStatus.KILLABLE);
 
     private static final List<ExecutionStatus> NON_TERMINALS = Arrays.stream(values())
             .filter(executionStatus -> executionStatus.terminalState == TerminalState.NON_TERMINAL)
@@ -66,5 +69,10 @@ public enum ExecutionStatus {
         }
 
         throw new IllegalArgumentException("Unknown execution status code: " + code);
+    }
+
+    private enum TerminalState {
+        TERMINAL,
+        NON_TERMINAL
     }
 }

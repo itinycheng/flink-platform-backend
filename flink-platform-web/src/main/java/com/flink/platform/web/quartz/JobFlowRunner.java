@@ -1,6 +1,7 @@
 package com.flink.platform.web.quartz;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.flink.platform.alert.AlertSendingService;
 import com.flink.platform.common.constants.Constant;
 import com.flink.platform.common.model.JobVertex;
 import com.flink.platform.common.util.JsonUtil;
@@ -16,7 +17,6 @@ import com.flink.platform.dao.service.JobInfoService;
 import com.flink.platform.dao.service.JobRunInfoService;
 import com.flink.platform.web.common.SpringContext;
 import com.flink.platform.web.config.WorkerConfig;
-import com.flink.platform.web.service.AlertSendingService;
 import com.flink.platform.web.service.JobFlowScheduleService;
 import lombok.extern.slf4j.Slf4j;
 import org.quartz.Job;
