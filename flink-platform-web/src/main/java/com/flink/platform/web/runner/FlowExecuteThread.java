@@ -1,5 +1,6 @@
 package com.flink.platform.web.runner;
 
+import com.flink.platform.alert.AlertSendingService;
 import com.flink.platform.common.enums.ExecutionStatus;
 import com.flink.platform.common.enums.TimeoutStrategy;
 import com.flink.platform.common.model.JobVertex;
@@ -11,7 +12,6 @@ import com.flink.platform.dao.util.JobFlowDagHelper;
 import com.flink.platform.web.common.SpringContext;
 import com.flink.platform.web.config.AppRunner;
 import com.flink.platform.web.config.WorkerConfig;
-import com.flink.platform.web.service.AlertSendingService;
 import com.flink.platform.web.service.KillJobService;
 import com.flink.platform.web.util.ThreadUtil;
 import jakarta.annotation.Nonnull;

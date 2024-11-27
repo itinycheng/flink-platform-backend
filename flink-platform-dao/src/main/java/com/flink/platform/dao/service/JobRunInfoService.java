@@ -3,6 +3,8 @@ package com.flink.platform.dao.service;
 import com.baomidou.dynamic.datasource.annotation.DS;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.flink.platform.common.enums.JobFlowType;
+import com.flink.platform.common.enums.JobStatus;
 import com.flink.platform.dao.entity.JobRunInfo;
 import com.flink.platform.dao.mapper.JobRunInfoMapper;
 import jakarta.annotation.Nonnull;
@@ -10,6 +12,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 
+import static com.flink.platform.common.enums.ExecutionStatus.UNEXPECTED;
 import static com.flink.platform.common.enums.ExecutionStatus.getNonTerminals;
 
 /** job run info. */
@@ -27,5 +30,9 @@ public class JobRunInfoService extends ServiceImpl<JobRunInfoMapper, JobRunInfo>
                 .eq(JobRunInfo::getJobId, jobId)
                 .in(JobRunInfo::getStatus, getNonTerminals())
                 .last("limit 1"));
+    }
+
+    public List<JobRunInfo> getJobRunsWithUnexpectedStatus() {
+        return this.baseMapper.queryLastJobRuns(JobFlowType.JOB_LIST, JobStatus.ONLINE, UNEXPECTED);
     }
 }

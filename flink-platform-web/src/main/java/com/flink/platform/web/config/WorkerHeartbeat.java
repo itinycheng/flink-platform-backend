@@ -68,11 +68,7 @@ public class WorkerHeartbeat {
 
     public synchronized void heartbeat() {
         // 1. Update worker heartbeat info.
-        Worker worker = workerService.getOne(new QueryWrapper<Worker>()
-                .lambda()
-                .select(Worker::getId)
-                .eq(Worker::getIp, HOST_IP)
-                .last("LIMIT 1"));
+        Worker worker = workerService.getCurrentWorker();
         Long workerId = worker != null ? worker.getId() : null;
 
         worker = new Worker();
