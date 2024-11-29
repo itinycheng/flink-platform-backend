@@ -14,7 +14,7 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 
 import static com.flink.platform.common.constants.Constant.EMPTY;
-import static com.flink.platform.common.enums.ExecutionStatus.FAILURE;
+import static com.flink.platform.common.enums.ExecutionStatus.ERROR;
 
 /** Alert sending service. */
 @Slf4j
@@ -45,7 +45,7 @@ public class AlertSendingService {
 
     public void sendErrAlerts(JobFlow jobFlow, String alertMag) {
         JobFlowRun jobFlowRun = jobFlowService.copyToJobFlowRun(jobFlow);
-        jobFlowRun.setStatus(FAILURE);
+        jobFlowRun.setStatus(ERROR);
         sendAlerts(jobFlowRun, alertMag);
     }
 }

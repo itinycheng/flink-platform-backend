@@ -13,6 +13,7 @@ import com.flink.platform.dao.entity.JobFlowRun;
 import com.flink.platform.dao.entity.JobInfo;
 import com.flink.platform.dao.entity.JobRunInfo;
 import com.flink.platform.dao.mapper.JobFlowMapper;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,6 +22,7 @@ import java.util.HashMap;
 import java.util.List;
 
 import static com.flink.platform.common.enums.JobFlowStatus.OFFLINE;
+import static com.flink.platform.common.enums.JobFlowStatus.ONLINE;
 import static com.flink.platform.common.enums.JobFlowType.JOB_LIST;
 import static java.lang.String.format;
 import static java.util.stream.Collectors.toList;
@@ -29,16 +31,14 @@ import static org.apache.commons.collections4.CollectionUtils.isNotEmpty;
 /** job config info. */
 @Service
 @DS("master_platform")
+@RequiredArgsConstructor(onConstructor_ = @Autowired)
 public class JobFlowService extends ServiceImpl<JobFlowMapper, JobFlow> {
 
-    @Autowired
-    private JobInfoService jobInfoService;
+    private final JobInfoService jobInfoService;
 
-    @Autowired
-    private JobFlowRunService jobFlowRunService;
+    private final JobFlowRunService jobFlowRunService;
 
-    @Autowired
-    private JobRunInfoService jobRunInfoService;
+    private final JobRunInfoService jobRunInfoService;
 
     @Transactional
     public JobFlow cloneJobFlow(long flowId) {
@@ -164,5 +164,13 @@ public class JobFlowService extends ServiceImpl<JobFlowMapper, JobFlow> {
         jobFlowRun.setTags(jobFlow.getTags());
         jobFlowRun.setAlerts(jobFlow.getAlerts());
         return jobFlowRun;
+    }
+
+    public List<JobFlow> getUnscheduledJobFlows() {
+        return list(new QueryWrapper<JobFlow>()
+                .lambda()
+                .eq(JobFlow::getStatus, ONLINE)
+                .isNotNull(JobFlow::getCronExpr)
+                .ne(JobFlow::getCronExpr, ""));
     }
 }
