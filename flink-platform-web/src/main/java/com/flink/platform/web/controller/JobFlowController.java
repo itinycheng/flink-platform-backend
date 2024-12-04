@@ -6,6 +6,7 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.flink.platform.common.constants.Constant;
 import com.flink.platform.common.enums.JobFlowStatus;
+import com.flink.platform.common.enums.JobFlowType;
 import com.flink.platform.common.util.UuidGenerator;
 import com.flink.platform.dao.entity.ExecutionConfig;
 import com.flink.platform.dao.entity.JobFlow;
@@ -163,7 +164,9 @@ public class JobFlowController {
             @RequestAttribute(value = Constant.SESSION_USER) User loginUser,
             @RequestParam(name = "page", required = false, defaultValue = "1") Integer page,
             @RequestParam(name = "size", required = false, defaultValue = "20") Integer size,
+            @RequestParam(name = "id", required = false) Long id,
             @RequestParam(name = "name", required = false) String name,
+            @RequestParam(name = "type", required = false) JobFlowType type,
             @RequestParam(name = "status", required = false) JobFlowStatus status,
             @RequestParam(name = "tag", required = false) String tagCode,
             @RequestParam(name = "sort", required = false) String sort) {
@@ -173,6 +176,8 @@ public class JobFlowController {
                 .lambda()
                 .select(JobFlow.class, field -> !"flow".equals(field.getProperty()))
                 .eq(JobFlow::getUserId, loginUser.getId())
+                .eq(id != null, JobFlow::getId, id)
+                .eq(type != null, JobFlow::getType, type)
                 .like(isNotEmpty(name), JobFlow::getName, name)
                 .like(isNotEmpty(tagCode), JobFlow::getTags, tagCode);
 

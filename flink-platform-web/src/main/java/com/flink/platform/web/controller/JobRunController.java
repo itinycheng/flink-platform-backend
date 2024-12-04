@@ -14,6 +14,7 @@ import com.flink.platform.dao.service.JobRunInfoService;
 import com.flink.platform.web.entity.request.JobRunRequest;
 import com.flink.platform.web.entity.response.ResultInfo;
 import com.flink.platform.web.service.KillJobService;
+import lombok.RequiredArgsConstructor;
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -43,16 +44,14 @@ import static java.util.stream.Collectors.toList;
 /** Job run info controller. */
 @RestController
 @RequestMapping("/jobRun")
+@RequiredArgsConstructor(onConstructor_ = @Autowired)
 public class JobRunController {
 
-    @Autowired
-    private JobRunInfoService jobRunInfoService;
+    private final JobRunInfoService jobRunInfoService;
 
-    @Autowired
-    private JobInfoService jobInfoService;
+    private final JobInfoService jobInfoService;
 
-    @Autowired
-    private KillJobService killJobService;
+    private final KillJobService killJobService;
 
     @GetMapping(value = "/get/{runId}")
     public ResultInfo<JobRunInfo> get(@PathVariable Long runId) {

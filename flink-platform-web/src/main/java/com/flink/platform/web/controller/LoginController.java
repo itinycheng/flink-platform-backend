@@ -10,6 +10,7 @@ import com.flink.platform.web.entity.request.UserRequest;
 import com.flink.platform.web.entity.response.ResultInfo;
 import com.flink.platform.web.util.HttpUtil;
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -29,13 +30,12 @@ import static com.flink.platform.web.entity.response.ResultInfo.success;
 /** user controller. */
 @RestController
 @RequestMapping
+@RequiredArgsConstructor(onConstructor_ = @Autowired)
 public class LoginController {
 
-    @Autowired
-    private UserService userService;
+    private final UserService userService;
 
-    @Autowired
-    private SessionService sessionService;
+    private final SessionService sessionService;
 
     @PostMapping(value = "/login")
     public ResultInfo<Map<String, String>> login(@RequestBody User user, HttpServletRequest request) {

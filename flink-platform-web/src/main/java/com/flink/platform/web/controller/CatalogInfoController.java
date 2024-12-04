@@ -10,6 +10,7 @@ import com.flink.platform.dao.entity.User;
 import com.flink.platform.dao.service.CatalogInfoService;
 import com.flink.platform.web.entity.request.CatalogInfoRequest;
 import com.flink.platform.web.entity.response.ResultInfo;
+import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -32,10 +33,10 @@ import static com.flink.platform.web.entity.response.ResultInfo.success;
 /** Catalog info controller. */
 @RestController
 @RequestMapping("/catalog")
+@RequiredArgsConstructor(onConstructor_ = @Autowired)
 public class CatalogInfoController {
 
-    @Autowired
-    private CatalogInfoService catalogService;
+    private final CatalogInfoService catalogService;
 
     @PostMapping(value = "/create")
     public ResultInfo<Long> create(

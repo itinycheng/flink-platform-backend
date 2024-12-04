@@ -19,6 +19,7 @@ import com.flink.platform.web.entity.JobQuartzInfo;
 import com.flink.platform.web.entity.request.JobInfoRequest;
 import com.flink.platform.web.entity.response.ResultInfo;
 import com.flink.platform.web.service.QuartzService;
+import lombok.RequiredArgsConstructor;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -58,19 +59,16 @@ import static org.apache.commons.collections4.CollectionUtils.isNotEmpty;
 /** manage job info. */
 @RestController
 @RequestMapping("/jobInfo")
+@RequiredArgsConstructor(onConstructor_ = @Autowired)
 public class JobInfoController {
 
-    @Autowired
-    private JobInfoService jobInfoService;
+    private final JobInfoService jobInfoService;
 
-    @Autowired
-    private JobRunInfoService jobRunService;
+    private final JobRunInfoService jobRunService;
 
-    @Autowired
-    private JobFlowService jobFlowService;
+    private final JobFlowService jobFlowService;
 
-    @Autowired
-    private QuartzService quartzService;
+    private final QuartzService quartzService;
 
     @PostMapping(value = "/create")
     public ResultInfo<JobInfo> create(

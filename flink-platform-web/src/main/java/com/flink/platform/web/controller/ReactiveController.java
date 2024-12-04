@@ -14,6 +14,7 @@ import com.flink.platform.web.entity.vo.ReactiveExecVo;
 import com.flink.platform.web.service.ReactiveService;
 import com.flink.platform.web.service.WorkerApplyService;
 import com.flink.platform.web.util.HttpUtil;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -48,19 +49,16 @@ import static com.flink.platform.web.entity.response.ResultInfo.success;
 @Slf4j
 @RestController
 @RequestMapping("/reactive")
+@RequiredArgsConstructor(onConstructor_ = @Autowired)
 public class ReactiveController {
 
-    @Autowired
-    private ReactiveService reactiveService;
+    private final ReactiveService reactiveService;
 
-    @Autowired
-    private DatasourceService datasourceService;
+    private final DatasourceService datasourceService;
 
-    @Autowired
-    private WorkerApplyService workerApplyService;
+    private final WorkerApplyService workerApplyService;
 
-    @Autowired
-    private RestTemplate restTemplate;
+    private final RestTemplate restTemplate;
 
     @GetMapping(value = "/jobToDbTypes")
     public ResultInfo<Map<JobType, DbType>> jobToDbTypes() {

@@ -9,6 +9,7 @@ import com.flink.platform.dao.entity.User;
 import com.flink.platform.dao.service.AlertService;
 import com.flink.platform.web.entity.request.AlertInfoRequest;
 import com.flink.platform.web.entity.response.ResultInfo;
+import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -30,10 +31,10 @@ import static com.flink.platform.web.entity.response.ResultInfo.success;
 /** Alert controller. */
 @RestController
 @RequestMapping("/alert")
+@RequiredArgsConstructor(onConstructor_ = @Autowired)
 public class AlertController {
 
-    @Autowired
-    private AlertService alertService;
+    private final AlertService alertService;
 
     @PostMapping(value = "/create")
     public ResultInfo<Long> create(

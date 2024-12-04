@@ -11,6 +11,7 @@ import com.flink.platform.dao.entity.Worker;
 import com.flink.platform.dao.service.WorkerService;
 import com.flink.platform.web.entity.request.WorkerRequest;
 import com.flink.platform.web.entity.response.ResultInfo;
+import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -35,10 +36,10 @@ import static com.flink.platform.web.entity.response.ResultInfo.success;
 /** Worker controller. */
 @RestController
 @RequestMapping("/worker")
+@RequiredArgsConstructor(onConstructor_ = @Autowired)
 public class WorkerController {
 
-    @Autowired
-    private WorkerService workerService;
+    private final WorkerService workerService;
 
     @GetMapping(value = "/get/{workerId}")
     public ResultInfo<Worker> get(@PathVariable Long workerId) {

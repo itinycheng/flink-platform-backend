@@ -11,6 +11,7 @@ import com.flink.platform.dao.entity.User;
 import com.flink.platform.dao.service.DatasourceService;
 import com.flink.platform.web.entity.request.DatasourceRequest;
 import com.flink.platform.web.entity.response.ResultInfo;
+import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -32,10 +33,10 @@ import static com.flink.platform.web.entity.response.ResultInfo.success;
 /** datasource controller. */
 @RestController
 @RequestMapping("/datasource")
+@RequiredArgsConstructor(onConstructor_ = @Autowired)
 public class DatasourceController {
 
-    @Autowired
-    private DatasourceService datasourceService;
+    private final DatasourceService datasourceService;
 
     @PostMapping(value = "/create")
     public ResultInfo<Long> create(
