@@ -9,10 +9,10 @@ import com.flink.platform.common.enums.ExecutionStatus;
 import com.flink.platform.dao.entity.JobFlowRun;
 import com.flink.platform.dao.entity.User;
 import com.flink.platform.dao.service.JobFlowRunService;
-import com.flink.platform.dao.service.JobRunInfoService;
 import com.flink.platform.web.entity.request.JobFlowRunRequest;
 import com.flink.platform.web.entity.response.ResultInfo;
 import com.flink.platform.web.service.KillJobService;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -42,13 +42,12 @@ import static org.apache.commons.lang3.ObjectUtils.isNotEmpty;
 @Slf4j
 @RestController
 @RequestMapping("/jobFlowRun")
+@RequiredArgsConstructor(onConstructor_ = @Autowired)
 public class JobFlowRunController {
 
-    @Autowired private JobFlowRunService jobFlowRunService;
+    private final JobFlowRunService jobFlowRunService;
 
-    @Autowired private JobRunInfoService jobRunInfoService;
-
-    @Autowired private KillJobService killJobService;
+    private final KillJobService killJobService;
 
     @GetMapping(value = "/get/{flowRunId}")
     public ResultInfo<JobFlowRun> get(@PathVariable long flowRunId) {
@@ -100,7 +99,7 @@ public class JobFlowRunController {
                         .like(isNotEmpty(tagCode), JobFlowRun::getTags, tagCode)
                         .between(
                                 nonNull(startTime) && nonNull(endTime),
-                                JobFlowRun::getCreateTime,
+                                JobFlowRun::getEndTime,
                                 startTime,
                                 endTime);
         if ("-id".equals(sort)) {

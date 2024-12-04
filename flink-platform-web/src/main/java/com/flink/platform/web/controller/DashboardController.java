@@ -8,6 +8,7 @@ import com.flink.platform.dao.entity.User;
 import com.flink.platform.dao.service.JobFlowRunService;
 import com.flink.platform.dao.service.JobRunInfoService;
 import com.flink.platform.web.entity.response.ResultInfo;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -27,11 +28,12 @@ import static java.util.Objects.nonNull;
 /** Dashboard statistics. */
 @RestController
 @RequestMapping("/dashboard")
+@RequiredArgsConstructor(onConstructor_ = @Autowired)
 public class DashboardController {
 
-    @Autowired private JobFlowRunService jobFlowRunService;
+    private final JobFlowRunService jobFlowRunService;
 
-    @Autowired private JobRunInfoService jobRunService;
+    private final JobRunInfoService jobRunService;
 
     @GetMapping(value = "/jobRunStatusCount")
     public ResultInfo<List<Map<String, Object>>> jobRunStatusCount(
@@ -49,7 +51,7 @@ public class DashboardController {
                                 .groupBy("status")
                                 .between(
                                         nonNull(startTime) && nonNull(endTime),
-                                        "create_time",
+                                        "stop_time",
                                         startTime,
                                         endTime)
                                 .eq("user_id", loginUser.getId()));
@@ -72,7 +74,7 @@ public class DashboardController {
                                 .groupBy("status")
                                 .between(
                                         nonNull(startTime) && nonNull(endTime),
-                                        "create_time",
+                                        "end_time",
                                         startTime,
                                         endTime)
                                 .eq("user_id", loginUser.getId()));

@@ -108,7 +108,7 @@ public class ProcessJobService {
             newJobRun.setBackInfo(callback);
             newJobRun.setSubmitTime(submitTime);
             if (executionStatus.isTerminalState()) {
-                newJobRun.setStopTime(LocalDateTime.now());
+                newJobRun.setEndTime(LocalDateTime.now());
             }
             jobRunInfoService.updateById(newJobRun);
 

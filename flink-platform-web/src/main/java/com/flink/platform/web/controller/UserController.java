@@ -8,11 +8,11 @@ import com.flink.platform.common.constants.Constant;
 import com.flink.platform.dao.entity.LongArrayList;
 import com.flink.platform.dao.entity.User;
 import com.flink.platform.dao.entity.Worker;
-import com.flink.platform.dao.service.SessionService;
 import com.flink.platform.dao.service.UserService;
 import com.flink.platform.dao.service.WorkerService;
 import com.flink.platform.web.entity.request.UserRequest;
 import com.flink.platform.web.entity.response.ResultInfo;
+import lombok.RequiredArgsConstructor;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,8 +24,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-
-import javax.servlet.http.HttpServletRequest;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -44,13 +42,12 @@ import static com.flink.platform.web.entity.response.ResultInfo.success;
 /** user controller. */
 @RestController
 @RequestMapping("/user")
+@RequiredArgsConstructor(onConstructor_ = @Autowired)
 public class UserController {
 
-    @Autowired private UserService userService;
+    private final UserService userService;
 
-    @Autowired private SessionService sessionService;
-
-    @Autowired private WorkerService workerService;
+    private final WorkerService workerService;
 
     @GetMapping(value = "/get/{userId}")
     public ResultInfo<User> get(@PathVariable Long userId) {
@@ -86,8 +83,7 @@ public class UserController {
             return failure(ERROR_PARAMETER, errorMsg);
         }
 
-        if (!Objects.equals(userRequest.getId(), loginUser.getId())
-                && loginUser.getType() != ADMIN) {
+        if (loginUser.getType() != ADMIN) {
             return failure(USER_HAVE_NO_PERMISSION);
         }
 
@@ -117,12 +113,13 @@ public class UserController {
     }
 
     @GetMapping(value = "/info")
-    public ResultInfo<Map<String, Object>> info(HttpServletRequest request) {
+    public ResultInfo<Map<String, Object>> info(
+            @RequestAttribute(value = Constant.SESSION_USER) User loginUser) {
         Map<String, Object> result = new HashMap<>();
         result.put("roles", Arrays.asList("admin", "common"));
         result.put("introduction", "A fixed user given by the backend");
         result.put("avatar", "https://wpimg.wallstcn.com/f778738c-e4f8-4870-b634-56703b4acafe.gif");
-        result.put("name", request.getHeader("X-Token"));
+        result.put("name", loginUser.getUsername());
         return success(result);
     }
 

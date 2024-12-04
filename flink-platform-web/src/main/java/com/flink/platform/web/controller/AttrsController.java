@@ -5,12 +5,12 @@ import com.flink.platform.common.enums.ExecutionCondition;
 import com.flink.platform.common.enums.ExecutionStatus;
 import com.flink.platform.common.enums.JobType;
 import com.flink.platform.dao.entity.task.DependentJob;
-import com.flink.platform.dao.service.JobInfoService;
-import com.flink.platform.dao.service.WorkerService;
 import com.flink.platform.web.config.FlinkConfig;
 import com.flink.platform.web.entity.response.ResultInfo;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -24,6 +24,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 import static com.flink.platform.common.constants.Constant.FLINK;
 import static com.flink.platform.common.constants.Constant.FULL_VERSION;
@@ -36,20 +37,17 @@ import static com.flink.platform.common.enums.ExecutionCondition.OR;
 import static com.flink.platform.common.enums.ExecutionStatus.FAILURE;
 import static com.flink.platform.common.enums.ExecutionStatus.SUCCESS;
 import static com.flink.platform.web.entity.response.ResultInfo.success;
-import static java.util.stream.Collectors.toList;
 
 /** Attrs controller. */
+@Slf4j
 @RestController
 @RequestMapping("/attr")
+@RequiredArgsConstructor(onConstructor_ = @Autowired)
 public class AttrsController {
 
     private static final String CLASS_PATH_PREFIX = "com.flink.platform.common.enums";
 
-    @Autowired private JobInfoService jobInfoService;
-
-    @Autowired private WorkerService workerService;
-
-    @Autowired private List<FlinkConfig> flinkConfigs;
+    private final List<FlinkConfig> flinkConfigs;
 
     @GetMapping(value = "/preconditions")
     public ResultInfo<List<ExecutionCondition>> precondition() {
@@ -72,7 +70,7 @@ public class AttrsController {
                     flinkConfigs.stream()
                             .map(FlinkConfig::getVersion)
                             .filter(Objects::nonNull)
-                            .collect(toList()));
+                            .collect(Collectors.toList()));
         } else {
             versions.add(FULL_VERSION);
         }
@@ -107,7 +105,7 @@ public class AttrsController {
         return success(Arrays.asList(SUCCESS, FAILURE));
     }
 
-    @GetMapping(value = "/list")
+    @GetMapping(value = "/enums")
     public ResultInfo<List<Map<String, Object>>> list(
             @RequestParam(name = "className", required = false) String className) {
         List<Map<String, Object>> enums = Lists.newArrayList();
@@ -124,7 +122,7 @@ public class AttrsController {
                 enums.add(map);
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("Get enum list error", e);
         }
         return success(enums);
     }
