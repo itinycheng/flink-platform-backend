@@ -28,7 +28,7 @@ public class UnscheduledJobFlowChecker {
 
     @Scheduled(initialDelay = 2 * 60 * 1000, fixedDelay = 60 * 60 * 1000)
     public void checkUnscheduledWorkflow() {
-        Worker worker = workerService.getCurrentWorker();
+        Worker worker = workerService.getCurWorkerIdAndRole();
         if (worker == null || !LEADER.equals(worker.getRole())) {
             log.info("Current worker is not leader, skip checkUnscheduledWorkflow.");
             return;

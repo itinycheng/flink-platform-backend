@@ -17,3 +17,8 @@ CREATE INDEX t_job_run_job_id_idx USING BTREE ON platform.t_job_run (job_id);
 
 CREATE INDEX t_job_flow_run_name_idx USING BTREE ON platform.t_job_flow_run (name);
 CREATE INDEX t_job_run_name_idx USING BTREE ON platform.t_job_run (name);
+
+-- 2024-12-04
+CREATE INDEX t_job_run_stop_time_idx USING BTREE ON platform.t_job_run (stop_time);
+CREATE INDEX t_job_flow_run_end_time_idx USING BTREE ON platform.t_job_flow_run (end_time);
+
