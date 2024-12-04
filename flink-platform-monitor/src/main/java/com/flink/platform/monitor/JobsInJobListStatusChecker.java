@@ -9,7 +9,6 @@ import com.flink.platform.dao.service.WorkerService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import static com.flink.platform.common.enums.WorkerStatus.LEADER;
