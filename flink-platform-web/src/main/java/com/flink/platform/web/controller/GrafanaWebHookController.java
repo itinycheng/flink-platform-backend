@@ -4,6 +4,7 @@ import com.flink.platform.alert.AlertSender;
 import com.flink.platform.common.util.JsonUtil;
 import com.flink.platform.dao.entity.alert.FeiShuAlert;
 import com.flink.platform.web.entity.response.ResultInfo;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -19,10 +20,10 @@ import static com.flink.platform.web.entity.response.ResultInfo.success;
 @Slf4j
 @RestController
 @RequestMapping("/webhook")
+@RequiredArgsConstructor(onConstructor_ = @Autowired)
 public class GrafanaWebHookController {
 
-    @Autowired
-    private AlertSender alertSender;
+    private final AlertSender alertSender;
 
     @PostMapping(value = "/forwardToFeiShu")
     public ResultInfo<String> forwardToFeiShu(@RequestBody Map<String, Object> grafanaMap) {

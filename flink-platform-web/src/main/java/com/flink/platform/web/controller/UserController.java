@@ -8,11 +8,11 @@ import com.flink.platform.common.constants.Constant;
 import com.flink.platform.dao.entity.LongArrayList;
 import com.flink.platform.dao.entity.User;
 import com.flink.platform.dao.entity.Worker;
-import com.flink.platform.dao.service.SessionService;
 import com.flink.platform.dao.service.UserService;
 import com.flink.platform.dao.service.WorkerService;
 import com.flink.platform.web.entity.request.UserRequest;
 import com.flink.platform.web.entity.response.ResultInfo;
+import lombok.RequiredArgsConstructor;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -42,16 +42,12 @@ import static com.flink.platform.web.entity.response.ResultInfo.success;
 /** user controller. */
 @RestController
 @RequestMapping("/user")
+@RequiredArgsConstructor(onConstructor_ = @Autowired)
 public class UserController {
 
-    @Autowired
-    private UserService userService;
+    private final UserService userService;
 
-    @Autowired
-    private SessionService sessionService;
-
-    @Autowired
-    private WorkerService workerService;
+    private final WorkerService workerService;
 
     @GetMapping(value = "/get/{userId}")
     public ResultInfo<User> get(@PathVariable Long userId) {

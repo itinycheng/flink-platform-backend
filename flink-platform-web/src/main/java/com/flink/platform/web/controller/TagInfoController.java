@@ -14,6 +14,7 @@ import com.flink.platform.dao.service.TagInfoService;
 import com.flink.platform.web.config.annotation.ApiException;
 import com.flink.platform.web.entity.request.TagInfoRequest;
 import com.flink.platform.web.entity.response.ResultInfo;
+import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -37,13 +38,12 @@ import static java.util.Objects.nonNull;
 /** Job flow tag controller. */
 @RestController
 @RequestMapping("/tag")
+@RequiredArgsConstructor(onConstructor_ = @Autowired)
 public class TagInfoController {
 
-    @Autowired
-    private TagInfoService tagInfoService;
+    private final TagInfoService tagInfoService;
 
-    @Autowired
-    private JobFlowService jobFlowService;
+    private final JobFlowService jobFlowService;
 
     @ApiException
     @PostMapping(value = "/create")

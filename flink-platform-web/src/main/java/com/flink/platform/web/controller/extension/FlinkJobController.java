@@ -8,6 +8,7 @@ import com.flink.platform.grpc.SavepointReply;
 import com.flink.platform.grpc.SavepointRequest;
 import com.flink.platform.web.entity.response.ResultInfo;
 import com.flink.platform.web.grpc.JobGrpcClient;
+import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -27,13 +28,12 @@ import static com.flink.platform.web.entity.response.ResultInfo.success;
  */
 @RestController
 @RequestMapping("/flink")
+@RequiredArgsConstructor(onConstructor_ = @Autowired)
 public class FlinkJobController {
 
-    @Autowired
-    private JobRunInfoService jobRunService;
+    private final JobRunInfoService jobRunService;
 
-    @Autowired
-    private JobGrpcClient jobGrpcClient;
+    private final JobGrpcClient jobGrpcClient;
 
     @GetMapping(value = "/savepoint/{jobRunId}")
     public ResultInfo<Long> savepoint(@PathVariable Long jobRunId) {

@@ -12,6 +12,7 @@ import com.flink.platform.dao.service.JobInfoService;
 import com.flink.platform.dao.service.JobParamService;
 import com.flink.platform.web.entity.request.JobParamRequest;
 import com.flink.platform.web.entity.response.ResultInfo;
+import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -38,13 +39,12 @@ import static java.util.Objects.nonNull;
 /** Alert controller. */
 @RestController
 @RequestMapping("/jobParam")
+@RequiredArgsConstructor(onConstructor_ = @Autowired)
 public class JobParamController {
 
-    @Autowired
-    private JobParamService jobParamService;
+    private final JobParamService jobParamService;
 
-    @Autowired
-    private JobInfoService jobService;
+    private final JobInfoService jobService;
 
     @PostMapping(value = "/create")
     public ResultInfo<Long> create(

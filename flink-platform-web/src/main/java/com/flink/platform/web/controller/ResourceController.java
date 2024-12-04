@@ -14,6 +14,7 @@ import com.flink.platform.web.entity.response.ResultInfo;
 import com.flink.platform.web.service.ResourceManageService;
 import com.flink.platform.web.service.StorageService;
 import com.flink.platform.web.util.ResourceUtil;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.fs.Path;
@@ -45,16 +46,14 @@ import static com.flink.platform.web.entity.response.ResultInfo.success;
 @Slf4j
 @RestController
 @RequestMapping("/resource")
+@RequiredArgsConstructor(onConstructor_ = @Autowired)
 public class ResourceController {
 
-    @Autowired
-    private ResourceManageService resourceManageService;
+    private final ResourceManageService resourceManageService;
 
-    @Autowired
-    private ResourceService resourceService;
+    private final ResourceService resourceService;
 
-    @Autowired
-    private StorageService storageService;
+    private final StorageService storageService;
 
     @PostMapping(value = "/create")
     public ResultInfo<Long> create(
