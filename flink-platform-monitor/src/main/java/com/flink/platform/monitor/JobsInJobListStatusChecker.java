@@ -30,7 +30,7 @@ public class JobsInJobListStatusChecker {
 
     private final AlertSendingService alertSendingService;
 
-    @Scheduled(initialDelay = 2 * 60 * 1000, fixedDelay = 10 * 60 * 1000)
+    // @Scheduled(initialDelay = 2 * 60 * 1000, fixedDelay = 10 * 60 * 1000)
     public void checkJobStatus() {
         Worker worker = workerService.getCurWorkerIdAndRole();
         if (worker == null || !LEADER.equals(worker.getRole())) {
