@@ -68,7 +68,7 @@ public class WorkerHeartbeat {
 
     public synchronized void heartbeat() {
         // 1. Update worker heartbeat info.
-        Worker worker = workerService.getCurrentWorker();
+        Worker worker = workerService.getCurWorkerIdAndRole();
         Long workerId = worker != null ? worker.getId() : null;
 
         worker = new Worker();
