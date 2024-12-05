@@ -2,6 +2,7 @@ package com.flink.platform.dao.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.flink.platform.common.enums.ExecutionStatus;
+import com.flink.platform.common.enums.JobFlowStatus;
 import com.flink.platform.common.enums.JobFlowType;
 import com.flink.platform.common.enums.JobStatus;
 import com.flink.platform.dao.entity.JobRunInfo;
@@ -63,6 +64,9 @@ public interface JobRunInfoMapper extends BaseMapper<JobRunInfo> {
                             <if test="jobFlowType != null">
                                 AND f.`type` = #{jobFlowType}
                             </if>
+                            <if test="jobFlowStatus != null">
+                                AND f.`status` = #{jobFlowStatus}
+                            </if>
                             <if test="jobStatus != null">
                                 AND j.status = #{jobStatus}
                             </if>
@@ -79,6 +83,7 @@ public interface JobRunInfoMapper extends BaseMapper<JobRunInfo> {
             """)
     List<JobRunInfo> queryLastJobRuns(
             @Param("jobFlowType") JobFlowType jobFlowType,
+            @Param("jobFlowStatus") JobFlowStatus jobFlowStatus,
             @Param("jobStatus") JobStatus jobStatus,
             @Param("jobRunStatusList") List<ExecutionStatus> jobRunStatusList);
 }
