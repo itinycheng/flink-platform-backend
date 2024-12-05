@@ -9,6 +9,7 @@ import com.flink.platform.dao.service.WorkerService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import static com.flink.platform.common.enums.WorkerStatus.LEADER;
@@ -29,7 +30,7 @@ public class JobsInJobListStatusChecker {
 
     private final AlertSendingService alertSendingService;
 
-    // @Scheduled(initialDelay = 2 * 60 * 1000, fixedDelay = 10 * 60 * 1000)
+    @Scheduled(initialDelay = 2 * 60 * 1000, fixedDelay = 10 * 60 * 1000)
     public void checkJobStatus() {
         Worker worker = workerService.getCurWorkerIdAndRole();
         if (worker == null || !LEADER.equals(worker.getRole())) {
