@@ -14,10 +14,10 @@ import static com.flink.platform.common.constants.Constant.HOST_IP;
 @DS("master_platform")
 public class WorkerService extends ServiceImpl<WorkerMapper, Worker> {
 
-    public Worker getCurrentWorker() {
+    public Worker getCurWorkerIdAndRole() {
         return getOne(new QueryWrapper<Worker>()
                 .lambda()
-                .select(Worker::getId)
+                .select(Worker::getId, Worker::getRole)
                 .eq(Worker::getIp, HOST_IP)
                 .last("LIMIT 1"));
     }

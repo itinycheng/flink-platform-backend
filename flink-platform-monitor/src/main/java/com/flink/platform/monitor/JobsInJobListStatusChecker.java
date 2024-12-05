@@ -32,7 +32,7 @@ public class JobsInJobListStatusChecker {
 
     @Scheduled(initialDelay = 2 * 60 * 1000, fixedDelay = 10 * 60 * 1000)
     public void checkJobStatus() {
-        Worker worker = workerService.getCurrentWorker();
+        Worker worker = workerService.getCurWorkerIdAndRole();
         if (worker == null || !LEADER.equals(worker.getRole())) {
             log.info("Current worker is not leader, skip checkJobStatus.");
             return;

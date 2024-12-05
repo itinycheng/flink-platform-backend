@@ -66,15 +66,15 @@ public interface JobRunInfoMapper extends BaseMapper<JobRunInfo> {
                             <if test="jobStatus != null">
                                 AND j.status = #{jobStatus}
                             </if>
-                            <if test="jobRunStatusList != null and jobRunStatusList.size() > 0">
-                                AND r.status in
-                                <foreach collection="jobRunStatusList" item="jobRunStatus" open='(' close=')' separator=','>
-                                    #{jobRunStatus}
-                                </foreach>
-                            </if>
                         GROUP BY r.job_id
                     ) t2
-                WHERE t1.id = t2.run_id;
+                WHERE t1.id = t2.run_id
+                <if test="jobRunStatusList != null and jobRunStatusList.size() > 0">
+                    AND t1.status in
+                    <foreach collection="jobRunStatusList" item="jobRunStatus" open='(' close=')' separator=','>
+                        #{jobRunStatus}
+                    </foreach>
+                </if>
             </script>
             """)
     List<JobRunInfo> queryLastJobRuns(
