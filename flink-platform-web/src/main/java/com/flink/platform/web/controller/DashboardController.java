@@ -45,7 +45,9 @@ public class DashboardController {
         List<Map<String, Object>> maps = jobRunService.listMaps(new QueryWrapper<JobRunInfo>()
                 .select("status, count(id) as count")
                 .groupBy("status")
-                .between(nonNull(startTime) && nonNull(endTime), "stop_time", startTime, endTime)
+                .nested(
+                        nonNull(startTime) && nonNull(endTime),
+                        qw -> qw.isNull("stop_time").or().between("stop_time", startTime, endTime))
                 .eq("user_id", loginUser.getId()));
         return success(maps);
     }
@@ -60,7 +62,9 @@ public class DashboardController {
         List<Map<String, Object>> maps = jobFlowRunService.listMaps(new QueryWrapper<JobFlowRun>()
                 .select("status, count(id) as count")
                 .groupBy("status")
-                .between(nonNull(startTime) && nonNull(endTime), "end_time", startTime, endTime)
+                .nested(
+                        nonNull(startTime) && nonNull(endTime),
+                        qw -> qw.isNull("end_time").or().between("end_time", startTime, endTime))
                 .eq("user_id", loginUser.getId()));
         return success(maps);
     }
