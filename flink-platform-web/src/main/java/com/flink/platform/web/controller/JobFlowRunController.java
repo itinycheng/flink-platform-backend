@@ -97,11 +97,15 @@ public class JobFlowRunController {
                         .eq(nonNull(status), JobFlowRun::getStatus, status)
                         .likeRight(isNotEmpty(name), JobFlowRun::getName, name)
                         .like(isNotEmpty(tagCode), JobFlowRun::getTags, tagCode)
-                        .between(
+                        .nested(
                                 nonNull(startTime) && nonNull(endTime),
-                                JobFlowRun::getEndTime,
-                                startTime,
-                                endTime);
+                                qw ->
+                                        qw.isNull(JobFlowRun::getEndTime)
+                                                .or()
+                                                .between(
+                                                        JobFlowRun::getEndTime,
+                                                        startTime,
+                                                        endTime));
         if ("-id".equals(sort)) {
             queryWrapper.orderByDesc(JobFlowRun::getId);
         }

@@ -49,11 +49,12 @@ public class DashboardController {
                         new QueryWrapper<JobRunInfo>()
                                 .select("status, count(id) as count")
                                 .groupBy("status")
-                                .between(
+                                .nested(
                                         nonNull(startTime) && nonNull(endTime),
-                                        "stop_time",
-                                        startTime,
-                                        endTime)
+                                        qw ->
+                                                qw.isNull("stop_time")
+                                                        .or()
+                                                        .between("stop_time", startTime, endTime))
                                 .eq("user_id", loginUser.getId()));
         return success(maps);
     }
@@ -72,11 +73,12 @@ public class DashboardController {
                         new QueryWrapper<JobFlowRun>()
                                 .select("status, count(id) as count")
                                 .groupBy("status")
-                                .between(
+                                .nested(
                                         nonNull(startTime) && nonNull(endTime),
-                                        "end_time",
-                                        startTime,
-                                        endTime)
+                                        qw ->
+                                                qw.isNull("end_time")
+                                                        .or()
+                                                        .between("end_time", startTime, endTime))
                                 .eq("user_id", loginUser.getId()));
         return success(maps);
     }
