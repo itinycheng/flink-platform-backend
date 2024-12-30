@@ -14,7 +14,7 @@ spring:
       # strict: true
       datasource:
         master_platform:
-          url: jdbc:mysql://172.30.75.250:3306/platform?allowMultiQueries=true&useUnicode=true&characterEncoding=UTF-8
+          url: jdbc:mysql://10.68.37.186:3306/platform?allowMultiQueries=true&useUnicode=true&characterEncoding=UTF-8
           username: admin
           password: JLKDSJAASJGIHIQ23CVGF
           driver-class-name: com.mysql.jdbc.Driver
@@ -28,7 +28,7 @@ spring:
       org:
         quartz:
           scheduler:
-            instanceName: quartzScheduler
+            instanceName: quartz_scheduler_v2
             instanceId: AUTO
           jobStore:
             class: org.springframework.scheduling.quartz.LocalDataSourceJobStore

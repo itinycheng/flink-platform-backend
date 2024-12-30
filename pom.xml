@@ -26,6 +26,10 @@
 			<properties>
 				<env>dev</env>
 			</properties>
+			<modules>
+				<module>flink-platform-ui</module>
+				<module>flink-platform-web</module>
+			</modules>
 			<activation>
 				<!-- set default env -->
 				<activeByDefault>true</activeByDefault>
@@ -432,7 +436,8 @@
 		<module>flink-platform-grpc</module>
 		<module>flink-sql-submit</module>
 		<module>flink-platform-storage</module>
-		<module>flink-platform-web</module>
 		<module>flink-platform-plugin</module>
+		<module>flink-platform-ui</module>
+		<module>flink-platform-web</module>
 	</modules>
 </project>
