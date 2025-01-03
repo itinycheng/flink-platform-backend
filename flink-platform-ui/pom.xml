@@ -57,20 +57,6 @@
 					</execution>
 				</executions>
 			</plugin>
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-resources-plugin</artifactId>
-				<configuration>
-					<encoding>${project.build.sourceEncoding}</encoding>
-					<outputDirectory>${project.build.directory}</outputDirectory>
-					<resources>
-						<resource>
-							<targetPath>${project.parent.basedir}/flink-platform-web/src/main/resources/static</targetPath>
-							<directory>${basedir}/frontend/dist</directory>
-						</resource>
-					</resources>
-				</configuration>
-			</plugin>
 		</plugins>
 	</build>
 </project>
