@@ -20,10 +20,10 @@ SERVER_LOG_DIR="/data0/logs/$PROJECT_NAME"
 PID_FILE="$DEPLOY_DIR/data/$PROJECT_NAME.pid"
 
 # SERVER_PORT
-if [ "$ENV" = "test" ]; then
-    SERVER_PORT="11001"
+if [ "$ENV" = "prod" ]; then
+    SERVER_PORT="8048"
 else
-    SERVER_PORT="9201"
+    SERVER_PORT="9104"
 fi
 
 # JAR_FILE
