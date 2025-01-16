@@ -48,6 +48,7 @@ public class KillJobService {
         this.jobFlowRunService = jobFlowRunService;
     }
 
+    // TODO: If workflow instance doesn't exist, KILLABLE may not be changed to a final status.
     public boolean killRemoteFlow(Long userId, Long flowRunId) {
         // Set the status of the workflow to KILLABLE.
         var newJobFlowRun = new JobFlowRun();
