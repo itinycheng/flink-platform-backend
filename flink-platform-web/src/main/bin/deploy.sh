@@ -12,6 +12,8 @@ COMMAND=$1  # 操作命令
 ENV=$2    #环境
 
 export JAVA_HOME=/usr/local/jdk1.8.0_161
+export HADOOP_USER_NAME=hdfs
+export HADOOP_CONF_DIR=/data0/project/hadoop-conf
 export PATH=$JAVA_HOME/bin:"$PATH"
 
 DEPLOY_DIR=$(cd "$(dirname "$0")/.." || { echo "Failed to find deploy directory."; exit 1; }; pwd)
