@@ -102,11 +102,11 @@ public class FlinkCommandExecutor implements CommandExecutor {
         AbstractTask task = command.getTask();
         if (task == null) {
             JobRunInfo jobRun = jobRunInfoService.getById(command.getJobRunId());
-            JobCallback jobCallback = jobRun.getBackInfo();
-            if (!jobRun.getStatus().isTerminalState() && jobCallback != null) {
+            JobCallback callback = jobRun.getBackInfo();
+            if (!jobRun.getStatus().isTerminalState() && callback != null) {
                 FlinkYarnTask newTask = new FlinkYarnTask(jobRun.getId(), jobRun.getDeployMode());
-                newTask.setProcessId(jobCallback.getProcessId());
-                newTask.setAppId(jobCallback.getAppId());
+                newTask.setProcessId(callback.getProcessId());
+                newTask.setAppId(callback.getAppId());
                 task = newTask;
             }
         }
