@@ -212,16 +212,16 @@ public enum Placeholder {
     }
 
     public static void main(String[] args) {
-        JobRunInfo jobRunInfo = new JobRunInfo();
+        JobRunInfo jobRun = new JobRunInfo();
 
-        jobRunInfo.setSubject(
+        jobRun.setSubject(
                 "select count() as date_${time:yyyyMMdd[curDay-1d]} from t where time = ${time:yyyyMMdd[curDay-1d]}");
-        System.out.println(TIME.provider.apply(jobRunInfo));
+        System.out.println(TIME.provider.apply(jobRun));
 
-        jobRunInfo.setSubject("select * from t where t.time = '${time:yyyy-MM-dd HH:mm:ss[curSecond]}'");
-        System.out.println(TIME.provider.apply(jobRunInfo));
+        jobRun.setSubject("select * from t where t.time = '${time:yyyy-MM-dd HH:mm:ss[curSecond]}'");
+        System.out.println(TIME.provider.apply(jobRun));
 
-        jobRunInfo.setSubject("select * from t where t.time = '${time:yyyy-MM-dd HH:mm:ss[curYear+12h]}'");
-        System.out.println(TIME.provider.apply(jobRunInfo));
+        jobRun.setSubject("select * from t where t.time = '${time:yyyy-MM-dd HH:mm:ss[curYear+12h]}'");
+        System.out.println(TIME.provider.apply(jobRun));
     }
 }

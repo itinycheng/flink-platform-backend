@@ -11,6 +11,7 @@ import com.flink.platform.dao.service.JobRunInfoService;
 import com.flink.platform.web.command.CommandBuilder;
 import com.flink.platform.web.command.JobCommand;
 import jakarta.annotation.Nonnull;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.tuple.Triple;
@@ -27,13 +28,12 @@ import static com.flink.platform.common.enums.JobType.DEPENDENT;
 /** condition builder. */
 @Slf4j
 @Component("dependentCommandBuilder")
+@RequiredArgsConstructor(onConstructor_ = @Autowired)
 public class DependentCommandBuilder implements CommandBuilder {
 
-    @Autowired
-    private JobFlowRunService jobFlowRunService;
+    private final JobFlowRunService jobFlowRunService;
 
-    @Autowired
-    private JobRunInfoService jobRunInfoService;
+    private final JobRunInfoService jobRunInfoService;
 
     @Override
     public boolean isSupported(JobType jobType, String version) {
@@ -41,9 +41,9 @@ public class DependentCommandBuilder implements CommandBuilder {
     }
 
     @Override
-    public JobCommand buildCommand(Long flowRunId, @Nonnull JobRunInfo jobRunInfo) {
-        Long jobRunId = jobRunInfo.getId();
-        DependentJob dependentJob = jobRunInfo.getConfig().unwrap(DependentJob.class);
+    public JobCommand buildCommand(Long flowRunId, @Nonnull JobRunInfo jobRun) {
+        Long jobRunId = jobRun.getId();
+        DependentJob dependentJob = jobRun.getConfig().unwrap(DependentJob.class);
         if (CollectionUtils.isEmpty(dependentJob.getDependentItems())) {
             return new DependentCommand(jobRunId, true);
         }
@@ -52,7 +52,9 @@ public class DependentCommandBuilder implements CommandBuilder {
                 ? dependentJob.getDependentItems().stream().anyMatch(this::validateDependentItem)
                 : dependentJob.getDependentItems().stream().allMatch(this::validateDependentItem);
 
-        return new DependentCommand(jobRunId, matched);
+        DependentCommand dependentCommand = new DependentCommand(jobRunId, matched);
+        populateTimeout(dependentCommand, jobRun);
+        return dependentCommand;
     }
 
     private boolean validateDependentItem(DependentJob.DependentItem dependentItem) {

@@ -117,7 +117,7 @@ public class JobExecuteThread implements Supplier<JobResponse> {
                 return new JobResponse(jobId, jobRunId, SUCCESS);
             }
 
-            if (noJobsRunning() && ++retryAttempt > retryTimes) {
+            if (noRunningJobs() && ++retryAttempt > retryTimes) {
                 return new JobResponse(jobId, jobRunId, jobRunStatus);
             }
 
@@ -384,7 +384,7 @@ public class JobExecuteThread implements Supplier<JobResponse> {
         }
     }
 
-    private boolean noJobsRunning() {
+    private boolean noRunningJobs() {
         return jobRunStatus == null || jobRunStatus.isTerminalState();
     }
 }

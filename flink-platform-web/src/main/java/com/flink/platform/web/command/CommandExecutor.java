@@ -28,12 +28,12 @@ public interface CommandExecutor {
         long jobRunId = jobCommand.getJobRunId();
         try {
             JOB_RUNNING_MAP.put(jobRunId, jobCommand);
-            JobCallback jobCallback = execCommand(jobCommand);
-            if (jobCallback.getStatus() == KILLABLE) {
+            JobCallback callback = execCommand(jobCommand);
+            if (callback.getStatus() == KILLABLE) {
                 killCommand(jobCommand);
-                jobCallback.setStatus(KILLED);
+                callback.setStatus(KILLED);
             }
-            return jobCallback;
+            return callback;
         } finally {
             JOB_RUNNING_MAP.remove(jobRunId);
         }
