@@ -2,7 +2,6 @@ package com.flink.platform.web.util;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
-import java.time.Duration;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -17,7 +16,7 @@ public class ThreadUtil {
     public static final int MAX_SLEEP_TIME_MILLIS = 60_000;
 
     public static ThreadPoolExecutor newFixedThreadExecutor(String namePrefix, int threadsNum) {
-        ThreadFactory threadFactory = namedThreadFactory(namePrefix, false);
+        var threadFactory = namedThreadFactory(namePrefix, false);
         return (ThreadPoolExecutor) Executors.newFixedThreadPool(threadsNum, threadFactory);
     }
 
@@ -32,12 +31,12 @@ public class ThreadUtil {
     }
 
     public static ThreadPoolExecutor newDaemonFixedThreadExecutor(String namePrefix, int threadsNum) {
-        ThreadFactory threadFactory = namedThreadFactory(namePrefix, true);
+        var threadFactory = namedThreadFactory(namePrefix, true);
         return (ThreadPoolExecutor) Executors.newFixedThreadPool(threadsNum, threadFactory);
     }
 
     public static ScheduledExecutorService newDaemonSingleScheduledExecutor(String namePrefix) {
-        ThreadFactory threadFactory = namedThreadFactory(namePrefix, true);
+        var threadFactory = namedThreadFactory(namePrefix, true);
         return Executors.newSingleThreadScheduledExecutor(threadFactory);
     }
 
@@ -58,14 +57,6 @@ public class ThreadUtil {
         try {
             Thread.sleep(millis);
         } catch (final Exception ignored) {
-        }
-    }
-
-    public static void sleepDuration(int retryAttempt, final Duration duration) {
-        if (duration == null || duration.isZero()) {
-            sleepRetry(retryAttempt);
-        } else {
-            sleep(duration.toMillis());
         }
     }
 }

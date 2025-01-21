@@ -8,6 +8,7 @@ import com.flink.platform.common.util.DurationUtil;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.math.NumberUtils;
 
 import java.time.Duration;
 
@@ -31,25 +32,40 @@ import static com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 })
 public class BaseJob {
 
-    private JobType type;
+    protected JobType type;
 
-    private int retryTimes = 0;
+    protected int retryTimes = 0;
 
-    private String retryInterval = "5s";
+    protected String retryInterval = "5s";
+
+    protected String timeout;
 
     public Duration parseRetryInterval() {
-        if (StringUtils.isNotEmpty(retryInterval)) {
-            try {
-                return DurationUtil.parse(retryInterval);
-            } catch (Exception ignored) {
-            }
+        return parseDuration(retryInterval);
+    }
+
+    public Duration parseTimeout() {
+        // Compatible with old version.
+        if (NumberUtils.isCreatable(timeout)) {
+            long millisecond = NumberUtils.createNumber(timeout).longValue();
+            return Duration.ofMillis(millisecond);
         }
 
-        return null;
+        return parseDuration(timeout);
     }
 
     @JsonIgnore
     public <T> T unwrap(Class<T> clazz) {
         return clazz.isInstance(this) ? clazz.cast(this) : null;
+    }
+
+    private Duration parseDuration(String text) {
+        if (StringUtils.isNotEmpty(text)) {
+            try {
+                return DurationUtil.parse(text);
+            } catch (Exception ignored) {
+            }
+        }
+        return null;
     }
 }

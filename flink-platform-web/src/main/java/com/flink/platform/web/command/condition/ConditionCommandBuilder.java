@@ -15,6 +15,7 @@ import com.flink.platform.dao.service.JobRunInfoService;
 import com.flink.platform.web.command.CommandBuilder;
 import com.flink.platform.web.command.JobCommand;
 import jakarta.annotation.Nonnull;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,13 +29,12 @@ import static java.util.stream.Collectors.toList;
 /** condition builder. */
 @Slf4j
 @Component("conditionCommandBuilder")
+@RequiredArgsConstructor(onConstructor_ = @Autowired)
 public class ConditionCommandBuilder implements CommandBuilder {
 
-    @Autowired
-    private JobFlowRunService jobFlowRunService;
+    private final JobFlowRunService jobFlowRunService;
 
-    @Autowired
-    private JobRunInfoService jobRunInfoService;
+    private final JobRunInfoService jobRunInfoService;
 
     @Override
     public boolean isSupported(JobType jobType, String version) {
@@ -79,7 +79,9 @@ public class ConditionCommandBuilder implements CommandBuilder {
                                             == getExpectedStatus(flow, jobRun.getJobId(), toVertexId));
                 };
 
-        return new ConditionCommand(jobRunId, success);
+        ConditionCommand conditionCommand = new ConditionCommand(jobRunId, success);
+        populateTimeout(conditionCommand, jobRunInfo);
+        return conditionCommand;
     }
 
     private ExecutionStatus getExpectedStatus(JobFlowDag flow, Long fromJobId, Long toJobId) {

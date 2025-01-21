@@ -46,6 +46,8 @@ public class SqlCommandBuilder implements CommandBuilder {
                     String.format("No available sql or parsing failed, subject: %s", jobRun.getSubject()));
         }
 
-        return new SqlCommand(jobRun.getId(), sqlJob.getDsId(), sqlList);
+        SqlCommand sqlCommand = new SqlCommand(jobRun.getId(), sqlJob.getDsId(), sqlList);
+        populateTimeout(sqlCommand, jobRun);
+        return sqlCommand;
     }
 }

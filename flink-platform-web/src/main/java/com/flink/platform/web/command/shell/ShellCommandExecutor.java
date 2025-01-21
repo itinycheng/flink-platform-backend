@@ -13,6 +13,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import java.time.Duration;
+
 /** shell command executor. */
 @Slf4j
 @Component("shellCommandExecutor")
@@ -33,11 +35,12 @@ public class ShellCommandExecutor implements CommandExecutor {
     @Override
     public JobCallback execCommand(@Nonnull JobCommand command) throws Exception {
         ShellCommand shellCommand = (ShellCommand) command;
+        Duration timeout = shellCommand.getTimeout();
         ShellTask task = new ShellTask(
                 shellCommand.getJobRunId(),
                 shellCommand.getScript(),
                 shellCommand.getEnvs(),
-                Math.min(workerConfig.getMaxShellExecTimeoutMills(), shellCommand.getTimeout()));
+                Math.min(workerConfig.getMaxShellExecTimeoutMills(), timeout.toMillis()));
         shellCommand.setTask(task);
         task.run();
 

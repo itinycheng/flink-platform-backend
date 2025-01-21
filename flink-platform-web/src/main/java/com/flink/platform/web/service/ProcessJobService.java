@@ -53,6 +53,9 @@ public class ProcessJobService {
         JobRunInfo jobRunInfo = null;
 
         try {
+            // create submit time.
+            LocalDateTime submitTime = LocalDateTime.now();
+
             // step 1: get job info
             jobRunInfo = jobRunInfoService.getById(jobRunId);
             if (jobRunInfo == null) {
@@ -63,12 +66,14 @@ public class ProcessJobService {
             Pair<String, Map<String, Object>> pair = jobRunExtraService.parseVarsAndContent(jobRunInfo);
             jobRunInfo.setVariables(pair.getRight());
             jobRunInfo.setSubject(pair.getLeft());
+            jobRunInfo.setSubmitTime(submitTime);
 
             JobRunInfo newJobRun = new JobRunInfo();
             newJobRun.setId(jobRunInfo.getId());
             newJobRun.setVariables(pair.getRight());
             newJobRun.setSubject(pair.getLeft());
             newJobRun.setHost(HOST_IP);
+            newJobRun.setSubmitTime(submitTime);
             jobRunInfoService.updateById(newJobRun);
 
             JobType jobType = jobRunInfo.getType();
@@ -82,7 +87,6 @@ public class ProcessJobService {
                     .buildCommand(jobRunInfo.getFlowRunId(), jobRunInfo);
 
             // step 4: submit job
-            LocalDateTime submitTime = LocalDateTime.now();
             final JobCommand command = jobCommand;
             JobCallback callback = jobCommandExecutors.stream()
                     .filter(executor -> executor.isSupported(jobType))
@@ -96,7 +100,6 @@ public class ProcessJobService {
             newJobRun.setId(jobRunInfo.getId());
             newJobRun.setStatus(executionStatus);
             newJobRun.setBackInfo(callback);
-            newJobRun.setSubmitTime(submitTime);
             if (executionStatus.isTerminalState()) {
                 newJobRun.setEndTime(LocalDateTime.now());
             }
