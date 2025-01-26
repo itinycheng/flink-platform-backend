@@ -5,6 +5,8 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
@@ -24,6 +26,8 @@ public class JsonUtil {
 
     static {
         MAPPER = new ObjectMapper();
+        MAPPER.registerModule(new Jdk8Module());
+        MAPPER.registerModule(new JavaTimeModule());
         MAPPER.setSerializationInclusion(JsonInclude.Include.ALWAYS);
         MAPPER.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
     }

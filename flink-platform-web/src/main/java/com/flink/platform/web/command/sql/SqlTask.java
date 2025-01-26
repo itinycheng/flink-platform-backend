@@ -27,6 +27,7 @@ import static com.flink.platform.common.enums.ExecutionStatus.SUCCESS;
 import static com.flink.platform.common.util.Preconditions.checkNotNull;
 import static com.flink.platform.web.util.JdbcUtil.createConnection;
 import static com.flink.platform.web.util.JdbcUtil.toJavaObject;
+import static java.util.stream.Collectors.joining;
 
 /** SQL Task. */
 @Slf4j
@@ -110,7 +111,7 @@ public class SqlTask extends AbstractTask {
 
         this.isSucceed = exceptionMsg == null;
         this.exceptionStack = exceptionMsg;
-        this.sqlResult = JsonUtil.toJsonString(dataList);
+        this.sqlResult = dataList.stream().map(JsonUtil::toJsonString).collect(joining(LINE_SEPARATOR));
     }
 
     @Override
