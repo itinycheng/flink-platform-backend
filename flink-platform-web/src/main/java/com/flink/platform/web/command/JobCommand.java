@@ -35,7 +35,21 @@ public abstract class JobCommand {
 
         @Override
         public int compare(JobCommand o1, JobCommand o2) {
-            return o1.getExpectedStopTime().compareTo(o2.getExpectedStopTime());
+            LocalDateTime t1 = o1.getExpectedStopTime();
+            LocalDateTime t2 = o2.getExpectedStopTime();
+            if (t1 == null && t2 == null) {
+                return 0;
+            }
+
+            if (t1 == null) {
+                return 1;
+            }
+
+            if (t2 == null) {
+                return -1;
+            }
+
+            return t1.compareTo(t2);
         }
     }
 }
