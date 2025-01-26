@@ -7,6 +7,7 @@ import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
+import org.springframework.context.ApplicationContextException;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
@@ -50,6 +51,18 @@ public class SpringContext implements ApplicationContextAware, DisposableBean {
 
     public static String getServerPort() {
         return applicationContext.getEnvironment().getProperty("server.port");
+    }
+
+    public static <T> T waitFor(Class<T> t) throws BeansException {
+        while (applicationContext == null) {
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                throw new ApplicationContextException("Wait for ApplicationContext failed", e);
+            }
+        }
+
+        return applicationContext.getBean(t);
     }
 
     @Override

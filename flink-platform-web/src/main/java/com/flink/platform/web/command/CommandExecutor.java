@@ -2,10 +2,9 @@ package com.flink.platform.web.command;
 
 import com.flink.platform.common.enums.JobType;
 import com.flink.platform.dao.entity.result.JobCallback;
+import com.flink.platform.web.command.JobCommand.ExpectedStopTimeComparator;
+import com.flink.platform.web.common.ValueSortedMap;
 import jakarta.annotation.Nonnull;
-
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 import static com.flink.platform.common.enums.ExecutionStatus.KILLABLE;
 import static com.flink.platform.common.enums.ExecutionStatus.KILLED;
@@ -13,13 +12,12 @@ import static com.flink.platform.common.enums.ExecutionStatus.KILLED;
 /** parse result. */
 public interface CommandExecutor {
 
-    Map<Long, JobCommand> JOB_RUNNING_MAP = new ConcurrentHashMap<>();
+    ValueSortedMap<Long, JobCommand> RUNNING_MAP = new ValueSortedMap<>(new ExpectedStopTimeComparator());
+
+    CommandMonitor INVISIBLE = new CommandMonitor(RUNNING_MAP).start();
 
     /**
      * whether support.
-     *
-     * @param jobType job type
-     * @return whether support
      */
     boolean isSupported(JobType jobType);
 
@@ -27,7 +25,7 @@ public interface CommandExecutor {
     default JobCallback exec(@Nonnull JobCommand jobCommand) throws Exception {
         long jobRunId = jobCommand.getJobRunId();
         try {
-            JOB_RUNNING_MAP.put(jobRunId, jobCommand);
+            RUNNING_MAP.put(jobRunId, jobCommand);
             JobCallback callback = execCommand(jobCommand);
             if (callback.getStatus() == KILLABLE) {
                 killCommand(jobCommand);
@@ -35,12 +33,12 @@ public interface CommandExecutor {
             }
             return callback;
         } finally {
-            JOB_RUNNING_MAP.remove(jobRunId);
+            RUNNING_MAP.remove(jobRunId);
         }
     }
 
     default void kill(long jobRunId) {
-        JobCommand jobCommand = JOB_RUNNING_MAP.get(jobRunId);
+        JobCommand jobCommand = RUNNING_MAP.get(jobRunId);
         if (jobCommand == null) {
             jobCommand = new JobCommand(jobRunId) {
                 @Override
@@ -54,10 +52,6 @@ public interface CommandExecutor {
 
     /**
      * execute command.
-     *
-     * @param command command to exec
-     * @return execute result
-     * @throws Exception execute exception
      */
     @Nonnull
     JobCallback execCommand(@Nonnull JobCommand command) throws Exception;
