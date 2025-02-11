@@ -6,7 +6,7 @@ import jakarta.annotation.Nonnull;
 import java.nio.file.Paths;
 
 import static com.flink.platform.common.constants.Constant.FILE_SEPARATOR;
-import static com.flink.platform.common.constants.Constant.ROOT_DIR;
+import static com.flink.platform.common.constants.Constant.USER_DIR;
 import static com.flink.platform.common.enums.JobType.SHELL;
 
 /** Env path. */
@@ -37,7 +37,7 @@ public class PathUtil {
             return WORK_DIR;
         }
 
-        return String.join(FILE_SEPARATOR, ROOT_DIR, WORK_DIR);
+        return String.join(FILE_SEPARATOR, USER_DIR, WORK_DIR);
     }
 
     public static void main(String[] args) {

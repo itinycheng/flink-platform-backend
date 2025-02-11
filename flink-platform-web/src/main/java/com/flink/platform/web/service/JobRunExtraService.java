@@ -78,9 +78,11 @@ public class JobRunExtraService {
             for (var entry : variables.entrySet()) {
                 var name = entry.getKey();
                 var sqlVar = Variable.matchPrefix(name);
-                var value = sqlVar.provider.apply(entry.getValue());
-                variableMap.put(name, value);
-                content = content.replace(name, value.toString());
+                if (sqlVar != null) {
+                    var value = sqlVar.provider.apply(entry.getValue());
+                    variableMap.put(name, value);
+                    content = content.replace(name, value.toString());
+                }
             }
         }
 
