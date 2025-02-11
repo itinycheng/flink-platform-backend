@@ -19,7 +19,7 @@ public class Constant {
 
     public static final String HOSTNAME;
 
-    public static final String ROOT_DIR;
+    public static final String USER_DIR;
 
     public static final String FILE_SEPARATOR = File.separator;
 
@@ -64,7 +64,7 @@ public class Constant {
     public static final String PID = isWindows() ? "handle" : "pid";
 
     static {
-        ROOT_DIR = System.getProperty("user.dir");
+        USER_DIR = System.getProperty("user.dir");
         HOST_IP = checkNotNull(getFirstNoLoopbackIP4Address());
         HOSTNAME = getHostname();
     }
