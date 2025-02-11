@@ -36,6 +36,6 @@ public enum Variable {
         return Arrays.stream(values())
                 .filter(sqlVar -> name.startsWith(sqlVar.wildcard))
                 .findFirst()
-                .orElseThrow(() -> new RuntimeException("Unrecognized type, variable: " + name));
+                .orElse(null);
     }
 }
