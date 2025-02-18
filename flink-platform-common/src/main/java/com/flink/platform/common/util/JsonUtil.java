@@ -2,11 +2,12 @@ package com.flink.platform.common.util;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateTimeDeserializer;
+import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateTimeSerializer;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
@@ -14,9 +15,14 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+
+import static com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES;
+import static com.flink.platform.common.util.DateUtil.GLOBAL_DATE_TIME_FORMAT;
+import static java.time.format.DateTimeFormatter.ofPattern;
 
 /** json utils. */
 @Slf4j
@@ -26,10 +32,17 @@ public class JsonUtil {
 
     static {
         MAPPER = new ObjectMapper();
-        MAPPER.registerModule(new Jdk8Module());
-        MAPPER.registerModule(new JavaTimeModule());
+        addGlobalConfig(MAPPER);
         MAPPER.setSerializationInclusion(JsonInclude.Include.ALWAYS);
-        MAPPER.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+    }
+
+    public static void addGlobalConfig(ObjectMapper mapper) {
+        mapper.registerModule(new Jdk8Module());
+        mapper.registerModule(new JavaTimeModule()
+                .addSerializer(LocalDateTime.class, new LocalDateTimeSerializer(ofPattern(GLOBAL_DATE_TIME_FORMAT)))
+                .addDeserializer(
+                        LocalDateTime.class, new LocalDateTimeDeserializer(ofPattern(GLOBAL_DATE_TIME_FORMAT))));
+        mapper.disable(FAIL_ON_UNKNOWN_PROPERTIES);
     }
 
     public static List<String> toList(String json) {
