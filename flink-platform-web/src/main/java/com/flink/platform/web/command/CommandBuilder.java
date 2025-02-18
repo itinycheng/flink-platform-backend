@@ -24,13 +24,13 @@ public interface CommandBuilder {
      * build a command from JobInfo.
      *
      * @param flowRunId flow run id
-     * @param jobRunInfo job run info
+     * @param jobRun job run info
      *
      * @return job command
      *
      * @throws Exception IO exception
      */
-    JobCommand buildCommand(Long flowRunId, @Nonnull JobRunInfo jobRunInfo) throws Exception;
+    JobCommand buildCommand(Long flowRunId, @Nonnull JobRunInfo jobRun) throws Exception;
 
     /**
      * populate timeout info if exists.
