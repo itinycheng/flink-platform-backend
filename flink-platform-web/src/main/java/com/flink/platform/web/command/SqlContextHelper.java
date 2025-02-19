@@ -86,12 +86,10 @@ public class SqlContextHelper {
                                                 variable.getKey(), variable.getValue().toString());
                             }
 
-                            for (var entry :
-                                    Placeholder.APOLLO.provider.apply(createSql).entrySet()) {
-                                createSql =
-                                        createSql.replace(
-                                                entry.getKey(), entry.getValue().toString());
-                            }
+                    for (var entry : Placeholder.APOLLO.apply(null, createSql).entrySet()) {
+                        createSql = createSql.replace(
+                                entry.getKey(), entry.getValue().toString());
+                    }
 
                             return new Catalog(
                                     catalogInfo.getName(), catalogInfo.getType(), createSql);
