@@ -16,7 +16,7 @@ public class PlaceholderUtil {
             return param;
         }
 
-        Map<String, Object> result = Placeholder.APOLLO.provider.apply(param);
+        Map<String, Object> result = Placeholder.APOLLO.apply(null, param);
         if (result != null && !result.isEmpty()) {
             Object value = result.values().iterator().next();
             if (value != null) {

@@ -60,18 +60,18 @@ public class JobConstant {
 
     // ${jobRun:id}
     public static final Pattern JOB_RUN_PLACEHOLDER_PATTERN =
-            Pattern.compile("\\$\\{\\s*jobRun:(?<field>\\S+)\\s*}", Pattern.CASE_INSENSITIVE | Pattern.MULTILINE);
+            Pattern.compile("\\$\\{\\s*jobRun:(?<field>[^}]+)\\s*}", Pattern.CASE_INSENSITIVE | Pattern.MULTILINE);
 
     // ${resource:hdfs:/path/file}
     public static final Pattern RESOURCE_PATTERN =
-            Pattern.compile("\\$\\{\\s*resource:(?<file>\\S+)\\s*}", Pattern.CASE_INSENSITIVE | Pattern.MULTILINE);
+            Pattern.compile("\\$\\{\\s*resource:(?<file>[^}]+)\\s*}", Pattern.CASE_INSENSITIVE | Pattern.MULTILINE);
 
     public static final String PARAM_FORMAT = "${param:%s}";
 
     public static final String APOLLO_CONF_PREFIX = "${apollo";
     // ${apollo:namespace:key}
     public static final Pattern APOLLO_CONF_PATTERN = Pattern.compile(
-            "\\$\\{\\s*apollo:(?<namespace>\\S+)\\s*:\\s*(?<key>\\S+)\\s*}",
+            "\\$\\{\\s*apollo:(?<namespace>[^}]+)\\s*:\\s*(?<key>[^}]+)\\s*}",
             Pattern.CASE_INSENSITIVE | Pattern.MULTILINE);
 
     public static final String CONFIG = "config";

@@ -3,15 +3,18 @@ package com.flink.platform.web.service;
 import com.flink.platform.common.enums.ExecutionStatus;
 import com.flink.platform.common.enums.JobType;
 import com.flink.platform.common.exception.UnrecoverableException;
+import com.flink.platform.common.util.JsonUtil;
 import com.flink.platform.dao.entity.JobRunInfo;
 import com.flink.platform.dao.entity.result.JobCallback;
+import com.flink.platform.dao.entity.task.BaseJob;
+import com.flink.platform.dao.entity.task.FlinkJob;
 import com.flink.platform.dao.service.JobRunInfoService;
 import com.flink.platform.web.command.CommandBuilder;
 import com.flink.platform.web.command.CommandExecutor;
 import com.flink.platform.web.command.JobCommand;
 import com.flink.platform.web.command.flink.FlinkCommand;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.tuple.Pair;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -63,15 +66,23 @@ public class ProcessJobService {
             }
 
             // step 2: Update jobRun and prepare environment before execution.
-            Pair<String, Map<String, Object>> pair = jobRunExtraService.parseVarsAndContent(jobRunInfo);
-            jobRunInfo.setVariables(pair.getRight());
-            jobRunInfo.setSubject(pair.getLeft());
+            Map<String, Object> varMap = jobRunExtraService.parseVariables(jobRunInfo);
+            String replacedContent = replaceVariables(jobRunInfo.getSubject(), varMap);
+            BaseJob replacedConfig = replaceVariables(jobRunInfo.getConfig(), varMap);
+            if (replacedConfig == null) {
+                replacedConfig = jobRunInfo.getConfig();
+            }
+
+            jobRunInfo.setVariables(varMap);
+            jobRunInfo.setSubject(replacedContent);
+            jobRunInfo.setConfig(replacedConfig);
             jobRunInfo.setSubmitTime(submitTime);
 
             JobRunInfo newJobRun = new JobRunInfo();
             newJobRun.setId(jobRunInfo.getId());
-            newJobRun.setVariables(pair.getRight());
-            newJobRun.setSubject(pair.getLeft());
+            newJobRun.setVariables(varMap);
+            newJobRun.setSubject(replacedContent);
+            newJobRun.setConfig(replacedConfig);
             newJobRun.setHost(HOST_IP);
             newJobRun.setSubmitTime(submitTime);
             jobRunInfoService.updateById(newJobRun);
@@ -120,5 +131,27 @@ public class ProcessJobService {
                 }
             }
         }
+    }
+
+    private BaseJob replaceVariables(BaseJob baseJob, Map<String, Object> varValueMap) {
+        // TODO: only support flink job for now.
+        if (!(baseJob instanceof FlinkJob)) {
+            return baseJob;
+        }
+
+        String jsonString = JsonUtil.toJsonString(baseJob);
+        String replaced = replaceVariables(jsonString, varValueMap);
+        return JsonUtil.toBean(replaced, BaseJob.class);
+    }
+
+    private String replaceVariables(String content, Map<String, Object> varValueMap) {
+        if (StringUtils.isEmpty(content)) {
+            return null;
+        }
+
+        for (var entry : varValueMap.entrySet()) {
+            content = content.replace(entry.getKey(), entry.getValue().toString());
+        }
+        return content;
     }
 }

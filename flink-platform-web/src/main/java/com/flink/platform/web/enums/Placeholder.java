@@ -26,7 +26,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Function;
+import java.util.function.BiFunction;
 import java.util.function.Supplier;
 import java.util.regex.Matcher;
 
@@ -39,7 +39,7 @@ import static com.flink.platform.common.constants.JobConstant.RESOURCE_PATTERN;
 import static com.flink.platform.common.constants.JobConstant.TIME_PLACEHOLDER_PATTERN;
 import static com.flink.platform.common.constants.JobConstant.TODAY_YYYY_MM_DD_VAR;
 import static com.flink.platform.common.enums.JobType.SHELL;
-import static com.flink.platform.common.util.FunctionUtil.uncheckedFunction;
+import static com.flink.platform.common.util.FunctionUtil.uncheckedBiFunction;
 import static com.flink.platform.common.util.Preconditions.checkNotNull;
 import static com.flink.platform.web.util.ResourceUtil.copyFromStorageToLocal;
 import static com.flink.platform.web.util.ResourceUtil.getAbsoluteStoragePath;
@@ -47,10 +47,9 @@ import static com.flink.platform.web.util.ResourceUtil.getAbsoluteStoragePath;
 /** placeholder in subject field of job. */
 @Slf4j
 public enum Placeholder {
-    JOB_RUN("${jobRun", (Object obj) -> {
-        JobRunInfo jobRun = ((JobRunInfo) obj);
+    JOB_RUN("${jobRun", (JobRunInfo jobRun, String content) -> {
         Map<String, Object> result = new HashMap<>();
-        Matcher matcher = JOB_RUN_PLACEHOLDER_PATTERN.matcher(jobRun.getSubject());
+        Matcher matcher = JOB_RUN_PLACEHOLDER_PATTERN.matcher(content);
         while (matcher.find()) {
             String field = matcher.group("field");
             Object value = null;
@@ -64,8 +63,7 @@ public enum Placeholder {
         return result;
     }),
 
-    APOLLO(APOLLO_CONF_PREFIX, uncheckedFunction(obj -> {
-        String content = obj instanceof JobRunInfo ? ((JobRunInfo) obj).getSubject() : (String) obj;
+    APOLLO(APOLLO_CONF_PREFIX, uncheckedBiFunction((JobRunInfo jobRun, String content) -> {
         PluginService pluginService = SpringContext.getBean(PluginService.class);
         Map<String, Object> result = new HashMap<>();
         Matcher matcher = APOLLO_CONF_PATTERN.matcher(content);
@@ -80,10 +78,9 @@ public enum Placeholder {
         return result;
     })),
 
-    RESOURCE("${resource", uncheckedFunction(obj -> {
-        JobRunInfo jobRun = (JobRunInfo) obj;
+    RESOURCE("${resource", uncheckedBiFunction((JobRunInfo jobRun, String content) -> {
         Map<String, Object> result = new HashMap<>();
-        Matcher matcher = RESOURCE_PATTERN.matcher(jobRun.getSubject());
+        Matcher matcher = RESOURCE_PATTERN.matcher(content);
         while (matcher.find()) {
             String variable = matcher.group();
             String filePath = matcher.group("file");
@@ -109,8 +106,7 @@ public enum Placeholder {
         return result;
     })),
 
-    PARAM("${param", (Object obj) -> {
-        JobRunInfo jobRun = (JobRunInfo) obj;
+    PARAM("${param", (JobRunInfo jobRun, String content) -> {
         JobParamService jobParamService = SpringContext.getBean(JobParamService.class);
         List<JobParam> jobParams = jobParamService.getJobParams(jobRun.getJobId());
         if (CollectionUtils.isEmpty(jobParams)) {
@@ -118,10 +114,9 @@ public enum Placeholder {
         }
 
         Map<String, Object> result = new HashMap<>();
-        String subject = jobRun.getSubject();
         jobParams.forEach(jobParam -> {
             String param = String.format(PARAM_FORMAT, jobParam.getParamName());
-            if (subject.contains(param)) {
+            if (content.contains(param)) {
                 result.put(param, jobParam.getParamValue());
             }
         });
@@ -129,10 +124,9 @@ public enum Placeholder {
     }),
 
     // ${time:yyyyMMdd[curDate-3d]}
-    TIME("${time", (@Nonnull Object obj) -> {
-        JobRunInfo jobRun = ((JobRunInfo) obj);
+    TIME("${time", (JobRunInfo jobRun, String content) -> {
         Map<String, Object> result = new HashMap<>();
-        Matcher matcher = TIME_PLACEHOLDER_PATTERN.matcher(jobRun.getSubject());
+        Matcher matcher = TIME_PLACEHOLDER_PATTERN.matcher(content);
         while (matcher.find()) {
             String variable = matcher.group();
             if (result.containsKey(variable)) {
@@ -160,14 +154,14 @@ public enum Placeholder {
     }),
 
     @Deprecated
-    CURRENT_TIMESTAMP(CURRENT_TIMESTAMP_VAR, (Object obj) -> {
+    CURRENT_TIMESTAMP(CURRENT_TIMESTAMP_VAR, (JobRunInfo jobRun, String content) -> {
         Map<String, Object> result = new HashMap<>(1);
         result.put(CURRENT_TIMESTAMP_VAR, System.currentTimeMillis());
         return result;
     }),
 
     @Deprecated
-    TODAY_YYYYMMDD(TODAY_YYYY_MM_DD_VAR, (Object obj) -> {
+    TODAY_YYYYMMDD(TODAY_YYYY_MM_DD_VAR, (JobRunInfo jobRun, String content) -> {
         Map<String, Object> result = new HashMap<>(1);
         result.put(TODAY_YYYY_MM_DD_VAR, DateUtil.format(System.currentTimeMillis(), "yyyyMMdd"));
         return result;
@@ -175,11 +169,15 @@ public enum Placeholder {
 
     public final String wildcard;
 
-    public final Function<Object, Map<String, Object>> provider;
+    public final BiFunction<JobRunInfo, String, Map<String, Object>> provider;
 
-    Placeholder(@Nonnull String wildcard, @Nonnull Function<Object, Map<String, Object>> provider) {
+    Placeholder(@Nonnull String wildcard, @Nonnull BiFunction<JobRunInfo, String, Map<String, Object>> provider) {
         this.wildcard = wildcard;
         this.provider = provider;
+    }
+
+    public Map<String, Object> apply(JobRunInfo jobRun, String content) {
+        return provider.apply(jobRun, content);
     }
 
     @Getter
@@ -216,12 +214,12 @@ public enum Placeholder {
 
         jobRun.setSubject(
                 "select count() as date_${time:yyyyMMdd[curDay-1d]} from t where time = ${time:yyyyMMdd[curDay-1d]}");
-        System.out.println(TIME.provider.apply(jobRun));
+        System.out.println(TIME.provider.apply(jobRun, jobRun.getSubject()));
 
         jobRun.setSubject("select * from t where t.time = '${time:yyyy-MM-dd HH:mm:ss[curSecond]}'");
-        System.out.println(TIME.provider.apply(jobRun));
+        System.out.println(TIME.provider.apply(jobRun, jobRun.getSubject()));
 
         jobRun.setSubject("select * from t where t.time = '${time:yyyy-MM-dd HH:mm:ss[curYear+12h]}'");
-        System.out.println(TIME.provider.apply(jobRun));
+        System.out.println(TIME.provider.apply(jobRun, jobRun.getSubject()));
     }
 }
