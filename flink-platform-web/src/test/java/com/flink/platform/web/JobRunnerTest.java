@@ -21,7 +21,7 @@ public class JobRunnerTest {
     public void testEnumJsonSerde() {
         Map<Placeholder, String> sqlVarValueMap = Arrays.stream(new Placeholder[] {CURRENT_TIMESTAMP})
                 .map(placeholder ->
-                        Pair.of(placeholder, placeholder.provider.apply(null).toString()))
+                        Pair.of(placeholder, placeholder.apply(null, null).toString()))
                 .collect(toMap(Pair::getLeft, Pair::getRight));
         System.out.println(JsonUtil.toJsonString(sqlVarValueMap));
     }
@@ -33,7 +33,7 @@ public class JobRunnerTest {
         jobRun.setJobId(33L);
 
         jobRun.setSubject("${ JobRUn:id } wow, ${JobRUn:id}, ${  JobRUn:code  }");
-        Map<String, Object> result = JOB_RUN.provider.apply(jobRun);
+        Map<String, Object> result = JOB_RUN.apply(jobRun, jobRun.getSubject());
         result.forEach((s, o) -> jobRun.setSubject(jobRun.getSubject().replace(s, o.toString())));
         assertEquals("22 wow, 22, job_33", jobRun.getSubject());
     }

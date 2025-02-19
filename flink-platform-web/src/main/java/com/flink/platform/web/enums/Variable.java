@@ -32,6 +32,10 @@ public enum Variable {
         this.provider = provider;
     }
 
+    public Object apply(Object object) {
+        return provider.apply(object);
+    }
+
     public static Variable matchPrefix(String name) {
         return Arrays.stream(values())
                 .filter(sqlVar -> name.startsWith(sqlVar.wildcard))

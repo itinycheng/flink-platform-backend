@@ -1,13 +1,13 @@
 package com.flink.platform.web.service;
 
 import com.flink.platform.common.constants.Constant;
+import com.flink.platform.common.util.JsonUtil;
 import com.flink.platform.dao.entity.JobInfo;
 import com.flink.platform.dao.entity.JobRunInfo;
 import com.flink.platform.dao.service.JobRunInfoService;
 import com.flink.platform.web.enums.Placeholder;
 import com.flink.platform.web.enums.Variable;
 import org.apache.commons.collections4.MapUtils;
-import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -53,39 +53,31 @@ public class JobRunExtraService {
         return jobRun;
     }
 
-    public Pair<String, Map<String, Object>> parseVarsAndContent(JobRunInfo jobRun) {
+    public Map<String, Object> parseVariables(JobRunInfo jobRun) {
         var variableMap = new HashMap<String, Object>();
-
+        var content = jobRun.getSubject();
+        var config = JsonUtil.toJsonString(jobRun.getConfig());
         for (Placeholder placeholder : Placeholder.values()) {
-            var subject = jobRun.getSubject();
-            if (!subject.contains(placeholder.wildcard)) {
-                continue;
+            if (content.contains(placeholder.wildcard)) {
+                variableMap.putAll(placeholder.apply(jobRun, content));
             }
 
-            var vars = placeholder.provider.apply(jobRun);
-            variableMap.putAll(vars);
-
-            for (var entry : vars.entrySet()) {
-                subject = subject.replace(entry.getKey(), entry.getValue().toString());
+            if (config.contains(placeholder.wildcard)) {
+                placeholder.apply(jobRun, config).forEach(variableMap::putIfAbsent);
             }
-
-            jobRun.setSubject(subject);
         }
 
-        var content = jobRun.getSubject();
         var variables = jobRun.getVariables();
         if (MapUtils.isNotEmpty(variables)) {
             for (var entry : variables.entrySet()) {
                 var name = entry.getKey();
                 var sqlVar = Variable.matchPrefix(name);
                 if (sqlVar != null) {
-                    var value = sqlVar.provider.apply(entry.getValue());
-                    variableMap.put(name, value);
-                    content = content.replace(name, value.toString());
+                    variableMap.put(name, sqlVar.apply(entry.getValue()));
                 }
             }
         }
 
-        return Pair.of(content, variableMap);
+        return variableMap;
     }
 }

@@ -1,5 +1,6 @@
 package com.flink.platform.common.util;
 
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -47,12 +48,29 @@ public class FunctionUtil {
         };
     }
 
+    public static <T, U, R> BiFunction<T, U, R> uncheckedBiFunction(BiFunctionWithException<T, U, R, ?> func) {
+        return (T t, U u) -> {
+            try {
+                return func.apply(t, u);
+            } catch (Throwable e) {
+                rethrow(e);
+                return null;
+            }
+        };
+    }
+
     public static void rethrow(Throwable t) {
         if (t instanceof RuntimeException) {
             throw (RuntimeException) t;
         } else {
             throw new RuntimeException(t);
         }
+    }
+
+    @FunctionalInterface
+    public interface BiFunctionWithException<T, U, R, E extends Throwable> {
+
+        R apply(T t, U u) throws E;
     }
 
     /**
