@@ -14,6 +14,7 @@ import com.flink.platform.web.command.CommandExecutor;
 import com.flink.platform.web.command.JobCommand;
 import com.flink.platform.web.command.flink.FlinkCommand;
 import lombok.extern.slf4j.Slf4j;
+import lombok.var;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -62,7 +63,8 @@ public class ProcessJobService {
             // step 1: get job info
             jobRunInfo = jobRunInfoService.getById(jobRunId);
             if (jobRunInfo == null) {
-                throw new UnrecoverableException(String.format("The job run: %s is no longer exists.", jobRunId));
+                throw new UnrecoverableException(
+                        String.format("The job run: %s is no longer exists.", jobRunId));
             }
 
             // step 2: Update jobRun and prepare environment before execution.
@@ -91,19 +93,27 @@ public class ProcessJobService {
             String version = jobRunInfo.getVersion();
 
             // step 3: build job command, create a SqlContext if needed
-            jobCommand = jobCommandBuilders.stream()
-                    .filter(builder -> builder.isSupported(jobType, version))
-                    .findFirst()
-                    .orElseThrow(() -> new UnrecoverableException("No available job command builder"))
-                    .buildCommand(jobRunInfo.getFlowRunId(), jobRunInfo);
+            jobCommand =
+                    jobCommandBuilders.stream()
+                            .filter(builder -> builder.isSupported(jobType, version))
+                            .findFirst()
+                            .orElseThrow(
+                                    () ->
+                                            new UnrecoverableException(
+                                                    "No available job command builder"))
+                            .buildCommand(jobRunInfo.getFlowRunId(), jobRunInfo);
 
             // step 4: submit job
             final JobCommand command = jobCommand;
-            JobCallback callback = jobCommandExecutors.stream()
-                    .filter(executor -> executor.isSupported(jobType))
-                    .findFirst()
-                    .orElseThrow(() -> new UnrecoverableException("No available job command executor"))
-                    .exec(command);
+            JobCallback callback =
+                    jobCommandExecutors.stream()
+                            .filter(executor -> executor.isSupported(jobType))
+                            .findFirst()
+                            .orElseThrow(
+                                    () ->
+                                            new UnrecoverableException(
+                                                    "No available job command executor"))
+                            .exec(command);
 
             // step 5: write job run info to db
             ExecutionStatus executionStatus = callback.getStatus();
@@ -120,7 +130,9 @@ public class ProcessJobService {
             log.info("Job run: {} submitted, time: {}", jobRunId, System.currentTimeMillis());
 
         } finally {
-            if (jobRunInfo != null && jobRunInfo.getType() == JobType.FLINK_SQL && jobCommand != null) {
+            if (jobRunInfo != null
+                    && jobRunInfo.getType() == JobType.FLINK_SQL
+                    && jobCommand != null) {
                 try {
                     FlinkCommand flinkCommand = (FlinkCommand) jobCommand;
                     if (flinkCommand.getMainArgs() != null) {

@@ -48,7 +48,8 @@ public class FunctionUtil {
         };
     }
 
-    public static <T, U, R> BiFunction<T, U, R> uncheckedBiFunction(BiFunctionWithException<T, U, R, ?> func) {
+    public static <T, U, R> BiFunction<T, U, R> uncheckedBiFunction(
+            BiFunctionWithException<T, U, R, ?> func) {
         return (T t, U u) -> {
             try {
                 return func.apply(t, u);

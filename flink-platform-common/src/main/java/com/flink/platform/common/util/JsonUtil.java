@@ -38,10 +38,14 @@ public class JsonUtil {
 
     public static void addGlobalConfig(ObjectMapper mapper) {
         mapper.registerModule(new Jdk8Module());
-        mapper.registerModule(new JavaTimeModule()
-                .addSerializer(LocalDateTime.class, new LocalDateTimeSerializer(ofPattern(GLOBAL_DATE_TIME_FORMAT)))
-                .addDeserializer(
-                        LocalDateTime.class, new LocalDateTimeDeserializer(ofPattern(GLOBAL_DATE_TIME_FORMAT))));
+        mapper.registerModule(
+                new JavaTimeModule()
+                        .addSerializer(
+                                LocalDateTime.class,
+                                new LocalDateTimeSerializer(ofPattern(GLOBAL_DATE_TIME_FORMAT)))
+                        .addDeserializer(
+                                LocalDateTime.class,
+                                new LocalDateTimeDeserializer(ofPattern(GLOBAL_DATE_TIME_FORMAT))));
         mapper.disable(FAIL_ON_UNKNOWN_PROPERTIES);
     }
 
