@@ -146,7 +146,7 @@ public class ProcessJobService {
 
     private String replaceVariables(String content, Map<String, Object> varValueMap) {
         if (StringUtils.isEmpty(content)) {
-            return null;
+            return content;
         }
 
         for (var entry : varValueMap.entrySet()) {
