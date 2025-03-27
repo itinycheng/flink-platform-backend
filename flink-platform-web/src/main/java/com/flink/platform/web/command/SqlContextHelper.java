@@ -76,9 +76,11 @@ public class SqlContextHelper {
                 .map(id -> catalogInfoService.getById(id))
                 .map(catalogInfo -> {
                     String createSql = catalogInfo.getCreateSql();
-                    for (var variable : variables.entrySet()) {
-                        createSql = createSql.replace(
-                                variable.getKey(), variable.getValue().toString());
+                    if (variables != null) {
+                        for (var variable : variables.entrySet()) {
+                            createSql = createSql.replace(
+                                    variable.getKey(), variable.getValue().toString());
+                        }
                     }
 
                     for (var entry : Placeholder.APOLLO.apply(null, createSql).entrySet()) {
