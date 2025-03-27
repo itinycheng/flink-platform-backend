@@ -57,7 +57,7 @@
 		<clickhouse-jdbc.version>0.3.1</clickhouse-jdbc.version>
 		<hadoop.version>3.3.5</hadoop.version>
 		<hive.version>2.3.9</hive.version>
-		<mybatis-plus.version>3.5.8</mybatis-plus.version>
+		<mybatis-plus.version>3.5.11</mybatis-plus.version>
 		<dynamic-datasource.version>4.3.1</dynamic-datasource.version>
 		<grpc.version>1.63.0</grpc.version>
 		<auto-service.version>1.1.1</auto-service.version>
