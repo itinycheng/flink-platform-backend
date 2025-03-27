@@ -75,6 +75,7 @@ public class FlowExecuteThread implements Runnable {
         jobFlowRun.setStatus(RUNNING);
 
         // Process job flow.
+        log.info("Start scheduling job flow: {}", jobFlowRun.getId());
         var flow = jobFlowRun.getFlow();
         flow.setConfig(jobFlowRun.getConfig());
         flow.getBeginVertices().forEach(jobVertex -> execVertex(jobVertex, flow));
