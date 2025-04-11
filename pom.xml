@@ -51,7 +51,7 @@
 		<maven.compiler.target>21</maven.compiler.target>
 		<commons-lang3.version>3.11</commons-lang3.version>
 		<commons-collections4.version>4.4</commons-collections4.version>
-		<commons-text.version>1.13.0</commons-text.version>
+		<commons-text.version>1.13.1</commons-text.version>
 		<lombok.version>1.18.30</lombok.version>
 		<mysql.version>8.0.32</mysql.version>
 		<clickhouse-jdbc.version>0.3.1</clickhouse-jdbc.version>
