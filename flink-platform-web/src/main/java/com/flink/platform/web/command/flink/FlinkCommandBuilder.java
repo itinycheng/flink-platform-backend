@@ -3,6 +3,7 @@ package com.flink.platform.web.command.flink;
 import com.flink.platform.common.enums.DeployMode;
 import com.flink.platform.common.enums.JobType;
 import com.flink.platform.common.exception.CommandUnableGenException;
+import com.flink.platform.common.util.Preconditions;
 import com.flink.platform.dao.entity.JobRunInfo;
 import com.flink.platform.dao.entity.task.FlinkJob;
 import com.flink.platform.dao.service.ResourceService;
@@ -57,7 +58,7 @@ public abstract class FlinkCommandBuilder implements CommandBuilder {
     private final FlinkConfig flinkConfig;
 
     public FlinkCommandBuilder(FlinkConfig flinkConfig) {
-        this.flinkConfig = flinkConfig;
+        this.flinkConfig = Preconditions.checkNotNull(flinkConfig);
     }
 
     @Override

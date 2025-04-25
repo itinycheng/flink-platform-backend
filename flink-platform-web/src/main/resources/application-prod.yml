@@ -14,9 +14,9 @@ spring:
       # strict: true
       datasource:
         master_platform:
-          url: jdbc:mysql://10.8.10.1:3306/platform?allowMultiQueries=true&useUnicode=true&characterEncoding=UTF-8&useSSL=false
-          username: signature
-          password: JDdDzUqHQKk=
+          url: jdbc:mysql://10.19.105.119:3306/test_up_platform?allowMultiQueries=true&useUnicode=true&characterEncoding=UTF-8&useSSL=false
+          username: root
+          password: gS5y24kKSoZa
           driver-class-name: com.mysql.jdbc.Driver
   quartz:
     job-store-type: jdbc
