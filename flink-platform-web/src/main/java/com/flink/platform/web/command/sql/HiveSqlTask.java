@@ -3,6 +3,7 @@ package com.flink.platform.web.command.sql;
 import com.flink.platform.dao.entity.Datasource;
 import com.flink.platform.dao.entity.ds.DatasourceParam;
 import com.flink.platform.dao.entity.result.JobCallback;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Maps;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -40,6 +41,9 @@ public class HiveSqlTask extends SqlTask {
     @Override
     public void beforeExecSql() {
         try {
+            // remove set spark conf sql
+            this.getSqlList().removeIf(this::isSetSparkConf);
+            log.info("exec sql list: {}", this.getSqlList());
             new Thread(this::storeLog).start();
         } catch (Exception e) {
             log.error("start hive log collect thread failed", e);
@@ -62,29 +66,20 @@ public class HiveSqlTask extends SqlTask {
         return datasourceParam;
     }
 
-    private Map<String, String> getSparkConf(List<String> sqlList) {
+    @VisibleForTesting
+    protected Map<String, String> getSparkConf(List<String> sqlList) {
         Map<String, String> sparkConf = Maps.newLinkedHashMap();
         sparkConf.putAll(getDefaultSparkConf());
         if (CollectionUtils.isEmpty(sqlList)) {
             return sparkConf;
         }
         for (String sql : sqlList) {
-            if (StringUtils.isBlank(sql)) {
+            if (!isSetSparkConf(sql)) {
                 continue;
             }
             sql = StringUtils.trim(sql);
-            if (!StringUtils.startsWithIgnoreCase(sql, "set")) {
-                break;
-            }
             String kvs = StringUtils.trim(StringUtils.replaceIgnoreCase(sql, "set ", ""));
             String[] kv = StringUtils.split(kvs, "=");
-            if (kv.length != 2) {
-                continue;
-            }
-            // only set spark conf
-            if (!StringUtils.startsWithIgnoreCase(StringUtils.trim(kv[0]), "spark")) {
-                continue;
-            }
             sparkConf.put(StringUtils.trim(kv[0]), StringUtils.trim(kv[1]));
         }
         return sparkConf;
@@ -96,6 +91,21 @@ public class HiveSqlTask extends SqlTask {
         // submit yarn queue
         // sparkDefaultVar.put("spark.yarn.queue", "root.users.hdfs");
         return sparkDefaultConf;
+    }
+
+    private Boolean isSetSparkConf(String sql) {
+        if (StringUtils.isBlank(sql)) {
+            return false;
+        }
+        sql = StringUtils.trim(sql);
+        if (!StringUtils.startsWithIgnoreCase(sql, "set")) {
+            return false;
+        }
+        String confVal = StringUtils.trim(StringUtils.replaceIgnoreCase(sql, "set ", ""));
+        if (!StringUtils.startsWithIgnoreCase(confVal, "spark")) {
+            return false;
+        }
+        return StringUtils.split(confVal, "=").length == 2;
     }
 
     private String getSparkAppName() {
