@@ -132,14 +132,6 @@ This file is based on the checkstyle file of Apache Beam.
 			<property name="message"
 					  value="Use Flink's Preconditions instead of Guava's Preconditions"/>
 		</module>
-		<!-- forbid the use of com.google.common.annotations.VisibleForTesting -->
-		<module name="Regexp">
-			<property name="format"
-					  value="import com\.google\.common\.annotations\.VisibleForTesting"/>
-			<property name="illegalPattern" value="true"/>
-			<property name="message"
-					  value="Use Flink's VisibleForTesting instead of Guava's VisibleForTesting"/>
-		</module>
 		<module name="Regexp">
 			<property name="format" value="import static com\.google\.common\.base\.Preconditions"/>
 			<property name="illegalPattern" value="true"/>

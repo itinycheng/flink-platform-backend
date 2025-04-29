@@ -13,10 +13,8 @@ public class HiveSqlTaskTest {
 
     @Test
     public void getSparkConfTest() {
-        List<String> sqlList = Lists.newArrayList(
-                "set spark.dynamicAllocation.maxExecutors=10",
-                "select 1"
-        );
+        List<String> sqlList =
+                Lists.newArrayList("set spark.dynamicAllocation.maxExecutors=10", "select 1");
         HiveSqlTask hiveSqlTask = new HiveSqlTask(1L, sqlList, new Datasource());
         Map<String, String> sparkConf = hiveSqlTask.getSparkConf(sqlList);
         log.info("sparkConf: {}", sparkConf);
@@ -27,12 +25,12 @@ public class HiveSqlTaskTest {
 
     @Test
     public void getSparkConfTest2() {
-        List<String> sqlList = Lists.newArrayList(
-                "create xxx;",
-                "SET spark.sql.shuffle.partitions = 1;",
-                "create taera;",
-                "insert overwrite select 1;"
-        );
+        List<String> sqlList =
+                Lists.newArrayList(
+                        "create xxx;",
+                        "SET spark.sql.shuffle.partitions = 1;",
+                        "create taera;",
+                        "insert overwrite select 1;");
         HiveSqlTask hiveSqlTask = new HiveSqlTask(1L, sqlList, new Datasource());
         Map<String, String> sparkConf = hiveSqlTask.getSparkConf(sqlList);
         log.info("sparkConf: {}", sparkConf);
@@ -40,5 +38,4 @@ public class HiveSqlTaskTest {
         List<String> execSqlList = hiveSqlTask.getSqlList();
         log.info("execSqlList: {}", execSqlList);
     }
-
 }
