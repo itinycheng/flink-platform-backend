@@ -14,7 +14,7 @@ import java.util.Set;
 @Slf4j
 public class DatasourceNamespaceBean implements NamespaceBean {
 
-    private static final String NAMESPACE = "datasource";
+    private static final String NAMESPACE = "ds";
 
     private final String password;
 
