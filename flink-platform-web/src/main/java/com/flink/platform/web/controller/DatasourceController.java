@@ -12,6 +12,7 @@ import com.flink.platform.dao.service.DatasourceService;
 import com.flink.platform.web.entity.request.DatasourceRequest;
 import com.flink.platform.web.entity.response.ResultInfo;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -23,14 +24,18 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.sql.Connection;
+import java.sql.Statement;
 import java.util.List;
 import java.util.Objects;
 
 import static com.flink.platform.common.enums.ResponseStatus.ERROR_PARAMETER;
 import static com.flink.platform.web.entity.response.ResultInfo.failure;
 import static com.flink.platform.web.entity.response.ResultInfo.success;
+import static com.flink.platform.web.util.JdbcUtil.createConnection;
 
 /** datasource controller. */
+@Slf4j
 @RestController
 @RequestMapping("/datasource")
 @RequiredArgsConstructor(onConstructor_ = @Autowired)
@@ -77,6 +82,19 @@ public class DatasourceController {
     public ResultInfo<Boolean> delete(@PathVariable Long dsId) {
         boolean bool = datasourceService.removeById(dsId);
         return success(bool);
+    }
+
+    @GetMapping(value = "/test/{dsId}")
+    public ResultInfo<Boolean> testConnection(@PathVariable Long dsId) {
+        Datasource datasource = datasourceService.getById(dsId);
+        try (Connection connection = createConnection(datasource.getType(), datasource.getParams());
+                Statement stmt = connection.createStatement()) {
+            stmt.executeQuery(datasource.getType().getConnTestQuery());
+            return success(true);
+        } catch (Exception e) {
+            log.warn("test connection failed, datasource: {}", datasource, e);
+            return success(false);
+        }
     }
 
     @GetMapping(value = "/page")
