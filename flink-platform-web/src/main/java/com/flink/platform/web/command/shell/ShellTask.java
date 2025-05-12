@@ -5,11 +5,13 @@ import com.flink.platform.dao.entity.result.ShellCallback;
 import com.flink.platform.web.command.AbstractTask;
 import com.flink.platform.web.util.CollectLogRunnable;
 import com.flink.platform.web.util.CommandUtil;
+import com.flink.platform.web.util.SystemUtil;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.InputStream;
+import java.util.Map;
 import java.util.function.BiConsumer;
 
 import static com.flink.platform.common.constants.Constant.LINE_SEPARATOR;
@@ -33,7 +35,7 @@ public class ShellTask extends AbstractTask {
 
     protected String command;
 
-    protected String[] envs;
+    protected Map<String, String> envp;
 
     protected long timeoutMills;
 
@@ -53,10 +55,10 @@ public class ShellTask extends AbstractTask {
 
     protected final StringBuffer errMsg = new StringBuffer();
 
-    public ShellTask(long id, String command, String[] envs, long timeoutMills) {
+    public ShellTask(long id, String command, Map<String, String> envp, long timeoutMills) {
         super(id);
         this.command = command;
-        this.envs = envs;
+        this.envp = envp;
         this.timeoutMills = timeoutMills;
         this.logConsumer = newLogBuffer(null);
     }
@@ -69,8 +71,9 @@ public class ShellTask extends AbstractTask {
 
     @Override
     public void run() throws Exception {
-        log.info("Exec command: {}, env properties: {}", command, envs);
-        this.process = Runtime.getRuntime().exec(command, envs);
+        var merged = SystemUtil.mergeEnv(envp);
+        log.info("Exec command: {}, env vars: {}", command, merged == null ? System.getenv() : merged);
+        this.process = Runtime.getRuntime().exec(command, SystemUtil.toEnvArray(merged));
         this.processId = CommandUtil.getProcessId(process);
         try (InputStream stdStream = process.getInputStream();
                 InputStream errStream = process.getErrorStream()) {
