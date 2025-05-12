@@ -22,7 +22,9 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
 
 import static com.flink.platform.common.constants.Constant.EMPTY;
@@ -116,8 +118,10 @@ public class FlinkCommandExecutor implements CommandExecutor {
         }
     }
 
-    private String[] buildEnvProps() {
-        return new String[] {String.format("%s=%s", HADOOP_USER_NAME, hadoopUser)};
+    private Map<String, String> buildEnvProps() {
+        var map = new HashMap<String, String>(1);
+        map.put(HADOOP_USER_NAME, hadoopUser);
+        return map;
     }
 
     // ------------------------------------------------------------------------

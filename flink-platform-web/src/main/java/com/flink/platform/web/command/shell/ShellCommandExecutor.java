@@ -39,7 +39,7 @@ public class ShellCommandExecutor implements CommandExecutor {
         ShellTask task = new ShellTask(
                 shellCommand.getJobRunId(),
                 shellCommand.getScript(),
-                shellCommand.getEnvs(),
+                shellCommand.getEnvp(),
                 Math.min(workerConfig.getMaxShellExecTimeoutMills(), timeout.toMillis()));
         shellCommand.setTask(task);
         task.run();
