@@ -5,13 +5,13 @@ storage:
   localBasePath: data_dir
   properties:
     fs.hdfs.impl: org.apache.hadoop.hdfs.DistributedFileSystem
-    fs.defaultFS: hdfs://nameservice1
-    ha.zookeeper.quorum: 10.8.12.10:2181,10.8.12.11:2181,10.8.12.12:2181
-    dfs.client.failover.proxy.provider.nameservice1: org.apache.hadoop.hdfs.server.namenode.ha.ConfiguredFailoverProxyProvider
-    dfs.ha.automatic-failover.enabled.nameservice1: true
-    dfs.nameservices: nameservice1
-    dfs.ha.namenodes.nameservice1: namenode39,namenode127
-    dfs.namenode.rpc-address.nameservice1.namenode39: 10.8.12.10:8020
-    dfs.namenode.rpc-address.nameservice1.namenode127: 10.8.12.12:8020
-    dfs.namenode.servicerpc-address.nameservice1.namenode39: 10.8.12.10:8022
-    dfs.namenode.servicerpc-address.nameservice1.namenode127: 10.8.12.12:8022
+    fs.defaultFS: hdfs://hacluster
+    ha.zookeeper.quorum: node-master3sval.mrs-p69w.com:2181,node-master2rwwb.mrs-p69w.com:2181,node-master1ffsl.mrs-p69w.com:2181
+    dfs.client.failover.proxy.provider.hacluster: org.apache.hadoop.hdfs.server.namenode.ha.ConfiguredFailoverProxyProvider
+    dfs.ha.automatic-failover.enabled.hacluster: true
+    dfs.nameservices: hacluster
+    dfs.ha.namenodes.hacluster: 3,4
+    dfs.namenode.rpc-address.hacluster.3: node-master2rwwb.mrs-p69w.com:8020
+    dfs.namenode.rpc-address.hacluster.4: node-master3sval.mrs-p69w.com:8020
+    dfs.namenode.servicerpc-address.hacluster.3: node-master2rwwb.mrs-p69w.com:25006
+    dfs.namenode.servicerpc-address.hacluster.4: node-master3sval.mrs-p69w.com:25006
