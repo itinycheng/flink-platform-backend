@@ -185,8 +185,12 @@ public class ResourceController {
             return failure(ERROR_PARAMETER, "file path is null");
         }
 
-        storageService.delete(resourceRequest.getFullName(), false);
-        return success(true);
+        String fullPath = resourceRequest.getFullName();
+        if (!storageService.exists(fullPath)) {
+            return success(true);
+        }
+
+        return success(storageService.trashOrDelete(fullPath, false));
     }
 
     private List<Resource> recursiveParents(Long pId) {

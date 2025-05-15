@@ -25,6 +25,14 @@ public class StorageService {
         return storageSystem.delete(dstPath, recursive);
     }
 
+    public boolean trashOrDelete(String path, boolean recursive) throws IOException {
+        if (storageSystem.moveToTrash(path)) {
+            return true;
+        }
+
+        return storageSystem.delete(path, recursive);
+    }
+
     public void copyFromLocal(String srcFile, String dstFile, boolean deleteSrc, boolean overwrite) throws IOException {
         storageSystem.copyFromLocalFile(srcFile, dstFile, deleteSrc, overwrite);
     }

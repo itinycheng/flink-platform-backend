@@ -22,6 +22,8 @@ public interface StorageSystem extends Closeable {
 
     boolean delete(String filePath, boolean recursive) throws IOException;
 
+    boolean moveToTrash(String path) throws IOException;
+
     boolean mkdir(String path) throws IOException;
 
     boolean exists(String path) throws IOException;
