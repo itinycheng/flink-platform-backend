@@ -33,7 +33,7 @@ public class CommandMonitor {
     }
 
     public CommandMonitor start() {
-        MONITOR.scheduleWithFixedDelay(this::killTimeoutJobsPeriodically, 1, 2, SECONDS);
+        MONITOR.scheduleWithFixedDelay(this::killTimeoutJobsPeriodically, 5, 2, SECONDS);
         log.info("CommandMonitor started.");
         return this;
     }
