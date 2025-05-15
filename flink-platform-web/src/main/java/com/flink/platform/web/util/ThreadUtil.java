@@ -1,14 +1,17 @@
 package com.flink.platform.web.util;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import lombok.extern.slf4j.Slf4j;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 /** Thread utils. */
+@Slf4j
 public class ThreadUtil {
 
     public static final int MIN_SLEEP_TIME_MILLIS = 3000;
@@ -45,6 +48,23 @@ public class ThreadUtil {
                 .setDaemon(isDaemon)
                 .setNameFormat(prefix + "-%d")
                 .build();
+    }
+
+    public static void addShutdownHook(ExecutorService service, String name) {
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            try {
+                log.info("JVM is shutting down, closing thread pool {}", name);
+                service.shutdown();
+                if (!service.awaitTermination(10, TimeUnit.SECONDS)) {
+                    log.info("Force shutting down thread pool {}", name);
+                    service.shutdownNow();
+                }
+            } catch (Exception exception) {
+                log.error("Error while shutting down thread pool {}", name, exception);
+                service.shutdownNow();
+                Thread.currentThread().interrupt();
+            }
+        }));
     }
 
     public static void sleepRetry(int retryAttempt) {
