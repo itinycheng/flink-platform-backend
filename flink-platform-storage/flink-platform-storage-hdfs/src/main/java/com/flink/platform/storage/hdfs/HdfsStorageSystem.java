@@ -11,6 +11,7 @@ import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.LocalFileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.fs.Trash;
 import org.apache.hadoop.hdfs.HdfsConfiguration;
 
 import java.io.IOException;
@@ -103,6 +104,11 @@ public class HdfsStorageSystem implements StorageSystem {
     public boolean delete(String filePath, boolean recursive) throws IOException {
         Path dstPath = new Path(filePath);
         return fs.delete(dstPath, recursive);
+    }
+
+    @Override
+    public boolean moveToTrash(String path) throws IOException {
+        return Trash.moveToAppropriateTrash(fs, new Path(path), fs.getConf());
     }
 
     @Override
