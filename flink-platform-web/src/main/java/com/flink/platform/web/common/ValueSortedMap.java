@@ -1,6 +1,8 @@
 package com.flink.platform.web.common;
 
-import java.util.Comparator;
+import lombok.AccessLevel;
+import lombok.Getter;
+
 import java.util.HashMap;
 import java.util.Map;
 import java.util.TreeSet;
@@ -8,25 +10,31 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
- * Time sorted map, thread safety.
+ * Value sorted map, thread safety.
  */
-public class ValueSortedMap<K, V> {
+@Getter
+public class ValueSortedMap<K, V extends Comparable<V>> {
 
     private final Map<K, V> kvMap;
 
     private final TreeSet<V> valSet;
 
+    @Getter(AccessLevel.NONE)
     private final ReadWriteLock lock;
 
-    public ValueSortedMap(Comparator<V> comparator) {
+    public ValueSortedMap() {
         this.kvMap = new HashMap<>();
-        this.valSet = new TreeSet<>(comparator);
+        this.valSet = new TreeSet<>();
         this.lock = new ReentrantReadWriteLock();
     }
 
     public void put(K key, V value) {
         lock.writeLock().lock();
         try {
+            if (kvMap.containsKey(key) || valSet.contains(value)) {
+                throw new IllegalArgumentException("Key or value already exists in the map.");
+            }
+
             kvMap.put(key, value);
             valSet.add(value);
         } finally {
