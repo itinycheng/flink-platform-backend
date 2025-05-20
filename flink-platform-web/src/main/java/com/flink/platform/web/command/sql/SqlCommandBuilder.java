@@ -49,6 +49,8 @@ public class SqlCommandBuilder implements CommandBuilder {
                             jobRun.getSubject()));
         }
 
-        return new SqlCommand(jobRun.getId(), sqlJob.getDsId(), sqlList);
+        SqlCommand sqlCommand = new SqlCommand(jobRun.getId(), sqlJob.getDsId(), sqlList);
+        populateTimeout(sqlCommand, jobRun);
+        return sqlCommand;
     }
 }

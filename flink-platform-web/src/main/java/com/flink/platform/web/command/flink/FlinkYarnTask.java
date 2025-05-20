@@ -9,6 +9,7 @@ import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
+import java.util.Map;
 import java.util.function.BiConsumer;
 import java.util.regex.Matcher;
 
@@ -33,8 +34,12 @@ public class FlinkYarnTask extends ShellTask {
     private String jobId;
 
     public FlinkYarnTask(
-            long jobRunId, DeployMode mode, String command, String[] envs, long timeoutMills) {
-        super(jobRunId, command, envs, timeoutMills);
+            long jobRunId,
+            DeployMode mode,
+            String command,
+            Map<String, String> envp,
+            long timeoutMills) {
+        super(jobRunId, command, envp, timeoutMills);
         this.mode = mode;
         setLogConsumer(this.extractAppIdAndJobId());
     }

@@ -24,6 +24,7 @@ import static com.flink.platform.common.constants.Constant.HOSTNAME;
 import static com.flink.platform.common.constants.Constant.HOST_IP;
 import static com.flink.platform.common.constants.Constant.LOCALHOST;
 import static com.flink.platform.common.enums.ExecutionStatus.getNonTerminals;
+import static com.flink.platform.common.enums.WorkerStatus.DELETED;
 import static com.flink.platform.common.enums.WorkerStatus.FOLLOWER;
 import static com.flink.platform.common.enums.WorkerStatus.INACTIVE;
 import static com.flink.platform.common.enums.WorkerStatus.LEADER;
@@ -91,7 +92,7 @@ public class WorkerHeartbeat {
         // TODO: dispatch JobFlowRun to other active workers.
         worker = workerService.getById(worker.getId());
         if (LEADER.equals(worker.getRole())) {
-            getWorkersWithHeartbeatTimeout()
+            getWorkersOfHeartbeatTimeout()
                     .forEach(
                             timeoutWorker ->
                                     jobFlowRunService
@@ -137,15 +138,15 @@ public class WorkerHeartbeat {
         return list.size() == 1 && list.get(0).isActive();
     }
 
-    public List<Worker> getWorkersWithHeartbeatTimeout() {
+    public List<Worker> getWorkersOfHeartbeatTimeout() {
         return workerService
                 .list(
                         new QueryWrapper<Worker>()
                                 .lambda()
-                                .ne(Worker::getRole, INACTIVE)
+                                .ne(Worker::getRole, DELETED)
                                 .ne(Worker::getIp, LOCALHOST))
                 .stream()
-                .filter(worker -> !worker.isActive())
+                .filter(worker -> !worker.isActive() || INACTIVE.equals(worker.getRole()))
                 .collect(toList());
     }
 }
