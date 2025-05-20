@@ -87,6 +87,7 @@ public class JobExecuteThread implements Supplier<JobResponse> {
         this.jobGrpcClient = SpringContext.getBean(JobGrpcClient.class);
     }
 
+    @SuppressWarnings("t")
     @Override
     public JobResponse get() {
         int retryTimes;
@@ -126,8 +127,12 @@ public class JobExecuteThread implements Supplier<JobResponse> {
             }
 
             callOnce();
-            log.warn("Execute jobRun: {} and wait for complete failed, retry attempt: {}.", jobRunId, retryAttempt);
+            if (SUCCESS.equals(jobRunStatus)) {
+                return new JobResponse(jobId, jobRunId, SUCCESS);
+            }
+
             // sleep and retry if exception found or status isn't success.
+            log.warn("Execute jobRun: {} and wait for complete failed, retry attempt: {}.", jobRunId, retryAttempt);
             if (retryAttempt < retryTimes) {
                 sleepRetry(retryInterval);
             }
