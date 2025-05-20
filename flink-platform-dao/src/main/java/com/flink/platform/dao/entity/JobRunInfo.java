@@ -117,7 +117,7 @@ public class JobRunInfo implements Serializable {
             return null;
         }
 
-        int maxLen = 60_000;
+        int maxLen = 50_000;
         int count = 0;
 
         // error msg.

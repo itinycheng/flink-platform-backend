@@ -103,6 +103,8 @@ public abstract class FlinkCommandBuilder implements CommandBuilder {
             default:
                 throw new CommandUnableGenException("unsupported job type");
         }
+
+        populateTimeout(command, jobRun);
         return command;
     }
 

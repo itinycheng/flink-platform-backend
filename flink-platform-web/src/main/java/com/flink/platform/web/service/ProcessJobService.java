@@ -57,9 +57,6 @@ public class ProcessJobService {
         JobRunInfo jobRunInfo = null;
 
         try {
-            // create submit time.
-            LocalDateTime submitTime = LocalDateTime.now();
-
             // step 1: get job info
             jobRunInfo = jobRunInfoService.getById(jobRunId);
             if (jobRunInfo == null) {
@@ -74,6 +71,9 @@ public class ProcessJobService {
             if (replacedConfig == null) {
                 replacedConfig = jobRunInfo.getConfig();
             }
+
+            // create submit time.
+            LocalDateTime submitTime = LocalDateTime.now();
 
             jobRunInfo.setVariables(varMap);
             jobRunInfo.setSubject(replacedContent);
