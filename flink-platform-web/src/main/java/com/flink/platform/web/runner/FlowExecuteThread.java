@@ -90,7 +90,7 @@ public class FlowExecuteThread implements Runnable {
                 timeoutHandled = true;
             }
 
-            ThreadUtil.sleep(5000);
+            ThreadUtil.safeSleep(5000);
         }
 
         // Wait for all jobs complete.

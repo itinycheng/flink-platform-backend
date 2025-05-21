@@ -73,10 +73,19 @@ public class ThreadUtil {
         sleep(mills);
     }
 
-    public static void sleep(final long millis) {
+    public static void safeSleep(final long millis) {
         try {
             Thread.sleep(millis);
         } catch (final Exception ignored) {
+        }
+    }
+
+    public static void sleep(final long millis) {
+        try {
+            Thread.sleep(millis);
+        } catch (final InterruptedException exception) {
+            log.error("Thread sleep error", exception);
+            Thread.currentThread().interrupt();
         }
     }
 }
