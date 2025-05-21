@@ -1,5 +1,6 @@
 package com.flink.platform.web.common;
 
+import com.flink.platform.web.util.ThreadUtil;
 import jakarta.annotation.Nonnull;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
@@ -7,7 +8,6 @@ import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
-import org.springframework.context.ApplicationContextException;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
@@ -55,11 +55,7 @@ public class SpringContext implements ApplicationContextAware, DisposableBean {
 
     public static <T> T waitFor(Class<T> t) throws BeansException {
         while (applicationContext == null) {
-            try {
-                Thread.sleep(1000);
-            } catch (InterruptedException e) {
-                throw new ApplicationContextException("Wait for ApplicationContext failed", e);
-            }
+            ThreadUtil.sleep(1000);
         }
 
         return applicationContext.getBean(t);
