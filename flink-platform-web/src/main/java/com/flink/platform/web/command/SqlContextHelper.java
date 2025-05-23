@@ -12,10 +12,11 @@ import com.flink.platform.dao.entity.task.FlinkJob;
 import com.flink.platform.dao.service.CatalogInfoService;
 import com.flink.platform.web.enums.Placeholder;
 import com.flink.platform.web.util.PathUtil;
-import jakarta.annotation.Resource;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.io.FileUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.io.File;
@@ -35,10 +36,10 @@ import static java.util.stream.Collectors.toList;
 /** Sql context helper. */
 @Slf4j
 @Component("sqlContextHelper")
+@RequiredArgsConstructor(onConstructor_ = @Autowired)
 public class SqlContextHelper {
 
-    @Resource
-    private CatalogInfoService catalogInfoService;
+    private final CatalogInfoService catalogInfoService;
 
     public String convertFromAndSaveToFile(JobRunInfo jobRun) {
         SqlContext sqlContext = convertFrom(jobRun);

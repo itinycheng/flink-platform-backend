@@ -4,6 +4,7 @@ import com.baomidou.dynamic.datasource.annotation.DS;
 import com.flink.platform.dao.entity.JobFlow;
 import com.flink.platform.dao.service.JobFlowService;
 import com.flink.platform.web.entity.JobFlowQuartzInfo;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -14,13 +15,12 @@ import static com.flink.platform.common.enums.JobFlowStatus.SCHEDULING;
 /** Job quartz service. */
 @Service
 @DS("master_platform")
+@RequiredArgsConstructor(onConstructor_ = @Autowired)
 public class JobFlowQuartzService {
 
-    @Autowired
-    private JobFlowService jobFlowService;
+    private final JobFlowService jobFlowService;
 
-    @Autowired
-    private QuartzService quartzService;
+    private final QuartzService quartzService;
 
     @Transactional(rollbackFor = Exception.class)
     public boolean scheduleJob(JobFlow jobFlow) {

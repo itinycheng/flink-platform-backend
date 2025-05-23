@@ -5,6 +5,7 @@ import com.flink.platform.dao.entity.Worker;
 import com.flink.platform.dao.service.WorkerService;
 import com.flink.platform.web.util.HttpUtil;
 import jakarta.annotation.Nullable;
+import lombok.RequiredArgsConstructor;
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -14,10 +15,10 @@ import java.util.Random;
 
 /** Worker apply service. */
 @Service
+@RequiredArgsConstructor(onConstructor_ = @Autowired)
 public class WorkerApplyService {
 
-    @Autowired
-    private WorkerService workerService;
+    private final WorkerService workerService;
 
     public String chooseWorker(List<Long> workerIds) {
         if (CollectionUtils.isEmpty(workerIds)) {

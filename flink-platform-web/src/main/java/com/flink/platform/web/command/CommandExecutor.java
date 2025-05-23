@@ -4,7 +4,6 @@ import com.flink.platform.common.enums.JobType;
 import com.flink.platform.dao.entity.result.JobCallback;
 import com.flink.platform.web.common.ValueSortedMap;
 import jakarta.annotation.Nonnull;
-import lombok.Getter;
 
 import static com.flink.platform.common.enums.ExecutionStatus.KILLABLE;
 import static com.flink.platform.common.enums.ExecutionStatus.KILLED;
@@ -12,12 +11,10 @@ import static com.flink.platform.common.enums.ExecutionStatus.KILLED;
 /** parse result. */
 public interface CommandExecutor {
 
-    @Getter
     ValueSortedMap<Long, JobCommand> RUNNING_MAP = new ValueSortedMap<>();
 
-    @Getter
-    CommandMonitor INVISIBLE =
-            new CommandMonitor().setRunningJobMap(RUNNING_MAP).start();
+    @SuppressWarnings("unused")
+    CommandMonitor MONITOR = new CommandMonitor(RUNNING_MAP).start();
 
     /**
      * whether support.

@@ -5,6 +5,7 @@ import com.flink.platform.common.exception.DefinitionException;
 import com.flink.platform.dao.service.JobRunInfoService;
 import com.flink.platform.web.config.FlinkConfig;
 import com.flink.platform.web.util.CommandUtil;
+import lombok.RequiredArgsConstructor;
 import org.apache.commons.text.StringSubstitutor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -19,15 +20,14 @@ import static com.flink.platform.common.enums.ResponseStatus.OPERATION_NOT_ALLOW
  * flink job service.
  */
 @Service
+@RequiredArgsConstructor(onConstructor_ = @Autowired)
 public class FlinkJobService {
 
     private static final Map<DeployMode, String> SAVEPOINT_FORMATS;
 
-    @Autowired
-    private List<FlinkConfig> flinkConfigs;
+    private final List<FlinkConfig> flinkConfigs;
 
-    @Autowired
-    private JobRunInfoService jobRunService;
+    private final JobRunInfoService jobRunService;
 
     static {
         var formatMap = new HashMap<DeployMode, String>();

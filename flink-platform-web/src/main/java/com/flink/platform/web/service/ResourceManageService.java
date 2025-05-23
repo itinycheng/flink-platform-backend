@@ -2,6 +2,7 @@ package com.flink.platform.web.service;
 
 import com.flink.platform.dao.entity.Resource;
 import com.flink.platform.dao.service.ResourceService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -9,13 +10,12 @@ import static com.flink.platform.web.util.ResourceUtil.getFullStorageFilePath;
 
 /** Resource manage service. */
 @Service
+@RequiredArgsConstructor(onConstructor_ = @Autowired)
 public class ResourceManageService {
 
-    @Autowired
-    private ResourceService resourceService;
+    private final ResourceService resourceService;
 
-    @Autowired
-    private StorageService storageService;
+    private final StorageService storageService;
 
     public boolean save(Resource entity) throws Exception {
         switch (entity.getType()) {

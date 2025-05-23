@@ -11,6 +11,7 @@ import com.flink.platform.grpc.JobGrpcServiceGrpc;
 import com.flink.platform.grpc.KillJobRequest;
 import com.flink.platform.web.command.CommandExecutor;
 import com.flink.platform.web.grpc.JobGrpcClient;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,6 +27,7 @@ import static com.flink.platform.common.enums.ExecutionStatus.getNonTerminals;
 /** Kill job service. */
 @Slf4j
 @Service
+@RequiredArgsConstructor(onConstructor_ = @Autowired)
 public class KillJobService {
 
     private final JobGrpcClient jobGrpcClient;
@@ -35,18 +37,6 @@ public class KillJobService {
     private final List<CommandExecutor> jobCommandExecutors;
 
     private final JobFlowRunService jobFlowRunService;
-
-    @Autowired
-    public KillJobService(
-            JobRunInfoService jobRunInfoService,
-            List<CommandExecutor> jobCommandExecutors,
-            JobGrpcClient jobGrpcClient,
-            JobFlowRunService jobFlowRunService) {
-        this.jobRunInfoService = jobRunInfoService;
-        this.jobCommandExecutors = jobCommandExecutors;
-        this.jobGrpcClient = jobGrpcClient;
-        this.jobFlowRunService = jobFlowRunService;
-    }
 
     // TODO: If workflow instance doesn't exist, KILLABLE may not be changed to a final status.
     public boolean killRemoteFlow(Long userId, Long flowRunId) {

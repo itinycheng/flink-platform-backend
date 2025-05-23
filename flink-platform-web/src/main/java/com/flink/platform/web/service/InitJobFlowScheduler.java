@@ -3,8 +3,8 @@ package com.flink.platform.web.service;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.flink.platform.dao.entity.JobFlowRun;
 import com.flink.platform.dao.service.JobFlowRunService;
-import com.flink.platform.dao.service.JobRunInfoService;
 import jakarta.annotation.PostConstruct;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -15,21 +15,15 @@ import static com.flink.platform.common.enums.ExecutionStatus.getNonTerminals;
 
 /** Init job flow scheduler when the project started. */
 @Component
+@RequiredArgsConstructor(onConstructor_ = @Autowired)
 public class InitJobFlowScheduler {
 
-    @Autowired
-    private JobFlowRunService jobFlowRunService;
+    private final JobFlowRunService jobFlowRunService;
 
-    @Autowired
-    private JobFlowScheduleService jobFlowScheduleService;
+    private final JobFlowScheduleService jobFlowScheduleService;
 
-    @Autowired
-    private JobRunInfoService jobRunInfoService;
+    private final QuartzService quartzService;
 
-    @Autowired
-    private QuartzService quartzService;
-
-    @Autowired
     @PostConstruct
     public void init() {
         CompletableFuture.runAsync(() -> {
