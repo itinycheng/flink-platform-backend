@@ -2,6 +2,7 @@ package com.flink.platform.web.service;
 
 import com.flink.platform.storage.base.StorageSystem;
 import jakarta.annotation.PreDestroy;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,10 +13,10 @@ import java.io.IOException;
 /** service for uploading/downloading resources. */
 @Slf4j
 @Service
+@RequiredArgsConstructor(onConstructor_ = @Autowired)
 public class StorageService {
 
-    @Autowired
-    private StorageSystem storageSystem;
+    private final StorageSystem storageSystem;
 
     public void copyFileToLocalIfChanged(String hdfsFile, String localFile) throws IOException {
         storageSystem.copyToLocalFileIfChanged(hdfsFile, localFile);

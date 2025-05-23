@@ -9,6 +9,7 @@ import com.flink.platform.web.monitor.DefaultStatusFetcher;
 import com.flink.platform.web.monitor.StatusFetcher;
 import com.flink.platform.web.util.ThreadUtil;
 import jakarta.annotation.Nonnull;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -20,17 +21,12 @@ import static com.flink.platform.common.enums.ExecutionStatus.ERROR;
 /** Job status service. */
 @Slf4j
 @Service
+@RequiredArgsConstructor(onConstructor_ = @Autowired)
 public class ProcessJobStatusService {
 
     private final List<StatusFetcher> statusFetchers;
 
     private final DefaultStatusFetcher defaultStatusFetcher;
-
-    @Autowired
-    public ProcessJobStatusService(List<StatusFetcher> statusFetchers, DefaultStatusFetcher defaultStatusFetcher) {
-        this.statusFetchers = statusFetchers;
-        this.defaultStatusFetcher = defaultStatusFetcher;
-    }
 
     @Nonnull
     public JobStatusReply getStatus(JobStatusRequest request) {

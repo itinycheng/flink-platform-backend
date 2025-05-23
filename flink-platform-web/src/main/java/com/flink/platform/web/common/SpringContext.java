@@ -55,6 +55,7 @@ public class SpringContext implements ApplicationContextAware, DisposableBean {
 
     public static <T> T waitFor(Class<T> t) throws BeansException {
         while (applicationContext == null) {
+            log.warn("Waiting for SpringContext to be initialized...");
             ThreadUtil.sleep(1000);
         }
 

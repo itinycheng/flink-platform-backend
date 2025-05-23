@@ -5,7 +5,6 @@ import com.flink.platform.web.common.SpringContext;
 import com.flink.platform.web.common.ValueSortedMap;
 import com.flink.platform.web.service.KillJobService;
 import com.flink.platform.web.util.ThreadUtil;
-import jakarta.annotation.Nonnull;
 import lombok.extern.slf4j.Slf4j;
 
 import java.time.LocalDateTime;
@@ -24,20 +23,14 @@ public class CommandMonitor {
 
     private final ExecutorService canceler;
 
-    private final KillJobService service;
+    private final ValueSortedMap<Long, JobCommand> runningJobMap;
 
-    private ValueSortedMap<Long, JobCommand> runningJobMap;
+    private KillJobService service;
 
-    public CommandMonitor() {
-        var service = SpringContext.waitFor(KillJobService.class);
-        this.service = Preconditions.checkNotNull(service);
+    public CommandMonitor(ValueSortedMap<Long, JobCommand> runningJobMap) {
+        this.runningJobMap = Preconditions.checkNotNull(runningJobMap);
         this.monitor = ThreadUtil.newDaemonSingleScheduledExecutor("CommandMonitor");
         this.canceler = ThreadUtil.newVirtualThreadExecutor("CommandCanceler");
-    }
-
-    public CommandMonitor setRunningJobMap(@Nonnull ValueSortedMap<Long, JobCommand> runningJobMap) {
-        this.runningJobMap = Preconditions.checkNotNull(runningJobMap);
-        return this;
     }
 
     public CommandMonitor start() {
@@ -62,8 +55,12 @@ public class CommandMonitor {
             return;
         }
 
+        if (this.service == null) {
+            this.service = SpringContext.waitFor(KillJobService.class);
+        }
+
         canceler.submit(() -> {
-            final var runningJobMap = this.runningJobMap;
+            final var service = this.service;
             service.killJob(command.getJobRunId());
             runningJobMap.remove(command.getJobRunId());
         });

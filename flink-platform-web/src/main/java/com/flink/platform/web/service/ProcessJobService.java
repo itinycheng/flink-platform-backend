@@ -13,6 +13,7 @@ import com.flink.platform.web.command.CommandBuilder;
 import com.flink.platform.web.command.CommandExecutor;
 import com.flink.platform.web.command.JobCommand;
 import com.flink.platform.web.command.flink.FlinkCommand;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,6 +30,7 @@ import static com.flink.platform.common.constants.Constant.HOST_IP;
 /** Process job service. */
 @Slf4j
 @Service
+@RequiredArgsConstructor(onConstructor_ = @Autowired)
 public class ProcessJobService {
 
     private final JobRunInfoService jobRunInfoService;
@@ -38,18 +40,6 @@ public class ProcessJobService {
     private final List<CommandBuilder> jobCommandBuilders;
 
     private final List<CommandExecutor> jobCommandExecutors;
-
-    @Autowired
-    public ProcessJobService(
-            JobRunInfoService jobRunInfoService,
-            JobRunExtraService jobRunExtraService,
-            List<CommandBuilder> jobCommandBuilders,
-            List<CommandExecutor> jobCommandExecutors) {
-        this.jobRunInfoService = jobRunInfoService;
-        this.jobRunExtraService = jobRunExtraService;
-        this.jobCommandBuilders = jobCommandBuilders;
-        this.jobCommandExecutors = jobCommandExecutors;
-    }
 
     public void processJob(final long jobRunId) throws Exception {
         JobCommand jobCommand = null;
