@@ -1,8 +1,11 @@
 package com.flink.platform.web.util;
 
+import com.flink.platform.dao.entity.Resource;
+import com.flink.platform.dao.service.ResourceService;
 import com.flink.platform.web.common.SpringContext;
 import com.flink.platform.web.service.StorageService;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.math.NumberUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
@@ -25,6 +28,8 @@ public class ResourceUtil {
 
     private static final StorageService STORAGE_SERVICE = SpringContext.getBean(StorageService.class);
 
+    private static final ResourceService RESOURCE_SERVICE = SpringContext.getBean(ResourceService.class);
+
     public static String getStorageFilePath(String relativePath, Long userId) {
         String storageUserDir = getStorageUserDir(userId);
         return String.join(SLASH, storageUserDir, relativePath);
@@ -32,6 +37,12 @@ public class ResourceUtil {
 
     public static String getAbsoluteStoragePath(String path, Long userId) {
         try {
+            if (NumberUtils.isParsable(path)) {
+                long id = NumberUtils.toLong(path);
+                Resource resource = RESOURCE_SERVICE.getById(id);
+                path = resource.getFullName();
+            }
+
             if (STORAGE_SERVICE.isAbsolutePath(path)) {
                 return STORAGE_SERVICE.normalizePath(path);
             } else {
