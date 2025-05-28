@@ -14,17 +14,20 @@ public interface CommandExecutor {
 
     ValueSortedMap<Long, JobCommand> RUNNING_MAP = new ValueSortedMap<>();
 
+    @SuppressWarnings("unused")
+    CommandMonitor MONITOR = new CommandMonitor(RUNNING_MAP).start();
+
     /** whether support. */
     boolean isSupported(JobType jobType);
 
     @Nonnull
-    default JobCallback exec(@Nonnull JobCommand jobCommand) throws Exception {
-        long jobRunId = jobCommand.getJobRunId();
+    default JobCallback exec(@Nonnull JobCommand command) throws Exception {
+        long jobRunId = command.getJobRunId();
         try {
-            RUNNING_MAP.put(jobRunId, jobCommand);
-            JobCallback callback = execCommand(jobCommand);
+            RUNNING_MAP.put(jobRunId, command);
+            JobCallback callback = execCommand(command);
             if (callback.getStatus() == KILLABLE) {
-                killCommand(jobCommand);
+                killCommand(command);
                 callback.setStatus(KILLED);
             }
             return callback;
