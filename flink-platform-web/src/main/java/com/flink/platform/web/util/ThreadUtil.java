@@ -1,14 +1,17 @@
 package com.flink.platform.web.util;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import lombok.extern.slf4j.Slf4j;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 /** Thread utils. */
+@Slf4j
 public class ThreadUtil {
 
     public static final int MIN_SLEEP_TIME_MILLIS = 3000;
@@ -47,16 +50,42 @@ public class ThreadUtil {
                 .build();
     }
 
+    public static void addShutdownHook(ExecutorService service, String name) {
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            try {
+                log.info("JVM is shutting down, closing thread pool {}", name);
+                service.shutdown();
+                if (!service.awaitTermination(10, TimeUnit.SECONDS)) {
+                    log.info("Force shutting down thread pool {}", name);
+                    service.shutdownNow();
+                }
+            } catch (Exception exception) {
+                log.error("Error while shutting down thread pool {}", name, exception);
+                service.shutdownNow();
+                Thread.currentThread().interrupt();
+            }
+        }));
+    }
+
     public static void sleepRetry(int retryAttempt) {
         int mills = Math.min(retryAttempt * MIN_SLEEP_TIME_MILLIS, MAX_SLEEP_TIME_MILLIS);
         mills = Math.max(mills, MIN_SLEEP_TIME_MILLIS);
         sleep(mills);
     }
 
-    public static void sleep(final long millis) {
+    public static void safeSleep(final long millis) {
         try {
             Thread.sleep(millis);
         } catch (final Exception ignored) {
+        }
+    }
+
+    public static void sleep(final long millis) {
+        try {
+            Thread.sleep(millis);
+        } catch (final InterruptedException exception) {
+            log.error("Thread sleep error", exception);
+            Thread.currentThread().interrupt();
         }
     }
 }

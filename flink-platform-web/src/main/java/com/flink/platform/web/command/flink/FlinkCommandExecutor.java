@@ -22,7 +22,9 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
 
 import static com.flink.platform.common.constants.Constant.EMPTY;
@@ -76,10 +78,11 @@ public class FlinkCommandExecutor implements CommandExecutor {
         ShellCallback callback = task.buildShellCallback();
 
         // call `killCommand` method if execute command failed.
-        if (task.finalStatus() != SUCCESS) {
+        if (!SUCCESS.equals(task.finalStatus())) {
             return new JobCallback(jobId, appId, null, callback, EMPTY, task.finalStatus());
         }
 
+        // Get the application report from Hadoop Yarn.
         if (StringUtils.isNotEmpty(appId) && StringUtils.isNotEmpty(jobId)) {
             ExecutionStatus status = SUBMITTED;
             String trackingUrl = EMPTY;
@@ -91,9 +94,15 @@ public class FlinkCommandExecutor implements CommandExecutor {
                 log.error("Failed to get ApplicationReport after command executed", e);
             }
             return new JobCallback(jobId, appId, trackingUrl, callback, EMPTY, status);
-        } else {
-            return new JobCallback(jobId, appId, EMPTY, callback, EMPTY, FAILURE);
         }
+
+        // If both appId and jobId are empty, means that there is no need to submit task to Yarn.
+        if (StringUtils.isEmpty(appId) && StringUtils.isEmpty(jobId)) {
+            return new JobCallback(jobId, appId, EMPTY, callback, EMPTY, SUCCESS);
+        }
+
+        // If one of appId and jobId is empty, means that there is a problem with the submitted task.
+        return new JobCallback(jobId, appId, EMPTY, callback, EMPTY, FAILURE);
     }
 
     @Override
@@ -116,8 +125,10 @@ public class FlinkCommandExecutor implements CommandExecutor {
         }
     }
 
-    private String[] buildEnvProps() {
-        return new String[] {String.format("%s=%s", HADOOP_USER_NAME, hadoopUser)};
+    private Map<String, String> buildEnvProps() {
+        var map = new HashMap<String, String>(1);
+        map.put(HADOOP_USER_NAME, hadoopUser);
+        return map;
     }
 
     // ------------------------------------------------------------------------

@@ -7,6 +7,7 @@ import com.flink.platform.dao.entity.JobRunInfo;
 import com.flink.platform.dao.service.JobRunInfoService;
 import com.flink.platform.web.enums.Placeholder;
 import com.flink.platform.web.enums.Variable;
+import lombok.RequiredArgsConstructor;
 import org.apache.commons.collections4.MapUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -18,13 +19,12 @@ import static com.flink.platform.common.enums.ExecutionStatus.CREATED;
 
 /** addition method. */
 @Service
+@RequiredArgsConstructor(onConstructor_ = @Autowired)
 public class JobRunExtraService {
 
-    @Autowired
-    private JobRunInfoService jobRunService;
+    private final JobRunInfoService jobRunService;
 
-    @Autowired
-    private WorkerApplyService workerApplyService;
+    private final WorkerApplyService workerApplyService;
 
     public Long createJobRun(JobInfo jobInfo, Long flowRunId) {
         var worker = workerApplyService.randomWorker(jobInfo.getRouteUrl());

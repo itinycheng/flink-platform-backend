@@ -53,12 +53,12 @@ public interface JobRunInfoMapper extends BaseMapper<JobRunInfo> {
                     t1.submit_time,
                     t1.stop_time,
                     t1.create_time
-                FROM platform.t_job_run t1,
+                FROM t_job_run t1,
                     (
                         SELECT max(r.id) as run_id
-                        FROM platform.t_job_flow f,
-                            platform.t_job j,
-                            platform.t_job_run r
+                        FROM t_job_flow f,
+                            t_job j,
+                            t_job_run r
                         WHERE f.id = j.flow_id
                             AND j.id = r.job_id
                             <if test="jobFlowType != null">
