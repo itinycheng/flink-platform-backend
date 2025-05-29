@@ -11,6 +11,12 @@ SHELL_NAME=$0
 COMMAND=$1  # 操作命令
 ENV=$2    #环境
 
+# Source /data0/project/hadoop-env if it exists
+if [ -f "/data0/project/hadoop-env" ]; then
+  printf "Sourcing environment variables from /data0/project/hadoop-env\n"
+  . /data0/project/hadoop-env
+fi
+
 export JAVA_HOME=/usr/local/jdk1.8.0_161
 export HADOOP_USER_NAME=hdfs
 export HADOOP_CONF_DIR=/data0/project/hadoop-conf
@@ -185,8 +191,12 @@ startService() {
     buildJavaOpts
 
     printf "\033[32mNow start %s server...\033[0m\n" "$PROJECT_NAME"
+    printf "\n\033[33mCurrent environment variables before starting Java process:\033[0m\n"
+    printenv
+    printf "\n"
+
     printf "\033 nohup java %s -jar %s > nohup.out 2>&1 & \033[0m\n" "$JAVA_OPTS" "$JAR_FILE"
-    nohup java $JAVA_OPTS -jar "$JAR_FILE" > nohup.out 2>&1 &
+    nohup java "$JAVA_OPTS" -jar "$JAR_FILE" > nohup.out 2>&1 &
     PID=$!
 
     if [ $? -eq 0 ]
