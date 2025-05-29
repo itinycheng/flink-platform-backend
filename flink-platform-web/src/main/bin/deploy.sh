@@ -196,7 +196,7 @@ startService() {
     printf "\n"
 
     printf "\033 nohup java %s -jar %s > nohup.out 2>&1 & \033[0m\n" "$JAVA_OPTS" "$JAR_FILE"
-    nohup java "$JAVA_OPTS" -jar "$JAR_FILE" > nohup.out 2>&1 &
+    nohup java $JAVA_OPTS -jar "$JAR_FILE" > nohup.out 2>&1 &
     PID=$!
 
     if [ $? -eq 0 ]
