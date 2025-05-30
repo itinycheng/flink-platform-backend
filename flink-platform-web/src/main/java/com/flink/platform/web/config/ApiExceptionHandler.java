@@ -12,6 +12,7 @@ import static com.flink.platform.common.enums.ResponseStatus.SERVICE_ERROR;
 import static com.flink.platform.web.entity.response.ResultInfo.failure;
 
 /** Global exception handler. */
+@SuppressWarnings("unused")
 @Slf4j
 @ControllerAdvice
 @ResponseBody
