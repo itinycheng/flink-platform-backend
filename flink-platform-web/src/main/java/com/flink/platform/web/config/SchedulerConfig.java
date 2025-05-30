@@ -9,13 +9,15 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
  * TODO:
  * Use virtual thread to configure the scheduler.
  */
+@SuppressWarnings("unused")
 @Configuration
 public class SchedulerConfig {
 
     @Bean
     public TaskScheduler taskScheduler() {
         ThreadPoolTaskScheduler scheduler = new ThreadPoolTaskScheduler();
-        scheduler.setPoolSize(5);
+        scheduler.setPoolSize(10);
+        scheduler.setVirtualThreads(true);
         scheduler.setThreadNamePrefix("scheduled-task-");
         scheduler.initialize();
         return scheduler;
