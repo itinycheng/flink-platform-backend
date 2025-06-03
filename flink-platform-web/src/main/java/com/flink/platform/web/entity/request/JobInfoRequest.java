@@ -120,6 +120,7 @@ public class JobInfoRequest {
         return requireNotNull(getSubject(), "The job subject cannot be null");
     }
 
+    @SuppressWarnings("t")
     private String verifyConfig() {
         BaseJob config = getConfig();
         if (config == null) {
@@ -137,12 +138,13 @@ public class JobInfoRequest {
             }
         }
 
-        ShellJob shellJob = config.unwrap(ShellJob.class);
-        if (shellJob != null) {
-            Duration timeout = shellJob.parseTimeout();
-            if (timeout == null || timeout.isZero() || timeout.isNegative()) {
-                return "The timeout of ShellJob is invalid";
-            }
+        Duration timeout = config.parseTimeout();
+        if (timeout != null && (timeout.isZero() || timeout.isNegative())) {
+            return "The timeout of job cannot be zero or negative";
+        }
+
+        if (timeout == null && config instanceof ShellJob) {
+            return "The timeout of shell job cannot be null";
         }
 
         DependentJob dependentJob = config.unwrap(DependentJob.class);

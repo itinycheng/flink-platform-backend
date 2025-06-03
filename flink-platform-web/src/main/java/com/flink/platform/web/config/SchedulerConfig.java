@@ -6,7 +6,6 @@ import org.springframework.scheduling.TaskScheduler;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 
 /**
- * TODO:
  * Use virtual thread to configure the scheduler.
  */
 @SuppressWarnings("unused")
