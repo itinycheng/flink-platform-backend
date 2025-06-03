@@ -8,6 +8,7 @@ import com.flink.platform.web.command.AbstractTask;
 import com.flink.platform.web.command.CommandExecutor;
 import com.flink.platform.web.command.JobCommand;
 import com.flink.platform.web.config.WorkerConfig;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -19,11 +20,12 @@ import java.time.Duration;
 /** shell command executor. */
 @Slf4j
 @Component("shellCommandExecutor")
+@RequiredArgsConstructor(onConstructor_ = @Autowired)
 public class ShellCommandExecutor implements CommandExecutor {
 
-    @Autowired private WorkerConfig workerConfig;
+    private final WorkerConfig workerConfig;
 
-    @Autowired private JobRunInfoService jobRunInfoService;
+    private final JobRunInfoService jobRunInfoService;
 
     @Override
     public boolean isSupported(JobType jobType) {
@@ -40,7 +42,11 @@ public class ShellCommandExecutor implements CommandExecutor {
                         shellCommand.getJobRunId(),
                         shellCommand.getScript(),
                         shellCommand.getEnvp(),
-                        Math.min(workerConfig.getMaxShellExecTimeoutMills(), timeout.toMillis()));
+                        timeout != null
+                                ? Math.min(
+                                        workerConfig.getMaxShellExecTimeoutMills(),
+                                        timeout.toMillis())
+                                : workerConfig.getMaxShellExecTimeoutMills());
         shellCommand.setTask(task);
         task.run();
 

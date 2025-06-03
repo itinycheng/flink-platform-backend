@@ -5,10 +5,12 @@ import com.flink.platform.common.constants.Constant;
 import com.flink.platform.dao.entity.User;
 import com.flink.platform.dao.service.SessionService;
 import com.flink.platform.dao.service.UserService;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpStatus;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerInterceptor;
 
 import javax.annotation.Nonnull;
@@ -17,11 +19,13 @@ import javax.servlet.http.HttpServletResponse;
 
 /** Login interceptor. */
 @Slf4j
+@Component
+@RequiredArgsConstructor(onConstructor_ = @Autowired)
 public class LoginInterceptor implements HandlerInterceptor {
 
-    @Autowired private UserService userService;
+    private final UserService userService;
 
-    @Autowired private SessionService sessionService;
+    private final SessionService sessionService;
 
     @Override
     public boolean preHandle(
