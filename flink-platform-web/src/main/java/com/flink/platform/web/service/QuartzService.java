@@ -1,6 +1,7 @@
 package com.flink.platform.web.service;
 
 import com.flink.platform.common.util.DateUtil;
+import com.flink.platform.common.util.ExceptionUtil;
 import com.flink.platform.web.common.QuartzException;
 import com.flink.platform.web.config.AppRunner;
 import com.flink.platform.web.entity.IQuartzInfo;
@@ -47,6 +48,15 @@ public class QuartzService {
             }
         } catch (Exception e) {
             throw new QuartzException("Waiting for quartz start failed", e);
+        }
+    }
+
+    public String quartzMetadata() {
+        try {
+            checkQuartzSchedulerStarted();
+            return String.valueOf(scheduler.getMetaData());
+        } catch (Exception e) {
+            return ExceptionUtil.stackTrace(e);
         }
     }
 

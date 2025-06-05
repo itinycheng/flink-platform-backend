@@ -72,7 +72,7 @@ public class ShellTask extends AbstractTask {
     @Override
     public void run() throws Exception {
         var merged = SystemUtil.mergeEnv(envp);
-        log.info("Exec command: {}, env vars: {}", command, merged == null ? System.getenv() : merged);
+        log.info("Exec command: {}, with user-defined env vars: {}", command, envp);
         this.process = Runtime.getRuntime().exec(command, SystemUtil.toEnvArray(merged));
         this.processId = CommandUtil.getProcessId(process);
         try (InputStream stdStream = process.getInputStream();
