@@ -1,8 +1,12 @@
 package com.flink.platform.web.controller;
 
+import com.flink.platform.common.constants.Constant;
 import com.flink.platform.web.entity.response.ResultInfo;
+import com.flink.platform.web.service.QuartzService;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.quartz.CronExpression;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -10,7 +14,9 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static com.flink.platform.common.enums.ResponseStatus.INVALID_CRONTAB_EXPR;
 import static com.flink.platform.common.util.DateUtil.GLOBAL_DATE_TIME_FORMAT;
@@ -22,7 +28,19 @@ import static com.flink.platform.web.entity.response.ResultInfo.success;
 @Slf4j
 @RestController
 @RequestMapping("/quartz")
+@RequiredArgsConstructor(onConstructor_ = @Autowired)
 public class QuartzController {
+
+    private final QuartzService quartzService;
+
+    @GetMapping(value = "/metadata")
+    public ResultInfo<Map<String, String>> metadata() {
+        Map<String, String> result = new HashMap<>();
+        result.put("hostname", Constant.HOSTNAME);
+        result.put("ip", Constant.HOST_IP);
+        result.put("quartz", quartzService.quartzMetadata());
+        return success(result);
+    }
 
     @GetMapping(value = "/parseExpr")
     public ResultInfo<List<String>> parseExpr(@RequestParam(name = "cron") String cron) {

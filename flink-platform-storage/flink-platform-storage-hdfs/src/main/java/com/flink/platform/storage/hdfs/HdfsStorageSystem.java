@@ -37,13 +37,18 @@ public class HdfsStorageSystem implements StorageSystem {
         System.setProperty("HADOOP_USER_NAME", properties.getUsername());
         org.apache.hadoop.conf.Configuration conf = new HdfsConfiguration();
         properties.getProperties().forEach(conf::set);
-        log.info("=============== [storage configuration info start.] ===============");
-        log.info("[hadoop conf]: size:{}, {}", conf.size(), conf);
-        log.info("[fs.defaultFS]: {}", conf.get("fs.defaultFS"));
-        log.info("[fs.hdfs.impl]: {}", conf.get("fs.hdfs.impl"));
         fs = FileSystem.newInstance(conf);
-        log.info("[fileSystem scheme]: {}", fs.getScheme());
-        log.info("=============== [storage configuration info end.] ===============");
+        // Log configuration information.
+        StringBuilder builder = new StringBuilder();
+        builder.append("=============== [storage configuration info start.] ===============\n");
+        builder.append("[hdfs conf size]: ").append(conf.size()).append("\n");
+        builder.append("[hdfs uri]: ").append(fs.getUri()).append("\n");
+        builder.append("[fs.defaultFS]: ").append(conf.get("fs.defaultFS")).append("\n");
+        builder.append("[fs.hdfs.impl]: ").append(conf.get("fs.hdfs.impl")).append("\n");
+        builder.append("[fileSystem scheme]: ").append(fs.getScheme()).append("\n");
+        builder.append(conf).append("\n");
+        builder.append("=============== [storage configuration info end.] ===============");
+        log.info("Hdfs FileSystem initialized successfully.\n{}", builder);
     }
 
     @Override
