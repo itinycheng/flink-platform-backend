@@ -12,7 +12,7 @@ import org.apache.commons.collections4.MapUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 import static com.flink.platform.common.enums.ExecutionStatus.CREATED;
@@ -54,17 +54,19 @@ public class JobRunExtraService {
     }
 
     public Map<String, Object> parseVariables(JobRunInfo jobRun) {
-        var variableMap = new HashMap<String, Object>();
-        var content = jobRun.getSubject();
-        var config = JsonUtil.toJsonString(jobRun.getConfig());
+        var variableMap = new LinkedHashMap<String, Object>();
+        var content = String.join(", ", jobRun.getSubject(), JsonUtil.toJsonString(jobRun.getConfig()));
         for (Placeholder placeholder : Placeholder.values()) {
-            if (content.contains(placeholder.wildcard)) {
-                variableMap.putAll(placeholder.apply(jobRun, content));
+            if (!content.contains(placeholder.wildcard)) {
+                continue;
             }
 
-            if (config.contains(placeholder.wildcard)) {
-                placeholder.apply(jobRun, config).forEach(variableMap::putIfAbsent);
+            var varMap = placeholder.apply(jobRun, content);
+            // Replace placeholders in the content with actual values
+            for (var entry : varMap.entrySet()) {
+                content = content.replace(entry.getKey(), entry.getValue().toString());
             }
+            variableMap.putAll(varMap);
         }
 
         var variables = jobRun.getVariables();
