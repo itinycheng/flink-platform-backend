@@ -176,7 +176,7 @@ public enum Placeholder {
         this.provider = provider;
     }
 
-    public Map<String, Object> apply(JobRunInfo jobRun, String content) {
+    public @Nonnull Map<String, Object> apply(JobRunInfo jobRun, String content) {
         return provider.apply(jobRun, content);
     }
 
