@@ -18,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.stream.Stream;
 
 import static com.flink.platform.common.constants.Constant.HOSTNAME;
 import static com.flink.platform.common.constants.Constant.HOST_IP;
@@ -47,20 +48,29 @@ public class WorkerHeartbeat {
     private static final ScheduledExecutorService EXECUTOR_SERVICE =
             ThreadUtil.newDaemonSingleScheduledExecutor("WorkerHeartbeat");
 
-    @Autowired
-    WorkerService workerService;
+    private final WorkerService workerService;
+
+    private final JobFlowRunService jobFlowRunService;
+
+    private final JobFlowScheduleService jobFlowScheduleService;
+
+    private final String port;
+
+    private final int grpcPort;
 
     @Autowired
-    JobFlowRunService jobFlowRunService;
-
-    @Autowired
-    JobFlowScheduleService jobFlowScheduleService;
-
-    @Value("${server.port}")
-    private String port;
-
-    @Value("${grpc.server.port}")
-    private int grpcPort;
+    public WorkerHeartbeat(
+            WorkerService workerService,
+            JobFlowRunService jobFlowRunService,
+            JobFlowScheduleService jobFlowScheduleService,
+            @Value("${server.port}") String port,
+            @Value("${grpc.server.port}") int grpcPort) {
+        this.workerService = workerService;
+        this.jobFlowRunService = jobFlowRunService;
+        this.jobFlowScheduleService = jobFlowScheduleService;
+        this.port = port;
+        this.grpcPort = grpcPort;
+    }
 
     @PostConstruct
     public void initHeartbeat() {
@@ -90,16 +100,32 @@ public class WorkerHeartbeat {
         }
 
         // 3. Reassign unfinished workflows belonging to offline workers.
-        // TODO: dispatch JobFlowRun to other active workers.
         worker = workerService.getById(worker.getId());
-        if (LEADER.equals(worker.getRole())) {
-            getWorkersOfHeartbeatTimeout().forEach(timeoutWorker -> jobFlowRunService
-                    .list(new QueryWrapper<JobFlowRun>()
-                            .lambda()
-                            .eq(JobFlowRun::getHost, timeoutWorker.getIp())
-                            .in(JobFlowRun::getStatus, getNonTerminals()))
-                    .forEach(jobFlowScheduleService::registerToScheduler));
+        if (!LEADER.equals(worker.getRole())) {
+            return;
         }
+
+        List<JobFlowRun> unfinishedList =
+                getInvalidWorkers().stream().flatMap(this::getUnfinishedByWorker).toList();
+        if (unfinishedList.isEmpty()) {
+            return;
+        }
+
+        // TODO: dispatch JobFlowRun to other active workers?
+        unfinishedList.forEach(jobFlowRun -> jobFlowRun.setHost(HOST_IP));
+        updateJobFlowRunHost(unfinishedList);
+        unfinishedList.forEach(jobFlowScheduleService::registerToScheduler);
+    }
+
+    private void updateJobFlowRunHost(List<JobFlowRun> list) {
+        jobFlowRunService.saveOrUpdateBatch(list.stream()
+                .map(jobFlowRun -> {
+                    JobFlowRun newJobFlowRun = new JobFlowRun();
+                    newJobFlowRun.setId(jobFlowRun.getId());
+                    newJobFlowRun.setHost(HOST_IP);
+                    return newJobFlowRun;
+                })
+                .toList());
     }
 
     @Transactional(isolation = SERIALIZABLE, rollbackFor = Throwable.class)
@@ -125,10 +151,10 @@ public class WorkerHeartbeat {
                 .select(Worker::getId, Worker::getHeartbeat)
                 .eq(Worker::getRole, LEADER)
                 .ne(Worker::getIp, LOCALHOST));
-        return list.size() == 1 && list.get(0).isActive();
+        return list.size() == 1 && list.getFirst().isActive();
     }
 
-    public List<Worker> getWorkersOfHeartbeatTimeout() {
+    public List<Worker> getInvalidWorkers() {
         return workerService
                 .list(new QueryWrapper<Worker>()
                         .lambda()
@@ -137,5 +163,14 @@ public class WorkerHeartbeat {
                 .stream()
                 .filter(worker -> !worker.isActive() || INACTIVE.equals(worker.getRole()))
                 .collect(toList());
+    }
+
+    public Stream<JobFlowRun> getUnfinishedByWorker(Worker invalidWorker) {
+        return jobFlowRunService
+                .list(new QueryWrapper<JobFlowRun>()
+                        .lambda()
+                        .eq(JobFlowRun::getHost, invalidWorker.getIp())
+                        .in(JobFlowRun::getStatus, getNonTerminals()))
+                .stream();
     }
 }
