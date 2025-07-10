@@ -105,8 +105,9 @@ public class WorkerHeartbeat {
             return;
         }
 
-        List<JobFlowRun> unfinishedList =
-                getInvalidWorkers().stream().flatMap(this::getUnfinishedByWorker).toList();
+        List<JobFlowRun> unfinishedList = getInvalidWorkers().stream()
+                .flatMap(this::getUnfinishedByWorker)
+                .toList();
         if (unfinishedList.isEmpty()) {
             return;
         }
@@ -118,7 +119,7 @@ public class WorkerHeartbeat {
     }
 
     private void updateJobFlowRunHost(List<JobFlowRun> list) {
-        jobFlowRunService.saveOrUpdateBatch(list.stream()
+        jobFlowRunService.updateBatchById(list.stream()
                 .map(jobFlowRun -> {
                     JobFlowRun newJobFlowRun = new JobFlowRun();
                     newJobFlowRun.setId(jobFlowRun.getId());

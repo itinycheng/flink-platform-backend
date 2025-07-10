@@ -17,6 +17,7 @@ import com.flink.platform.web.service.ProcessJobService;
 import com.flink.platform.web.service.ProcessJobStatusService;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.devh.boot.grpc.server.service.GrpcService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,30 +25,27 @@ import org.springframework.beans.factory.annotation.Autowired;
 /** Job process grpc service. */
 @Slf4j
 @GrpcService
+@RequiredArgsConstructor(onConstructor_ = @Autowired)
 public class JobGrpcServer extends JobGrpcServiceGrpc.JobGrpcServiceImplBase {
 
-    @Autowired
-    private ProcessJobService processJobService;
+    private final ProcessJobService processJobService;
 
-    @Autowired
-    private ProcessJobStatusService processJobStatusService;
+    private final ProcessJobStatusService processJobStatusService;
 
-    @Autowired
-    private KillJobService killJobService;
+    private final KillJobService killJobService;
 
-    @Autowired
-    private FlinkJobService flinkJobService;
+    private final FlinkJobService flinkJobService;
 
     @Override
     public void processJob(ProcessJobRequest request, StreamObserver<ProcessJobReply> responseObserver) {
+        long jobRunId = request.getJobRunId();
         try {
-            long jobRunId = request.getJobRunId();
             processJobService.processJob(jobRunId);
             ProcessJobReply reply =
                     ProcessJobReply.newBuilder().setJobRunId(jobRunId).build();
             responseObserver.onNext(reply);
         } catch (Exception e) {
-            log.error("process job via grpc failed", e);
+            log.error("process job via grpc failed, jobRunId: {}", jobRunId, e);
             responseObserver.onError(buildGrpcException(e));
         }
         responseObserver.onCompleted();
@@ -59,7 +57,7 @@ public class JobGrpcServer extends JobGrpcServiceGrpc.JobGrpcServiceImplBase {
             JobStatusReply reply = processJobStatusService.getStatus(request);
             responseObserver.onNext(reply);
         } catch (Exception e) {
-            log.error("get job status via grpc failed", e);
+            log.error("get job status via grpc failed, jobRunId: {}", request.getJobRunId(), e);
             responseObserver.onError(buildGrpcException(e));
         }
         responseObserver.onCompleted();
@@ -67,13 +65,13 @@ public class JobGrpcServer extends JobGrpcServiceGrpc.JobGrpcServiceImplBase {
 
     @Override
     public void killJob(KillJobRequest request, StreamObserver<KillJobReply> responseObserver) {
+        long jobRunId = request.getJobRunId();
         try {
-            killJobService.killJob(request.getJobRunId());
-            KillJobReply reply =
-                    KillJobReply.newBuilder().setJobRunId(request.getJobRunId()).build();
+            killJobService.killJob(jobRunId);
+            KillJobReply reply = KillJobReply.newBuilder().setJobRunId(jobRunId).build();
             responseObserver.onNext(reply);
         } catch (Exception e) {
-            log.error("kill job via grpc failed", e);
+            log.error("kill job via grpc failed, jobRunId: {}", jobRunId, e);
             responseObserver.onError(buildGrpcException(e));
         }
         responseObserver.onCompleted();
@@ -81,14 +79,14 @@ public class JobGrpcServer extends JobGrpcServiceGrpc.JobGrpcServiceImplBase {
 
     @Override
     public void savepointJob(SavepointRequest request, StreamObserver<SavepointReply> responseObserver) {
+        long jobRunId = request.getJobRunId();
         try {
-            flinkJobService.savepoint(request.getJobRunId());
-            SavepointReply reply = SavepointReply.newBuilder()
-                    .setJobRunId(request.getJobRunId())
-                    .build();
+            flinkJobService.savepoint(jobRunId);
+            SavepointReply reply =
+                    SavepointReply.newBuilder().setJobRunId(jobRunId).build();
             responseObserver.onNext(reply);
         } catch (Exception e) {
-            log.error("flink job savepoint via grpc failed", e);
+            log.error("flink job savepoint via grpc failed, jobRUnId: {}", jobRunId, e);
             responseObserver.onError(buildGrpcException(e));
         }
         responseObserver.onCompleted();

@@ -89,6 +89,7 @@ public class JobFlowScheduleService {
             return;
         }
 
+        log.info("Registering workflow to scheduler, flowRunId: {}", jobFlowRun.getId());
         inFlightFlows.offer(jobFlowRun);
     }
 
