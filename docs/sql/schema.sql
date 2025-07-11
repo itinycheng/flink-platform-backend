@@ -240,7 +240,7 @@ CREATE TABLE `t_catalog_info` (
   `name` varchar(64) NOT NULL COMMENT 'catalog name',
   `description` varchar(255) DEFAULT NULL COMMENT 'catalog desc',
   `user_id` bigint(11) NOT NULL COMMENT 'user id',
-  `type` varchar(32) NOT NULL COMMENT 'catalog type',
+  `type` varchar(64) NOT NULL COMMENT 'catalog type',
   `default_database` varchar(64) NOT NULL COMMENT 'default database',
   `config_path` varchar(128) DEFAULT NULL COMMENT 'config dir path',
   `configs` varchar(1024) DEFAULT NULL COMMENT 'config properties',
@@ -288,6 +288,7 @@ CREATE TABLE `t_job_flow` (
   `cron_expr` varchar(64) DEFAULT NULL COMMENT 'crontab expression',
   `flow` text COMMENT 'flow definition',
   `priority` tinyint(2) DEFAULT NULL COMMENT 'execution priority',
+  `config` varchar(255) comment 'execution config',
   `tags` VARCHAR(255) DEFAULT NULL COMMENT 'tag list',
   `alerts` varchar(255) DEFAULT NULL COMMENT 'alert strategy',
   `timeout` varchar(255) DEFAULT NULL COMMENT 'timeout',
@@ -339,8 +340,10 @@ CREATE TABLE `t_job_flow_run` (
   `end_time` datetime DEFAULT NULL,
   `create_time` datetime DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
-  KEY `t_job_flow_run_flow_id_idx` (`flow_id`) USING BTREE
-  KEY `t_job_flow_run_create_time_idx` (`create_time`) USING BTREE
+  KEY `t_job_flow_run_flow_id_idx` (`flow_id`) USING BTREE,
+  KEY `t_job_flow_run_create_time_idx` (`create_time`) USING BTREE,
+  KEY `t_job_flow_run_name_idx` (`name`) USING BTREE,
+  KEY `t_job_flow_run_end_time_idx` (`end_time`) USING BTREE
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4;
 
 -- ----------------------------
@@ -370,7 +373,9 @@ CREATE TABLE `t_job_run` (
   PRIMARY KEY (`id`),
   KEY `t_job_run_create_time_idx` (`create_time`) USING BTREE,
   KEY `t_job_run_job_id_idx` (`job_id`) USING BTREE,
-  KEY `t_job_run_flow_run_id_idx` (`flow_run_id`) USING BTREE
+  KEY `t_job_run_flow_run_id_idx` (`flow_run_id`) USING BTREE,
+  KEY `t_job_run_name_idx` (`name`) USING BTREE,
+  KEY `t_job_run_stop_time_idx` (`stop_time`) USING BTREE
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COMMENT='job run info';
 
 -- ----------------------------
