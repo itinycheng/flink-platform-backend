@@ -20,7 +20,6 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.List;
 
-import static com.flink.platform.common.enums.ExecutionStatus.KILLABLE;
 import static com.flink.platform.common.enums.ExecutionStatus.KILLED;
 import static com.flink.platform.common.enums.ExecutionStatus.getNonTerminals;
 
@@ -38,45 +37,39 @@ public class KillJobService {
 
     private final JobFlowRunService jobFlowRunService;
 
-    // TODO: If workflow instance doesn't exist, KILLABLE may not be changed to a final status.
+    /**
+     * Get unfinished jobs and kill them concurrently.
+     */
     public boolean killRemoteFlow(Long userId, Long flowRunId) {
-        // Set the status of the workflow to KILLABLE.
-        var newJobFlowRun = new JobFlowRun();
-        newJobFlowRun.setId(flowRunId);
-        newJobFlowRun.setStatus(KILLABLE);
-        jobFlowRunService.updateById(newJobFlowRun);
-
-        // Get unfinished jobs and kill them concurrently.
-        List<JobRunInfo> list = jobRunInfoService.list(new QueryWrapper<JobRunInfo>()
+        List<JobRunInfo> jobRunList = jobRunInfoService.list(new QueryWrapper<JobRunInfo>()
                 .lambda()
                 .select(JobRunInfo::getId, JobRunInfo::getHost)
                 .eq(JobRunInfo::getFlowRunId, flowRunId)
                 .eq(JobRunInfo::getUserId, userId)
                 .in(JobRunInfo::getStatus, getNonTerminals()));
-        if (CollectionUtils.isEmpty(list)) {
+        if (CollectionUtils.isEmpty(jobRunList)) {
+            updateStatusToKilled(flowRunId);
             return true;
         }
 
-        return list.parallelStream()
-                .map(jobRun -> {
-                    try {
-                        return killRemoteJob(jobRun);
-                    } catch (Exception e) {
-                        log.error("kill job: {} failed.", jobRun.getId(), e);
-                        return false;
-                    }
-                })
+        boolean allKilled = jobRunList.parallelStream()
+                .map(this::attemptToKillJob)
                 .reduce((bool1, bool2) -> bool1 && bool2)
                 .orElse(false);
+        if (allKilled) {
+            updateStatusToKilled(flowRunId);
+        }
+
+        return allKilled;
     }
 
-    public boolean killRemoteJob(JobRunInfo jobRun) {
-        String host = jobRun.getHost();
-        JobGrpcServiceGrpc.JobGrpcServiceBlockingStub stub = jobGrpcClient.grpcClient(host);
-        KillJobRequest request =
-                KillJobRequest.newBuilder().setJobRunId(jobRun.getId()).build();
-        stub.killJob(request);
-        return true;
+    public boolean attemptToKillJob(JobRunInfo jobRun) {
+        try {
+            return killRemoteJob(jobRun);
+        } catch (Exception e) {
+            log.error("kill job: {} failed.", jobRun.getId(), e);
+            return false;
+        }
     }
 
     public void killJob(final long jobRunId) {
@@ -112,5 +105,23 @@ public class KillJobService {
             jobRunInfoService.updateById(newJobRun);
             log.info("Kill job run: {} finished, time: {}", jobRunId, System.currentTimeMillis());
         }
+    }
+
+    // ================== Private Methods ==================
+
+    private void updateStatusToKilled(Long flowRunId) {
+        var newJobFlowRun = new JobFlowRun();
+        newJobFlowRun.setId(flowRunId);
+        newJobFlowRun.setStatus(KILLED);
+        jobFlowRunService.updateById(newJobFlowRun);
+    }
+
+    private boolean killRemoteJob(JobRunInfo jobRun) {
+        String host = jobRun.getHost();
+        JobGrpcServiceGrpc.JobGrpcServiceBlockingStub stub = jobGrpcClient.grpcClient(host);
+        KillJobRequest request =
+                KillJobRequest.newBuilder().setJobRunId(jobRun.getId()).build();
+        stub.killJob(request);
+        return true;
     }
 }

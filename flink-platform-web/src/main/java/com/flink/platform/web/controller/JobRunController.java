@@ -123,7 +123,7 @@ public class JobRunController {
             return failure(NO_RUNNING_JOB_FOUND);
         }
 
-        boolean bool = killJobService.killRemoteJob(jobRun);
+        boolean bool = killJobService.attemptToKillJob(jobRun);
         return success(bool);
     }
 }
