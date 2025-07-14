@@ -1,6 +1,5 @@
 package com.flink.platform.web.service;
 
-import com.flink.platform.common.constants.Constant;
 import com.flink.platform.common.util.JsonUtil;
 import com.flink.platform.dao.entity.JobInfo;
 import com.flink.platform.dao.entity.JobRunInfo;
@@ -10,6 +9,7 @@ import com.flink.platform.web.enums.Variable;
 import lombok.RequiredArgsConstructor;
 import lombok.var;
 import org.apache.commons.collections4.MapUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -29,8 +29,12 @@ public class JobRunExtraService {
 
     public Long createJobRun(JobInfo jobInfo, Long flowRunId) {
         var worker = workerApplyService.randomWorker(jobInfo.getRouteUrl());
-        var host = worker != null ? worker.getIp() : Constant.HOST_IP;
-        var jobRun = createFrom(jobInfo, flowRunId, host);
+        if (worker == null || StringUtils.isEmpty(worker.getIp())) {
+            throw new IllegalStateException(
+                    "No available worker found for job: " + jobInfo.getName());
+        }
+
+        var jobRun = createFrom(jobInfo, flowRunId, worker.getIp());
         jobRunService.save(jobRun);
         return jobRun.getId();
     }
