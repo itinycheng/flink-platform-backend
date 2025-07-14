@@ -15,6 +15,7 @@ services:
     ports:
       - "9104:9104"
       - "9898:9898"
+      - "5005:5005"
     depends_on:
       - mysql_db
     environment:
