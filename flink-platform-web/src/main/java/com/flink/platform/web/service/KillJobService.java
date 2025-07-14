@@ -3,7 +3,6 @@ package com.flink.platform.web.service;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.flink.platform.common.enums.JobType;
 import com.flink.platform.common.exception.UnrecoverableException;
-import com.flink.platform.dao.entity.JobFlowRun;
 import com.flink.platform.dao.entity.JobRunInfo;
 import com.flink.platform.dao.service.JobFlowRunService;
 import com.flink.platform.dao.service.JobRunInfoService;
@@ -13,7 +12,6 @@ import com.flink.platform.web.command.CommandExecutor;
 import com.flink.platform.web.grpc.JobGrpcClient;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import lombok.var;
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -39,16 +37,9 @@ public class KillJobService {
 
     private final JobFlowRunService jobFlowRunService;
 
-    // TODO: If workflow instance doesn't exist, KILLABLE may not be changed to a final status.
+    /** Get unfinished jobs and kill them concurrently. */
     public boolean killRemoteFlow(Long userId, Long flowRunId) {
-        // Set the status of the workflow to KILLABLE.
-        var newJobFlowRun = new JobFlowRun();
-        newJobFlowRun.setId(flowRunId);
-        newJobFlowRun.setStatus(KILLABLE);
-        jobFlowRunService.updateById(newJobFlowRun);
-
-        // Get unfinished jobs and kill them concurrently.
-        List<JobRunInfo> list =
+        List<JobRunInfo> jobRunList =
                 jobRunInfoService.list(
                         new QueryWrapper<JobRunInfo>()
                                 .lambda()
@@ -56,30 +47,26 @@ public class KillJobService {
                                 .eq(JobRunInfo::getFlowRunId, flowRunId)
                                 .eq(JobRunInfo::getUserId, userId)
                                 .in(JobRunInfo::getStatus, getNonTerminals()));
-        if (CollectionUtils.isEmpty(list)) {
+        if (CollectionUtils.isEmpty(jobRunList)) {
+            jobFlowRunService.updateStatusById(flowRunId, KILLED);
             return true;
         }
 
-        return list.parallelStream()
-                .map(
-                        jobRun -> {
-                            try {
-                                return killRemoteJob(jobRun);
-                            } catch (Exception e) {
-                                log.error("kill job: {} failed.", jobRun.getId(), e);
-                                return false;
-                            }
-                        })
+        jobFlowRunService.updateStatusById(flowRunId, KILLABLE);
+        return jobRunList
+                .parallelStream()
+                .map(this::attemptToKillJob)
                 .reduce((bool1, bool2) -> bool1 && bool2)
                 .orElse(false);
     }
 
-    public boolean killRemoteJob(JobRunInfo jobRun) {
-        String host = jobRun.getHost();
-        JobGrpcServiceGrpc.JobGrpcServiceBlockingStub stub = jobGrpcClient.grpcClient(host);
-        KillJobRequest request = KillJobRequest.newBuilder().setJobRunId(jobRun.getId()).build();
-        stub.killJob(request);
-        return true;
+    public boolean attemptToKillJob(JobRunInfo jobRun) {
+        try {
+            return killRemoteJob(jobRun);
+        } catch (Exception e) {
+            log.error("kill job: {} failed.", jobRun.getId(), e);
+            return false;
+        }
     }
 
     public void killJob(final long jobRunId) {
@@ -119,5 +106,15 @@ public class KillJobService {
             jobRunInfoService.updateById(newJobRun);
             log.info("Kill job run: {} finished, time: {}", jobRunId, System.currentTimeMillis());
         }
+    }
+
+    // ================== Private Methods ==================
+
+    private boolean killRemoteJob(JobRunInfo jobRun) {
+        String host = jobRun.getHost();
+        JobGrpcServiceGrpc.JobGrpcServiceBlockingStub stub = jobGrpcClient.grpcClient(host);
+        KillJobRequest request = KillJobRequest.newBuilder().setJobRunId(jobRun.getId()).build();
+        stub.killJob(request);
+        return true;
     }
 }

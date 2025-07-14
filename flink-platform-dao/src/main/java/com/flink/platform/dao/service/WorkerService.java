@@ -7,7 +7,12 @@ import com.flink.platform.dao.entity.Worker;
 import com.flink.platform.dao.mapper.WorkerMapper;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
 import static com.flink.platform.common.constants.Constant.HOST_IP;
+import static com.flink.platform.common.enums.WorkerStatus.FOLLOWER;
+import static com.flink.platform.common.enums.WorkerStatus.LEADER;
 
 /** job config info. */
 @Service
@@ -21,5 +26,15 @@ public class WorkerService extends ServiceImpl<WorkerMapper, Worker> {
                         .select(Worker::getId, Worker::getRole)
                         .eq(Worker::getIp, HOST_IP)
                         .last("LIMIT 1"));
+    }
+
+    public List<Worker> listActiveWorkersByIds(List<Long> ids) {
+        List<Worker> workers =
+                list(
+                        new QueryWrapper<Worker>()
+                                .lambda()
+                                .in(Worker::getId, ids)
+                                .in(Worker::getRole, LEADER, FOLLOWER));
+        return workers.stream().filter(Worker::isActive).collect(Collectors.toList());
     }
 }
