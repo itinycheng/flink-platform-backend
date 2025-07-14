@@ -3,7 +3,6 @@ package com.flink.platform.web.service;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.flink.platform.common.enums.JobType;
 import com.flink.platform.common.exception.UnrecoverableException;
-import com.flink.platform.dao.entity.JobFlowRun;
 import com.flink.platform.dao.entity.JobRunInfo;
 import com.flink.platform.dao.service.JobFlowRunService;
 import com.flink.platform.dao.service.JobRunInfoService;
@@ -20,6 +19,7 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import static com.flink.platform.common.enums.ExecutionStatus.KILLABLE;
 import static com.flink.platform.common.enums.ExecutionStatus.KILLED;
 import static com.flink.platform.common.enums.ExecutionStatus.getNonTerminals;
 
@@ -48,19 +48,15 @@ public class KillJobService {
                 .eq(JobRunInfo::getUserId, userId)
                 .in(JobRunInfo::getStatus, getNonTerminals()));
         if (CollectionUtils.isEmpty(jobRunList)) {
-            updateStatusToKilled(flowRunId);
+            jobFlowRunService.updateStatusById(flowRunId, KILLED);
             return true;
         }
 
-        boolean allKilled = jobRunList.parallelStream()
+        jobFlowRunService.updateStatusById(flowRunId, KILLABLE);
+        return jobRunList.parallelStream()
                 .map(this::attemptToKillJob)
                 .reduce((bool1, bool2) -> bool1 && bool2)
                 .orElse(false);
-        if (allKilled) {
-            updateStatusToKilled(flowRunId);
-        }
-
-        return allKilled;
     }
 
     public boolean attemptToKillJob(JobRunInfo jobRun) {
@@ -108,13 +104,6 @@ public class KillJobService {
     }
 
     // ================== Private Methods ==================
-
-    private void updateStatusToKilled(Long flowRunId) {
-        var newJobFlowRun = new JobFlowRun();
-        newJobFlowRun.setId(flowRunId);
-        newJobFlowRun.setStatus(KILLED);
-        jobFlowRunService.updateById(newJobFlowRun);
-    }
 
     private boolean killRemoteJob(JobRunInfo jobRun) {
         String host = jobRun.getHost();

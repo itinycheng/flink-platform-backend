@@ -165,6 +165,7 @@ public class FlowExecuteThread implements Runnable {
         isRunning = false;
         // TODO：Better to cancel the running jobs?
         // Seems different scenarios have different results.
+        // TODO：Handle semaphore.
         runningJobs.values().forEach(future -> future.complete(null));
     }
 

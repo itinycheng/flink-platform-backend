@@ -3,6 +3,7 @@ package com.flink.platform.dao.service;
 import com.baomidou.dynamic.datasource.annotation.DS;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.flink.platform.common.enums.ExecutionStatus;
 import com.flink.platform.common.enums.ExecutionStrategy;
 import com.flink.platform.dao.entity.ExecutionConfig;
 import com.flink.platform.dao.entity.JobFlowRun;
@@ -31,6 +32,13 @@ public class JobFlowRunService extends ServiceImpl<JobFlowRunMapper, JobFlowRun>
                 .eq(JobRunInfo::getFlowRunId, flowRunId)
                 .eq(JobRunInfo::getUserId, userId));
         removeById(flowRunId);
+    }
+
+    public void updateStatusById(Long flowRunId, ExecutionStatus status) {
+        var newJobFlowRun = new JobFlowRun();
+        newJobFlowRun.setId(flowRunId);
+        newJobFlowRun.setStatus(status);
+        updateById(newJobFlowRun);
     }
 
     public JobFlowRun findRunningFlow(@Nonnull Long flowId, ExecutionConfig config) {
