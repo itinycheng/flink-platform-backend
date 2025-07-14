@@ -20,6 +20,9 @@ public class WorkerApplyService {
 
     private final WorkerService workerService;
 
+    private final Random random = new Random();
+
+    @Deprecated(since = "Use chooseWorker(List<Long> workerIds) instead. ")
     public String chooseWorker(List<Long> workerIds) {
         if (CollectionUtils.isEmpty(workerIds)) {
             return HttpUtil.getDefaultUrl();
@@ -36,7 +39,7 @@ public class WorkerApplyService {
             return HttpUtil.getDefaultUrl();
         }
 
-        int idx = new Random().nextInt(workers.size());
+        int idx = random.nextInt(workers.size());
         Worker worker = workers.get(idx);
         return HttpUtil.buildHttpUrl(worker.getIp(), worker.getPort());
     }
@@ -46,12 +49,12 @@ public class WorkerApplyService {
             return null;
         }
 
-        List<Worker> workers = workerService.listByIds(workerIds);
+        List<Worker> workers = workerService.listActiveWorkersByIds(workerIds);
         if (CollectionUtils.isEmpty(workers)) {
             return null;
         }
 
-        int idx = new Random().nextInt(workers.size());
+        int idx = random.nextInt(workers.size());
         return workers.get(idx);
     }
 }
