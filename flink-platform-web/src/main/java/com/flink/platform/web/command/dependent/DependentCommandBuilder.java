@@ -1,11 +1,11 @@
 package com.flink.platform.web.command.dependent;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import com.flink.platform.common.enums.ExecutionStatus;
 import com.flink.platform.common.enums.JobType;
 import com.flink.platform.dao.entity.JobFlowRun;
 import com.flink.platform.dao.entity.JobRunInfo;
 import com.flink.platform.dao.entity.task.DependentJob;
+import com.flink.platform.dao.entity.task.DependentJob.DependentItem;
 import com.flink.platform.dao.service.JobFlowRunService;
 import com.flink.platform.dao.service.JobRunInfoService;
 import com.flink.platform.web.command.CommandBuilder;
@@ -14,7 +14,6 @@ import jakarta.annotation.Nonnull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang3.tuple.Triple;
 import org.quartz.CronExpression;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -22,8 +21,11 @@ import org.springframework.stereotype.Component;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Date;
+import java.util.List;
 
+import static com.flink.platform.common.constants.Constant.LINE_SEPARATOR;
 import static com.flink.platform.common.enums.JobType.DEPENDENT;
+import static java.util.stream.Collectors.joining;
 
 /** condition builder. */
 @Slf4j
@@ -45,37 +47,43 @@ public class DependentCommandBuilder implements CommandBuilder {
         Long jobRunId = jobRun.getId();
         DependentJob dependentJob = jobRun.getConfig().unwrap(DependentJob.class);
         if (CollectionUtils.isEmpty(dependentJob.getDependentItems())) {
-            return new DependentCommand(jobRunId, true);
+            return new DependentCommand(jobRunId, true, null);
         }
 
+        List<DependentItem> dependentItems = dependentJob.getDependentItems();
         boolean matched = dependentJob.getRelation() == DependentJob.DependentRelation.OR
-                ? dependentJob.getDependentItems().stream().anyMatch(this::validateDependentItem)
-                : dependentJob.getDependentItems().stream().allMatch(this::validateDependentItem);
+                ? dependentItems.stream().anyMatch(this::populateAndEvaluateConditions)
+                : dependentItems.stream().allMatch(this::populateAndEvaluateConditions);
 
-        DependentCommand dependentCommand = new DependentCommand(jobRunId, matched);
+        String message = dependentItems.stream()
+                .map(item -> String.format(
+                        "flowRunId: %s, jobRunId: %s, status: %s, Verification passed: %s",
+                        item.getLatestFlowRunId(), item.getLatestJobRunId(), item.getLatestStatus(), matched))
+                .collect(joining(LINE_SEPARATOR));
+
+        DependentCommand dependentCommand = new DependentCommand(jobRunId, matched, message);
         populateTimeout(dependentCommand, jobRun);
         return dependentCommand;
     }
 
-    private boolean validateDependentItem(DependentJob.DependentItem dependentItem) {
+    private boolean populateAndEvaluateConditions(DependentJob.DependentItem dependentItem) {
         if (dependentItem.getFlowId() == null || CollectionUtils.isEmpty(dependentItem.getStatuses())) {
             return true;
         }
 
         // Get status and create_at of the latest JobRun/JobFlowRun.
-        Triple<Long, ExecutionStatus, LocalDateTime> latestExecution = getLatestExecution(dependentItem);
-        Long flowRunId = latestExecution.getLeft();
-        ExecutionStatus status = latestExecution.getMiddle();
-        LocalDateTime createAt = latestExecution.getRight();
+        populateLatestExecutionInfo(dependentItem);
 
         // return if status doesn't match.
-        if (!dependentItem.getStatuses().contains(status)) {
+        if (!dependentItem.getStatuses().contains(dependentItem.getLatestStatus())) {
             return false;
         }
 
+        Long flowRunId = dependentItem.getLatestFlowRunId();
+        LocalDateTime createAt = dependentItem.getLatestCreateTime();
+
         // base time.
         LocalDateTime now = LocalDateTime.now();
-
         LocalDateTime sinceTime;
         switch (dependentItem.getStrategy()) {
             case LAST_EXECUTION_AFTER_TIME:
@@ -110,16 +118,23 @@ public class DependentCommandBuilder implements CommandBuilder {
         }
     }
 
-    public Triple<Long, ExecutionStatus, LocalDateTime> getLatestExecution(DependentJob.DependentItem dependentItem) {
+    public void populateLatestExecutionInfo(DependentJob.DependentItem dependentItem) {
         if (dependentItem.getJobId() != null) {
-            JobRunInfo jobRunInfo = jobRunInfoService.getOne(new QueryWrapper<JobRunInfo>()
+            JobRunInfo jobRun = jobRunInfoService.getOne(new QueryWrapper<JobRunInfo>()
                     .lambda()
-                    .select(JobRunInfo::getFlowRunId, JobRunInfo::getStatus, JobRunInfo::getCreateTime)
+                    .select(
+                            JobRunInfo::getId,
+                            JobRunInfo::getFlowRunId,
+                            JobRunInfo::getStatus,
+                            JobRunInfo::getCreateTime)
                     .eq(JobRunInfo::getJobId, dependentItem.getJobId())
                     .orderByDesc(JobRunInfo::getId)
                     .last("limit 1"));
-            if (jobRunInfo != null) {
-                return Triple.of(jobRunInfo.getFlowRunId(), jobRunInfo.getStatus(), jobRunInfo.getCreateTime());
+            if (jobRun != null) {
+                dependentItem.setLatestJobRunId(jobRun.getId());
+                dependentItem.setLatestFlowRunId(jobRun.getFlowRunId());
+                dependentItem.setLatestStatus(jobRun.getStatus());
+                dependentItem.setLatestCreateTime(jobRun.getCreateTime());
             }
         } else {
             JobFlowRun jobFlowRun = jobFlowRunService.getOne(new QueryWrapper<JobFlowRun>()
@@ -129,7 +144,9 @@ public class DependentCommandBuilder implements CommandBuilder {
                     .orderByDesc(JobFlowRun::getId)
                     .last("limit 1"));
             if (jobFlowRun != null) {
-                return Triple.of(jobFlowRun.getId(), jobFlowRun.getStatus(), jobFlowRun.getCreateTime());
+                dependentItem.setLatestFlowRunId(jobFlowRun.getId());
+                dependentItem.setLatestStatus(jobFlowRun.getStatus());
+                dependentItem.setLatestCreateTime(jobFlowRun.getCreateTime());
             }
         }
 

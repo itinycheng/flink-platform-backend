@@ -10,9 +10,12 @@ public class DependentCommand extends JobCommand {
     /** whether the dependent verification is successful. */
     private final boolean success;
 
-    public DependentCommand(long jobRunId, boolean success) {
+    private final String message;
+
+    public DependentCommand(long jobRunId, boolean success, String message) {
         super(jobRunId);
         this.success = success;
+        this.message = message;
     }
 
     @Override

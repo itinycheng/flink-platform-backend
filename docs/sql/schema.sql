@@ -491,10 +491,3 @@ INSERT INTO `t_catalog_info` VALUES (2, 'tidb', 'tidb_db', 1, 'TIDB', 'discovery
 INSERT INTO `t_catalog_info` VALUES (3, 'clickhouse', 'user_db', 1, 'CLICKHOUSE', 'user_db', NULL, '{\"url\":\"clickhouse://0.0.0.0:8123\", \"username\":\"user\", \"password\":\"passwd\", \"sink.flush-interval\":\"60s\", \"sink.write-local\":\"true\", \"sink.batch-size\":\"500000\"}', NULL, now(), now());
 INSERT INTO `t_catalog_info` VALUES (4, 'iceberg', 'iceberg_db', 1, 'ICEBERG', 'iceberg_db', NULL, NULL, 'CREATE CATALOG iceberg WITH (\n  \'type\'=\'iceberg\',\n  \'catalog-type\'=\'hive\',\n  \'hive-conf-dir\'=\'/etc/hive/conf\',\n  \'property-version\'=\'1\',\n  \'warehouse\'=\'hdfs:///iceberg/warehouse\',\n  \'default-database\'=\'iceberg_db\'\n)', now(), now());
 COMMIT;
-
--- ----------------------------
--- Records of t_worker
--- ----------------------------
-BEGIN;
-INSERT INTO `t_worker` VALUES (0, 'unlimited', 'run locally', '127.0.0.1', '9104', 9898, 'FOLLOWER', NULL, now(), now());
-COMMIT;
