@@ -8,6 +8,7 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
 import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.List;
 
 /** dependent job. */
@@ -39,6 +40,12 @@ public class DependentJob extends BaseJob {
         private DependentStrategy strategy;
 
         private String duration;
+
+        // latest execution info
+        private transient Long latestFlowRunId;
+        private transient Long latestJobRunId;
+        private transient ExecutionStatus latestStatus;
+        private transient LocalDateTime latestCreateTime;
 
         public Duration parseDuration() {
             try {
