@@ -3,7 +3,9 @@ package com.flink.platform.common.util;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JavaType;
+import com.fasterxml.jackson.databind.Module;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateTimeDeserializer;
@@ -16,11 +18,13 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
 import static com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES;
+import static com.fasterxml.jackson.databind.MapperFeature.PROPAGATE_TRANSIENT_MARKER;
 import static com.flink.platform.common.util.DateUtil.GLOBAL_DATE_TIME_FORMAT;
 import static java.time.format.DateTimeFormatter.ofPattern;
 
@@ -31,18 +35,18 @@ public class JsonUtil {
     public static final ObjectMapper MAPPER;
 
     static {
-        MAPPER = new ObjectMapper();
-        addGlobalConfig(MAPPER);
-        MAPPER.setSerializationInclusion(JsonInclude.Include.ALWAYS);
+        MAPPER = jacksonBuilderWithGlobalConfigs()
+                .serializationInclusion(JsonInclude.Include.ALWAYS)
+                .build();
     }
 
-    public static void addGlobalConfig(ObjectMapper mapper) {
-        mapper.registerModule(new Jdk8Module());
-        mapper.registerModule(new JavaTimeModule()
-                .addSerializer(LocalDateTime.class, new LocalDateTimeSerializer(ofPattern(GLOBAL_DATE_TIME_FORMAT)))
-                .addDeserializer(
-                        LocalDateTime.class, new LocalDateTimeDeserializer(ofPattern(GLOBAL_DATE_TIME_FORMAT))));
-        mapper.disable(FAIL_ON_UNKNOWN_PROPERTIES);
+    public static JsonMapper.Builder jacksonBuilderWithGlobalConfigs() {
+        return JsonMapper.builder()
+                .addModules(defaultGlobalModules())
+                // Ignore transient fields during serialization
+                .enable(PROPAGATE_TRANSIENT_MARKER)
+                // Ignore unknown properties during deserialization
+                .disable(FAIL_ON_UNKNOWN_PROPERTIES);
     }
 
     public static List<String> toList(String json) {
@@ -126,5 +130,16 @@ public class JsonUtil {
             log.error("Failed to serial {}.", obj, e);
             return null;
         }
+    }
+
+    public static List<Module> defaultGlobalModules() {
+        return Arrays.asList(
+                new Jdk8Module(),
+                new JavaTimeModule()
+                        .addSerializer(
+                                LocalDateTime.class, new LocalDateTimeSerializer(ofPattern(GLOBAL_DATE_TIME_FORMAT)))
+                        .addDeserializer(
+                                LocalDateTime.class,
+                                new LocalDateTimeDeserializer(ofPattern(GLOBAL_DATE_TIME_FORMAT))));
     }
 }
