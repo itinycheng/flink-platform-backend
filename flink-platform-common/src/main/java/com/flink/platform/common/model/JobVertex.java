@@ -1,6 +1,5 @@
 package com.flink.platform.common.model;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.flink.platform.common.enums.ExecutionCondition;
 import com.flink.platform.common.enums.ExecutionStatus;
 import com.flink.platform.common.graph.Vertex;
@@ -21,10 +20,8 @@ public class JobVertex extends Vertex<Long> {
 
     private ExecutionCondition precondition = AND;
 
-    @JsonIgnore
     private transient volatile Long jobRunId;
 
-    @JsonIgnore
     private transient volatile ExecutionStatus jobRunStatus;
 
     public JobVertex(Long id, Long jobId) {

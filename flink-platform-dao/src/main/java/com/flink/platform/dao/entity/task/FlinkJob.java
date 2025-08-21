@@ -1,6 +1,5 @@
 package com.flink.platform.dao.entity.task;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
@@ -26,9 +25,6 @@ public class FlinkJob extends BaseJob {
     /** external jars, such as udf jar. */
     private List<Long> extJars;
 
-    @JsonIgnore
-    private transient List<String> extJarPaths;
-
     /** main args. */
     private String mainArgs;
 
@@ -37,4 +33,6 @@ public class FlinkJob extends BaseJob {
 
     /** wait until the streaming job terminate. */
     private boolean waitForTermination;
+
+    private transient List<String> extJarPaths;
 }

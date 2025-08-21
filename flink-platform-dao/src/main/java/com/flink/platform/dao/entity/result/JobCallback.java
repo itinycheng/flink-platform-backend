@@ -1,9 +1,7 @@
 package com.flink.platform.dao.entity.result;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.flink.platform.common.enums.ExecutionStatus;
-import jakarta.annotation.Nonnull;
 import lombok.Data;
 import lombok.experimental.Delegate;
 
@@ -22,13 +20,10 @@ public class JobCallback {
 
     private String message;
 
-    @JsonIgnore
-    private ExecutionStatus status;
+    private transient ExecutionStatus status;
 
-    @Nonnull
     @Delegate
-    @JsonIgnore
-    private ShellCallback cmdCallback;
+    private transient ShellCallback cmdCallback;
 
     /** Only for deSeral. */
     public JobCallback() {
