@@ -4,12 +4,12 @@ import org.apache.commons.lang3.time.DateUtils;
 
 import java.time.Instant;
 import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.util.Map;
-import java.util.TimeZone;
 import java.util.concurrent.ConcurrentHashMap;
+
+import static com.flink.platform.common.constants.Constant.GLOBAL_ZONE_ID;
 
 /** date utils. */
 public class DateUtil {
@@ -18,15 +18,12 @@ public class DateUtil {
 
     public static final String GLOBAL_TIMEZONE = "Asia/Shanghai";
 
-    public static final ZoneId DEFAULT_ZONE_ID =
-            TimeZone.getTimeZone(GLOBAL_TIMEZONE).toZoneId();
-
     public static final long MILLIS_PER_MINUTE = DateUtils.MILLIS_PER_MINUTE;
 
     private static final Map<String, DateTimeFormatter> FORMATTERS = new ConcurrentHashMap<>();
 
     public static LocalDateTime toLocalDateTime(long timestamp) {
-        return LocalDateTime.ofInstant(Instant.ofEpochMilli(timestamp), DEFAULT_ZONE_ID);
+        return LocalDateTime.ofInstant(Instant.ofEpochMilli(timestamp), GLOBAL_ZONE_ID);
     }
 
     public static String format(LocalDateTime dateTime) {
@@ -42,10 +39,10 @@ public class DateUtil {
         return dateTime.format(getFormatter(format));
     }
 
-    private static DateTimeFormatter getFormatter(String format) {
+    public static DateTimeFormatter getFormatter(String format) {
         return FORMATTERS.computeIfAbsent(format, s -> new DateTimeFormatterBuilder()
                 .appendPattern(s)
                 .toFormatter()
-                .withZone(DEFAULT_ZONE_ID));
+                .withZone(GLOBAL_ZONE_ID));
     }
 }

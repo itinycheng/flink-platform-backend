@@ -5,7 +5,7 @@ import org.apache.flink.table.functions.ScalarFunction;
 import java.time.Instant;
 import java.time.LocalDateTime;
 
-import static com.flink.platform.udf.util.DateUtil.getFormatter;
+import static com.flink.platform.common.util.DateUtil.getFormatter;
 
 /** Timestamp format utils. */
 public class TimeFormatFunction extends ScalarFunction {

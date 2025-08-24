@@ -17,7 +17,7 @@ public class ObjectUtil {
         } else if (clazz.isAssignableFrom(Float.class)) {
             return Arrays.stream(arr).map(Float::parseFloat).toArray();
         } else {
-            throw new RuntimeException(String.format("Unsupported data type %s", clazz.toString()));
+            throw new RuntimeException(String.format("Unsupported data type %s", clazz));
         }
     }
 }
