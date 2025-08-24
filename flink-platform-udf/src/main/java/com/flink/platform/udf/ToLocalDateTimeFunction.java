@@ -6,25 +6,20 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.time.Instant;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.HashMap;
-import java.util.Map;
 
-import static com.flink.platform.udf.util.DateUtil.UDF_ZONE_ID;
-import static com.flink.platform.udf.util.DateUtil.getFormatter;
+import static com.flink.platform.common.constants.Constant.GLOBAL_ZONE_ID;
+import static com.flink.platform.common.util.DateUtil.getFormatter;
 
 /** Date time utils. */
 @Slf4j
 public class ToLocalDateTimeFunction extends ScalarFunction {
-
-    private static final Map<String, DateTimeFormatter> FORMATTERS = new HashMap<>();
 
     public LocalDateTime eval(Long timestamp) {
         if (timestamp == null) {
             return null;
         }
 
-        return LocalDateTime.ofInstant(Instant.ofEpochMilli(timestamp), UDF_ZONE_ID);
+        return LocalDateTime.ofInstant(Instant.ofEpochMilli(timestamp), GLOBAL_ZONE_ID);
     }
 
     public LocalDateTime eval(String timeStr, String format) {

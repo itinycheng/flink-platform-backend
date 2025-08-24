@@ -1,6 +1,8 @@
 package com.flink.platform.common.constants;
 
 import java.io.File;
+import java.time.ZoneId;
+import java.util.TimeZone;
 
 import static com.flink.platform.common.util.DateUtil.MILLIS_PER_MINUTE;
 import static com.flink.platform.common.util.OSUtil.getFirstNoLoopbackIP4Address;
@@ -63,9 +65,19 @@ public class Constant {
 
     public static final String PID = isWindows() ? "handle" : "pid";
 
+    public static final TimeZone GLOBAL_TIME_ZONE;
+
+    public static final ZoneId GLOBAL_ZONE_ID;
+
+    public static final String GLOBAL_TIME_ZONE_ID;
+
     static {
         USER_DIR = System.getProperty("user.dir");
         HOST_IP = checkNotNull(getFirstNoLoopbackIP4Address());
         HOSTNAME = getHostname();
+
+        GLOBAL_TIME_ZONE = TimeZone.getDefault();
+        GLOBAL_ZONE_ID = GLOBAL_TIME_ZONE.toZoneId();
+        GLOBAL_TIME_ZONE_ID = GLOBAL_TIME_ZONE.getID();
     }
 }

@@ -18,7 +18,7 @@ import java.io.IOException;
 import java.time.Instant;
 import java.time.LocalDateTime;
 
-import static com.flink.platform.common.util.DateUtil.DEFAULT_ZONE_ID;
+import static com.flink.platform.common.constants.Constant.GLOBAL_ZONE_ID;
 
 /**
  * hdfs storage system.
@@ -58,7 +58,7 @@ public class HdfsStorageSystem implements StorageSystem {
 
         long modificationTime = status.getModificationTime();
         var instant = Instant.ofEpochMilli(modificationTime);
-        var localDateTime = LocalDateTime.ofInstant(instant, DEFAULT_ZONE_ID);
+        var localDateTime = LocalDateTime.ofInstant(instant, GLOBAL_ZONE_ID);
         return StorageStatus.of(status.getLen(), localDateTime);
     }
 
