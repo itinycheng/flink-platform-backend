@@ -5,7 +5,6 @@ import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.baomidou.mybatisplus.extension.handlers.JacksonTypeHandler;
-import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.flink.platform.common.enums.DeployMode;
 import com.flink.platform.common.enums.ExecutionMode;
@@ -13,8 +12,10 @@ import com.flink.platform.common.enums.ExecutionStatus;
 import com.flink.platform.common.enums.JobType;
 import com.flink.platform.dao.entity.result.JobCallback;
 import com.flink.platform.dao.entity.task.BaseJob;
+import lombok.AccessLevel;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 import org.apache.commons.lang3.time.DurationFormatUtils;
 
 import java.io.Serializable;
@@ -24,8 +25,6 @@ import java.util.Map;
 import java.util.Set;
 
 import static com.flink.platform.common.constants.Constant.EMPTY;
-import static com.flink.platform.common.util.DateUtil.GLOBAL_DATE_TIME_FORMAT;
-import static com.flink.platform.common.util.DateUtil.GLOBAL_TIMEZONE;
 import static org.apache.commons.lang3.StringUtils.defaultString;
 
 /** Job run info. */
@@ -75,15 +74,13 @@ public class JobRunInfo implements Serializable {
     private JobCallback backInfo;
 
     /** submit time. */
-    @JsonFormat(pattern = GLOBAL_DATE_TIME_FORMAT, timezone = GLOBAL_TIMEZONE)
     private LocalDateTime submitTime;
 
     /** end time. */
     @TableField("stop_time")
-    @JsonFormat(pattern = GLOBAL_DATE_TIME_FORMAT, timezone = GLOBAL_TIMEZONE)
     private LocalDateTime endTime;
 
-    @JsonFormat(pattern = GLOBAL_DATE_TIME_FORMAT, timezone = GLOBAL_TIMEZONE)
+    @Setter(AccessLevel.NONE)
     private LocalDateTime createTime;
 
     @JsonIgnore

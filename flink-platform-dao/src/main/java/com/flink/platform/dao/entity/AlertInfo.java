@@ -5,7 +5,6 @@ import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.baomidou.mybatisplus.extension.handlers.JacksonTypeHandler;
-import com.fasterxml.jackson.annotation.JsonFormat;
 import com.flink.platform.common.enums.AlertType;
 import com.flink.platform.dao.entity.alert.BaseAlert;
 import lombok.AccessLevel;
@@ -17,9 +16,6 @@ import lombok.Setter;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
-
-import static com.flink.platform.common.util.DateUtil.GLOBAL_DATE_TIME_FORMAT;
-import static com.flink.platform.common.util.DateUtil.GLOBAL_TIMEZONE;
 
 /** Alert configuration. */
 @Data
@@ -50,6 +46,5 @@ public class AlertInfo implements Serializable {
 
     /** create time. */
     @Setter(AccessLevel.NONE)
-    @JsonFormat(pattern = GLOBAL_DATE_TIME_FORMAT, timezone = GLOBAL_TIMEZONE)
     private LocalDateTime createTime;
 }
