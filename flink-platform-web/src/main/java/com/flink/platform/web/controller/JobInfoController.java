@@ -158,12 +158,12 @@ public class JobInfoController {
             List<Long> jobIds = result.getRecords().stream().map(JobInfo::getId).collect(toList());
             Map<Long, JobRunInfo> runningJobsMap = jobRunService.listLastWithoutLargeFields(null, jobIds).stream()
                     .collect(toMap(JobRunInfo::getJobId, jobRun -> jobRun));
-            result.getRecords().forEach(jobInfo -> {
-                JobRunInfo jobRun = runningJobsMap.get(jobInfo.getId());
+            result.getRecords().forEach(job -> {
+                JobRunInfo jobRun = runningJobsMap.get(job.getId());
                 if (jobRun != null) {
-                    jobInfo.setJobRunId(jobRun.getId());
-                    jobInfo.setJobRunStatus(jobRun.getStatus());
-                    jobInfo.setFlowRunId(jobRun.getFlowRunId());
+                    job.setJobRunId(jobRun.getId());
+                    job.setJobRunStatus(jobRun.getStatus());
+                    job.setFlowRunId(jobRun.getFlowRunId());
                 }
             });
         }

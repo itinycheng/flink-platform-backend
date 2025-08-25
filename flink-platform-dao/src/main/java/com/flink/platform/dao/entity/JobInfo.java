@@ -6,7 +6,6 @@ import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.baomidou.mybatisplus.extension.handlers.JacksonTypeHandler;
-import com.fasterxml.jackson.annotation.JsonFormat;
 import com.flink.platform.common.enums.DeployMode;
 import com.flink.platform.common.enums.ExecutionMode;
 import com.flink.platform.common.enums.ExecutionStatus;
@@ -22,9 +21,6 @@ import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.Set;
-
-import static com.flink.platform.common.util.DateUtil.GLOBAL_DATE_TIME_FORMAT;
-import static com.flink.platform.common.util.DateUtil.GLOBAL_TIMEZONE;
 
 /**
  * job config info. <br>
@@ -86,28 +82,26 @@ public class JobInfo implements Serializable {
 
     /** create time. */
     @Setter(AccessLevel.NONE)
-    @JsonFormat(pattern = GLOBAL_DATE_TIME_FORMAT, timezone = GLOBAL_TIMEZONE)
     private LocalDateTime createTime;
 
     /** update time. */
     @Setter(AccessLevel.NONE)
-    @JsonFormat(pattern = GLOBAL_DATE_TIME_FORMAT, timezone = GLOBAL_TIMEZONE)
     @TableField(update = "now()", updateStrategy = FieldStrategy.ALWAYS)
     private LocalDateTime updateTime;
 
     /** job run id. */
     @TableField(exist = false)
-    private transient Long jobRunId;
+    private Long jobRunId;
 
     /**
      * flow run id.
      */
     @TableField(exist = false)
-    private transient Long flowRunId;
+    private Long flowRunId;
 
     /**
      * job run status.
      */
     @TableField(exist = false)
-    private transient ExecutionStatus jobRunStatus;
+    private ExecutionStatus jobRunStatus;
 }

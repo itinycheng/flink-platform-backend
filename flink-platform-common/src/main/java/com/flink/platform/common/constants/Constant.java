@@ -69,8 +69,6 @@ public class Constant {
 
     public static final ZoneId GLOBAL_ZONE_ID;
 
-    public static final String GLOBAL_TIME_ZONE_ID;
-
     static {
         USER_DIR = System.getProperty("user.dir");
         HOST_IP = checkNotNull(getFirstNoLoopbackIP4Address());
@@ -78,6 +76,5 @@ public class Constant {
 
         GLOBAL_TIME_ZONE = TimeZone.getDefault();
         GLOBAL_ZONE_ID = GLOBAL_TIME_ZONE.toZoneId();
-        GLOBAL_TIME_ZONE_ID = GLOBAL_TIME_ZONE.getID();
     }
 }

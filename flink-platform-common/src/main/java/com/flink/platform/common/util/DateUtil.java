@@ -16,8 +16,6 @@ public class DateUtil {
 
     public static final String GLOBAL_DATE_TIME_FORMAT = "yyyy-MM-dd HH:mm:ss";
 
-    public static final String GLOBAL_TIMEZONE = "Asia/Shanghai";
-
     public static final long MILLIS_PER_MINUTE = DateUtils.MILLIS_PER_MINUTE;
 
     private static final Map<String, DateTimeFormatter> FORMATTERS = new ConcurrentHashMap<>();
