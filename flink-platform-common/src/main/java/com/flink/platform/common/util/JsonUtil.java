@@ -2,10 +2,13 @@ package com.flink.platform.common.util;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JavaType;
+import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.Module;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.json.JsonMapper;
+import com.fasterxml.jackson.databind.json.JsonMapper.Builder;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateTimeDeserializer;
@@ -20,11 +23,14 @@ import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TimeZone;
 
 import static com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES;
 import static com.fasterxml.jackson.databind.MapperFeature.PROPAGATE_TRANSIENT_MARKER;
+import static com.flink.platform.common.constants.Constant.GLOBAL_TIME_ZONE;
 import static com.flink.platform.common.util.DateUtil.GLOBAL_DATE_TIME_FORMAT;
 import static java.time.format.DateTimeFormatter.ofPattern;
 
@@ -38,15 +44,6 @@ public class JsonUtil {
         MAPPER = jacksonBuilderWithGlobalConfigs()
                 .serializationInclusion(JsonInclude.Include.ALWAYS)
                 .build();
-    }
-
-    public static JsonMapper.Builder jacksonBuilderWithGlobalConfigs() {
-        return JsonMapper.builder()
-                .addModules(defaultGlobalModules())
-                // Ignore transient fields during serialization
-                .enable(PROPAGATE_TRANSIENT_MARKER)
-                // Ignore unknown properties during deserialization
-                .disable(FAIL_ON_UNKNOWN_PROPERTIES);
     }
 
     public static List<String> toList(String json) {
@@ -132,6 +129,28 @@ public class JsonUtil {
         }
     }
 
+    // ====================================================
+    // ============== jackson global configs ==============
+    // ====================================================
+
+    public static JsonMapper.Builder jacksonBuilderWithGlobalConfigs() {
+        Builder builder =
+                JsonMapper.builder().addModules(defaultGlobalModules()).defaultTimeZone(defaultGlobalTimeZone());
+        addDefaultGlobalFeaturesTo(builder);
+        return builder;
+    }
+
+    public static TimeZone defaultGlobalTimeZone() {
+        return GLOBAL_TIME_ZONE;
+    }
+
+    public static Map<Object, Boolean> defaultGlobalFeatures() {
+        Map<Object, Boolean> features = new HashMap<>();
+        features.put(PROPAGATE_TRANSIENT_MARKER, true);
+        features.put(FAIL_ON_UNKNOWN_PROPERTIES, false);
+        return features;
+    }
+
     public static List<Module> defaultGlobalModules() {
         return Arrays.asList(
                 new Jdk8Module(),
@@ -141,5 +160,23 @@ public class JsonUtil {
                         .addDeserializer(
                                 LocalDateTime.class,
                                 new LocalDateTimeDeserializer(ofPattern(GLOBAL_DATE_TIME_FORMAT))));
+    }
+
+    private static void addDefaultGlobalFeaturesTo(JsonMapper.Builder builder) {
+        defaultGlobalFeatures().forEach((feature, enable) -> {
+            if (enable) {
+                if (feature instanceof MapperFeature) {
+                    builder.enable((MapperFeature) feature);
+                } else if (feature instanceof DeserializationFeature) {
+                    builder.enable((DeserializationFeature) feature);
+                }
+            } else {
+                if (feature instanceof MapperFeature) {
+                    builder.disable((MapperFeature) feature);
+                } else if (feature instanceof DeserializationFeature) {
+                    builder.disable((DeserializationFeature) feature);
+                }
+            }
+        });
     }
 }
