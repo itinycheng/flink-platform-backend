@@ -27,9 +27,10 @@ import java.util.List;
 import java.util.Objects;
 
 import static com.flink.platform.common.enums.ResponseStatus.ERROR_PARAMETER;
+import static com.flink.platform.common.enums.ResponseStatus.INVALID_STATUS;
 import static com.flink.platform.common.enums.ResponseStatus.USER_HAVE_NO_PERMISSION;
 import static com.flink.platform.common.enums.UserType.ADMIN;
-import static com.flink.platform.common.enums.WorkerStatus.INACTIVE;
+import static com.flink.platform.common.enums.WorkerStatus.DELETED;
 import static com.flink.platform.web.entity.response.ResultInfo.failure;
 import static com.flink.platform.web.entity.response.ResultInfo.success;
 
@@ -98,7 +99,7 @@ public class WorkerController {
         if (role != null) {
             queryWrapper.eq(Worker::getRole, role);
         } else {
-            queryWrapper.ne(Worker::getRole, INACTIVE);
+            queryWrapper.ne(Worker::getRole, DELETED);
         }
 
         IPage<Worker> iPage = workerService.page(pager, queryWrapper);
@@ -110,16 +111,38 @@ public class WorkerController {
         return success(workerService.list());
     }
 
-    @GetMapping(value = "/purge/{workerId}")
-    public ResultInfo<Long> purge(
+    @GetMapping(value = "/delete/{workerId}")
+    public ResultInfo<Long> delete(
             @RequestAttribute(value = Constant.SESSION_USER) User loginUser, @PathVariable long workerId) {
+        if (loginUser.getType() != ADMIN) {
+            return failure(USER_HAVE_NO_PERMISSION);
+        }
+
         Worker worker = workerService.getById(workerId);
         if (worker == null) {
             return failure(ERROR_PARAMETER);
         }
 
+        worker = new Worker();
+        worker.setId(workerId);
+        worker.setRole(DELETED);
+        workerService.updateById(worker);
+        return success(workerId);
+    }
+
+    @GetMapping(value = "/purge/{workerId}")
+    public ResultInfo<Long> purge(
+            @RequestAttribute(value = Constant.SESSION_USER) User loginUser, @PathVariable long workerId) {
         if (loginUser.getType() != ADMIN) {
             return failure(USER_HAVE_NO_PERMISSION);
+        }
+
+        Worker worker = workerService.getById(workerId);
+        if (worker == null) {
+            return failure(ERROR_PARAMETER);
+        }
+        if (!DELETED.equals(worker.getRole())) {
+            return failure(INVALID_STATUS);
         }
 
         workerService.removeById(workerId);
