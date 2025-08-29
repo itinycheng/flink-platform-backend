@@ -149,7 +149,5 @@ public class DependentCommandBuilder implements CommandBuilder {
                 dependentItem.setLatestCreateTime(jobFlowRun.getCreateTime());
             }
         }
-
-        throw new RuntimeException("Get latest flowRunId/status/createTime failed");
     }
 }
