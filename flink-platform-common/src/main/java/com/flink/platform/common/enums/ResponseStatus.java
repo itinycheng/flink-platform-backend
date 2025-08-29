@@ -31,6 +31,7 @@ public enum ResponseStatus {
     JOB_LIST_NOT_SUPPORT_SCHEDULING(10026, "Job list does not support scheduling"),
     FLOW_ALREADY_SCHEDULED(10027, "Workflow already being scheduled"),
     INVALID_WORKFLOW_TYPE(10028, "invalid workflow type"),
+    INVALID_STATUS(10029, "invalid status"),
     ;
 
     private final int code;
