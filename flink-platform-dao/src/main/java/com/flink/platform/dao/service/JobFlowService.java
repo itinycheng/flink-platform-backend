@@ -4,6 +4,7 @@ import com.baomidou.dynamic.datasource.annotation.DS;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.flink.platform.common.model.JobVertex;
+import com.flink.platform.common.util.StringUtil;
 import com.flink.platform.common.util.UuidGenerator;
 import com.flink.platform.dao.entity.JobFlow;
 import com.flink.platform.dao.entity.JobFlowDag;
@@ -45,7 +46,9 @@ public class JobFlowService extends ServiceImpl<JobFlowMapper, JobFlow> {
         // clone jobFlow.
         final var jobFlow = getById(flowId);
         jobFlow.setId(null);
-        jobFlow.setName(format("%s-copy_%d", jobFlow.getName(), System.currentTimeMillis()));
+
+        var nameCopied = format("%s-copy_%d", jobFlow.getName(), System.currentTimeMillis());
+        jobFlow.setName(StringUtil.truncateByBytes(nameCopied, 64, true));
         jobFlow.setCode(UuidGenerator.generateShortUuid());
         jobFlow.setStatus(OFFLINE);
         save(jobFlow);

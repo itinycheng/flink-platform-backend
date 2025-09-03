@@ -35,6 +35,8 @@ public class Constant {
 
     public static final String DOT = ".";
 
+    public static final String ELLIPSIS = "...";
+
     public static final String SEMICOLON = ";";
 
     public static final String SPACE = " ";
