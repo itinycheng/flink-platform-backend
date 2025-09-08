@@ -38,7 +38,8 @@ buildNumber.properties
 hs_err_pid*
 
 *.iml
-.idea
+.idea/
+!.idea/dictionaries/
 
 ### macOS template
 # General

@@ -5,7 +5,6 @@ import com.flink.platform.common.enums.ExecutionStatus;
 import com.flink.platform.common.enums.JobStatus;
 import com.flink.platform.common.model.JobVertex;
 import com.flink.platform.common.util.ExceptionUtil;
-import com.flink.platform.common.util.JsonUtil;
 import com.flink.platform.dao.entity.JobFlowRun;
 import com.flink.platform.dao.entity.JobInfo;
 import com.flink.platform.dao.entity.JobRunInfo;
@@ -87,7 +86,7 @@ public class JobExecuteThread implements Supplier<JobResponse> {
         this.jobGrpcClient = SpringContext.getBean(JobGrpcClient.class);
     }
 
-    @SuppressWarnings("t")
+    @SuppressWarnings("D")
     @Override
     public JobResponse get() {
         int retryTimes;
@@ -316,18 +315,12 @@ public class JobExecuteThread implements Supplier<JobResponse> {
     }
 
     private JobStatusRequest buildJobStatusRequest(JobRunInfo jobRun) {
-        JobStatusRequest.Builder builder = JobStatusRequest.newBuilder()
+        return JobStatusRequest.newBuilder()
                 .setJobRunId(jobRun.getId())
+                .setJobId(jobRun.getJobId())
                 .setDeployMode(jobRun.getDeployMode().name())
-                .setRetries(errorRetries);
-
-        JobCallback callback = jobRun.getBackInfo();
-        if (callback != null) {
-            callback = callback.cloneWithoutMsg();
-            builder.setBackInfo(JsonUtil.toJsonString(callback));
-        }
-
-        return builder.build();
+                .setRetries(errorRetries)
+                .build();
     }
 
     private StatusInfo correctStreamJobStatus(StatusInfo statusInfo, LocalDateTime startTime) {
