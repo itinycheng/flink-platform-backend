@@ -3,7 +3,7 @@ package com.flink.platform.web.command.flink;
 import com.flink.platform.common.enums.DeployMode;
 import com.flink.platform.web.command.shell.ShellTask;
 import com.flink.platform.web.common.SpringContext;
-import com.flink.platform.web.external.YarnClientService;
+import com.flink.platform.web.external.LocalHadoopService;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -25,7 +25,7 @@ import static com.flink.platform.web.util.CollectLogRunnable.CmdOutType.STD;
 @Setter
 public class FlinkYarnTask extends ShellTask {
 
-    private YarnClientService yarnClientService;
+    private LocalHadoopService localHadoopService;
 
     private DeployMode mode;
 
@@ -43,7 +43,7 @@ public class FlinkYarnTask extends ShellTask {
     public FlinkYarnTask(long jobRunId, DeployMode mode) {
         super(jobRunId, null, null, 0);
         this.mode = mode;
-        this.yarnClientService = SpringContext.getBean(YarnClientService.class);
+        this.localHadoopService = SpringContext.getBean(LocalHadoopService.class);
     }
 
     public void run() throws Exception {
@@ -59,7 +59,7 @@ public class FlinkYarnTask extends ShellTask {
         if (StringUtils.isNotEmpty(appId)) {
             if (FLINK_YARN_PER.equals(mode)) {
                 try {
-                    yarnClientService.killApplication(appId);
+                    localHadoopService.killApplication(appId);
                 } catch (Exception e) {
                     log.error("Kill yarn application: {} failed", appId, e);
                 }

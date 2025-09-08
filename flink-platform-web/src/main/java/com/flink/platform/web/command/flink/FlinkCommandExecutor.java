@@ -10,12 +10,10 @@ import com.flink.platform.web.command.AbstractTask;
 import com.flink.platform.web.command.CommandExecutor;
 import com.flink.platform.web.command.JobCommand;
 import com.flink.platform.web.config.WorkerConfig;
-import com.flink.platform.web.external.YarnClientService;
-import com.flink.platform.web.util.YarnHelper;
+import com.flink.platform.web.external.LocalHadoopService;
 import jakarta.annotation.Nonnull;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.hadoop.yarn.api.records.ApplicationReport;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Lazy;
@@ -50,7 +48,7 @@ public class FlinkCommandExecutor implements CommandExecutor {
 
     @Lazy
     @Autowired
-    private YarnClientService yarnClientService;
+    private LocalHadoopService localHadoopService;
 
     @Autowired
     private JobRunInfoService jobRunInfoService;
@@ -87,9 +85,9 @@ public class FlinkCommandExecutor implements CommandExecutor {
             ExecutionStatus status = SUBMITTED;
             String trackingUrl = EMPTY;
             try {
-                ApplicationReport applicationReport = yarnClientService.getApplicationReport(appId);
-                status = YarnHelper.getStatus(applicationReport);
-                trackingUrl = applicationReport.getTrackingUrl();
+                var statusReport = localHadoopService.getApplicationReport(appId);
+                status = statusReport.getStatus();
+                trackingUrl = statusReport.getTrackingUrl();
             } catch (Exception e) {
                 log.error("Failed to get ApplicationReport after command executed", e);
             }

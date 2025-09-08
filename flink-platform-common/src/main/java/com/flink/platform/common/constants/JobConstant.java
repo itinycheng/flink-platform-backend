@@ -14,6 +14,8 @@ public class JobConstant {
 
     public static final String YARN_APPLICATION_NAME = "yarn.application.name";
 
+    public static final String YARN_APPLICATION_TAG = "yarn.tags";
+
     public static final String YARN_PROVIDED_LIB_DIRS = "yarn.provided.lib.dirs";
 
     public static final String SQL_LINE_SEPARATOR = "\n";
