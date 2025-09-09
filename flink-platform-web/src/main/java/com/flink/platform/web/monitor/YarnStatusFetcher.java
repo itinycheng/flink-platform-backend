@@ -1,6 +1,7 @@
 package com.flink.platform.web.monitor;
 
 import com.flink.platform.common.enums.DeployMode;
+import com.flink.platform.common.enums.ExecutionStatus;
 import com.flink.platform.grpc.JobStatusReply;
 import com.flink.platform.grpc.JobStatusRequest;
 import com.flink.platform.web.external.LocalHadoopService;
@@ -9,6 +10,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.core.annotation.Order;
+import org.springframework.retry.annotation.Backoff;
+import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Component;
 
 import static com.flink.platform.common.enums.ExecutionStatus.NOT_EXIST;
@@ -19,9 +22,12 @@ import static com.flink.platform.common.enums.ExecutionStatus.NOT_EXIST;
 @Component
 public class YarnStatusFetcher implements StatusFetcher {
 
-    @Lazy
+    private final LocalHadoopService localHadoopService;
+
     @Autowired
-    private LocalHadoopService localHadoopService;
+    public YarnStatusFetcher(@Lazy LocalHadoopService localHadoopService) {
+        this.localHadoopService = localHadoopService;
+    }
 
     @Override
     public boolean isSupported(DeployMode deployMode) {
@@ -31,17 +37,22 @@ public class YarnStatusFetcher implements StatusFetcher {
         };
     }
 
+    @Retryable(
+            retryFor = Exception.class,
+            maxAttempts = 4,
+            backoff = @Backoff(delay = 1500, multiplier = 2),
+            exceptionExpression = "@appRunnerChecker.shouldRetry(#root)")
     @Override
     public JobStatusReply getStatus(JobStatusRequest request) {
-        long currentTimeMillis = System.currentTimeMillis();
         String applicationTag = YarnHelper.getApplicationTag(request.getJobId(), request.getJobRunId());
         try {
             var statusReport = localHadoopService.getApplicationReport(applicationTag);
             if (statusReport != null) {
                 return newJobStatusReply(
-                        statusReport.getStatus().getCode(), statusReport.getStartTime(), statusReport.getFinishTime());
+                        statusReport.getStatus(), statusReport.getStartTime(), statusReport.getFinishTime());
             } else {
-                return newJobStatusReply(NOT_EXIST.getCode(), currentTimeMillis, currentTimeMillis);
+                long currentTimeMillis = System.currentTimeMillis();
+                return newJobStatusReply(NOT_EXIST, currentTimeMillis, currentTimeMillis);
             }
         } catch (Exception e) {
             log.error("Use yarn client to get ApplicationReport failed, application tag: {}", applicationTag, e);
@@ -49,9 +60,9 @@ public class YarnStatusFetcher implements StatusFetcher {
         }
     }
 
-    private JobStatusReply newJobStatusReply(int status, long startTime, long endTime) {
+    private JobStatusReply newJobStatusReply(ExecutionStatus status, long startTime, long endTime) {
         return JobStatusReply.newBuilder()
-                .setStatus(status)
+                .setStatus(status.getCode())
                 .setStartTime(startTime)
                 .setEndTime(endTime)
                 .build();
