@@ -1,4 +1,4 @@
-package com.flink.platform.web.config;
+package com.flink.platform.web.component;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
