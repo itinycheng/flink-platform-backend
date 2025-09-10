@@ -44,7 +44,7 @@ public class YarnStatusFetcher implements StatusFetcher {
             exceptionExpression = "@appRunnerChecker.shouldRetry(#root)")
     @Override
     public JobStatusReply getStatus(JobStatusRequest request) {
-        String applicationTag = YarnHelper.getApplicationTag(request.getJobId(), request.getJobRunId());
+        String applicationTag = YarnHelper.getApplicationTag(request.getJobRunId());
         try {
             var statusReport = localHadoopService.getApplicationReport(applicationTag);
             if (statusReport != null) {

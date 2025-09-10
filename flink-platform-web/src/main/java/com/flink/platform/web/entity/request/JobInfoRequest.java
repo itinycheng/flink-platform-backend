@@ -120,7 +120,7 @@ public class JobInfoRequest {
         return requireNotNull(getSubject(), "The job subject cannot be null");
     }
 
-    @SuppressWarnings("t")
+    @SuppressWarnings("D")
     private String verifyConfig() {
         BaseJob config = getConfig();
         if (config == null) {

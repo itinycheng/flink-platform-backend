@@ -9,10 +9,10 @@ import org.apache.hadoop.yarn.api.records.YarnApplicationState;
 /** yarn util. */
 public class YarnHelper {
 
-    private static final String APP_TAG_FORMAT = "tag_%s_%s";
+    private static final String APP_TAG_FORMAT = "tag_%s";
 
-    public static String getApplicationTag(Long jobId, Long jobRunId) {
-        return String.format(APP_TAG_FORMAT, jobId, jobRunId);
+    public static String getApplicationTag(Long jobRunId) {
+        return String.format(APP_TAG_FORMAT, jobRunId);
     }
 
     public static ExecutionStatus getStatus(ApplicationReport applicationReport) {
