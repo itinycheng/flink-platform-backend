@@ -5,7 +5,6 @@ import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.baomidou.mybatisplus.extension.handlers.JacksonTypeHandler;
-import com.fasterxml.jackson.annotation.JsonFormat;
 import com.flink.platform.common.enums.ExecutionStatus;
 import com.flink.platform.common.enums.JobFlowType;
 import com.flink.platform.dao.entity.alert.AlertConfigList;
@@ -19,8 +18,6 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 
 import static com.flink.platform.common.constants.Constant.EMPTY;
-import static com.flink.platform.common.util.DateUtil.GLOBAL_DATE_TIME_FORMAT;
-import static com.flink.platform.common.util.DateUtil.GLOBAL_TIMEZONE;
 
 /** job flow instance. */
 @Data
@@ -62,14 +59,11 @@ public class JobFlowRun {
 
     private ExecutionStatus status;
 
-    @JsonFormat(pattern = GLOBAL_DATE_TIME_FORMAT, timezone = GLOBAL_TIMEZONE)
     private LocalDateTime startTime;
 
-    @JsonFormat(pattern = GLOBAL_DATE_TIME_FORMAT, timezone = GLOBAL_TIMEZONE)
     private LocalDateTime endTime;
 
     @Setter(AccessLevel.NONE)
-    @JsonFormat(pattern = GLOBAL_DATE_TIME_FORMAT, timezone = GLOBAL_TIMEZONE)
     private LocalDateTime createTime;
 
     public String getDuration() {
