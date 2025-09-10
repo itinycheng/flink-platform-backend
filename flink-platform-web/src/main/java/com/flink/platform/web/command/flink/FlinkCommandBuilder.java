@@ -116,7 +116,7 @@ public abstract class FlinkCommandBuilder implements CommandBuilder {
     private String createAppTag(JobRunInfo jobRun) {
         return switch (jobRun.getDeployMode()) {
             case FLINK_YARN_PER, FLINK_YARN_SESSION, FLINK_YARN_RUN_APPLICATION -> YarnHelper.getApplicationTag(
-                    jobRun.getJobId(), jobRun.getId());
+                    jobRun.getId());
             default -> EMPTY;
         };
     }

@@ -4,6 +4,7 @@ import com.flink.platform.common.enums.DeployMode;
 import com.flink.platform.web.command.shell.ShellTask;
 import com.flink.platform.web.common.SpringContext;
 import com.flink.platform.web.external.LocalHadoopService;
+import com.flink.platform.web.util.YarnHelper;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -16,6 +17,7 @@ import java.util.regex.Matcher;
 import static com.flink.platform.common.constants.JobConstant.APP_ID_PATTERN;
 import static com.flink.platform.common.constants.JobConstant.JOB_ID_PATTERN;
 import static com.flink.platform.common.enums.DeployMode.FLINK_YARN_PER;
+import static com.flink.platform.common.enums.DeployMode.FLINK_YARN_RUN_APPLICATION;
 import static com.flink.platform.web.util.CollectLogRunnable.CmdOutType;
 import static com.flink.platform.web.util.CollectLogRunnable.CmdOutType.STD;
 
@@ -56,16 +58,15 @@ public class FlinkYarnTask extends ShellTask {
         super.cancel();
 
         // kill application.
-        if (StringUtils.isNotEmpty(appId)) {
-            if (FLINK_YARN_PER.equals(mode)) {
-                try {
-                    localHadoopService.killApplication(appId);
-                } catch (Exception e) {
-                    log.error("Kill yarn application: {} failed", appId, e);
-                }
+        try {
+            if (FLINK_YARN_PER.equals(mode) || FLINK_YARN_RUN_APPLICATION.equals(mode)) {
+                String applicationTag = YarnHelper.getApplicationTag(jobRunId);
+                localHadoopService.killApplication(applicationTag);
             } else {
                 log.warn("Kill command unsupported deployMode: {}, applicationId: {}", mode, appId);
             }
+        } catch (Exception e) {
+            log.error("Kill yarn application: {} failed", appId, e);
         }
     }
 
@@ -94,7 +95,7 @@ public class FlinkYarnTask extends ShellTask {
     public static String extractApplicationId(String message) {
         Matcher matcher = APP_ID_PATTERN.matcher(message);
         if (matcher.find()) {
-            return matcher.group(1);
+            return matcher.group(0);
         } else {
             return null;
         }

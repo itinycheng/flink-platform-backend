@@ -23,12 +23,9 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.regex.Matcher;
 
 import static com.flink.platform.common.constants.Constant.EMPTY;
-import static com.flink.platform.common.constants.JobConstant.APP_ID_PATTERN;
 import static com.flink.platform.common.constants.JobConstant.HADOOP_USER_NAME;
-import static com.flink.platform.common.constants.JobConstant.JOB_ID_PATTERN;
 import static com.flink.platform.common.enums.ExecutionStatus.FAILURE;
 import static com.flink.platform.common.enums.ExecutionStatus.SUBMITTED;
 import static com.flink.platform.common.enums.ExecutionStatus.SUCCESS;
@@ -127,27 +124,5 @@ public class FlinkCommandExecutor implements CommandExecutor {
         var map = new HashMap<String, String>(1);
         map.put(HADOOP_USER_NAME, hadoopUser);
         return map;
-    }
-
-    // ------------------------------------------------------------------------
-    //  exposed static methods for test cases
-    // ------------------------------------------------------------------------
-
-    public static String extractApplicationId(String message) {
-        Matcher matcher = APP_ID_PATTERN.matcher(message);
-        if (matcher.find()) {
-            return matcher.group(1);
-        } else {
-            return null;
-        }
-    }
-
-    public static String extractJobId(String message) {
-        Matcher matcher = JOB_ID_PATTERN.matcher(message);
-        if (matcher.find()) {
-            return matcher.group(1);
-        } else {
-            return null;
-        }
     }
 }
