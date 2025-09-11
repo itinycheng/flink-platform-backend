@@ -11,6 +11,7 @@ import com.flink.platform.web.command.CommandExecutor;
 import com.flink.platform.web.command.JobCommand;
 import com.flink.platform.web.config.WorkerConfig;
 import com.flink.platform.web.external.LocalHadoopService;
+import com.flink.platform.web.util.YarnHelper;
 import lombok.extern.slf4j.Slf4j;
 import lombok.var;
 import org.apache.commons.lang3.StringUtils;
@@ -82,7 +83,9 @@ public class FlinkCommandExecutor implements CommandExecutor {
             ExecutionStatus status = SUBMITTED;
             String trackingUrl = EMPTY;
             try {
-                var statusReport = localHadoopService.getApplicationReport(appId);
+                long jobRunId = command.getJobRunId();
+                String applicationTag = YarnHelper.getApplicationTag(jobRunId);
+                var statusReport = localHadoopService.getApplicationReport(applicationTag);
                 status = statusReport.getStatus();
                 trackingUrl = statusReport.getTrackingUrl();
             } catch (Exception e) {
