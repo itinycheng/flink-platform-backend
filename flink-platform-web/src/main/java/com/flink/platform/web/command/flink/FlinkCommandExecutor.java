@@ -11,13 +11,15 @@ import com.flink.platform.web.command.CommandExecutor;
 import com.flink.platform.web.command.JobCommand;
 import com.flink.platform.web.config.WorkerConfig;
 import com.flink.platform.web.external.LocalHadoopService;
-import jakarta.annotation.Nonnull;
+import com.flink.platform.web.util.YarnHelper;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
+
+import javax.annotation.Nonnull;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -82,7 +84,9 @@ public class FlinkCommandExecutor implements CommandExecutor {
             ExecutionStatus status = SUBMITTED;
             String trackingUrl = EMPTY;
             try {
-                var statusReport = localHadoopService.getApplicationReport(appId);
+                long jobRunId = command.getJobRunId();
+                String applicationTag = YarnHelper.getApplicationTag(jobRunId);
+                var statusReport = localHadoopService.getApplicationReport(applicationTag);
                 status = statusReport.getStatus();
                 trackingUrl = statusReport.getTrackingUrl();
             } catch (Exception e) {
