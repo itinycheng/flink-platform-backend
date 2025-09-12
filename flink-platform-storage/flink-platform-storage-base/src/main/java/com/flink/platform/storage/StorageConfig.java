@@ -49,8 +49,8 @@ public class StorageConfig {
         return storageSystem.normalizePath(storageBasePath);
     }
 
-    @Bean("clusterIdPath")
-    public String createClusterId(StorageSystem storageSystem, StorageProperties properties) throws Exception {
+    @Bean("primaryClusterIdFilePath")
+    public String primaryClusterIdFilePath(StorageSystem storageSystem, StorageProperties properties) throws Exception {
         String storageBasePath = properties.getStorageBasePath();
         String clusterIdFile = String.join(FILE_SEPARATOR, storageBasePath, ".main_cluster_id");
         if (!storageSystem.exists(clusterIdFile)) {

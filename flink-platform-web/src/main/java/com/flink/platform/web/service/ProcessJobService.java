@@ -88,7 +88,7 @@ public class ProcessJobService {
                     .buildCommand(jobRunInfo.getFlowRunId(), jobRunInfo);
 
             // step 4: submit job
-            final JobCommand command = jobCommand;
+            final var command = jobCommand;
             JobCallback callback = jobCommandExecutors.stream()
                     .filter(executor -> executor.isSupported(jobType))
                     .findFirst()

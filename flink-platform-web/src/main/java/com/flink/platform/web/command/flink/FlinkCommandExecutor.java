@@ -1,16 +1,12 @@
 package com.flink.platform.web.command.flink;
 
-import com.flink.platform.common.enums.ExecutionStatus;
 import com.flink.platform.common.enums.JobType;
-import com.flink.platform.dao.entity.JobRunInfo;
 import com.flink.platform.dao.entity.result.JobCallback;
-import com.flink.platform.dao.entity.result.ShellCallback;
 import com.flink.platform.dao.service.JobRunInfoService;
-import com.flink.platform.web.command.AbstractTask;
 import com.flink.platform.web.command.CommandExecutor;
 import com.flink.platform.web.command.JobCommand;
 import com.flink.platform.web.config.WorkerConfig;
-import com.flink.platform.web.external.LocalHadoopService;
+import com.flink.platform.web.environment.HadoopService;
 import com.flink.platform.web.util.YarnHelper;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -47,7 +43,7 @@ public class FlinkCommandExecutor implements CommandExecutor {
 
     @Lazy
     @Autowired
-    private LocalHadoopService localHadoopService;
+    private HadoopService hadoopService;
 
     @Autowired
     private JobRunInfoService jobRunInfoService;
@@ -60,8 +56,8 @@ public class FlinkCommandExecutor implements CommandExecutor {
     @Nonnull
     @Override
     public JobCallback execCommand(@Nonnull JobCommand command) throws Exception {
-        FlinkCommand flinkCommand = (FlinkCommand) command;
-        FlinkYarnTask task = new FlinkYarnTask(
+        var flinkCommand = (FlinkCommand) command;
+        var task = new FlinkYarnTask(
                 flinkCommand.getJobRunId(),
                 flinkCommand.getMode(),
                 flinkCommand.toCommandString(),
@@ -70,9 +66,9 @@ public class FlinkCommandExecutor implements CommandExecutor {
         flinkCommand.setTask(task);
         task.run();
 
-        String appId = task.getAppId();
-        String jobId = task.getJobId();
-        ShellCallback callback = task.buildShellCallback();
+        var appId = task.getAppId();
+        var jobId = task.getJobId();
+        var callback = task.buildShellCallback();
 
         // call `killCommand` method if execute command failed.
         if (!SUCCESS.equals(task.finalStatus())) {
@@ -81,12 +77,12 @@ public class FlinkCommandExecutor implements CommandExecutor {
 
         // Get the application report from Hadoop Yarn.
         if (StringUtils.isNotEmpty(appId) && StringUtils.isNotEmpty(jobId)) {
-            ExecutionStatus status = SUBMITTED;
-            String trackingUrl = EMPTY;
+            var status = SUBMITTED;
+            var trackingUrl = EMPTY;
             try {
-                long jobRunId = command.getJobRunId();
-                String applicationTag = YarnHelper.getApplicationTag(jobRunId);
-                var statusReport = localHadoopService.getApplicationReport(applicationTag);
+                var jobRunId = command.getJobRunId();
+                var applicationTag = YarnHelper.getApplicationTag(jobRunId);
+                var statusReport = hadoopService.getApplicationReport(applicationTag);
                 status = statusReport.getStatus();
                 trackingUrl = statusReport.getTrackingUrl();
             } catch (Exception e) {
@@ -107,12 +103,12 @@ public class FlinkCommandExecutor implements CommandExecutor {
     @Override
     public void killCommand(@Nonnull JobCommand command) {
         // Need provide processId, applicationId, deployMode.
-        AbstractTask task = command.getTask();
+        var task = command.getTask();
         if (task == null) {
-            JobRunInfo jobRun = jobRunInfoService.getById(command.getJobRunId());
-            JobCallback callback = jobRun.getBackInfo();
+            var jobRun = jobRunInfoService.getById(command.getJobRunId());
+            var callback = jobRun.getBackInfo();
             if (!jobRun.getStatus().isTerminalState() && callback != null) {
-                FlinkYarnTask newTask = new FlinkYarnTask(jobRun.getId(), jobRun.getDeployMode());
+                var newTask = new FlinkYarnTask(jobRun.getId(), jobRun.getDeployMode());
                 newTask.setProcessId(callback.getProcessId());
                 newTask.setAppId(callback.getAppId());
                 task = newTask;

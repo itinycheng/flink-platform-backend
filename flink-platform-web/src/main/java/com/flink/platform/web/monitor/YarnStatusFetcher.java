@@ -4,7 +4,7 @@ import com.flink.platform.common.enums.DeployMode;
 import com.flink.platform.common.enums.ExecutionStatus;
 import com.flink.platform.grpc.JobStatusReply;
 import com.flink.platform.grpc.JobStatusRequest;
-import com.flink.platform.web.external.LocalHadoopService;
+import com.flink.platform.web.environment.HadoopService;
 import com.flink.platform.web.util.YarnHelper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,11 +22,11 @@ import static com.flink.platform.common.enums.ExecutionStatus.NOT_EXIST;
 @Component
 public class YarnStatusFetcher implements StatusFetcher {
 
-    private final LocalHadoopService localHadoopService;
+    private final HadoopService hadoopService;
 
     @Autowired
-    public YarnStatusFetcher(@Lazy LocalHadoopService localHadoopService) {
-        this.localHadoopService = localHadoopService;
+    public YarnStatusFetcher(@Lazy HadoopService hadoopService) {
+        this.hadoopService = hadoopService;
     }
 
     @Override
@@ -44,9 +44,9 @@ public class YarnStatusFetcher implements StatusFetcher {
             exceptionExpression = "@appRunnerChecker.shouldRetry(#root)")
     @Override
     public JobStatusReply getStatus(JobStatusRequest request) {
-        String applicationTag = YarnHelper.getApplicationTag(request.getJobRunId());
+        var applicationTag = YarnHelper.getApplicationTag(request.getJobRunId());
         try {
-            var statusReport = localHadoopService.getApplicationReport(applicationTag);
+            var statusReport = hadoopService.getApplicationReport(applicationTag);
             if (statusReport != null) {
                 return newJobStatusReply(
                         statusReport.getStatus(), statusReport.getStartTime(), statusReport.getFinishTime());
