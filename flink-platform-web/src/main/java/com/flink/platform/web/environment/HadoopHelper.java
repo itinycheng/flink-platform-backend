@@ -1,4 +1,4 @@
-package com.flink.platform.web.external;
+package com.flink.platform.web.environment;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.hadoop.conf.Configuration;
@@ -8,7 +8,7 @@ import java.io.File;
 
 /** Hadoop util. */
 @Slf4j
-public class HadoopUtil {
+public class HadoopHelper {
 
     public static Configuration getHadoopConfiguration() {
         Configuration result = new Configuration();

@@ -3,7 +3,7 @@ package com.flink.platform.web.command.flink;
 import com.flink.platform.common.enums.DeployMode;
 import com.flink.platform.web.command.shell.ShellTask;
 import com.flink.platform.web.common.SpringContext;
-import com.flink.platform.web.external.LocalHadoopService;
+import com.flink.platform.web.environment.HadoopService;
 import com.flink.platform.web.util.YarnHelper;
 import lombok.Getter;
 import lombok.Setter;
@@ -27,7 +27,7 @@ import static com.flink.platform.web.util.CollectLogRunnable.CmdOutType.STD;
 @Setter
 public class FlinkYarnTask extends ShellTask {
 
-    private LocalHadoopService localHadoopService;
+    private HadoopService hadoopService;
 
     private DeployMode mode;
 
@@ -45,7 +45,7 @@ public class FlinkYarnTask extends ShellTask {
     public FlinkYarnTask(long jobRunId, DeployMode mode) {
         super(jobRunId, null, null, 0);
         this.mode = mode;
-        this.localHadoopService = SpringContext.getBean(LocalHadoopService.class);
+        this.hadoopService = SpringContext.getBean(HadoopService.class);
     }
 
     public void run() throws Exception {
@@ -61,7 +61,7 @@ public class FlinkYarnTask extends ShellTask {
         try {
             if (FLINK_YARN_PER.equals(mode) || FLINK_YARN_RUN_APPLICATION.equals(mode)) {
                 String applicationTag = YarnHelper.getApplicationTag(jobRunId);
-                localHadoopService.killApplication(applicationTag);
+                hadoopService.killApplication(applicationTag);
             } else {
                 log.warn("Kill command unsupported deployMode: {}, applicationId: {}", mode, appId);
             }

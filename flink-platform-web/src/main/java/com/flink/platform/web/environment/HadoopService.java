@@ -1,4 +1,4 @@
-package com.flink.platform.web.external;
+package com.flink.platform.web.environment;
 
 import com.flink.platform.web.model.ApplicationStatusReport;
 import com.flink.platform.web.util.ThreadUtil;
@@ -8,10 +8,7 @@ import jakarta.annotation.PreDestroy;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.LocalFileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.yarn.client.api.YarnClient;
 import org.apache.hadoop.yarn.conf.YarnConfiguration;
@@ -23,7 +20,6 @@ import org.springframework.stereotype.Component;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -32,17 +28,17 @@ import java.util.concurrent.ScheduledExecutorService;
 import static org.apache.commons.lang3.ArrayUtils.EMPTY_STRING_ARRAY;
 
 /**
- * Yarn client service. <br> 1. Manage the lifecycle of YarnClient and FileSystem. <br> 2. Loads
+ * Hadoop client service. <br> 1. Manage the lifecycle of YarnClient and FileSystem. <br> 2. Loads
  * hadoop configuration from local disk to initialize Yarn and HDFS clients. <br>
  */
 @Slf4j
 @Lazy
-@Component
-public class LocalHadoopService {
+@Component("environmentHadoopService")
+public class HadoopService {
 
     private static final int REQUEST_APP_REPORT_BATCH_SIZE = 100;
 
-    private final String clusterIdPath;
+    private final String primaryClusterIdFilePath;
 
     // tag -> ApplicationStatusReport.
     private final Map<String, ApplicationStatusReport> runningApplications;
@@ -53,11 +49,11 @@ public class LocalHadoopService {
 
     private FileSystem hdfsClient;
 
-    private boolean isOnMain = true;
+    private boolean isPrimaryCluster = true;
 
     @Autowired
-    public LocalHadoopService(@Qualifier("clusterIdPath") String clusterIdPath) {
-        this.clusterIdPath = clusterIdPath;
+    public HadoopService(@Qualifier("primaryClusterIdFilePath") String primaryClusterIdFilePath) {
+        this.primaryClusterIdFilePath = primaryClusterIdFilePath;
         this.runningApplications = new ConcurrentHashMap<>();
         this.reportRefreshExecutor = ThreadUtil.newDaemonSingleScheduledExecutor("application-report-refresh");
     }
@@ -66,7 +62,7 @@ public class LocalHadoopService {
     @PostConstruct
     public void initHadoopClient() {
         log.info("Init Yarn and FileSystem clients of hadoop corresponding to the current running instance.");
-        Configuration conf = HadoopUtil.getHadoopConfiguration();
+        var conf = HadoopHelper.getHadoopConfiguration();
         yarnClient = YarnClient.createYarnClient();
         yarnClient.init(new YarnConfiguration(conf));
         yarnClient.start();
@@ -78,7 +74,8 @@ public class LocalHadoopService {
         }
 
         try {
-            isOnMain = clusterIdPath.contains("hdfs") && hdfsClient.exists(new Path(clusterIdPath));
+            isPrimaryCluster =
+                    primaryClusterIdFilePath.contains("hdfs") && hdfsClient.exists(new Path(primaryClusterIdFilePath));
         } catch (Exception e) {
             throw new RuntimeException("check cluster id failed");
         }
@@ -126,18 +123,18 @@ public class LocalHadoopService {
     }
 
     public void copyIfNewHdfsAndFileChanged(String localFile, String hdfsFile) throws IOException {
-        if (isOnMain) {
+        if (isPrimaryCluster) {
             return;
         }
 
-        Path localPath = new Path(localFile);
-        Path hdfsPath = new Path(hdfsFile);
+        var localPath = new Path(localFile);
+        var hdfsPath = new Path(hdfsFile);
 
         boolean isCopy = true;
         if (hdfsClient.exists(hdfsPath)) {
-            LocalFileSystem local = FileSystem.getLocal(hdfsClient.getConf());
-            FileStatus localFileStatus = local.getFileStatus(localPath);
-            FileStatus hdfsFileStatus = hdfsClient.getFileStatus(hdfsPath);
+            var local = FileSystem.getLocal(hdfsClient.getConf());
+            var localFileStatus = local.getFileStatus(localPath);
+            var hdfsFileStatus = hdfsClient.getFileStatus(hdfsPath);
             isCopy = localFileStatus.getLen() != hdfsFileStatus.getLen()
                     || localFileStatus.getModificationTime() > hdfsFileStatus.getModificationTime();
         }
@@ -148,9 +145,9 @@ public class LocalHadoopService {
     }
 
     private void refreshReport() {
-        String[] allTags = this.runningApplications.keySet().toArray(EMPTY_STRING_ARRAY);
-        List<List<String>> partitions = Lists.partition(Arrays.asList(allTags), REQUEST_APP_REPORT_BATCH_SIZE);
-        for (List<String> partition : partitions) {
+        var allTags = this.runningApplications.keySet().toArray(EMPTY_STRING_ARRAY);
+        var partitions = Lists.partition(Arrays.asList(allTags), REQUEST_APP_REPORT_BATCH_SIZE);
+        for (var partition : partitions) {
             try {
                 var partitionTags = new HashSet<>(partition);
                 var partitionReports = yarnClient.getApplications(null, null, partitionTags);
@@ -160,7 +157,7 @@ public class LocalHadoopService {
                         continue;
                     }
 
-                    String tag = applicationTags.stream()
+                    var tag = applicationTags.stream()
                             .filter(partitionTags::contains)
                             .findFirst()
                             .orElse(null);

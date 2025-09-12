@@ -1,4 +1,4 @@
-package com.flink.platform.web.command;
+package com.flink.platform.web.command.flink;
 
 import com.flink.platform.common.exception.CommandUnableGenException;
 import com.flink.platform.common.job.Catalog;
@@ -11,6 +11,7 @@ import com.flink.platform.dao.entity.JobRunInfo;
 import com.flink.platform.dao.entity.task.FlinkJob;
 import com.flink.platform.dao.service.CatalogInfoService;
 import com.flink.platform.web.enums.Placeholder;
+import com.flink.platform.web.environment.HadoopService;
 import com.flink.platform.web.util.PathUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -40,6 +41,8 @@ import static java.util.stream.Collectors.toList;
 public class SqlContextHelper {
 
     private final CatalogInfoService catalogInfoService;
+
+    private final HadoopService hadoopService;
 
     public String convertFromAndSaveToFile(JobRunInfo jobRun) {
         SqlContext sqlContext = convertFrom(jobRun);

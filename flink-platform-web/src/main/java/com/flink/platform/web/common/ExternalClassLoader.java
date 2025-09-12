@@ -1,4 +1,4 @@
-package com.flink.platform.web.external;
+package com.flink.platform.web.common;
 
 import java.io.File;
 import java.net.URL;
