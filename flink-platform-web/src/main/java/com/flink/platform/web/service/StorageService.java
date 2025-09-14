@@ -46,6 +46,10 @@ public class StorageService {
         storageSystem.copyFromLocalFile(srcFile, dstFile, deleteSrc, overwrite);
     }
 
+    public void createFile(String filePath, String data, boolean overwrite) throws IOException {
+        storageSystem.createFile(filePath, data, overwrite);
+    }
+
     public boolean mkDir(String path) throws IOException {
         return storageSystem.mkdir(path);
     }

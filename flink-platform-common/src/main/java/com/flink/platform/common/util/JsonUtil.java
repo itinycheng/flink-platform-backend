@@ -113,6 +113,10 @@ public class JsonUtil {
 
     public static <T> T toBean(Path path, Class<T> clazz) throws IOException {
         InputStream inputStream = Files.newInputStream(path);
+        return toBean(inputStream, clazz);
+    }
+
+    public static <T> T toBean(InputStream inputStream, Class<T> clazz) throws IOException {
         return MAPPER.readValue(inputStream, clazz);
     }
 

@@ -4,6 +4,7 @@ import org.apache.flink.configuration.Configuration;
 import org.apache.flink.table.api.TableEnvironment;
 
 import com.flink.platform.common.enums.SqlType;
+import com.flink.platform.common.file.CommonPath;
 import com.flink.platform.common.job.Catalog;
 import com.flink.platform.common.job.Function;
 import com.flink.platform.common.job.Sql;
@@ -15,8 +16,7 @@ import com.flink.platform.sql.submit.helper.ExecuteSqls;
 import com.flink.platform.sql.submit.helper.ExecutionEnvs;
 import com.flink.platform.sql.submit.helper.Functions;
 
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.io.InputStream;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -28,8 +28,9 @@ import static java.util.stream.Collectors.toMap;
 public class Sql115Application {
     public static void main(String[] args) throws Exception {
         // deSer sql context
-        Path sqlContextPath = Paths.get(args[0]);
-        SqlContext sqlContext = JsonUtil.toBean(sqlContextPath, SqlContext.class);
+        CommonPath path = CommonPath.parse(args[0]);
+        InputStream inputStream = path.getInputStream();
+        SqlContext sqlContext = JsonUtil.toBean(inputStream, SqlContext.class);
 
         // step 1: create and configure environment
         Map<String, String> configMap = new HashMap<>();

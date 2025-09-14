@@ -5,6 +5,7 @@ import com.flink.platform.common.job.Catalog;
 import com.flink.platform.common.job.Function;
 import com.flink.platform.common.job.Sql;
 import com.flink.platform.common.job.SqlContext;
+import com.flink.platform.common.util.DateUtil;
 import com.flink.platform.common.util.JsonUtil;
 import com.flink.platform.common.util.SqlUtil;
 import com.flink.platform.dao.entity.JobRunInfo;
@@ -16,12 +17,9 @@ import com.flink.platform.web.util.PathUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.io.FileUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import java.io.File;
-import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -46,12 +44,12 @@ public class SqlContextHelper {
 
     public String convertFromAndSaveToFile(JobRunInfo jobRun) {
         SqlContext sqlContext = convertFrom(jobRun);
-        long timestamp = System.currentTimeMillis();
+        long timestamp = DateUtil.timestamp(jobRun.getCreateTime());
         String fileName = String.join(DOT, jobRun.getJobCode(), String.valueOf(timestamp), JSON_FILE_SUFFIX);
-        String execJobDirPath = PathUtil.getExecJobDirPath(jobRun.getUserId(), jobRun.getJobId(), jobRun.getType());
-        String localFilePath = String.join(FILE_SEPARATOR, execJobDirPath, fileName);
-        saveToStorage(localFilePath, sqlContext);
-        return localFilePath;
+        String relativePath = PathUtil.getJobRunRelativePath(jobRun);
+        String fileStoragePath = String.join(FILE_SEPARATOR, storageService.getRootPath(), relativePath, fileName);
+        saveToStorageSystem(fileStoragePath, sqlContext);
+        return fileStoragePath;
     }
 
     public SqlContext convertFrom(JobRunInfo jobRun) {
@@ -109,11 +107,11 @@ public class SqlContextHelper {
         return sqlList;
     }
 
-    public void saveToStorage(String sqlFilePath, SqlContext sqlContext) {
+    public void saveToStorageSystem(String fileStoragePath, SqlContext sqlContext) {
         try {
             String json = JsonUtil.toJsonString(sqlContext);
-            FileUtils.write(new File(sqlFilePath), json, StandardCharsets.UTF_8);
-            log.info("serial sql context to local disk successfully, path: {}, data: {}", sqlFilePath, json);
+            storageService.createFile(fileStoragePath, json, true);
+            log.info("serial sql context to storage successfully, path: {}, data: {}", fileStoragePath, json);
         } catch (Exception e) {
             throw new RuntimeException("serde sql context to local disk failed", e);
         }
