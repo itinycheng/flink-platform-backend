@@ -24,11 +24,11 @@ public class ResourceUtil {
 
     private static final String localRootPath = PathUtil.getWorkRootPath();
 
-    private static final String storageRootPath = SpringContext.getBean("storageBasePath", String.class);
-
     private static final StorageService STORAGE_SERVICE = SpringContext.getBean(StorageService.class);
 
     private static final ResourceService RESOURCE_SERVICE = SpringContext.getBean(ResourceService.class);
+
+    private static final String storageRootPath = STORAGE_SERVICE.getRootPath();
 
     public static String getStorageFilePath(String relativePath, Long userId) {
         String storageUserDir = getStorageUserDir(userId);

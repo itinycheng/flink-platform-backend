@@ -11,7 +11,7 @@ import com.flink.platform.dao.entity.JobRunInfo;
 import com.flink.platform.dao.entity.task.FlinkJob;
 import com.flink.platform.dao.service.CatalogInfoService;
 import com.flink.platform.web.enums.Placeholder;
-import com.flink.platform.web.environment.HadoopService;
+import com.flink.platform.web.service.StorageService;
 import com.flink.platform.web.util.PathUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -42,7 +42,7 @@ public class SqlContextHelper {
 
     private final CatalogInfoService catalogInfoService;
 
-    private final HadoopService hadoopService;
+    private final StorageService storageService;
 
     public String convertFromAndSaveToFile(JobRunInfo jobRun) {
         SqlContext sqlContext = convertFrom(jobRun);
@@ -50,7 +50,7 @@ public class SqlContextHelper {
         String fileName = String.join(DOT, jobRun.getJobCode(), String.valueOf(timestamp), JSON_FILE_SUFFIX);
         String execJobDirPath = PathUtil.getExecJobDirPath(jobRun.getUserId(), jobRun.getJobId(), jobRun.getType());
         String localFilePath = String.join(FILE_SEPARATOR, execJobDirPath, fileName);
-        saveToFile(localFilePath, sqlContext);
+        saveToStorage(localFilePath, sqlContext);
         return localFilePath;
     }
 
@@ -77,7 +77,7 @@ public class SqlContextHelper {
             return emptyList();
         }
         return catalogs.stream()
-                .map(id -> catalogInfoService.getById(id))
+                .map(catalogInfoService::getById)
                 .map(catalogInfo -> {
                     String createSql = catalogInfo.getCreateSql();
                     if (variables != null) {
@@ -109,7 +109,7 @@ public class SqlContextHelper {
         return sqlList;
     }
 
-    public void saveToFile(String sqlFilePath, SqlContext sqlContext) {
+    public void saveToStorage(String sqlFilePath, SqlContext sqlContext) {
         try {
             String json = JsonUtil.toJsonString(sqlContext);
             FileUtils.write(new File(sqlFilePath), json, StandardCharsets.UTF_8);

@@ -35,4 +35,9 @@ public class LocalStorageSystem extends HdfsStorageSystem {
         log.info("[fileSystem scheme]: {}", fs.getScheme());
         log.info("=============== [storage configuration info end.] ===============");
     }
+
+    @Override
+    public boolean isDistributed() {
+        return false;
+    }
 }
