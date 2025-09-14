@@ -16,14 +16,14 @@ public class PathUtil {
 
     private static final String JOB_ROOT_DIR_NAME = "jobs";
 
-    private static final String JOB_WORK_DIR_NAME = "job_%d";
+    private static final String JOB_DIR_FORMAT = "job_%d";
 
-    private static final String USER_DIR_NAME = "user_%d";
+    private static final String USER_DIR_FORMAT = "user_%d";
 
     public static String getExecJobDirPath(@Nonnull Long userId, @Nonnull Long jobId, @Nonnull JobType jobType) {
         String jobRootPath = getExecJobRootPath();
-        String userDirName = String.format(USER_DIR_NAME, userId);
-        String jobDirName = String.format(JOB_WORK_DIR_NAME, jobId);
+        String userDirName = String.format(USER_DIR_FORMAT, userId);
+        String jobDirName = String.format(JOB_DIR_FORMAT, jobId);
         return String.join(
                 FILE_SEPARATOR, jobRootPath, userDirName, jobType.name().toLowerCase(), jobDirName);
     }

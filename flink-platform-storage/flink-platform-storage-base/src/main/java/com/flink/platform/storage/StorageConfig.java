@@ -11,11 +11,11 @@ import java.util.ServiceLoader;
 import java.util.UUID;
 
 import static com.flink.platform.common.constants.Constant.FILE_SEPARATOR;
-import static java.lang.String.format;
 
 /**
  * storage loader.
  */
+@SuppressWarnings("unused")
 @Slf4j
 @Configuration
 public class StorageConfig {
@@ -29,24 +29,7 @@ public class StorageConfig {
                 return storageFactory.createStorageSystem(properties);
             }
         }
-
         return null;
-    }
-
-    @Bean("storageBasePath")
-    public String createStorageBasePath(StorageSystem storageSystem, StorageProperties properties) throws Exception {
-        String storageBasePath = properties.getStorageBasePath();
-        if (!storageSystem.exists(storageBasePath)) {
-            if (storageSystem.mkdir(storageBasePath)) {
-                log.info("storage base dir: {} created successfully.", storageBasePath);
-            } else {
-                throw new RuntimeException(format("create storage base dir: %s failed.", storageBasePath));
-            }
-        } else {
-            log.info("storage base dir: {} already exists", storageBasePath);
-        }
-
-        return storageSystem.normalizePath(storageBasePath);
     }
 
     @Bean("primaryClusterIdFilePath")
@@ -62,7 +45,6 @@ public class StorageConfig {
                 storageSystem.rename(tmpClusterIdFile, clusterIdFile);
             }
         }
-
         return storageSystem.normalizePath(clusterIdFile);
     }
 }

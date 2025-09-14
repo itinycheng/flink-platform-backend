@@ -18,6 +18,14 @@ public class StorageService {
 
     private final StorageSystem storageSystem;
 
+    public boolean isDistributed() {
+        return storageSystem.isDistributed();
+    }
+
+    public String getRootPath() {
+        return storageSystem.getRootPath();
+    }
+
     public void copyFileToLocalIfChanged(String hdfsFile, String localFile) throws IOException {
         storageSystem.copyToLocalFileIfChanged(hdfsFile, localFile);
     }

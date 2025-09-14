@@ -19,6 +19,7 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 
 import static com.flink.platform.common.constants.Constant.GLOBAL_ZONE_ID;
+import static java.lang.String.format;
 
 /**
  * hdfs storage system.
@@ -28,27 +29,20 @@ public class HdfsStorageSystem implements StorageSystem {
 
     protected final StorageProperties properties;
     protected FileSystem fs;
+    protected String rootPath;
 
     public HdfsStorageSystem(@Nonnull StorageProperties properties) {
         this.properties = Preconditions.checkNotNull(properties);
     }
 
-    public void open() throws IOException {
-        System.setProperty("HADOOP_USER_NAME", properties.getUsername());
-        org.apache.hadoop.conf.Configuration conf = new HdfsConfiguration();
-        properties.getProperties().forEach(conf::set);
-        fs = FileSystem.newInstance(conf);
-        // Log configuration information.
-        StringBuilder builder = new StringBuilder();
-        builder.append("=============== [storage configuration info start.] ===============\n");
-        builder.append("[hdfs conf size]: ").append(conf.size()).append("\n");
-        builder.append("[hdfs uri]: ").append(fs.getUri()).append("\n");
-        builder.append("[fs.defaultFS]: ").append(conf.get("fs.defaultFS")).append("\n");
-        builder.append("[fs.hdfs.impl]: ").append(conf.get("fs.hdfs.impl")).append("\n");
-        builder.append("[fileSystem scheme]: ").append(fs.getScheme()).append("\n");
-        builder.append(conf).append("\n");
-        builder.append("=============== [storage configuration info end.] ===============");
-        log.info("Hdfs FileSystem initialized successfully.\n{}", builder);
+    @Override
+    public String getRootPath() {
+        return rootPath;
+    }
+
+    @Override
+    public boolean isDistributed() {
+        return true;
     }
 
     @Override
@@ -150,8 +144,49 @@ public class HdfsStorageSystem implements StorageSystem {
         return hdfsPath.isAbsolute();
     }
 
+    // ==================================================================
+    // ========================= init and close =========================
+    // ==================================================================
+
+    @Override
+    public void open() throws IOException {
+        System.setProperty("HADOOP_USER_NAME", properties.getUsername());
+        org.apache.hadoop.conf.Configuration conf = new HdfsConfiguration();
+        properties.getProperties().forEach(conf::set);
+        fs = FileSystem.newInstance(conf);
+        // create and get root path.
+        rootPath = initializeRootPath();
+        // Log configuration information.
+        StringBuilder builder = new StringBuilder();
+        builder.append("=============== [storage configuration info start.] ===============\n");
+        builder.append("[hdfs conf size]: ").append(conf.size()).append("\n");
+        builder.append("[hdfs uri]: ").append(fs.getUri()).append("\n");
+        builder.append("[fs.defaultFS]: ").append(conf.get("fs.defaultFS")).append("\n");
+        builder.append("[fs.hdfs.impl]: ").append(conf.get("fs.hdfs.impl")).append("\n");
+        builder.append("[fileSystem scheme]: ").append(fs.getScheme()).append("\n");
+        builder.append(conf).append("\n");
+        builder.append("=============== [storage configuration info end.] ===============");
+        log.info("Hdfs FileSystem initialized successfully.\n{}", builder);
+    }
+
     @Override
     public void close() throws IOException {
         fs.close();
+    }
+
+    private String initializeRootPath() throws IOException {
+        String storageBasePath = properties.getStorageBasePath();
+        Path basePath = new Path(storageBasePath);
+        if (fs.exists(basePath)) {
+            log.info("storage base dir: {} already exists", storageBasePath);
+        }
+
+        if (fs.mkdirs(basePath)) {
+            log.info("storage base dir: {} created successfully.", storageBasePath);
+        } else {
+            throw new RuntimeException(format("create storage base dir: %s failed.", storageBasePath));
+        }
+
+        return normalizePath(storageBasePath);
     }
 }

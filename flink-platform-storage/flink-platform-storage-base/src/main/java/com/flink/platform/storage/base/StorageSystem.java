@@ -10,6 +10,10 @@ public interface StorageSystem extends Closeable {
 
     void open() throws IOException;
 
+    String getRootPath();
+
+    boolean isDistributed();
+
     StorageStatus getFileStatus(String filePath) throws IOException;
 
     void copyToLocalFile(String srcFile, String dstFile) throws IOException;
