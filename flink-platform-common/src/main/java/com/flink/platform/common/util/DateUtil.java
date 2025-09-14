@@ -14,6 +14,8 @@ import static com.flink.platform.common.constants.Constant.GLOBAL_ZONE_ID;
 /** date utils. */
 public class DateUtil {
 
+    public static final String DATE_FORMAT = "yyyyMMdd";
+
     public static final String GLOBAL_DATE_TIME_FORMAT = "yyyy-MM-dd HH:mm:ss";
 
     public static final long MILLIS_PER_MINUTE = DateUtils.MILLIS_PER_MINUTE;
@@ -22,6 +24,10 @@ public class DateUtil {
 
     public static LocalDateTime toLocalDateTime(long timestamp) {
         return LocalDateTime.ofInstant(Instant.ofEpochMilli(timestamp), GLOBAL_ZONE_ID);
+    }
+
+    public static long timestamp(LocalDateTime dateTime) {
+        return dateTime.atZone(GLOBAL_ZONE_ID).toInstant().toEpochMilli();
     }
 
     public static String format(LocalDateTime dateTime) {
