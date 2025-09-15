@@ -4,6 +4,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 
+import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -23,8 +24,16 @@ public class HdfsPath implements CommonPath {
     @Override
     public InputStream getInputStream() throws IOException {
         Configuration conf = new Configuration();
-        try (FileSystem fs = FileSystem.get(conf)) {
-            return fs.open(filePath);
-        }
+        FileSystem fs = FileSystem.get(conf);
+        return new FilterInputStream(fs.open(filePath)) {
+            @Override
+            public void close() throws IOException {
+                try {
+                    super.close();
+                } finally {
+                    fs.close();
+                }
+            }
+        };
     }
 }
