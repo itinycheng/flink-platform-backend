@@ -10,8 +10,6 @@ import org.springframework.context.annotation.Configuration;
 import java.util.ServiceLoader;
 import java.util.UUID;
 
-import static com.flink.platform.common.constants.Constant.FILE_SEPARATOR;
-
 /**
  * storage loader.
  */
@@ -35,10 +33,11 @@ public class StorageConfig {
     @Bean("primaryClusterIdFilePath")
     public String primaryClusterIdFilePath(StorageSystem storageSystem, StorageProperties properties) throws Exception {
         String storageBasePath = properties.getStorageBasePath();
-        String clusterIdFile = String.join(FILE_SEPARATOR, storageBasePath, ".main_cluster_id");
+        String fileSeparator = storageSystem.getFileSeparator();
+        String clusterIdFile = String.join(fileSeparator, storageBasePath, ".main_cluster_id");
         if (!storageSystem.exists(clusterIdFile)) {
             String clusterId = UUID.randomUUID().toString();
-            String tmpClusterIdFile = String.join(FILE_SEPARATOR, storageBasePath, ".main_cluster_id" + clusterId);
+            String tmpClusterIdFile = String.join(fileSeparator, storageBasePath, ".main_cluster_id" + clusterId);
 
             storageSystem.createFile(tmpClusterIdFile, clusterId, true);
             if (!storageSystem.exists(clusterIdFile)) {

@@ -8,7 +8,7 @@ import jakarta.annotation.Nonnull;
 import java.nio.file.Paths;
 import java.time.format.DateTimeFormatter;
 
-import static com.flink.platform.common.constants.Constant.FILE_SEPARATOR;
+import static com.flink.platform.common.constants.Constant.OS_FILE_SEPARATOR;
 import static com.flink.platform.common.constants.Constant.USER_DIR;
 import static com.flink.platform.common.enums.JobType.SHELL;
 import static com.flink.platform.common.util.DateUtil.DATE_FORMAT;
@@ -28,7 +28,7 @@ public class PathUtil {
     public static String getJobRunRelativePath(JobRunInfo jobRun) {
         DateTimeFormatter formatter = DateUtil.getFormatter(DATE_FORMAT);
         return String.join(
-                FILE_SEPARATOR,
+                OS_FILE_SEPARATOR,
                 JOB_ROOT_DIR,
                 jobRun.getCreateTime().format(formatter),
                 String.format(USER_DIR_FORMAT, jobRun.getUserId()),
@@ -41,19 +41,19 @@ public class PathUtil {
         String userDirName = String.format(USER_DIR_FORMAT, userId);
         String jobDirName = String.format(JOB_DIR_FORMAT, jobId);
         return String.join(
-                FILE_SEPARATOR, jobRootPath, userDirName, jobType.name().toLowerCase(), jobDirName);
+                OS_FILE_SEPARATOR, jobRootPath, userDirName, jobType.name().toLowerCase(), jobDirName);
     }
 
     public static String getExecJobRootPath() {
-        return String.join(FILE_SEPARATOR, getWorkRootPath(), JOB_ROOT_DIR);
+        return String.join(OS_FILE_SEPARATOR, getLocalWorkRootPath(), JOB_ROOT_DIR);
     }
 
-    public static String getWorkRootPath() {
+    public static String getLocalWorkRootPath() {
         if (Paths.get(WORK_DIR).isAbsolute()) {
             return WORK_DIR;
         }
 
-        return String.join(FILE_SEPARATOR, USER_DIR, WORK_DIR);
+        return String.join(OS_FILE_SEPARATOR, USER_DIR, WORK_DIR);
     }
 
     public static void main(String[] args) {

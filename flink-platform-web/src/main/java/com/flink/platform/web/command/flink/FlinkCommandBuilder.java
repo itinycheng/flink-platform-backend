@@ -11,6 +11,7 @@ import com.flink.platform.web.config.FlinkConfig;
 import com.flink.platform.web.environment.HadoopService;
 import com.flink.platform.web.service.StorageService;
 import com.flink.platform.web.util.PathUtil;
+import com.flink.platform.web.util.ResourceUtil;
 import com.flink.platform.web.util.YarnHelper;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Resource;
@@ -19,6 +20,7 @@ import org.apache.commons.collections4.ListUtils;
 import org.apache.hadoop.fs.Path;
 import org.springframework.context.annotation.Lazy;
 
+import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -27,12 +29,10 @@ import java.util.Collections;
 import java.util.List;
 
 import static com.flink.platform.common.constants.Constant.EMPTY;
-import static com.flink.platform.common.constants.Constant.SEMICOLON;
 import static com.flink.platform.common.constants.Constant.SLASH;
 import static com.flink.platform.common.constants.JobConstant.YARN_APPLICATION_NAME;
 import static com.flink.platform.common.constants.JobConstant.YARN_APPLICATION_TAG;
 import static com.flink.platform.common.constants.JobConstant.YARN_PROVIDED_LIB_DIRS;
-import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 
 /** Flink command builder. */
@@ -70,23 +70,25 @@ public abstract class FlinkCommandBuilder implements CommandBuilder {
     @Override
     public JobCommand buildCommand(Long flowRunId, @Nonnull JobRunInfo jobRun) throws Exception {
         var flinkJob = jobRun.getConfig().unwrap(FlinkJob.class);
-        initExtJarPaths(flinkJob);
+
         var deployMode = jobRun.getDeployMode();
         var command = new FlinkCommand(jobRun.getId(), deployMode);
         var execMode = String.format(EXEC_MODE, deployMode.mode, deployMode.target);
         command.setPrefix(flinkConfig.getCommandPath() + execMode);
-        // add configurations
+
+        // add configurations.
         var configs = command.getConfigs();
         if (flinkJob.getConfigs() != null) {
             configs.putAll(flinkJob.getConfigs());
         }
-        // add yarn application name and tag
+        // TODO: support more resource providers.
         configs.put(YARN_APPLICATION_NAME, createAppName(jobRun));
         configs.put(YARN_APPLICATION_TAG, createAppTag(jobRun));
-        // add lib dirs and user classpaths
-        configs.put(YARN_PROVIDED_LIB_DIRS, getMergedLibDirs(flinkJob.getExtJarPaths()));
-        List<URL> classpaths = getOrCreateClasspaths(jobRun, flinkJob.getExtJarPaths());
-        command.setClasspaths(classpaths);
+        configs.put(YARN_PROVIDED_LIB_DIRS, flinkConfig.getLibDirs());
+
+        // add classpaths.
+        List<String> extJarStoragePaths = getExtJarPaths(flinkJob);
+        command.setClasspaths(downloadAndGetExtJarUrls(extJarStoragePaths));
         switch (jobRun.getType()) {
             case FLINK_JAR:
                 var localPathOfMainJar = getLocalPathOfMainJar(jobRun);
@@ -124,43 +126,23 @@ public abstract class FlinkCommandBuilder implements CommandBuilder {
                 "-", jobRun.getExecMode().name(), jobRun.getJobCode() + "_" + jobRun.getFlowRunId(), jobName);
     }
 
-    private String getLocalPathOfMainJar(JobRunInfo jobRun) {
+    private String getLocalPathOfMainJar(JobRunInfo jobRun) throws IOException {
         var jarPath = jobRun.getSubject();
         if (!jarPath.toLowerCase().startsWith("hdfs")) {
             return jarPath;
         }
 
-        var jarName = new Path(jarPath).getName();
-        var localJarPath = getLocalFilePath(jobRun, jarName);
-        copyToLocalIfChanged(jarPath, localJarPath);
-        return localJarPath;
+        return ResourceUtil.copyFromStorageToLocal(jarPath);
     }
 
-    private Object getMergedLibDirs(List<String> extJarList) {
-        var userLibDirs = extJarList.stream()
-                .map(s -> s.substring(0, s.lastIndexOf(SLASH)))
-                .distinct()
-                .collect(joining(SEMICOLON));
-        return !userLibDirs.isEmpty()
-                ? String.join(SEMICOLON, flinkConfig.getLibDirs(), userLibDirs)
-                : flinkConfig.getLibDirs();
-    }
-
-    private List<URL> getOrCreateClasspaths(JobRunInfo jobRun, List<String> extJarList) throws Exception {
-        var classpaths = new ArrayList<URL>(extJarList.size());
-        for (var hdfsExtJar : extJarList) {
-            var extJarName = new Path(hdfsExtJar).getName();
-            var localPath = getLocalFilePath(jobRun, extJarName);
-            copyToLocalIfChanged(hdfsExtJar, localPath);
-            copyToRemoteIfChanged(localPath, hdfsExtJar);
-            classpaths.add(Paths.get(localPath).toUri().toURL());
+    private List<URL> downloadAndGetExtJarUrls(List<String> extJarList) throws Exception {
+        var jarUrls = new ArrayList<URL>(extJarList.size());
+        for (var extJar : extJarList) {
+            var localPath = ResourceUtil.copyFromStorageToLocal(extJar);
+            copyToRemoteIfChanged(localPath, extJar);
+            jarUrls.add(Paths.get(localPath).toUri().toURL());
         }
-        return classpaths;
-    }
-
-    private String getLocalFilePath(JobRunInfo jobRun, String fileName) {
-        var execJobDirPath = PathUtil.getExecJobDirPath(jobRun.getUserId(), jobRun.getJobId(), jobRun.getType());
-        return String.join(SLASH, execJobDirPath, fileName);
+        return jarUrls;
     }
 
     private String getLocalPathOfSqlJarFile() {
@@ -171,6 +153,7 @@ public abstract class FlinkCommandBuilder implements CommandBuilder {
         return localFile;
     }
 
+    // TODO: support more environments.
     private void copyToRemoteIfChanged(String localFile, String hdfsFile) {
         try {
             hadoopService.copyIfNewHdfsAndFileChanged(localFile, hdfsFile);
@@ -187,11 +170,10 @@ public abstract class FlinkCommandBuilder implements CommandBuilder {
         }
     }
 
-    private void initExtJarPaths(FlinkJob flinkJob) {
-        var jarPaths = ListUtils.defaultIfNull(flinkJob.getExtJars(), Collections.emptyList()).stream()
+    private List<String> getExtJarPaths(FlinkJob flinkJob) {
+        return ListUtils.defaultIfNull(flinkJob.getExtJars(), Collections.emptyList()).stream()
                 .map(resourceId -> resourceService.getById(resourceId))
                 .map(com.flink.platform.dao.entity.Resource::getFullName)
                 .collect(toList());
-        flinkJob.setExtJarPaths(jarPaths);
     }
 }

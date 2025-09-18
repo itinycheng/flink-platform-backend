@@ -22,7 +22,7 @@ public class ResourceUtil {
 
     private static final String RESOURCE_DIR = "resource";
 
-    private static final String localRootPath = PathUtil.getWorkRootPath();
+    private static final String localRootPath = PathUtil.getLocalWorkRootPath();
 
     private static final StorageService STORAGE_SERVICE = SpringContext.getBean(StorageService.class);
 
@@ -91,6 +91,7 @@ public class ResourceUtil {
     }
 
     public static String copyFromStorageToLocal(String storagePath) throws IOException {
+        // TODO: storage system is local disk, just return the path ?
         String localPath = storagePath.replace(storageRootPath, localRootPath);
         STORAGE_SERVICE.copyFileToLocalIfChanged(storagePath, localPath);
         return localPath;

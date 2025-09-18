@@ -23,7 +23,7 @@ public class Constant {
 
     public static final String USER_DIR;
 
-    public static final String FILE_SEPARATOR = File.separator;
+    public static final String OS_FILE_SEPARATOR = File.separator;
 
     public static final String COMMA = ",";
 

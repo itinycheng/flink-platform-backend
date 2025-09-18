@@ -7,7 +7,7 @@ import org.apache.hadoop.yarn.api.records.ApplicationReport;
 /** yarn util. */
 public class YarnHelper {
 
-    private static final String APP_TAG_FORMAT = "tag_%s";
+    private static final String APP_TAG_FORMAT = "job_run_id_%s";
 
     public static String getApplicationTag(Long jobRunId) {
         return String.format(APP_TAG_FORMAT, jobRunId);

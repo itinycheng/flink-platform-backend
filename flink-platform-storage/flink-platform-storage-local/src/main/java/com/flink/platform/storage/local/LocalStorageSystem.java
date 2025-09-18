@@ -1,5 +1,6 @@
 package com.flink.platform.storage.local;
 
+import com.flink.platform.common.constants.Constant;
 import com.flink.platform.storage.StorageProperties;
 import com.flink.platform.storage.hdfs.HdfsStorageSystem;
 import jakarta.annotation.Nonnull;
@@ -39,5 +40,10 @@ public class LocalStorageSystem extends HdfsStorageSystem {
     @Override
     public boolean isDistributed() {
         return false;
+    }
+
+    @Override
+    public String getFileSeparator() {
+        return Constant.OS_FILE_SEPARATOR;
     }
 }

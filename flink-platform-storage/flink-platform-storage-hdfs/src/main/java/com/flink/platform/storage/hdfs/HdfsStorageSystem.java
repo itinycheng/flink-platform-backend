@@ -1,5 +1,6 @@
 package com.flink.platform.storage.hdfs;
 
+import com.flink.platform.common.constants.Constant;
 import com.flink.platform.common.util.Preconditions;
 import com.flink.platform.storage.StorageProperties;
 import com.flink.platform.storage.base.StorageStatus;
@@ -46,14 +47,19 @@ public class HdfsStorageSystem implements StorageSystem {
     }
 
     @Override
+    public String getFileSeparator() {
+        return Constant.SLASH;
+    }
+
+    @Override
     public StorageStatus getFileStatus(String filePath) throws IOException {
         var path = new Path(filePath);
         FileStatus status = fs.getFileStatus(path);
 
-        long modificationTime = status.getModificationTime();
+        var modificationTime = status.getModificationTime();
         var instant = Instant.ofEpochMilli(modificationTime);
         var localDateTime = LocalDateTime.ofInstant(instant, GLOBAL_ZONE_ID);
-        return StorageStatus.of(status.getLen(), localDateTime);
+        return StorageStatus.of(path.getName(), status.getLen(), localDateTime);
     }
 
     @Override
