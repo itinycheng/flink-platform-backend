@@ -25,7 +25,7 @@ import java.util.Map;
 import java.util.regex.Matcher;
 
 import static com.flink.platform.common.constants.Constant.DOT;
-import static com.flink.platform.common.constants.Constant.FILE_SEPARATOR;
+import static com.flink.platform.common.constants.Constant.OS_FILE_SEPARATOR;
 import static com.flink.platform.common.constants.JobConstant.JSON_FILE_SUFFIX;
 import static com.flink.platform.common.constants.JobConstant.SQL_PATTERN;
 import static java.util.Collections.emptyList;
@@ -47,7 +47,7 @@ public class SqlContextHelper {
         long timestamp = DateUtil.timestamp(jobRun.getCreateTime());
         String fileName = String.join(DOT, jobRun.getJobCode(), String.valueOf(timestamp), JSON_FILE_SUFFIX);
         String relativePath = PathUtil.getJobRunRelativePath(jobRun);
-        String fileStoragePath = String.join(FILE_SEPARATOR, storageService.getRootPath(), relativePath, fileName);
+        String fileStoragePath = String.join(OS_FILE_SEPARATOR, storageService.getRootPath(), relativePath, fileName);
         saveToStorageSystem(fileStoragePath, sqlContext);
         return fileStoragePath;
     }
@@ -58,7 +58,6 @@ public class SqlContextHelper {
         sqlContext.setId(jobRun.getJobCode());
         sqlContext.setSqls(toSqls(jobRun.getSubject()));
         sqlContext.setExecMode(jobRun.getExecMode());
-        sqlContext.setExtJars(flinkJob.getExtJarPaths());
         sqlContext.setConfigs(toConfigs(flinkJob.getConfigs()));
         sqlContext.setCatalogs(toCatalogs(flinkJob.getCatalogs(), jobRun.getVariables()));
         sqlContext.setFunctions(toFunctions());

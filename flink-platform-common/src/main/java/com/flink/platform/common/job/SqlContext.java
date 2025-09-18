@@ -16,8 +16,6 @@ public class SqlContext {
 
     private ExecutionMode execMode;
 
-    private List<String> extJars;
-
     /** flink-conf.yaml configs. */
     private Map<String, String> configs;
 

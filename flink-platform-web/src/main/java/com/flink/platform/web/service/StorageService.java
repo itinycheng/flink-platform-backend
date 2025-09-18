@@ -1,5 +1,6 @@
 package com.flink.platform.web.service;
 
+import com.flink.platform.storage.base.StorageStatus;
 import com.flink.platform.storage.base.StorageSystem;
 import jakarta.annotation.PreDestroy;
 import lombok.RequiredArgsConstructor;
@@ -24,6 +25,10 @@ public class StorageService {
 
     public String getRootPath() {
         return storageSystem.getRootPath();
+    }
+
+    public StorageStatus getFileStatus(String filePath) throws IOException {
+        return storageSystem.getFileStatus(filePath);
     }
 
     public void copyFileToLocalIfChanged(String hdfsFile, String localFile) throws IOException {

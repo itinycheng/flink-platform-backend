@@ -14,7 +14,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 
 import static com.flink.platform.common.constants.Constant.DOT;
-import static com.flink.platform.common.constants.Constant.FILE_SEPARATOR;
+import static com.flink.platform.common.constants.Constant.OS_FILE_SEPARATOR;
 import static com.flink.platform.common.enums.JobType.SHELL;
 import static com.flink.platform.web.util.CommandUtil.commandType;
 import static com.flink.platform.web.util.CommandUtil.getShellCommand;
@@ -34,7 +34,7 @@ public class ShellCommandBuilder implements CommandBuilder {
     public JobCommand buildCommand(Long flowRunId, @Nonnull JobRunInfo jobRun) throws IOException {
         String commandDirPath = getExecJobDirPath(jobRun.getUserId(), jobRun.getJobId(), SHELL);
         String commandFileName = String.join(DOT, jobRun.getJobId().toString(), commandType());
-        String commandFilePath = String.join(FILE_SEPARATOR, commandDirPath, commandFileName);
+        String commandFilePath = String.join(OS_FILE_SEPARATOR, commandDirPath, commandFileName);
         Path commandPath = Paths.get(commandFilePath);
         FileUtil.rewriteFile(commandPath, jobRun.getSubject());
         FileUtil.setPermissions(commandPath, "rwxr--r--");

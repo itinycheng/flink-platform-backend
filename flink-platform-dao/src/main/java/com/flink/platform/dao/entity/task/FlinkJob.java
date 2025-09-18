@@ -33,6 +33,4 @@ public class FlinkJob extends BaseJob {
 
     /** wait until the streaming job terminate. */
     private boolean waitForTermination;
-
-    private transient List<String> extJarPaths;
 }
