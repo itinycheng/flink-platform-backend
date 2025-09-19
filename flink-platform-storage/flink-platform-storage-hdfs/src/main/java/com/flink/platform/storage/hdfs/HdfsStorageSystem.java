@@ -52,6 +52,11 @@ public class HdfsStorageSystem implements StorageSystem {
     }
 
     @Override
+    public String getParentPath(String filePath) {
+        return new Path(filePath).getParent().toString();
+    }
+
+    @Override
     public StorageStatus getFileStatus(String filePath) throws IOException {
         var path = new Path(filePath);
         FileStatus status = fs.getFileStatus(path);
@@ -59,7 +64,7 @@ public class HdfsStorageSystem implements StorageSystem {
         var modificationTime = status.getModificationTime();
         var instant = Instant.ofEpochMilli(modificationTime);
         var localDateTime = LocalDateTime.ofInstant(instant, GLOBAL_ZONE_ID);
-        return StorageStatus.of(path.getName(), status.getLen(), localDateTime);
+        return StorageStatus.of(status.getLen(), localDateTime);
     }
 
     @Override

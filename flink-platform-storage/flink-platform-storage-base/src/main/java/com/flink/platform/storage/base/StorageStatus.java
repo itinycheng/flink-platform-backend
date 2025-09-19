@@ -19,11 +19,8 @@ public class StorageStatus {
 
     private LocalDateTime modificationTime;
 
-    private String name;
-
-    public static StorageStatus of(@Nonnull String name, long byteLength, @Nonnull LocalDateTime modificationTime) {
+    public static StorageStatus of(long byteLength, @Nonnull LocalDateTime modificationTime) {
         StorageStatus storageStatus = new StorageStatus();
-        storageStatus.name = checkNotNull(name);
         storageStatus.byteLength = byteLength;
         storageStatus.modificationTime = checkNotNull(modificationTime);
         return storageStatus;

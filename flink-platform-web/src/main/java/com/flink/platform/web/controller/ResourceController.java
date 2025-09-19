@@ -152,19 +152,19 @@ public class ResourceController {
                 Resource resource = resourceService.getById(pid);
                 parentDir = resource.getFullName();
             }
-            String fullStorageFileName =
-                    ResourceUtil.getFullStorageFilePath(loginUser.getId(), parentDir, file.getOriginalFilename());
-            if (id == null && storageService.exists(fullStorageFileName)) {
+            String absStorageFilePath = resourceManageService.getAbsStorageFilePath(
+                    loginUser.getId(), parentDir, file.getOriginalFilename());
+            if (id == null && storageService.exists(absStorageFilePath)) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(FILE_EXISTS.getDesc());
             }
 
             localFileName = ResourceUtil.randomLocalTmpFile();
             ResourceUtil.copyToLocal(file, localFileName);
-            storageService.copyFromLocal(localFileName, fullStorageFileName, true, true);
+            storageService.copyFromLocal(localFileName, absStorageFilePath, true, true);
 
             Resource resource = new Resource();
-            resource.setFullName(fullStorageFileName);
-            resource.setName(new Path(fullStorageFileName).getName());
+            resource.setFullName(absStorageFilePath);
+            resource.setName(new Path(absStorageFilePath).getName());
             return ResponseEntity.status(HttpStatus.OK).body(success(resource));
         } catch (Exception e) {
             log.error("upload file error", e);
