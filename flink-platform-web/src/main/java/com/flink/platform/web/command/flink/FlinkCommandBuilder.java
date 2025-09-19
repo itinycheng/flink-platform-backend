@@ -9,9 +9,9 @@ import com.flink.platform.web.command.CommandBuilder;
 import com.flink.platform.web.command.JobCommand;
 import com.flink.platform.web.config.FlinkConfig;
 import com.flink.platform.web.environment.HadoopService;
+import com.flink.platform.web.service.ResourceManageService;
 import com.flink.platform.web.service.StorageService;
 import com.flink.platform.web.util.PathUtil;
-import com.flink.platform.web.util.ResourceUtil;
 import com.flink.platform.web.util.YarnHelper;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Resource;
@@ -29,10 +29,12 @@ import java.util.Collections;
 import java.util.List;
 
 import static com.flink.platform.common.constants.Constant.EMPTY;
+import static com.flink.platform.common.constants.Constant.SEMICOLON;
 import static com.flink.platform.common.constants.Constant.SLASH;
 import static com.flink.platform.common.constants.JobConstant.YARN_APPLICATION_NAME;
 import static com.flink.platform.common.constants.JobConstant.YARN_APPLICATION_TAG;
 import static com.flink.platform.common.constants.JobConstant.YARN_PROVIDED_LIB_DIRS;
+import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 
 /** Flink command builder. */
@@ -52,6 +54,9 @@ public abstract class FlinkCommandBuilder implements CommandBuilder {
     @Resource
     protected ResourceService resourceService;
 
+    @Resource
+    protected ResourceManageService resourceManageService;
+
     @Lazy
     @Resource
     protected HadoopService hadoopService;
@@ -70,6 +75,7 @@ public abstract class FlinkCommandBuilder implements CommandBuilder {
     @Override
     public JobCommand buildCommand(Long flowRunId, @Nonnull JobRunInfo jobRun) throws Exception {
         var flinkJob = jobRun.getConfig().unwrap(FlinkJob.class);
+        List<String> extJarStoragePaths = getExtJarPaths(flinkJob);
 
         var deployMode = jobRun.getDeployMode();
         var command = new FlinkCommand(jobRun.getId(), deployMode);
@@ -84,11 +90,9 @@ public abstract class FlinkCommandBuilder implements CommandBuilder {
         // TODO: support more resource providers.
         configs.put(YARN_APPLICATION_NAME, createAppName(jobRun));
         configs.put(YARN_APPLICATION_TAG, createAppTag(jobRun));
-        configs.put(YARN_PROVIDED_LIB_DIRS, flinkConfig.getLibDirs());
+        configs.put(YARN_PROVIDED_LIB_DIRS, getMergedLibDirs(extJarStoragePaths));
 
-        // add classpaths.
-        List<String> extJarStoragePaths = getExtJarPaths(flinkJob);
-        command.setClasspaths(downloadAndGetExtJarUrls(extJarStoragePaths));
+        command.setClasspaths(downloadAndGetLocalUrls(extJarStoragePaths));
         switch (jobRun.getType()) {
             case FLINK_JAR:
                 var localPathOfMainJar = getLocalPathOfMainJar(jobRun);
@@ -132,13 +136,23 @@ public abstract class FlinkCommandBuilder implements CommandBuilder {
             return jarPath;
         }
 
-        return ResourceUtil.copyFromStorageToLocal(jarPath);
+        return resourceManageService.copyFromStorageToLocal(jarPath);
     }
 
-    private List<URL> downloadAndGetExtJarUrls(List<String> extJarList) throws Exception {
+    private Object getMergedLibDirs(List<String> extJarList) {
+        var userLibDirs = extJarList.stream()
+                .map(extJar -> storageService.getParentPath(extJar))
+                .distinct()
+                .collect(joining(SEMICOLON));
+        return !userLibDirs.isEmpty()
+                ? String.join(SEMICOLON, flinkConfig.getLibDirs(), userLibDirs)
+                : flinkConfig.getLibDirs();
+    }
+
+    private List<URL> downloadAndGetLocalUrls(List<String> extJarList) throws Exception {
         var jarUrls = new ArrayList<URL>(extJarList.size());
         for (var extJar : extJarList) {
-            var localPath = ResourceUtil.copyFromStorageToLocal(extJar);
+            var localPath = resourceManageService.copyFromStorageToLocal(extJar);
             copyToRemoteIfChanged(localPath, extJar);
             jarUrls.add(Paths.get(localPath).toUri().toURL());
         }

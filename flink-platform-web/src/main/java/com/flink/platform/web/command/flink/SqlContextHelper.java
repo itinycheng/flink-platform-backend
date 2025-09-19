@@ -110,7 +110,7 @@ public class SqlContextHelper {
         try {
             String json = JsonUtil.toJsonString(sqlContext);
             storageService.createFile(fileStoragePath, json, true);
-            log.info("serial sql context to storage successfully, path: {}, data: {}", fileStoragePath, json);
+            log.debug("serial sql context to storage successfully, path: {}, data: {}", fileStoragePath, json);
         } catch (Exception e) {
             throw new RuntimeException("serde sql context to local disk failed", e);
         }

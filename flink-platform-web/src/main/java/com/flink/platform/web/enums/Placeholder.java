@@ -89,7 +89,7 @@ public enum Placeholder {
             }
 
             // filePath.startsWith("hdfs") ? filePath : getStorageFilePath(filePath, jobRun.getUserId());
-            String absoluteStoragePath = getAbsoluteStoragePath(filePath, jobRun.getUserId());
+            String absoluteStoragePath = getAbsoluteStoragePath(filePath);
             String localPath = copyFromStorageToLocal(absoluteStoragePath);
             result.put(variable, localPath);
 

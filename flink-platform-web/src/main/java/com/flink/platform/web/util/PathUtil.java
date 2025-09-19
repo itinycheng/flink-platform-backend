@@ -10,7 +10,6 @@ import java.time.format.DateTimeFormatter;
 
 import static com.flink.platform.common.constants.Constant.OS_FILE_SEPARATOR;
 import static com.flink.platform.common.constants.Constant.USER_DIR;
-import static com.flink.platform.common.enums.JobType.SHELL;
 import static com.flink.platform.common.util.DateUtil.DATE_FORMAT;
 
 /** Env path. */
@@ -54,10 +53,5 @@ public class PathUtil {
         }
 
         return String.join(OS_FILE_SEPARATOR, USER_DIR, WORK_DIR);
-    }
-
-    public static void main(String[] args) {
-        String userDirPath = getExecJobDirPath(1L, 12L, SHELL);
-        System.out.println(userDirPath);
     }
 }
