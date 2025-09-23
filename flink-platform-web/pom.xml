@@ -184,6 +184,11 @@
 						</goals>
 					</execution>
 				</executions>
+				<configuration>
+					<excludes>
+						<exclude>org.projectlombok:lombok</exclude>
+					</excludes>
+				</configuration>
 			</plugin>
 		</plugins>
 	</build>

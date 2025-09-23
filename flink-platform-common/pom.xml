@@ -15,7 +15,6 @@
 	<packaging>jar</packaging>
 
 	<properties>
-		<scope.provided>provided</scope.provided>
 		<maven.compiler.source>8</maven.compiler.source>
 		<maven.compiler.target>8</maven.compiler.target>
 	</properties>
