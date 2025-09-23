@@ -49,6 +49,7 @@
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<maven.compiler.source>21</maven.compiler.source>
 		<maven.compiler.target>21</maven.compiler.target>
+		<scope.provided>provided</scope.provided>
 		<commons-lang3.version>3.11</commons-lang3.version>
 		<commons-collections4.version>4.4</commons-collections4.version>
 		<commons-text.version>1.14.0</commons-text.version>
@@ -143,11 +144,6 @@
 			<dependency>
 				<groupId>io.grpc</groupId>
 				<artifactId>grpc-protobuf</artifactId>
-				<version>${grpc.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>io.grpc</groupId>
-				<artifactId>grpc-api</artifactId>
 				<version>${grpc.version}</version>
 			</dependency>
 			<!-- hadoop -->
