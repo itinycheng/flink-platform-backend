@@ -24,7 +24,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.apache.commons.lang3.ArrayUtils.EMPTY_STRING_ARRAY;
 
 /**
@@ -81,7 +83,7 @@ public class HadoopService {
         }
 
         // start the application report refresh thread.
-        reportRefreshExecutor.execute(this::refreshReport);
+        reportRefreshExecutor.scheduleWithFixedDelay(this::refreshReport, 5, 10, TimeUnit.SECONDS);
     }
 
     public ApplicationStatusReport getApplicationReport(String applicationTag) throws Exception {
@@ -141,6 +143,16 @@ public class HadoopService {
 
         if (isCopy) {
             hdfsClient.copyFromLocalFile(false, true, localPath, hdfsPath);
+        }
+    }
+
+    public void writeToFilePath(String filePath, String content) throws IOException {
+        if (isPrimaryCluster) {
+            return;
+        }
+        var path = new Path(filePath);
+        try (var out = hdfsClient.create(path, true)) {
+            out.write(content.getBytes(UTF_8));
         }
     }
 
