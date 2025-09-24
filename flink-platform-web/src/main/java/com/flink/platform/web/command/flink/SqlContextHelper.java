@@ -12,6 +12,7 @@ import com.flink.platform.dao.entity.JobRunInfo;
 import com.flink.platform.dao.entity.task.FlinkJob;
 import com.flink.platform.dao.service.CatalogInfoService;
 import com.flink.platform.web.enums.Placeholder;
+import com.flink.platform.web.environment.DataDispatcherService;
 import com.flink.platform.web.service.StorageService;
 import com.flink.platform.web.util.PathUtil;
 import lombok.RequiredArgsConstructor;
@@ -20,6 +21,7 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -42,14 +44,22 @@ public class SqlContextHelper {
 
     private final StorageService storageService;
 
-    public String convertFromAndSaveToFile(JobRunInfo jobRun) {
+    private final DataDispatcherService dispatcherService;
+
+    public String convertFromAndSaveToFile(JobRunInfo jobRun) throws IOException {
         SqlContext sqlContext = convertFrom(jobRun);
         long timestamp = DateUtil.timestamp(jobRun.getCreateTime());
         String fileName = String.join(DOT, jobRun.getJobCode(), String.valueOf(timestamp), JSON_FILE_SUFFIX);
         String relativePath = PathUtil.getJobRunRelativePath(jobRun);
-        String fileStoragePath = String.join(OS_FILE_SEPARATOR, storageService.getRootPath(), relativePath, fileName);
-        saveToStorageSystem(fileStoragePath, sqlContext);
-        return fileStoragePath;
+        String json = JsonUtil.toJsonString(sqlContext);
+        // save to storage and execution environment.
+        String storageFilePath = String.join(OS_FILE_SEPARATOR, storageService.getRootPath(), relativePath, fileName);
+        storageService.createFile(storageFilePath, json, true);
+        log.debug("serial sql context to storage successfully, path: {}", storageFilePath);
+        // save to execution environment.
+        String dispatchedFilePath = dispatcherService.writeToExecutionEnv(jobRun.getDeployMode(), fileName, json);
+        log.debug("serial sql context to execution environment successfully, path: {}", dispatchedFilePath);
+        return dispatchedFilePath;
     }
 
     public SqlContext convertFrom(JobRunInfo jobRun) {
@@ -104,16 +114,6 @@ public class SqlContextHelper {
             throw new CommandUnableGenException(String.format("no sql found or parsing failed, subject: %s", subject));
         }
         return sqlList;
-    }
-
-    public void saveToStorageSystem(String fileStoragePath, SqlContext sqlContext) {
-        try {
-            String json = JsonUtil.toJsonString(sqlContext);
-            storageService.createFile(fileStoragePath, json, true);
-            log.debug("serial sql context to storage successfully, path: {}, data: {}", fileStoragePath, json);
-        } catch (Exception e) {
-            throw new RuntimeException("serde sql context to local disk failed", e);
-        }
     }
 
     public static void main(String[] args) {

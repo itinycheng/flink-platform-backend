@@ -1,4 +1,4 @@
-package com.flink.platform.common.file;
+package com.flink.platform.sql.submit.base;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -11,6 +11,8 @@ public interface CommonPath {
     String getName();
 
     InputStream getInputStream() throws IOException;
+
+    String readAndDelete() throws IOException;
 
     static CommonPath parse(String path) {
         if (path.startsWith("hdfs:")) {
