@@ -85,12 +85,12 @@ public class WorkerHeartbeat {
         worker = new Worker();
         worker.setId(workerId);
         worker.setHeartbeat(System.currentTimeMillis());
+        worker.setRole(FOLLOWER);
         if (workerId == null) {
             worker.setName(HOSTNAME);
             worker.setIp(HOST_IP);
             worker.setPort(port);
             worker.setGrpcPort(grpcPort);
-            worker.setRole(FOLLOWER);
         }
         workerService.saveOrUpdate(worker);
 

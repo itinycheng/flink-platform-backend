@@ -2,7 +2,6 @@ package com.flink.platform.web.environment;
 
 import com.flink.platform.common.enums.DeployMode;
 import com.flink.platform.common.util.FileUtil;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
@@ -19,10 +18,13 @@ import static com.flink.platform.common.constants.Constant.USER_DIR;
  * data dispatcher service.
  */
 @Slf4j
-@Lazy
 @Component
-@RequiredArgsConstructor(onConstructor_ = @Autowired)
 public class DataDispatcherService {
+
+    @Autowired
+    public DataDispatcherService(@Lazy HadoopService hadoopService) {
+        this.hadoopService = hadoopService;
+    }
 
     private final HadoopService hadoopService;
 

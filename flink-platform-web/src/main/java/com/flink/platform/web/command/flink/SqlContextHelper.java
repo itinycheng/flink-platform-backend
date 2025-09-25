@@ -5,7 +5,6 @@ import com.flink.platform.common.job.Catalog;
 import com.flink.platform.common.job.Function;
 import com.flink.platform.common.job.Sql;
 import com.flink.platform.common.job.SqlContext;
-import com.flink.platform.common.util.DateUtil;
 import com.flink.platform.common.util.JsonUtil;
 import com.flink.platform.common.util.SqlUtil;
 import com.flink.platform.dao.entity.JobRunInfo;
@@ -13,8 +12,8 @@ import com.flink.platform.dao.entity.task.FlinkJob;
 import com.flink.platform.dao.service.CatalogInfoService;
 import com.flink.platform.web.enums.Placeholder;
 import com.flink.platform.web.environment.DataDispatcherService;
+import com.flink.platform.web.service.JobRunExtraService;
 import com.flink.platform.web.service.StorageService;
-import com.flink.platform.web.util.PathUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
@@ -24,11 +23,7 @@ import org.springframework.stereotype.Component;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
-import java.util.regex.Matcher;
 
-import static com.flink.platform.common.constants.Constant.DOT;
-import static com.flink.platform.common.constants.Constant.OS_FILE_SEPARATOR;
-import static com.flink.platform.common.constants.JobConstant.JSON_FILE_SUFFIX;
 import static com.flink.platform.common.constants.JobConstant.SQL_PATTERN;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
@@ -46,25 +41,25 @@ public class SqlContextHelper {
 
     private final DataDispatcherService dispatcherService;
 
+    private final JobRunExtraService jobRunExtraService;
+
     public String convertFromAndSaveToFile(JobRunInfo jobRun) throws IOException {
-        SqlContext sqlContext = convertFrom(jobRun);
-        long timestamp = DateUtil.timestamp(jobRun.getCreateTime());
-        String fileName = String.join(DOT, jobRun.getJobCode(), String.valueOf(timestamp), JSON_FILE_SUFFIX);
-        String relativePath = PathUtil.getJobRunRelativePath(jobRun);
-        String json = JsonUtil.toJsonString(sqlContext);
+        var sqlContext = convertFrom(jobRun);
+        var json = JsonUtil.toJsonString(sqlContext);
         // save to storage and execution environment.
-        String storageFilePath = String.join(OS_FILE_SEPARATOR, storageService.getRootPath(), relativePath, fileName);
+        var storageFilePath = jobRunExtraService.buildStorageFilePath(jobRun);
         storageService.createFile(storageFilePath, json, true);
         log.debug("serial sql context to storage successfully, path: {}", storageFilePath);
         // save to execution environment.
-        String dispatchedFilePath = dispatcherService.writeToExecutionEnv(jobRun.getDeployMode(), fileName, json);
+        var fileName = jobRunExtraService.buildJsonFileName(jobRun);
+        var dispatchedFilePath = dispatcherService.writeToExecutionEnv(jobRun.getDeployMode(), fileName, json);
         log.debug("serial sql context to execution environment successfully, path: {}", dispatchedFilePath);
         return dispatchedFilePath;
     }
 
     public SqlContext convertFrom(JobRunInfo jobRun) {
-        FlinkJob flinkJob = jobRun.getConfig().unwrap(FlinkJob.class);
-        SqlContext sqlContext = new SqlContext();
+        var flinkJob = jobRun.getConfig().unwrap(FlinkJob.class);
+        var sqlContext = new SqlContext();
         sqlContext.setId(jobRun.getJobCode());
         sqlContext.setSqls(toSqls(jobRun.getSubject()));
         sqlContext.setExecMode(jobRun.getExecMode());
@@ -86,7 +81,7 @@ public class SqlContextHelper {
         return catalogs.stream()
                 .map(catalogInfoService::getById)
                 .map(catalogInfo -> {
-                    String createSql = catalogInfo.getCreateSql();
+                    var createSql = catalogInfo.getCreateSql();
                     if (variables != null) {
                         for (var variable : variables.entrySet()) {
                             createSql = createSql.replace(
@@ -109,7 +104,7 @@ public class SqlContextHelper {
     }
 
     public List<Sql> toSqls(String subject) {
-        List<Sql> sqlList = SqlUtil.convertToSqls(subject);
+        var sqlList = SqlUtil.convertToSqls(subject);
         if (sqlList.isEmpty()) {
             throw new CommandUnableGenException(String.format("no sql found or parsing failed, subject: %s", subject));
         }
@@ -117,7 +112,7 @@ public class SqlContextHelper {
     }
 
     public static void main(String[] args) {
-        Matcher matcher = SQL_PATTERN.matcher("set a =\n b;\nset c = d;\n select * from a where  name = ';';");
+        var matcher = SQL_PATTERN.matcher("set a =\n b;\nset c = d;\n select * from a where  name = ';';");
         while (matcher.find()) {
             System.out.println("item: " + matcher.group());
         }
