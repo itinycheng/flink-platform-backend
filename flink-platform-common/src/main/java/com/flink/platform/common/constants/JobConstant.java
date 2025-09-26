@@ -77,4 +77,6 @@ public class JobConstant {
             Pattern.CASE_INSENSITIVE | Pattern.MULTILINE);
 
     public static final String CONFIG = "config";
+
+    public static final String JOB_RUN_DIR = "job_run";
 }

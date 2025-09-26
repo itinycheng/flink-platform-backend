@@ -22,10 +22,14 @@ public class SpringContext implements ApplicationContextAware, DisposableBean {
     @Getter
     private static ApplicationContext applicationContext;
 
+    @Getter
+    private static String applicationName;
+
     /** set application context. */
     @Override
     public void setApplicationContext(@Nonnull ApplicationContext applicationContext) {
         SpringContext.applicationContext = applicationContext;
+        applicationName = applicationContext.getEnvironment().getProperty("spring.application.name");
     }
 
     /** get bean from applicationContext. */
@@ -66,5 +70,6 @@ public class SpringContext implements ApplicationContextAware, DisposableBean {
     public void destroy() throws Exception {
         log.info("Clean ApplicationContext instance in SpringContext class");
         applicationContext = null;
+        applicationName = null;
     }
 }

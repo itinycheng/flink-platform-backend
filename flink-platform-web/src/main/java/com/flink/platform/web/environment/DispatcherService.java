@@ -2,6 +2,7 @@ package com.flink.platform.web.environment;
 
 import com.flink.platform.common.enums.DeployMode;
 import com.flink.platform.common.util.FileUtil;
+import com.flink.platform.web.common.SpringContext;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
@@ -12,17 +13,18 @@ import java.nio.file.Paths;
 
 import static com.flink.platform.common.constants.Constant.OS_FILE_SEPARATOR;
 import static com.flink.platform.common.constants.Constant.SLASH;
-import static com.flink.platform.common.constants.Constant.USER_DIR;
+import static com.flink.platform.common.constants.Constant.TMP_DIR;
+import static com.flink.platform.common.constants.JobConstant.JOB_RUN_DIR;
 
 /**
  * data dispatcher service.
  */
 @Slf4j
 @Component
-public class DataDispatcherService {
+public class DispatcherService {
 
     @Autowired
-    public DataDispatcherService(@Lazy HadoopService hadoopService) {
+    public DispatcherService(@Lazy HadoopService hadoopService) {
         this.hadoopService = hadoopService;
     }
 
@@ -32,12 +34,14 @@ public class DataDispatcherService {
         switch (deployMode) {
             case RUN_LOCAL:
             case FLINK_YARN_PER:
-                String localFilePath = String.join(OS_FILE_SEPARATOR, USER_DIR, "tmp", "job_run", fileName);
-                FileUtil.rewriteFile(Paths.get(localFilePath), content);
-                return localFilePath;
+                var localTmpFile = String.join(
+                        OS_FILE_SEPARATOR, TMP_DIR, SpringContext.getApplicationName(), JOB_RUN_DIR, fileName);
+                FileUtil.rewriteFile(Paths.get(localTmpFile), content);
+                return localTmpFile;
             case FLINK_YARN_SESSION:
             case FLINK_YARN_RUN_APPLICATION:
-                String hdfsFilePath = String.join(SLASH, "tmp", "job_run", fileName);
+                String hdfsFilePath =
+                        String.join(SLASH, "hdfs:/tmp", SpringContext.getApplicationName(), JOB_RUN_DIR, fileName);
                 hadoopService.writeToFilePath(hdfsFilePath, content);
                 return hdfsFilePath;
             default:

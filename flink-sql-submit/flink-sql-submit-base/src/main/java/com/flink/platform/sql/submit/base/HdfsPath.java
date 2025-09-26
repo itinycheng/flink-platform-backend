@@ -28,8 +28,7 @@ public class HdfsPath implements CommonPath {
 
     @Override
     public InputStream getInputStream() throws IOException {
-        Configuration conf = new Configuration();
-        FileSystem fs = FileSystem.get(conf);
+        FileSystem fs = FileSystem.get(new Configuration());
         return new FilterInputStream(fs.open(filePath)) {
             @Override
             public void close() throws IOException {
@@ -45,8 +44,9 @@ public class HdfsPath implements CommonPath {
     @Override
     public String readAndDelete() throws IOException {
         StringBuilder builder = new StringBuilder();
-        try (FileSystem fs = createFileSystem();
-                BufferedReader reader = new BufferedReader(new InputStreamReader(fs.open(filePath), UTF_8))) {
+        try (FileSystem fs = FileSystem.get(new Configuration());
+                InputStreamReader in = new InputStreamReader(fs.open(filePath), UTF_8);
+                BufferedReader reader = new BufferedReader(in)) {
             String line;
             while ((line = reader.readLine()) != null) {
                 builder.append(line).append(LINE_SEPARATOR);
@@ -56,9 +56,5 @@ public class HdfsPath implements CommonPath {
         }
 
         return builder.toString();
-    }
-
-    private FileSystem createFileSystem() throws IOException {
-        return FileSystem.get(new Configuration());
     }
 }
