@@ -7,13 +7,12 @@ import java.nio.file.Paths;
 
 import static com.flink.platform.common.constants.Constant.OS_FILE_SEPARATOR;
 import static com.flink.platform.common.constants.Constant.USER_DIR;
+import static com.flink.platform.common.constants.JobConstant.JOB_RUN_DIR;
 
 /** Env path. */
 public class PathUtil {
 
     public static final String WORK_DIR = "platform";
-
-    public static final String JOB_ROOT_DIR = "job_run";
 
     public static final String JOB_DIR_FORMAT = "job_%d";
 
@@ -28,7 +27,7 @@ public class PathUtil {
     }
 
     public static String getExecJobRootPath() {
-        return String.join(OS_FILE_SEPARATOR, getLocalWorkRootPath(), JOB_ROOT_DIR);
+        return String.join(OS_FILE_SEPARATOR, getLocalWorkRootPath(), JOB_RUN_DIR);
     }
 
     public static String getLocalWorkRootPath() {

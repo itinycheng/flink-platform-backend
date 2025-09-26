@@ -7,7 +7,6 @@ import com.flink.platform.dao.entity.JobRunInfo;
 import com.flink.platform.dao.service.JobRunInfoService;
 import com.flink.platform.web.enums.Placeholder;
 import com.flink.platform.web.enums.Variable;
-import com.flink.platform.web.util.PathUtil;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -18,6 +17,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 import static com.flink.platform.common.constants.Constant.DOT;
+import static com.flink.platform.common.constants.JobConstant.JOB_RUN_DIR;
 import static com.flink.platform.common.constants.JobConstant.JSON_FILE_SUFFIX;
 import static com.flink.platform.common.enums.ExecutionStatus.CREATED;
 import static com.flink.platform.common.util.DateUtil.DATE_FORMAT;
@@ -101,7 +101,7 @@ public class JobRunExtraService {
         String fileSeparator = storageService.getFileSeparator();
         var relativePath = String.join(
                 fileSeparator,
-                PathUtil.JOB_ROOT_DIR,
+                JOB_RUN_DIR,
                 DateUtil.format(jobRun.getCreateTime(), DATE_FORMAT),
                 String.format(USER_DIR_FORMAT, jobRun.getUserId()),
                 jobRun.getType().name().toLowerCase(),

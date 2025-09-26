@@ -28,6 +28,7 @@ import static com.flink.platform.common.enums.WorkerStatus.DELETED;
 import static com.flink.platform.common.enums.WorkerStatus.FOLLOWER;
 import static com.flink.platform.common.enums.WorkerStatus.INACTIVE;
 import static com.flink.platform.common.enums.WorkerStatus.LEADER;
+import static com.flink.platform.common.enums.WorkerStatus.isActiveStatus;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static java.util.stream.Collectors.toList;
 import static org.springframework.transaction.annotation.Isolation.SERIALIZABLE;
@@ -85,13 +86,18 @@ public class WorkerHeartbeat {
         worker = new Worker();
         worker.setId(workerId);
         worker.setHeartbeat(System.currentTimeMillis());
-        worker.setRole(FOLLOWER);
         if (workerId == null) {
             worker.setName(HOSTNAME);
             worker.setIp(HOST_IP);
             worker.setPort(port);
             worker.setGrpcPort(grpcPort);
+            worker.setRole(FOLLOWER);
         }
+
+        if (!isActiveStatus(worker.getRole())) {
+            worker.setRole(FOLLOWER);
+        }
+
         workerService.saveOrUpdate(worker);
 
         // 2. Try to be the leader.

@@ -11,7 +11,7 @@ import com.flink.platform.dao.entity.JobRunInfo;
 import com.flink.platform.dao.entity.task.FlinkJob;
 import com.flink.platform.dao.service.CatalogInfoService;
 import com.flink.platform.web.enums.Placeholder;
-import com.flink.platform.web.environment.DataDispatcherService;
+import com.flink.platform.web.environment.DispatcherService;
 import com.flink.platform.web.service.JobRunExtraService;
 import com.flink.platform.web.service.StorageService;
 import lombok.RequiredArgsConstructor;
@@ -39,7 +39,7 @@ public class SqlContextHelper {
 
     private final StorageService storageService;
 
-    private final DataDispatcherService dispatcherService;
+    private final DispatcherService dispatcherService;
 
     private final JobRunExtraService jobRunExtraService;
 
@@ -50,7 +50,6 @@ public class SqlContextHelper {
         var storageFilePath = jobRunExtraService.buildStorageFilePath(jobRun);
         storageService.createFile(storageFilePath, json, true);
         log.debug("serial sql context to storage successfully, path: {}", storageFilePath);
-        // save to execution environment.
         var fileName = jobRunExtraService.buildJsonFileName(jobRun);
         var dispatchedFilePath = dispatcherService.writeToExecutionEnv(jobRun.getDeployMode(), fileName, json);
         log.debug("serial sql context to execution environment successfully, path: {}", dispatchedFilePath);
