@@ -51,6 +51,8 @@ public class Constant {
 
     public static final String SLASH = "/";
 
+    public static final String TMP = "tmp";
+
     public static final String SESSION_USER = "session.user";
 
     public static final String FLINK = "FLINK";

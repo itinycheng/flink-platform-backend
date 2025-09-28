@@ -24,8 +24,6 @@ public class JobConstant {
 
     public static final String JSON_FILE_SUFFIX = "json";
 
-    public static final String TMP_FILE_SUFFIX = "tmp";
-
     public static final String CURRENT_TIMESTAMP_VAR = "${currentTimestamp}";
 
     public static final String TODAY_YYYY_MM_DD_VAR = "${today_yyyyMMdd}";
@@ -79,4 +77,8 @@ public class JobConstant {
     public static final String CONFIG = "config";
 
     public static final String JOB_RUN_DIR = "job_run";
+
+    public static final String JOB_DIR_FORMAT = "job_%d";
+
+    public static final String USER_DIR_FORMAT = "user_%d";
 }

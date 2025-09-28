@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
+import static com.flink.platform.common.constants.JobConstant.JSON_FILE_SUFFIX;
 import static com.flink.platform.common.constants.JobConstant.SQL_PATTERN;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
@@ -47,11 +48,11 @@ public class SqlContextHelper {
         var sqlContext = convertFrom(jobRun);
         var json = JsonUtil.toJsonString(sqlContext);
         // save to storage and execution environment.
-        var storageFilePath = jobRunExtraService.buildStorageFilePath(jobRun);
+        var storageFilePath = jobRunExtraService.buildStoragePath(jobRun, JSON_FILE_SUFFIX);
         storageService.createFile(storageFilePath, json, true);
         log.debug("serial sql context to storage successfully, path: {}", storageFilePath);
-        var fileName = jobRunExtraService.buildJsonFileName(jobRun);
-        var dispatchedFilePath = dispatcherService.writeToExecutionEnv(jobRun.getDeployMode(), fileName, json);
+        var dispatchedFilePath = dispatcherService.buildLocalEnvFilePath(jobRun, JSON_FILE_SUFFIX);
+        dispatcherService.writeToLocalEnv(jobRun.getDeployMode(), dispatchedFilePath, json);
         log.debug("serial sql context to execution environment successfully, path: {}", dispatchedFilePath);
         return dispatchedFilePath;
     }
