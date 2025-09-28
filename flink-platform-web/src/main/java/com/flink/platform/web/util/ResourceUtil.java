@@ -14,7 +14,7 @@ import java.util.UUID;
 
 import static com.flink.platform.common.constants.Constant.DOT;
 import static com.flink.platform.common.constants.Constant.SLASH;
-import static com.flink.platform.common.constants.JobConstant.TMP_FILE_SUFFIX;
+import static com.flink.platform.common.constants.Constant.TMP;
 
 /** Resource util. */
 public class ResourceUtil {
@@ -46,7 +46,7 @@ public class ResourceUtil {
     }
 
     public static String randomLocalTmpFile() {
-        String fileName = String.join(DOT, UUID.randomUUID().toString(), TMP_FILE_SUFFIX);
+        String fileName = String.join(DOT, UUID.randomUUID().toString(), TMP);
         return String.join(SLASH, localRootPath, fileName);
     }
 

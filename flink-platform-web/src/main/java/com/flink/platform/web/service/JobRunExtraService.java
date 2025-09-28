@@ -17,13 +17,12 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 import static com.flink.platform.common.constants.Constant.DOT;
+import static com.flink.platform.common.constants.JobConstant.JOB_DIR_FORMAT;
 import static com.flink.platform.common.constants.JobConstant.JOB_RUN_DIR;
-import static com.flink.platform.common.constants.JobConstant.JSON_FILE_SUFFIX;
+import static com.flink.platform.common.constants.JobConstant.USER_DIR_FORMAT;
 import static com.flink.platform.common.enums.ExecutionStatus.CREATED;
 import static com.flink.platform.common.util.DateUtil.DATE_FORMAT;
 import static com.flink.platform.common.util.DateUtil.READABLE_TIMESTAMP_FORMAT;
-import static com.flink.platform.web.util.PathUtil.JOB_DIR_FORMAT;
-import static com.flink.platform.web.util.PathUtil.USER_DIR_FORMAT;
 
 /** addition method. */
 @Service
@@ -96,9 +95,9 @@ public class JobRunExtraService {
         return variableMap;
     }
 
-    // e.g.: job_run/20250910/user_1/flink_sql/job_328
-    public String buildStorageFilePath(JobRunInfo jobRun) {
-        String fileSeparator = storageService.getFileSeparator();
+    // e.g.: /root/job_run/20250910/user_1/flink_sql/job_328/job_328.20250910153012.sql
+    public String buildStoragePath(JobRunInfo jobRun, String fileSuffix) {
+        var fileSeparator = storageService.getFileSeparator();
         var relativePath = String.join(
                 fileSeparator,
                 JOB_RUN_DIR,
@@ -106,12 +105,13 @@ public class JobRunExtraService {
                 String.format(USER_DIR_FORMAT, jobRun.getUserId()),
                 jobRun.getType().name().toLowerCase(),
                 String.format(JOB_DIR_FORMAT, jobRun.getJobId()),
-                buildJsonFileName(jobRun));
+                buildTimestampedFileName(jobRun, fileSuffix));
         return String.join(fileSeparator, storageService.getRootPath(), relativePath);
     }
 
-    public String buildJsonFileName(JobRunInfo jobRun) {
+    // buildFileName(jobRun, fileSuffix)
+    private String buildTimestampedFileName(JobRunInfo jobRun, String fileSuffix) {
         var readableTime = DateUtil.format(jobRun.getCreateTime(), READABLE_TIMESTAMP_FORMAT);
-        return String.join(DOT, jobRun.getJobCode(), readableTime, JSON_FILE_SUFFIX);
+        return String.join(DOT, jobRun.getJobCode(), readableTime, fileSuffix);
     }
 }
