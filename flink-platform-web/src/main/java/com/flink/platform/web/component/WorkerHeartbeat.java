@@ -12,7 +12,7 @@ import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.Configuration;
+import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
@@ -43,7 +43,7 @@ import static org.springframework.transaction.annotation.Isolation.SERIALIZABLE;
  * <p>3. Check if any workers are inactive and reassign jobs owned by these workers.
  */
 @Slf4j
-@Configuration
+@Component
 public class WorkerHeartbeat {
 
     private static final ScheduledExecutorService EXECUTOR_SERVICE =
