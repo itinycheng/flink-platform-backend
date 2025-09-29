@@ -11,7 +11,7 @@
 		<version>0.0.1</version>
 	</parent>
 
-	<artifactId>flink-platform-monitor</artifactId>
+	<artifactId>flink-platform-cron</artifactId>
 	<name>flink-platform-monitor</name>
 	<packaging>jar</packaging>
 
