@@ -15,6 +15,7 @@ import com.flink.platform.sql.submit.helper.Configurations;
 import com.flink.platform.sql.submit.helper.ExecuteSqls;
 import com.flink.platform.sql.submit.helper.ExecutionEnvs;
 import com.flink.platform.sql.submit.helper.Functions;
+import lombok.extern.slf4j.Slf4j;
 
 import java.util.List;
 import java.util.Map;
@@ -23,11 +24,13 @@ import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 
 /** Must input a context file whose sql is validated. */
+@Slf4j
 public class Sql112Application {
 
     public static void main(String[] args) throws Exception {
         CommonPath path = CommonPath.parse(args[0]);
-        SqlContext sqlContext = JsonUtil.toBean(path.readAndDelete(), SqlContext.class);
+        SqlContext sqlContext = JsonUtil.toBean(path.getInputStream(), SqlContext.class);
+        log.info("Loaded sqlContext: {}", JsonUtil.toJsonString(sqlContext));
 
         // step 1: create and configure environment
         TableEnvironment tEnv = ExecutionEnvs.createExecutionEnv(sqlContext.getExecMode());
