@@ -3,6 +3,7 @@
     <words>
       <w>addrs</w>
       <w>classpaths</w>
+      <w>deps</w>
       <w>envp</w>
       <w>envs</w>
       <w>rwxr</w>
