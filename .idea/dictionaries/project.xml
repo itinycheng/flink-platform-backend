@@ -4,6 +4,7 @@
       <w>addrs</w>
       <w>classpaths</w>
       <w>envp</w>
+      <w>envs</w>
       <w>rwxr</w>
       <w>sqls</w>
       <w>tmpdir</w>

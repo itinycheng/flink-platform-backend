@@ -1,11 +1,13 @@
 package com.flink.platform.sql.submit.helper;
 
+import org.apache.flink.streaming.api.functions.sink.PrintSinkFunction;
 import org.apache.flink.table.api.StatementSet;
-import org.apache.flink.table.api.TableEnvironment;
+import org.apache.flink.table.api.Table;
 
 import com.flink.platform.common.enums.SqlType;
 import com.flink.platform.common.exception.FlinkJobGenException;
 import com.flink.platform.common.job.Sql;
+import com.flink.platform.sql.submit.common.FlinkEnvironment;
 
 import java.util.List;
 import java.util.Set;
@@ -21,25 +23,33 @@ public class ExecuteSqls {
     private static final Set<SqlType> INSERT_TYPES =
             Stream.of(INSERT_INTO, INSERT_OVERWRITE).collect(toSet());
 
-    public static void execSqls(TableEnvironment tEnv, List<Sql> sqls) {
-        StatementSet statementSet = tEnv.createStatementSet();
-        sqls.forEach(sql -> ExecuteSqls.executeSql(tEnv, statementSet, sql));
+    public static void execSQLs(FlinkEnvironment env, List<Sql> sqls) {
+        StatementSet statementSet = env.createStatementSet();
+        sqls.forEach(sql -> ExecuteSqls.executeSQL(env, statementSet, sql));
         if (sqls.stream().anyMatch(sql -> INSERT_TYPES.contains(sql.getType()))) {
             statementSet.execute();
         }
     }
 
-    private static void executeSql(TableEnvironment tEnv, StatementSet statementSet, Sql sql) {
+    private static void executeSQL(FlinkEnvironment env, StatementSet statementSet, Sql sql) {
         switch (sql.getType()) {
             case SET:
                 String[] operands = sql.getOperands();
-                Configurations.setConfig(tEnv, operands[0], operands[1]);
+                Configurations.setConfig(env, operands[0], operands[1]);
                 break;
             case INSERT_INTO:
             case INSERT_OVERWRITE:
                 statementSet.addInsertSql(sql.getOperands()[0]);
                 break;
             case SELECT:
+                try {
+                    Table table = env.sqlQuery(sql.getOperands()[0]);
+                    env.toDataStream(table).addSink(new PrintSinkFunction<>());
+                    env.execute();
+                } catch (Exception e) {
+                    throw new FlinkJobGenException(String.format("Failed to execute select sql: %s", sql), e);
+                }
+                break;
             case USE:
             case USE_CATALOG:
             case CREATE_CATALOG:
@@ -61,7 +71,7 @@ public class ExecuteSqls {
             case SHOW_TABLES:
             case DESCRIBE:
             case EXPLAIN:
-                tEnv.executeSql(sql.getOperands()[0]).print();
+                env.executeSql(sql.getOperands()[0]).print();
                 break;
             default:
                 throw new FlinkJobGenException(String.format("Unknown sql type, sql: %s", sql));
