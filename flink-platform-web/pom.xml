@@ -47,7 +47,7 @@
 		</dependency>
 		<dependency>
 			<groupId>com.flink.platform</groupId>
-			<artifactId>flink-platform-monitor</artifactId>
+			<artifactId>flink-platform-cron</artifactId>
 			<version>${project.version}</version>
 		</dependency>
 		<dependency>

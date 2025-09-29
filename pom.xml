@@ -409,7 +409,7 @@
 		<module>flink-platform-common</module>
 		<module>flink-platform-udf</module>
 		<module>flink-platform-alert</module>
-		<module>flink-platform-monitor</module>
+		<module>flink-platform-cron</module>
 		<module>flink-platform-dao</module>
 		<module>flink-platform-grpc</module>
 		<module>flink-sql-submit</module>
