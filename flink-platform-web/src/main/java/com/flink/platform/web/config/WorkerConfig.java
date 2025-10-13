@@ -28,9 +28,6 @@ public class WorkerConfig {
     @Min(0)
     private int errorRetries;
 
-    @Min(5_000)
-    private int streamingJobToSuccessMills;
-
     @Min(1)
     private int reactiveExecThreads;
 
