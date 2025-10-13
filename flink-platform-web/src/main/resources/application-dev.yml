@@ -84,7 +84,6 @@ worker:
   perFlowExecThreads: 5
   maxPerFlowExecThreads: 10
   errorRetries: 3
-  streamingJobToSuccessMills: 300000
   reactiveExecThreads: 10
   flinkSubmitTimeoutMills: 300000
   maxShellExecTimeoutMills: 28800000

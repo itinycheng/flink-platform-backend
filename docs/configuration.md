@@ -103,10 +103,6 @@ worker:
   # Retry times when submitting job or getting job status fails.
   errorRetries: 3
 
-  # Streaming job can exist in a workflow, we must give a terminal status to keep the execution of downstream nodes.
-  # This is a condition that after streaming job has been running normally for 300000 millisecond we will set the status of steaming job to SUCCESS.
-  streamingJobToSuccessMills: 300000
-
   # Set the thread pool size for reactive mode.
   reactiveExecThreads: 10
 
