@@ -1,7 +1,7 @@
 package com.flink.platform.dao;
 
 import com.baomidou.mybatisplus.extension.handlers.JacksonTypeHandler;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.flink.platform.common.util.JsonUtil;
 import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.context.annotation.Configuration;
@@ -12,8 +12,7 @@ import org.springframework.context.annotation.Configuration;
 public class MapperInitializer {
 
     static {
-        ObjectMapper objectMapper = new ObjectMapper();
-        JsonUtil.addGlobalConfig(objectMapper);
-        JacksonTypeHandler.setObjectMapper(objectMapper);
+        JsonMapper mapper = JsonUtil.jacksonBuilderWithGlobalConfigs().build();
+        JacksonTypeHandler.setObjectMapper(mapper);
     }
 }

@@ -11,9 +11,10 @@ import com.flink.platform.web.command.CommandBuilder;
 import com.flink.platform.web.command.JobCommand;
 import com.flink.platform.web.command.SqlContextHelper;
 import com.flink.platform.web.config.FlinkConfig;
-import com.flink.platform.web.external.YarnClientService;
+import com.flink.platform.web.external.LocalHadoopService;
 import com.flink.platform.web.service.StorageService;
 import com.flink.platform.web.util.PathUtil;
+import com.flink.platform.web.util.YarnHelper;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.ListUtils;
 import org.apache.hadoop.fs.Path;
@@ -30,9 +31,11 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+import static com.flink.platform.common.constants.Constant.EMPTY;
 import static com.flink.platform.common.constants.Constant.SEMICOLON;
 import static com.flink.platform.common.constants.Constant.SLASH;
 import static com.flink.platform.common.constants.JobConstant.YARN_APPLICATION_NAME;
+import static com.flink.platform.common.constants.JobConstant.YARN_APPLICATION_TAG;
 import static com.flink.platform.common.constants.JobConstant.YARN_PROVIDED_LIB_DIRS;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
@@ -47,15 +50,15 @@ public abstract class FlinkCommandBuilder implements CommandBuilder {
     private static final String EXEC_MODE = " %s -t %s -d ";
 
     @Resource(name = "sqlContextHelper")
-    private SqlContextHelper sqlContextHelper;
+    protected SqlContextHelper sqlContextHelper;
 
-    @Resource private StorageService storageService;
+    @Resource protected StorageService storageService;
 
-    @Resource private ResourceService resourceService;
+    @Resource protected ResourceService resourceService;
 
-    @Lazy @Resource private YarnClientService yarnClientService;
+    @Lazy @Resource protected LocalHadoopService localHadoopService;
 
-    private final FlinkConfig flinkConfig;
+    protected final FlinkConfig flinkConfig;
 
     public FlinkCommandBuilder(FlinkConfig flinkConfig) {
         this.flinkConfig = Preconditions.checkNotNull(flinkConfig);
@@ -79,8 +82,9 @@ public abstract class FlinkCommandBuilder implements CommandBuilder {
         if (flinkJob.getConfigs() != null) {
             configs.putAll(flinkJob.getConfigs());
         }
-        // add yarn application name
+        // add yarn application name and tag
         configs.put(YARN_APPLICATION_NAME, createAppName(jobRun));
+        configs.put(YARN_APPLICATION_TAG, createAppTag(jobRun));
         // add lib dirs and user classpaths
         configs.put(YARN_PROVIDED_LIB_DIRS, getMergedLibDirs(flinkJob.getExtJarPaths()));
         List<URL> classpaths = getOrCreateClasspaths(jobRun, flinkJob.getExtJarPaths());
@@ -106,6 +110,17 @@ public abstract class FlinkCommandBuilder implements CommandBuilder {
 
         populateTimeout(command, jobRun);
         return command;
+    }
+
+    private String createAppTag(JobRunInfo jobRun) {
+        switch (jobRun.getDeployMode()) {
+            case FLINK_YARN_SESSION:
+            case FLINK_YARN_RUN_APPLICATION:
+            case FLINK_YARN_PER:
+                return YarnHelper.getApplicationTag(jobRun.getId());
+            default:
+                return EMPTY;
+        }
     }
 
     private String createAppName(JobRunInfo jobRun) {
@@ -169,7 +184,7 @@ public abstract class FlinkCommandBuilder implements CommandBuilder {
 
     private void copyToRemoteIfChanged(String localFile, String hdfsFile) {
         try {
-            yarnClientService.copyIfNewHdfsAndFileChanged(localFile, hdfsFile);
+            localHadoopService.copyIfNewHdfsAndFileChanged(localFile, hdfsFile);
         } catch (Exception e) {
             throw new RuntimeException(
                     String.format("Copy %s from local to remote hdfs failed", localFile), e);

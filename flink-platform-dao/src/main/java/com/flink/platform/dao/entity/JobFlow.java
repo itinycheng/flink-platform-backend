@@ -6,18 +6,16 @@ import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.baomidou.mybatisplus.extension.handlers.JacksonTypeHandler;
-import com.fasterxml.jackson.annotation.JsonFormat;
 import com.flink.platform.common.enums.JobFlowStatus;
 import com.flink.platform.common.enums.JobFlowType;
 import com.flink.platform.dao.entity.alert.AlertConfigList;
+import lombok.AccessLevel;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import java.time.LocalDateTime;
-
-import static com.flink.platform.common.util.DateUtil.GLOBAL_DATE_TIME_FORMAT;
-import static com.flink.platform.common.util.DateUtil.GLOBAL_TIMEZONE;
 
 /** job flow. */
 @Data
@@ -69,11 +67,10 @@ public class JobFlow {
     private JobFlowStatus status;
 
     /** create time. */
-    @JsonFormat(pattern = GLOBAL_DATE_TIME_FORMAT, timezone = GLOBAL_TIMEZONE)
+    @Setter(AccessLevel.NONE)
     private LocalDateTime createTime;
 
     /** update time. */
-    @JsonFormat(pattern = GLOBAL_DATE_TIME_FORMAT, timezone = GLOBAL_TIMEZONE)
     @TableField(update = "now()", updateStrategy = FieldStrategy.ALWAYS)
     private LocalDateTime updateTime;
 }

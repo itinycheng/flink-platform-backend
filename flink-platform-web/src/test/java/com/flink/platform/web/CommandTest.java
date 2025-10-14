@@ -1,7 +1,7 @@
 package com.flink.platform.web;
 
 import com.flink.platform.dao.entity.result.ShellCallback;
-import com.flink.platform.web.command.flink.FlinkCommandExecutor;
+import com.flink.platform.web.command.flink.FlinkYarnTask;
 import com.flink.platform.web.util.CommandUtil;
 import org.junit.Assert;
 import org.junit.Test;
@@ -23,8 +23,8 @@ public class CommandTest {
 
     @Test
     public void testExtractAppIdAndJobId() {
-        String appId = FlinkCommandExecutor.extractApplicationId(YARN_CLIENT_MESSAGE);
-        String jobId = FlinkCommandExecutor.extractJobId(YARN_CLIENT_MESSAGE);
+        String appId = FlinkYarnTask.extractApplicationId(YARN_CLIENT_MESSAGE);
+        String jobId = FlinkYarnTask.extractJobId(YARN_CLIENT_MESSAGE);
         Assert.assertEquals("application_1616984365313_0284", appId);
         Assert.assertEquals("698185836ffa4165f35c71627eb8c6f7", jobId);
     }

@@ -10,12 +10,11 @@ import com.flink.platform.web.command.AbstractTask;
 import com.flink.platform.web.command.CommandExecutor;
 import com.flink.platform.web.command.JobCommand;
 import com.flink.platform.web.config.WorkerConfig;
-import com.flink.platform.web.external.YarnClientService;
+import com.flink.platform.web.external.LocalHadoopService;
 import com.flink.platform.web.util.YarnHelper;
 import lombok.extern.slf4j.Slf4j;
 import lombok.var;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.hadoop.yarn.api.records.ApplicationReport;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Lazy;
@@ -27,12 +26,9 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.regex.Matcher;
 
 import static com.flink.platform.common.constants.Constant.EMPTY;
-import static com.flink.platform.common.constants.JobConstant.APP_ID_PATTERN;
 import static com.flink.platform.common.constants.JobConstant.HADOOP_USER_NAME;
-import static com.flink.platform.common.constants.JobConstant.JOB_ID_PATTERN;
 import static com.flink.platform.common.enums.ExecutionStatus.FAILURE;
 import static com.flink.platform.common.enums.ExecutionStatus.SUBMITTED;
 import static com.flink.platform.common.enums.ExecutionStatus.SUCCESS;
@@ -50,7 +46,7 @@ public class FlinkCommandExecutor implements CommandExecutor {
 
     @Autowired private WorkerConfig workerConfig;
 
-    @Lazy @Autowired private YarnClientService yarnClientService;
+    @Lazy @Autowired private LocalHadoopService localHadoopService;
 
     @Autowired private JobRunInfoService jobRunInfoService;
 
@@ -87,9 +83,11 @@ public class FlinkCommandExecutor implements CommandExecutor {
             ExecutionStatus status = SUBMITTED;
             String trackingUrl = EMPTY;
             try {
-                ApplicationReport applicationReport = yarnClientService.getApplicationReport(appId);
-                status = YarnHelper.getStatus(applicationReport);
-                trackingUrl = applicationReport.getTrackingUrl();
+                long jobRunId = command.getJobRunId();
+                String applicationTag = YarnHelper.getApplicationTag(jobRunId);
+                var statusReport = localHadoopService.getApplicationReport(applicationTag);
+                status = statusReport.getStatus();
+                trackingUrl = statusReport.getTrackingUrl();
             } catch (Exception e) {
                 log.error("Failed to get ApplicationReport after command executed", e);
             }
@@ -130,27 +128,5 @@ public class FlinkCommandExecutor implements CommandExecutor {
         var map = new HashMap<String, String>(1);
         map.put(HADOOP_USER_NAME, hadoopUser);
         return map;
-    }
-
-    // ------------------------------------------------------------------------
-    //  exposed static methods for test cases
-    // ------------------------------------------------------------------------
-
-    public static String extractApplicationId(String message) {
-        Matcher matcher = APP_ID_PATTERN.matcher(message);
-        if (matcher.find()) {
-            return matcher.group(1);
-        } else {
-            return null;
-        }
-    }
-
-    public static String extractJobId(String message) {
-        Matcher matcher = JOB_ID_PATTERN.matcher(message);
-        if (matcher.find()) {
-            return matcher.group(1);
-        } else {
-            return null;
-        }
     }
 }

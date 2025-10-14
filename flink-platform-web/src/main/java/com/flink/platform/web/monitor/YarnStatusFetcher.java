@@ -1,19 +1,18 @@
 package com.flink.platform.web.monitor;
 
 import com.flink.platform.common.enums.DeployMode;
-import com.flink.platform.common.util.JsonUtil;
-import com.flink.platform.dao.entity.result.JobCallback;
+import com.flink.platform.common.enums.ExecutionStatus;
 import com.flink.platform.grpc.JobStatusReply;
 import com.flink.platform.grpc.JobStatusRequest;
-import com.flink.platform.web.external.YarnClientService;
+import com.flink.platform.web.external.LocalHadoopService;
 import com.flink.platform.web.util.YarnHelper;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.hadoop.yarn.api.records.ApplicationReport;
-import org.apache.hadoop.yarn.exceptions.ApplicationNotFoundException;
+import lombok.var;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.core.annotation.Order;
+import org.springframework.retry.annotation.Backoff;
+import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Component;
 
 import static com.flink.platform.common.enums.ExecutionStatus.NOT_EXIST;
@@ -24,7 +23,12 @@ import static com.flink.platform.common.enums.ExecutionStatus.NOT_EXIST;
 @Component
 public class YarnStatusFetcher implements StatusFetcher {
 
-    @Lazy @Autowired private YarnClientService yarnClientService;
+    private final LocalHadoopService localHadoopService;
+
+    @Autowired
+    public YarnStatusFetcher(@Lazy LocalHadoopService localHadoopService) {
+        this.localHadoopService = localHadoopService;
+    }
 
     @Override
     public boolean isSupported(DeployMode deployMode) {
@@ -38,37 +42,37 @@ public class YarnStatusFetcher implements StatusFetcher {
         }
     }
 
+    @Retryable(
+            value = Exception.class,
+            maxAttempts = 4,
+            backoff = @Backoff(delay = 1500, multiplier = 2),
+            exceptionExpression = "@appRunnerChecker.shouldRetry(#root)")
     @Override
     public JobStatusReply getStatus(JobStatusRequest request) {
-        long currentTimeMillis = System.currentTimeMillis();
-        JobCallback jobCallback = JsonUtil.toBean(request.getBackInfo(), JobCallback.class);
-        if (jobCallback == null || StringUtils.isEmpty(jobCallback.getAppId())) {
-            return newJobStatusReply(NOT_EXIST.getCode(), currentTimeMillis, currentTimeMillis);
-        }
-
-        String applicationId = jobCallback.getAppId();
+        String applicationTag = YarnHelper.getApplicationTag(request.getJobRunId());
         try {
-            ApplicationReport applicationReport =
-                    yarnClientService.getApplicationReport(jobCallback.getAppId());
-            return newJobStatusReply(
-                    YarnHelper.getStatus(applicationReport).getCode(),
-                    applicationReport.getStartTime(),
-                    applicationReport.getFinishTime());
-        } catch (ApplicationNotFoundException e) {
-            log.warn("Application: {} not found.", applicationId, e);
-            return newJobStatusReply(NOT_EXIST.getCode(), currentTimeMillis, currentTimeMillis);
+            var statusReport = localHadoopService.getApplicationReport(applicationTag);
+            if (statusReport != null) {
+                return newJobStatusReply(
+                        statusReport.getStatus(),
+                        statusReport.getStartTime(),
+                        statusReport.getFinishTime());
+            } else {
+                long currentTimeMillis = System.currentTimeMillis();
+                return newJobStatusReply(NOT_EXIST, currentTimeMillis, currentTimeMillis);
+            }
         } catch (Exception e) {
             log.error(
-                    "Use yarn client to get ApplicationReport failed, application: {}",
-                    applicationId,
+                    "Use yarn client to get ApplicationReport failed, application tag: {}",
+                    applicationTag,
                     e);
             throw new RuntimeException(e);
         }
     }
 
-    private JobStatusReply newJobStatusReply(int status, long startTime, long endTime) {
+    private JobStatusReply newJobStatusReply(ExecutionStatus status, long startTime, long endTime) {
         return JobStatusReply.newBuilder()
-                .setStatus(status)
+                .setStatus(status.getCode())
                 .setStartTime(startTime)
                 .setEndTime(endTime)
                 .build();

@@ -45,7 +45,7 @@ public class SqlUtil {
                 Arrays.stream(statement.split(SQL_LINE_SEPARATOR))
                         .map(String::trim)
                         .filter(StringUtils::isNotBlank)
-                        .filter(segment -> !segment.startsWith(SQL_COMMENT_SYMBOL))
+                        .filter(line -> !line.startsWith(SQL_COMMENT_SYMBOL))
                         .collect(Collectors.joining(Constant.SPACE + SQL_LINE_SEPARATOR));
         // delete ';'
         if (stmt.endsWith(SEMICOLON)) {

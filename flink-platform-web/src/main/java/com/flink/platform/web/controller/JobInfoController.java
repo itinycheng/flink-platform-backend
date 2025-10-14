@@ -169,12 +169,12 @@ public class JobInfoController {
                             .collect(toMap(JobRunInfo::getJobId, jobRun -> jobRun));
             result.getRecords()
                     .forEach(
-                            jobInfo -> {
-                                JobRunInfo jobRun = runningJobsMap.get(jobInfo.getId());
+                            job -> {
+                                JobRunInfo jobRun = runningJobsMap.get(job.getId());
                                 if (jobRun != null) {
-                                    jobInfo.setJobRunId(jobRun.getId());
-                                    jobInfo.setJobRunStatus(jobRun.getStatus());
-                                    jobInfo.setFlowRunId(jobRun.getFlowRunId());
+                                    job.setJobRunId(jobRun.getId());
+                                    job.setJobRunStatus(jobRun.getStatus());
+                                    job.setFlowRunId(jobRun.getFlowRunId());
                                 }
                             });
         }

@@ -37,7 +37,7 @@ message ProcessJobReply {
 message JobStatusRequest {
   int64 jobRunId = 1;
   string deployMode = 2;
-  string backInfo = 3;
+  int64 jobId = 3;
   int32 retries = 4;
 }
 

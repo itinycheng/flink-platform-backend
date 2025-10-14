@@ -5,8 +5,7 @@ import java.util.regex.Pattern;
 /** constant values for key. */
 public class JobConstant {
 
-    public static final Pattern APP_ID_PATTERN =
-            Pattern.compile("yarn\\s+application\\s+-kill\\s+(\\S+)");
+    public static final Pattern APP_ID_PATTERN = Pattern.compile("application_\\d{10,13}_\\d+");
 
     public static final Pattern JOB_ID_PATTERN =
             Pattern.compile("Job\\s+has\\s+been\\s+submitted\\s+with\\s+JobID\\s+(\\S+)");
@@ -14,6 +13,8 @@ public class JobConstant {
     public static final String HADOOP_USER_NAME = "HADOOP_USER_NAME";
 
     public static final String YARN_APPLICATION_NAME = "yarn.application.name";
+
+    public static final String YARN_APPLICATION_TAG = "yarn.tags";
 
     public static final String YARN_PROVIDED_LIB_DIRS = "yarn.provided.lib.dirs";
 

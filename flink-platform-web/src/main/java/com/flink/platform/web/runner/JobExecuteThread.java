@@ -5,13 +5,11 @@ import com.flink.platform.common.enums.ExecutionStatus;
 import com.flink.platform.common.enums.JobStatus;
 import com.flink.platform.common.model.JobVertex;
 import com.flink.platform.common.util.ExceptionUtil;
-import com.flink.platform.common.util.JsonUtil;
 import com.flink.platform.dao.entity.JobFlowRun;
 import com.flink.platform.dao.entity.JobInfo;
 import com.flink.platform.dao.entity.JobRunInfo;
 import com.flink.platform.dao.entity.result.JobCallback;
 import com.flink.platform.dao.entity.task.BaseJob;
-import com.flink.platform.dao.entity.task.FlinkJob;
 import com.flink.platform.dao.service.JobFlowRunService;
 import com.flink.platform.dao.service.JobInfoService;
 import com.flink.platform.dao.service.JobRunInfoService;
@@ -33,18 +31,14 @@ import org.apache.commons.lang3.tuple.Pair;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
-import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.function.Supplier;
 
-import static com.flink.platform.common.enums.ExecutionMode.STREAMING;
 import static com.flink.platform.common.enums.ExecutionStatus.CREATED;
 import static com.flink.platform.common.enums.ExecutionStatus.ERROR;
-import static com.flink.platform.common.enums.ExecutionStatus.FAILURE;
 import static com.flink.platform.common.enums.ExecutionStatus.KILLABLE;
 import static com.flink.platform.common.enums.ExecutionStatus.KILLED;
 import static com.flink.platform.common.enums.ExecutionStatus.NOT_EXIST;
-import static com.flink.platform.common.enums.ExecutionStatus.RUNNING;
 import static com.flink.platform.common.enums.ExecutionStatus.SUCCESS;
 import static com.flink.platform.grpc.JobGrpcServiceGrpc.JobGrpcServiceBlockingStub;
 import static com.flink.platform.web.util.ThreadUtil.MIN_SLEEP_TIME_MILLIS;
@@ -59,8 +53,6 @@ public class JobExecuteThread implements Supplier<JobResponse> {
     private final Long jobId;
 
     private final int errorRetries;
-
-    private final int streamingJobToSuccessMills;
 
     private final JobInfoService jobInfoService;
 
@@ -80,7 +72,6 @@ public class JobExecuteThread implements Supplier<JobResponse> {
         this.flowRunId = flowRunId;
         this.jobId = jobVertex.getJobId();
         this.errorRetries = workerConfig.getErrorRetries();
-        this.streamingJobToSuccessMills = workerConfig.getStreamingJobToSuccessMills();
         this.jobInfoService = SpringContext.getBean(JobInfoService.class);
         this.jobRunInfoService = SpringContext.getBean(JobRunInfoService.class);
         this.jobRunExtraService = SpringContext.getBean(JobRunExtraService.class);
@@ -88,7 +79,7 @@ public class JobExecuteThread implements Supplier<JobResponse> {
         this.jobGrpcClient = SpringContext.getBean(JobGrpcClient.class);
     }
 
-    @SuppressWarnings("t")
+    @SuppressWarnings("D")
     @Override
     public JobResponse get() {
         int retryTimes;
@@ -301,25 +292,14 @@ public class JobExecuteThread implements Supplier<JobResponse> {
                 JobStatusRequest request = buildJobStatusRequest(jobRun);
                 JobStatusReply jobStatusReply = stub.getJobStatus(request);
                 StatusInfo statusInfo = StatusInfo.fromReplay(jobStatusReply);
-                if (STREAMING.equals(jobRun.getExecMode())) {
-                    // Interim solution: finite data streams can also use streaming mode.
-                    FlinkJob flinkJob = jobRun.getConfig().unwrap(FlinkJob.class);
-                    if (flinkJob != null && !flinkJob.isWaitForTermination()) {
-                        statusInfo = correctStreamJobStatus(statusInfo, jobRun.getCreateTime());
-                    }
-                }
-
-                // update status.
-                if (statusInfo != null) {
-                    log.info(
-                            "Job runId: {}, name: {} Status: {}",
-                            jobRun.getId(),
-                            jobRun.getName(),
-                            statusInfo.getStatus());
-                    updateJobRunIfNeeded(jobRun, statusInfo, null);
-                    if (statusInfo.getStatus().isTerminalState()) {
-                        return statusInfo;
-                    }
+                log.info(
+                        "Job runId: {}, name: {} Status: {}",
+                        jobRun.getId(),
+                        jobRun.getName(),
+                        statusInfo.getStatus());
+                updateJobRunIfNeeded(jobRun, statusInfo, null);
+                if (statusInfo.getStatus().isTerminalState()) {
+                    return statusInfo;
                 }
             } catch (Exception e) {
                 log.error("Fetch job status failed", e);
@@ -332,33 +312,12 @@ public class JobExecuteThread implements Supplier<JobResponse> {
     }
 
     private JobStatusRequest buildJobStatusRequest(JobRunInfo jobRun) {
-        JobStatusRequest.Builder builder =
-                JobStatusRequest.newBuilder()
-                        .setJobRunId(jobRun.getId())
-                        .setDeployMode(jobRun.getDeployMode().name())
-                        .setRetries(errorRetries);
-
-        JobCallback callback = jobRun.getBackInfo();
-        if (callback != null) {
-            callback = callback.cloneWithoutMsg();
-            builder.setBackInfo(JsonUtil.toJsonString(callback));
-        }
-
-        return builder.build();
-    }
-
-    private StatusInfo correctStreamJobStatus(StatusInfo statusInfo, LocalDateTime startTime) {
-        if (statusInfo == null || statusInfo.getStatus().isTerminalState()) {
-            return statusInfo;
-        }
-
-        if (LocalDateTime.now()
-                .isAfter(startTime.plus(streamingJobToSuccessMills, ChronoUnit.MILLIS))) {
-            ExecutionStatus finalStatus = statusInfo.getStatus() == RUNNING ? SUCCESS : FAILURE;
-            return new StatusInfo(finalStatus, statusInfo.getStartTime(), statusInfo.getEndTime());
-        }
-
-        return statusInfo;
+        return JobStatusRequest.newBuilder()
+                .setJobRunId(jobRun.getId())
+                .setJobId(jobRun.getJobId())
+                .setDeployMode(jobRun.getDeployMode().name())
+                .setRetries(errorRetries)
+                .build();
     }
 
     private void updateJobRunIfNeeded(

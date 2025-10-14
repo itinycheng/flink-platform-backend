@@ -25,7 +25,7 @@ public class JobFlowDag extends DAG<Long, JobVertex, JobEdge> {
 
     private Map<Long, EdgeLayout> edgeLayouts;
 
-    @JsonIgnore private transient ExecutionConfig config;
+    private transient ExecutionConfig config;
 
     public JobFlowDag() {
         this.nodeLayouts = new HashMap<>();
