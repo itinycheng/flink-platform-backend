@@ -6,6 +6,7 @@
       <w>deps</w>
       <w>envp</w>
       <w>envs</w>
+      <w>openrewrite</w>
       <w>rwxr</w>
       <w>sqls</w>
       <w>tmpdir</w>
