@@ -354,7 +354,17 @@
 					<activeRecipes>
 						<recipe>org.openrewrite.java.migrate.UpgradeToJava21</recipe>
 					</activeRecipes>
+					<failOnDryRunResults>true</failOnDryRunResults>
 				</configuration>
+				<executions>
+					<execution>
+						<id>rewrite-dry-run</id>
+						<phase>deploy</phase>
+						<goals>
+							<goal>dryRun</goal>
+						</goals>
+					</execution>
+				</executions>
 				<dependencies>
 					<dependency>
 						<groupId>org.openrewrite.recipe</groupId>
