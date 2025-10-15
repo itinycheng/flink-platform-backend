@@ -34,4 +34,25 @@ public class ApplicationStatusReport {
     public long getFinishTime() {
         return report.getFinishTime();
     }
+
+    @Override
+    public String toString() {
+        var r = report;
+        return "ApplicationStatusReport{"
+                + "status="
+                + status
+                + ", appId="
+                + r.getApplicationId()
+                + ", appType="
+                + r.getApplicationType()
+                + ", yarnState="
+                + r.getYarnApplicationState()
+                + ", finalStatus="
+                + r.getFinalApplicationStatus()
+                + ", tags="
+                + r.getApplicationTags()
+                + ", trackingUrl="
+                + r.getTrackingUrl()
+                + '}';
+    }
 }
