@@ -82,7 +82,7 @@ public class FlinkCommandExecutor implements CommandExecutor {
             try {
                 var jobRunId = command.getJobRunId();
                 var applicationTag = YarnHelper.getApplicationTag(jobRunId);
-                var statusReport = hadoopService.getApplicationReport(applicationTag);
+                var statusReport = hadoopService.getStatusReportWithRetry(applicationTag);
                 status = statusReport.getStatus();
                 trackingUrl = statusReport.getTrackingUrl();
             } catch (Exception e) {
