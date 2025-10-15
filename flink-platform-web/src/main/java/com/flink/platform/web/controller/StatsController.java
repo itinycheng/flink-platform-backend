@@ -4,6 +4,7 @@ import com.flink.platform.web.config.annotation.ApiException;
 import com.flink.platform.web.entity.response.ResultInfo;
 import com.flink.platform.web.external.LocalHadoopService;
 import lombok.extern.slf4j.Slf4j;
+import lombok.var;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.web.bind.annotation.GetMapping;
