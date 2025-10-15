@@ -11,9 +11,12 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Map;
+import java.util.Map.Entry;
 
 import static com.flink.platform.web.entity.response.ResultInfo.success;
+import static java.util.stream.Collectors.toMap;
 
+@SuppressWarnings("unused")
 @Slf4j
 @RestController
 @RequestMapping("/stats")
@@ -29,6 +32,8 @@ public class StatsController {
     @ApiException
     @GetMapping(value = "/runningYarnJobStatusList")
     public ResultInfo<Map<?, ?>> runningYarnJobStatusList() {
-        return success(localHadoopService.getRunningApplications());
+        var runningApplications = localHadoopService.getRunningApplications().entrySet().stream()
+                .collect(toMap(Entry::getKey, entry -> entry.getValue().toString()));
+        return success(runningApplications);
     }
 }
