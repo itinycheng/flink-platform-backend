@@ -33,8 +33,9 @@ public class StatsController {
     @ApiException
     @GetMapping(value = "/runningYarnJobStatusList")
     public ResultInfo<Map<?, ?>> runningYarnJobStatusList() {
-        var runningApplications = localHadoopService.getRunningApplications().entrySet().stream()
-                .collect(toMap(Entry::getKey, entry -> entry.getValue().toString()));
+        var runningApplications =
+                localHadoopService.getRunningApplications().entrySet().stream()
+                        .collect(toMap(Entry::getKey, entry -> entry.getValue().toString()));
         return success(runningApplications);
     }
 }
