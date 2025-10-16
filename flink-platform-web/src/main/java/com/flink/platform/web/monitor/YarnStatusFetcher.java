@@ -11,8 +11,6 @@ import lombok.var;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.core.annotation.Order;
-import org.springframework.retry.annotation.Backoff;
-import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Component;
 
 import static com.flink.platform.common.enums.ExecutionStatus.NOT_EXIST;
@@ -42,16 +40,11 @@ public class YarnStatusFetcher implements StatusFetcher {
         }
     }
 
-    @Retryable(
-            value = Exception.class,
-            maxAttempts = 4,
-            backoff = @Backoff(delay = 1500, multiplier = 2),
-            exceptionExpression = "@appRunnerChecker.shouldRetry(#root)")
     @Override
     public JobStatusReply getStatus(JobStatusRequest request) {
         String applicationTag = YarnHelper.getApplicationTag(request.getJobRunId());
         try {
-            var statusReport = localHadoopService.getApplicationReport(applicationTag);
+            var statusReport = localHadoopService.getStatusReportWithRetry(applicationTag);
             if (statusReport != null) {
                 return newJobStatusReply(
                         statusReport.getStatus(),
