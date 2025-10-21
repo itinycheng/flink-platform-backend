@@ -40,6 +40,7 @@ import static com.flink.platform.common.enums.ExecutionStatus.KILLED;
 import static com.flink.platform.common.enums.ExecutionStatus.NOT_EXIST;
 import static com.flink.platform.common.enums.ExecutionStatus.SUCCESS;
 import static com.flink.platform.grpc.JobGrpcServiceGrpc.JobGrpcServiceBlockingStub;
+import static com.flink.platform.web.util.ThreadUtil.DEFAULT_SLEEP_TIME_MILLIS;
 import static com.flink.platform.web.util.ThreadUtil.MIN_SLEEP_TIME_MILLIS;
 import static java.util.Objects.nonNull;
 
@@ -269,7 +270,6 @@ public class JobExecuteThread implements Supplier<JobResponse> {
     }
 
     public StatusInfo updateAndWaitForComplete(JobGrpcServiceBlockingStub stub, JobRunInfo jobRun) {
-        int retryTimes = 0;
         while (AppRunner.isRunning()) {
             try {
                 // Get and correct job status.
@@ -286,7 +286,7 @@ public class JobExecuteThread implements Supplier<JobResponse> {
                 log.error("Fetch job status failed", e);
             }
 
-            ThreadUtil.sleepRetry(++retryTimes);
+            ThreadUtil.sleep(DEFAULT_SLEEP_TIME_MILLIS);
         }
 
         return null;

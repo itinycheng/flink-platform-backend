@@ -16,7 +16,7 @@ public class ThreadUtil {
 
     public static final int MIN_SLEEP_TIME_MILLIS = 3000;
 
-    public static final int MAX_SLEEP_TIME_MILLIS = 60_000;
+    public static final int DEFAULT_SLEEP_TIME_MILLIS = 5000;
 
     public static ThreadPoolExecutor newFixedThreadExecutor(String namePrefix, int threadsNum) {
         var threadFactory = namedThreadFactory(namePrefix, false);
@@ -65,12 +65,6 @@ public class ThreadUtil {
                 Thread.currentThread().interrupt();
             }
         }));
-    }
-
-    public static void sleepRetry(int retryAttempt) {
-        int mills = Math.min(retryAttempt * MIN_SLEEP_TIME_MILLIS, MAX_SLEEP_TIME_MILLIS);
-        mills = Math.max(mills, MIN_SLEEP_TIME_MILLIS);
-        sleep(mills);
     }
 
     public static void safeSleep(final long millis) {

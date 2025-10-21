@@ -136,6 +136,8 @@ public class HadoopService {
 
         var report = statusReport.getReport();
         yarnClient.killApplication(report.getApplicationId());
+        // remove cached report.
+        runningApplications.remove(applicationTag);
         log.info("Kill application id: {}, tag: {} successfully.", report.getApplicationId(), applicationTag);
     }
 
