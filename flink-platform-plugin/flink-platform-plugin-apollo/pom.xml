@@ -18,7 +18,7 @@
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<apollo.version>2.4.0</apollo.version>
 		<jasypt.version>1.9.3</jasypt.version>
-		<maven-antrun-plugin.version>3.1.0</maven-antrun-plugin.version>
+		<maven-antrun-plugin.version>3.2.0</maven-antrun-plugin.version>
 	</properties>
 
 	<dependencies>
