@@ -427,7 +427,6 @@
 		<module>flink-platform-dao</module>
 		<module>flink-platform-grpc</module>
 		<module>flink-sql-submit</module>
-		<module>flink-platform-ui</module>
 		<module>flink-platform-storage</module>
 		<module>flink-platform-plugin</module>
 		<module>flink-platform-web</module>
