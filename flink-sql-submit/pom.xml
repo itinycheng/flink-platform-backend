@@ -16,9 +16,7 @@
 	<properties>
 		<maven.compiler.source>8</maven.compiler.source>
 		<maven.compiler.target>8</maven.compiler.target>
-
 		<flink.version>unknown</flink.version>
-		<flink.scope>provided</flink.scope>
 	</properties>
 
 	<modules>
@@ -45,10 +43,6 @@
 							<relocation>
 								<pattern>org.yaml</pattern>
 								<shadedPattern>com.flink.platform.shaded.org.yaml</shadedPattern>
-							</relocation>
-							<relocation>
-								<pattern>lombok</pattern>
-								<shadedPattern>com.flink.platform.shaded.lombok</shadedPattern>
 							</relocation>
 							<relocation>
 								<pattern>org.apache.commons</pattern>

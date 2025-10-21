@@ -4,10 +4,9 @@ import com.flink.platform.common.enums.JobType;
 import com.flink.platform.dao.entity.Datasource;
 import com.flink.platform.dao.entity.result.JobCallback;
 import com.flink.platform.web.command.JobCommand;
+import jakarta.annotation.Nonnull;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
-
-import javax.annotation.Nonnull;
 
 import static com.flink.platform.common.enums.JobType.HIVE_SQL;
 
@@ -26,8 +25,7 @@ public class HiveSqlCommandExecutor extends SqlCommandExecutor {
     public JobCallback execCommand(@Nonnull JobCommand command) throws Exception {
         SqlCommand sqlCommand = (SqlCommand) command;
         Datasource datasource = datasourceService.getById(sqlCommand.getDsId());
-        HiveSqlTask task =
-                new HiveSqlTask(sqlCommand.getJobRunId(), sqlCommand.getSqls(), datasource);
+        HiveSqlTask task = new HiveSqlTask(sqlCommand.getJobRunId(), sqlCommand.getSqls(), datasource);
         sqlCommand.setTask(task);
         task.run();
 

@@ -6,7 +6,9 @@ import org.springframework.context.annotation.Configuration;
 
 import java.util.Map;
 
-/** hdfs storage properties. */
+/**
+ * hdfs storage properties.
+ */
 @Data
 @Configuration
 @ConfigurationProperties(prefix = "storage")

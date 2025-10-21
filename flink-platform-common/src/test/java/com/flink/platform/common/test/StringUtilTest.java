@@ -6,7 +6,9 @@ import org.junit.Test;
 import static com.flink.platform.common.util.StringUtil.byteLength;
 import static com.flink.platform.common.util.StringUtil.truncateByBytes;
 
-/** string util test. */
+/**
+ * string util test.
+ */
 public class StringUtilTest {
 
     @Test

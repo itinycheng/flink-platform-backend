@@ -24,8 +24,7 @@ public class ApiExceptionHandler {
             throw (UncaughtException) e;
         }
 
-        if (e instanceof DefinitionException) {
-            DefinitionException exception = (DefinitionException) e;
+        if (e instanceof DefinitionException exception) {
             return failure(exception.getStatus());
         }
 

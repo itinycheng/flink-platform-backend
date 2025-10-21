@@ -15,14 +15,12 @@ import com.flink.platform.dao.entity.JobInfo;
 import com.flink.platform.dao.entity.JobRunInfo;
 import com.flink.platform.dao.mapper.JobFlowMapper;
 import lombok.RequiredArgsConstructor;
-import lombok.var;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashMap;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import static com.flink.platform.common.enums.JobFlowStatus.OFFLINE;
 import static com.flink.platform.common.enums.JobFlowStatus.ONLINE;
@@ -105,21 +103,18 @@ public class JobFlowService extends ServiceImpl<JobFlowMapper, JobFlow> {
 
         // copy jobs not in workflow.
         if (JOB_LIST.equals(jobFlow.getType())) {
-            List<Long> jobIds =
-                    vertices.stream().map(JobVertex::getJobId).collect(Collectors.toList());
+            List<Long> jobIds = vertices.stream().map(JobVertex::getJobId).toList();
             jobInfoService
-                    .list(
-                            new QueryWrapper<JobInfo>()
-                                    .lambda()
-                                    .eq(JobInfo::getFlowId, flowId)
-                                    .in(isNotEmpty(jobIds), JobInfo::getId, jobIds))
-                    .forEach(
-                            jobInfo -> {
-                                jobInfo.setId(null);
-                                jobInfo.setFlowId(jobFlow.getId());
-                                jobInfo.setName(format("%s-copy", jobInfo.getName()));
-                                jobInfoService.save(jobInfo);
-                            });
+                    .list(new QueryWrapper<JobInfo>()
+                            .lambda()
+                            .eq(JobInfo::getFlowId, flowId)
+                            .in(isNotEmpty(jobIds), JobInfo::getId, jobIds))
+                    .forEach(jobInfo -> {
+                        jobInfo.setId(null);
+                        jobInfo.setFlowId(jobFlow.getId());
+                        jobInfo.setName(format("%s-copy", jobInfo.getName()));
+                        jobInfoService.save(jobInfo);
+                    });
         }
 
         // update workflow.
@@ -130,28 +125,20 @@ public class JobFlowService extends ServiceImpl<JobFlowMapper, JobFlow> {
 
     @Transactional(rollbackFor = Exception.class)
     public void deleteAllById(long flowId, long userId) {
-        List<JobInfo> jobInfoList =
-                jobInfoService.list(
-                        new QueryWrapper<JobInfo>()
-                                .lambda()
-                                .eq(JobInfo::getFlowId, flowId)
-                                .eq(JobInfo::getUserId, userId));
+        List<JobInfo> jobInfoList = jobInfoService.list(new QueryWrapper<JobInfo>()
+                .lambda()
+                .eq(JobInfo::getFlowId, flowId)
+                .eq(JobInfo::getUserId, userId));
         if (isNotEmpty(jobInfoList)) {
             List<Long> jobIds = jobInfoList.stream().map(JobInfo::getId).collect(toList());
-            jobRunInfoService.remove(
-                    new QueryWrapper<JobRunInfo>().lambda().in(JobRunInfo::getJobId, jobIds));
+            jobRunInfoService.remove(new QueryWrapper<JobRunInfo>().lambda().in(JobRunInfo::getJobId, jobIds));
             jobInfoService.remove(new QueryWrapper<JobInfo>().lambda().in(JobInfo::getId, jobIds));
         }
-        jobFlowRunService.remove(
-                new QueryWrapper<JobFlowRun>()
-                        .lambda()
-                        .eq(JobFlowRun::getFlowId, flowId)
-                        .eq(JobFlowRun::getUserId, userId));
-        remove(
-                new QueryWrapper<JobFlow>()
-                        .lambda()
-                        .eq(JobFlow::getId, flowId)
-                        .eq(JobFlow::getUserId, userId));
+        jobFlowRunService.remove(new QueryWrapper<JobFlowRun>()
+                .lambda()
+                .eq(JobFlowRun::getFlowId, flowId)
+                .eq(JobFlowRun::getUserId, userId));
+        remove(new QueryWrapper<JobFlow>().lambda().eq(JobFlow::getId, flowId).eq(JobFlow::getUserId, userId));
     }
 
     @Transactional(rollbackFor = Exception.class)
@@ -183,11 +170,10 @@ public class JobFlowService extends ServiceImpl<JobFlowMapper, JobFlow> {
     }
 
     public List<JobFlow> getUnscheduledJobFlows() {
-        return list(
-                new QueryWrapper<JobFlow>()
-                        .lambda()
-                        .eq(JobFlow::getStatus, ONLINE)
-                        .isNotNull(JobFlow::getCronExpr)
-                        .ne(JobFlow::getCronExpr, ""));
+        return list(new QueryWrapper<JobFlow>()
+                .lambda()
+                .eq(JobFlow::getStatus, ONLINE)
+                .isNotNull(JobFlow::getCronExpr)
+                .ne(JobFlow::getCronExpr, ""));
     }
 }

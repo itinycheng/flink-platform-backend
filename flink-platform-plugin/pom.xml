@@ -13,7 +13,7 @@
 
 	<name>flink-platform-plugin</name>
 	<url>http://maven.apache.org</url>
-	
+
 	<modules>
 		<module>flink-platform-plugin-apollo</module>
 		<module>flink-platform-plugin-base</module>

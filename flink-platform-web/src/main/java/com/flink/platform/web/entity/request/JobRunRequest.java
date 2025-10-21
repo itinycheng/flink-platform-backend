@@ -13,7 +13,9 @@ import java.util.List;
 @NoArgsConstructor
 public class JobRunRequest {
 
-    @Delegate private final JobRunInfo jobInfo = new JobRunInfo();
+    @Delegate
+    private final JobRunInfo jobInfo = new JobRunInfo();
 
-    @Setter private List<Long> jobIds;
+    @Setter
+    private List<Long> jobIds;
 }

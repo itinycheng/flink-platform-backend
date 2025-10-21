@@ -3,7 +3,6 @@ package com.flink.platform.web;
 import com.flink.platform.web.command.JobCommand;
 import com.flink.platform.web.command.dependent.DependentCommand;
 import com.flink.platform.web.common.ValueSortedMap;
-import lombok.var;
 import org.junit.Assert;
 import org.junit.Test;
 

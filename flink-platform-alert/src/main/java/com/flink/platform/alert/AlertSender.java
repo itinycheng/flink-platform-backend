@@ -37,26 +37,22 @@ public class AlertSender {
             return false;
         }
 
-        switch (alertInfo.getType()) {
-            case FEI_SHU:
-                return sendToFeiShu((FeiShuAlert) alertInfo.getConfig(), jobFlowRun, alertMsg);
-            case DING_DING:
-            case SMS:
-            case EMAIL:
-            default:
+        return switch (alertInfo.getType()) {
+            case FEI_SHU -> sendToFeiShu((FeiShuAlert) alertInfo.getConfig(), jobFlowRun, alertMsg);
+            default -> {
                 log.error("Alert type: {} not supported", alertInfo.getType());
-                return false;
-        }
+                yield false;
+            }
+        };
     }
 
     public boolean sendToFeiShu(FeiShuAlert alert, JobFlowRun jobFlowRun, String alertMsg) {
         try {
-            String content =
-                    JsonUtil.toJsonString(alert.getContent())
-                            .replace("${id}", String.valueOf(jobFlowRun.getId()))
-                            .replace("${name}", jobFlowRun.getName())
-                            .replace("${status}", jobFlowRun.getStatus().name())
-                            .replace("${alertMsg}", alertMsg);
+            String content = JsonUtil.toJsonString(alert.getContent())
+                    .replace("${id}", String.valueOf(jobFlowRun.getId()))
+                    .replace("${name}", jobFlowRun.getName())
+                    .replace("${status}", jobFlowRun.getStatus().name())
+                    .replace("${alertMsg}", alertMsg);
             if (content.contains("${jobRunDetails}")) {
                 content = content.replace("${jobRunDetails}", getJobRunDetails(jobFlowRun.getId()));
             }
@@ -74,20 +70,17 @@ public class AlertSender {
     }
 
     private String getJobRunDetails(Long flowRunId) {
-        List<JobRunInfo> jobRuns =
-                jobRunInfoService.list(
-                        new QueryWrapper<JobRunInfo>()
-                                .lambda()
-                                .select(JobRunInfo::getName, JobRunInfo::getStatus)
-                                .eq(JobRunInfo::getFlowRunId, flowRunId));
+        List<JobRunInfo> jobRuns = jobRunInfoService.list(new QueryWrapper<JobRunInfo>()
+                .lambda()
+                .select(JobRunInfo::getName, JobRunInfo::getStatus)
+                .eq(JobRunInfo::getFlowRunId, flowRunId));
 
         StringBuilder buffer = new StringBuilder();
-        jobRuns.forEach(
-                jobRun ->
-                        buffer.append(String.format("%-10s", jobRun.getStatus().name()))
-                                .append(" : ")
-                                .append(jobRun.getName())
-                                .append("\n"));
+        jobRuns.forEach(jobRun -> buffer.append(
+                        String.format("%-10s", jobRun.getStatus().name()))
+                .append(" : ")
+                .append(jobRun.getName())
+                .append("\n"));
         return buffer.toString();
     }
 

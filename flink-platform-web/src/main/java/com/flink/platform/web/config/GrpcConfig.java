@@ -6,7 +6,9 @@ import net.devh.boot.grpc.server.serverfactory.GrpcServerConfigurer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-/** Use virtual thread to handle grpc calls. */
+/**
+ * Use virtual thread to handle grpc calls.
+ */
 @Configuration
 class GrpcConfig {
 

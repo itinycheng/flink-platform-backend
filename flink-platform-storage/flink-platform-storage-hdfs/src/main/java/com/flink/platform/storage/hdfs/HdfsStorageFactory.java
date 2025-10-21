@@ -6,7 +6,9 @@ import com.flink.platform.storage.base.StorageSystem;
 import com.flink.platform.storage.base.StorageType;
 import com.google.auto.service.AutoService;
 
-/** Hello world. */
+/**
+ * Hello world.
+ */
 @AutoService(StorageFactory.class)
 public class HdfsStorageFactory implements StorageFactory {
 

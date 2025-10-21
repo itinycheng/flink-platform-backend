@@ -25,8 +25,7 @@ public class Preconditions {
         }
     }
 
-    public static <T extends Throwable> void checkThrow(boolean condition, Supplier<T> supplier)
-            throws T {
+    public static <T extends Throwable> void checkThrow(boolean condition, Supplier<T> supplier) throws T {
         if (condition) {
             throw supplier.get();
         }

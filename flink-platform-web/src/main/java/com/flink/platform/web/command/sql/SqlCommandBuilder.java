@@ -7,10 +7,9 @@ import com.flink.platform.dao.entity.JobRunInfo;
 import com.flink.platform.dao.entity.task.SqlJob;
 import com.flink.platform.web.command.CommandBuilder;
 import com.flink.platform.web.command.JobCommand;
+import jakarta.annotation.Nonnull;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
-
-import javax.annotation.Nonnull;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -44,9 +43,7 @@ public class SqlCommandBuilder implements CommandBuilder {
 
         if (sqlList.isEmpty()) {
             throw new CommandUnableGenException(
-                    String.format(
-                            "No available sql or parsing failed, subject: %s",
-                            jobRun.getSubject()));
+                    String.format("No available sql or parsing failed, subject: %s", jobRun.getSubject()));
         }
 
         SqlCommand sqlCommand = new SqlCommand(jobRun.getId(), sqlJob.getDsId(), sqlList);

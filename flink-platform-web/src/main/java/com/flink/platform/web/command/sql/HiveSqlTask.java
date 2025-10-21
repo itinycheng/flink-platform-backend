@@ -4,12 +4,11 @@ import com.flink.platform.dao.entity.Datasource;
 import com.flink.platform.dao.entity.ds.DatasourceParam;
 import com.flink.platform.dao.entity.result.JobCallback;
 import com.google.common.collect.Maps;
+import jakarta.annotation.Nonnull;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hive.jdbc.HiveStatement;
 import org.springframework.util.CollectionUtils;
-
-import javax.annotation.Nonnull;
 
 import java.util.List;
 import java.util.Map;
@@ -24,8 +23,7 @@ public class HiveSqlTask extends SqlTask {
 
     private final StringBuffer logBuffer;
 
-    public HiveSqlTask(
-            long jobRunId, @Nonnull List<String> sqlList, @Nonnull Datasource datasource) {
+    public HiveSqlTask(long jobRunId, @Nonnull List<String> sqlList, @Nonnull Datasource datasource) {
         super(jobRunId, sqlList, datasource);
         logBuffer = new StringBuffer();
     }
@@ -40,7 +38,8 @@ public class HiveSqlTask extends SqlTask {
     @Override
     public void beforeExecSql() {
         try {
-            new Thread(this::storeLog).start();
+            Thread logThread = Thread.ofVirtual().unstarted(this::storeLog);
+            logThread.start();
         } catch (Exception e) {
             log.error("start hive log collect thread failed", e);
         }

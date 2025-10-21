@@ -13,9 +13,11 @@ import static com.flink.platform.common.util.Preconditions.requireNotNull;
 @NoArgsConstructor
 public class UserRequest {
 
-    @Delegate private final User user = new User();
+    @Delegate
+    private final User user = new User();
 
-    @Setter private String token;
+    @Setter
+    private String token;
 
     public String validateOnCreate() {
         String msg = usernameNotNull();

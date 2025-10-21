@@ -5,7 +5,9 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.util.Map;
 
-/** Apollo utils. */
+/**
+ * Apollo utils.
+ */
 @Slf4j
 public class PlaceholderUtil {
 
@@ -15,7 +17,7 @@ public class PlaceholderUtil {
         }
 
         Map<String, Object> result = Placeholder.APOLLO.apply(null, param);
-        if (result != null && !result.isEmpty()) {
+        if (!result.isEmpty()) {
             Object value = result.values().iterator().next();
             if (value != null) {
                 log.debug("Apollo config found, param:{}, value:{}", param, value);

@@ -6,12 +6,11 @@ import com.flink.platform.grpc.JobStatusReply;
 import com.flink.platform.grpc.JobStatusRequest;
 import com.flink.platform.web.monitor.DefaultStatusFetcher;
 import com.flink.platform.web.monitor.StatusFetcher;
+import jakarta.annotation.Nonnull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
-import javax.annotation.Nonnull;
 
 import java.util.List;
 
@@ -28,14 +27,10 @@ public class ProcessJobStatusService {
     @Nonnull
     public JobStatusReply getStatus(JobStatusRequest request) {
         final DeployMode deployMode = DeployMode.from(request.getDeployMode());
-        StatusFetcher statusFetcher =
-                statusFetchers.stream()
-                        .filter(fetcher -> fetcher.isSupported(deployMode))
-                        .findFirst()
-                        .orElseThrow(
-                                () ->
-                                        new JobStatusScrapeException(
-                                                "No available job status fetcher"));
+        StatusFetcher statusFetcher = statusFetchers.stream()
+                .filter(fetcher -> fetcher.isSupported(deployMode))
+                .findFirst()
+                .orElseThrow(() -> new JobStatusScrapeException("No available job status fetcher"));
 
         try {
             return statusFetcher.getStatus(request);

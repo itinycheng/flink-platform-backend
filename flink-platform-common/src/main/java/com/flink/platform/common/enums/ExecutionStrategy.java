@@ -1,6 +1,8 @@
 package com.flink.platform.common.enums;
 
-/** flow run strategy. */
+/**
+ * flow run strategy.
+ */
 public enum ExecutionStrategy {
     ONLY_CUR_JOB,
 

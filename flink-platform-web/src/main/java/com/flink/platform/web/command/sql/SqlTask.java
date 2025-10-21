@@ -7,11 +7,10 @@ import com.flink.platform.dao.entity.Datasource;
 import com.flink.platform.dao.entity.ds.DatasourceParam;
 import com.flink.platform.dao.entity.result.JobCallback;
 import com.flink.platform.web.command.AbstractTask;
+import jakarta.annotation.Nonnull;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
-
-import javax.annotation.Nonnull;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -91,9 +90,7 @@ public class SqlTask extends AbstractTask {
                         while (resultSet.next() && count++ < 2000) {
                             Map<String, Object> itemMap = new HashMap<>(num);
                             for (int i = 1; i <= num; i++) {
-                                itemMap.put(
-                                        columnNames[i - 1],
-                                        toJavaObject(resultSet.getObject(i), dbType));
+                                itemMap.put(columnNames[i - 1], toJavaObject(resultSet.getObject(i), dbType));
                             }
                             dataList.add(itemMap);
                         }
@@ -114,8 +111,7 @@ public class SqlTask extends AbstractTask {
 
         this.isSucceed = exceptionMsg == null;
         this.exceptionStack = exceptionMsg;
-        this.sqlResult =
-                dataList.stream().map(JsonUtil::toJsonString).collect(joining(LINE_SEPARATOR));
+        this.sqlResult = dataList.stream().map(JsonUtil::toJsonString).collect(joining(LINE_SEPARATOR));
     }
 
     @Override

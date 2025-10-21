@@ -9,12 +9,10 @@ import com.flink.platform.dao.entity.ExecutionConfig;
 import com.flink.platform.dao.entity.JobFlowRun;
 import com.flink.platform.dao.entity.JobRunInfo;
 import com.flink.platform.dao.mapper.JobFlowRunMapper;
-import lombok.var;
+import jakarta.annotation.Nonnull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import javax.annotation.Nonnull;
 
 import static com.flink.platform.common.enums.ExecutionStatus.getNonTerminals;
 import static com.flink.platform.common.enums.ExecutionStrategy.ONLY_CUR_JOB;
@@ -24,15 +22,15 @@ import static com.flink.platform.common.enums.ExecutionStrategy.ONLY_CUR_JOB;
 @DS("master_platform")
 public class JobFlowRunService extends ServiceImpl<JobFlowRunMapper, JobFlowRun> {
 
-    @Autowired private JobRunInfoService jobRunService;
+    @Autowired
+    private JobRunInfoService jobRunService;
 
     @Transactional
     public void deleteAllById(long flowRunId, long userId) {
-        jobRunService.remove(
-                new QueryWrapper<JobRunInfo>()
-                        .lambda()
-                        .eq(JobRunInfo::getFlowRunId, flowRunId)
-                        .eq(JobRunInfo::getUserId, userId));
+        jobRunService.remove(new QueryWrapper<JobRunInfo>()
+                .lambda()
+                .eq(JobRunInfo::getFlowRunId, flowRunId)
+                .eq(JobRunInfo::getUserId, userId));
         removeById(flowRunId);
     }
 
@@ -54,25 +52,23 @@ public class JobFlowRunService extends ServiceImpl<JobFlowRunMapper, JobFlowRun>
             strategy = null;
         }
 
-        return list(
-                        new QueryWrapper<JobFlowRun>()
-                                .lambda()
-                                .eq(JobFlowRun::getFlowId, flowId)
-                                .in(JobFlowRun::getStatus, getNonTerminals()))
+        return list(new QueryWrapper<JobFlowRun>()
+                        .lambda()
+                        .eq(JobFlowRun::getFlowId, flowId)
+                        .in(JobFlowRun::getStatus, getNonTerminals()))
                 .stream()
-                .filter(
-                        jobFlowRun -> {
-                            if (!ONLY_CUR_JOB.equals(strategy)) {
-                                return true;
-                            }
+                .filter(jobFlowRun -> {
+                    if (!ONLY_CUR_JOB.equals(strategy)) {
+                        return true;
+                    }
 
-                            if (startJobId == null) {
-                                return true;
-                            }
+                    if (startJobId == null) {
+                        return true;
+                    }
 
-                            var conf = jobFlowRun.getConfig();
-                            return startJobId.equals(conf.getStartJobId());
-                        })
+                    var conf = jobFlowRun.getConfig();
+                    return startJobId.equals(conf.getStartJobId());
+                })
                 .findAny()
                 .orElse(null);
     }

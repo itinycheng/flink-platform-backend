@@ -16,8 +16,7 @@ import java.util.Properties;
 public class JdbcUtil {
 
     /** create datasource. */
-    public static Connection createConnection(DbType dbType, DatasourceParam params)
-            throws Exception {
+    public static Connection createConnection(DbType dbType, DatasourceParam params) throws Exception {
         log.info("create connection. dbType: {}, params: {}", dbType, params);
         Class.forName(dbType.getDriver());
         Properties properties = new Properties();
@@ -56,8 +55,7 @@ public class JdbcUtil {
                     int arrayLength = java.lang.reflect.Array.getLength(objectArray);
                     Object[] javaObjectArray = new Object[arrayLength];
                     for (int i = 0; i < arrayLength; i++) {
-                        javaObjectArray[i] =
-                                toJavaObject(java.lang.reflect.Array.get(objectArray, i), dbType);
+                        javaObjectArray[i] = toJavaObject(java.lang.reflect.Array.get(objectArray, i), dbType);
                     }
                     return javaObjectArray;
                 } else {

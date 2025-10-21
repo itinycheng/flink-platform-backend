@@ -32,13 +32,8 @@ public class ApolloService {
                 .map(ns -> ns.getConfig(key))
                 .filter(Objects::nonNull)
                 .findAny()
-                .orElseThrow(
-                        () ->
-                                new IllegalArgumentException(
-                                        "Apollo config not found: namespace: "
-                                                + namespace
-                                                + ", key: "
-                                                + key));
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "Apollo config not found: namespace: " + namespace + ", key: " + key));
     }
 
     private void checkPluginEnabled() {

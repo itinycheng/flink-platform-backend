@@ -23,7 +23,9 @@ import static com.flink.platform.common.enums.ResponseStatus.OPERATION_NOT_ALLOW
 import static com.flink.platform.web.entity.response.ResultInfo.failure;
 import static com.flink.platform.web.entity.response.ResultInfo.success;
 
-/** flink job controller. */
+/**
+ * flink job controller.
+ */
 @RestController
 @RequestMapping("/flink")
 @RequiredArgsConstructor(onConstructor_ = @Autowired)
@@ -45,14 +47,13 @@ public class FlinkJobController {
         }
 
         JobCallback callback = jobRun.getBackInfo();
-        if (callback == null
-                || StringUtils.isEmpty(callback.getJobId())
-                || StringUtils.isEmpty(callback.getAppId())) {
+        if (callback == null || StringUtils.isEmpty(callback.getJobId()) || StringUtils.isEmpty(callback.getAppId())) {
             return failure(OPERATION_NOT_ALLOWED, "AppId or JobId not found");
         }
 
         JobGrpcServiceBlockingStub jobGrpcService = jobGrpcClient.grpcClient(jobRun.getHost());
-        SavepointRequest request = SavepointRequest.newBuilder().setJobRunId(jobRunId).build();
+        SavepointRequest request =
+                SavepointRequest.newBuilder().setJobRunId(jobRunId).build();
         SavepointReply savepoint = jobGrpcService.savepointJob(request);
         return success(savepoint.getJobRunId());
     }

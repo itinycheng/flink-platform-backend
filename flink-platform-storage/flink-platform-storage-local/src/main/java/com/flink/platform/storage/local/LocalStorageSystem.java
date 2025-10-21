@@ -1,17 +1,19 @@
 package com.flink.platform.storage.local;
 
+import com.flink.platform.common.constants.Constant;
 import com.flink.platform.storage.StorageProperties;
 import com.flink.platform.storage.hdfs.HdfsStorageSystem;
+import jakarta.annotation.Nonnull;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.hdfs.HdfsConfiguration;
 
-import javax.annotation.Nonnull;
-
 import java.io.IOException;
 import java.util.Map;
 
-/** hdfs storage system. */
+/**
+ * hdfs storage system.
+ */
 @Slf4j
 public class LocalStorageSystem extends HdfsStorageSystem {
 
@@ -33,5 +35,15 @@ public class LocalStorageSystem extends HdfsStorageSystem {
         fs = FileSystem.newInstanceLocal(conf);
         log.info("[fileSystem scheme]: {}", fs.getScheme());
         log.info("=============== [storage configuration info end.] ===============");
+    }
+
+    @Override
+    public boolean isDistributed() {
+        return false;
+    }
+
+    @Override
+    public String getFileSeparator() {
+        return Constant.OS_FILE_SEPARATOR;
     }
 }

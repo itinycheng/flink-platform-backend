@@ -22,7 +22,8 @@ public class JobCallback {
 
     private transient ExecutionStatus status;
 
-    @Delegate private transient ShellCallback cmdCallback;
+    @Delegate
+    private transient ShellCallback cmdCallback;
 
     /** Only for deSeral. */
     public JobCallback() {

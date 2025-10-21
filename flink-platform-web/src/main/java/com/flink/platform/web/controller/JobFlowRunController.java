@@ -79,33 +79,24 @@ public class JobFlowRunController {
             @RequestParam(name = "name", required = false) String name,
             @RequestParam(name = "status", required = false) ExecutionStatus status,
             @RequestParam(name = "tag", required = false) String tagCode,
-            @DateTimeFormat(pattern = GLOBAL_DATE_TIME_FORMAT)
-                    @RequestParam(name = "startTime", required = false)
+            @DateTimeFormat(pattern = GLOBAL_DATE_TIME_FORMAT) @RequestParam(name = "startTime", required = false)
                     LocalDateTime startTime,
-            @DateTimeFormat(pattern = GLOBAL_DATE_TIME_FORMAT)
-                    @RequestParam(name = "endTime", required = false)
+            @DateTimeFormat(pattern = GLOBAL_DATE_TIME_FORMAT) @RequestParam(name = "endTime", required = false)
                     LocalDateTime endTime,
             @RequestParam(name = "sort", required = false) String sort) {
         Page<JobFlowRun> pager = new Page<>(page, size);
 
-        LambdaQueryWrapper<JobFlowRun> queryWrapper =
-                new QueryWrapper<JobFlowRun>()
-                        .lambda()
-                        .select(JobFlowRun.class, field -> !"flow".equals(field.getProperty()))
-                        .eq(JobFlowRun::getUserId, loginUser.getId())
-                        .eq(nonNull(id), JobFlowRun::getId, id)
-                        .eq(nonNull(status), JobFlowRun::getStatus, status)
-                        .likeRight(isNotEmpty(name), JobFlowRun::getName, name)
-                        .like(isNotEmpty(tagCode), JobFlowRun::getTags, tagCode)
-                        .nested(
-                                nonNull(startTime) && nonNull(endTime),
-                                qw ->
-                                        qw.isNull(JobFlowRun::getEndTime)
-                                                .or()
-                                                .between(
-                                                        JobFlowRun::getEndTime,
-                                                        startTime,
-                                                        endTime));
+        LambdaQueryWrapper<JobFlowRun> queryWrapper = new QueryWrapper<JobFlowRun>()
+                .lambda()
+                .select(JobFlowRun.class, field -> !"flow".equals(field.getProperty()))
+                .eq(JobFlowRun::getUserId, loginUser.getId())
+                .eq(nonNull(id), JobFlowRun::getId, id)
+                .eq(nonNull(status), JobFlowRun::getStatus, status)
+                .likeRight(isNotEmpty(name), JobFlowRun::getName, name)
+                .like(isNotEmpty(tagCode), JobFlowRun::getTags, tagCode)
+                .nested(nonNull(startTime) && nonNull(endTime), qw -> qw.isNull(JobFlowRun::getEndTime)
+                        .or()
+                        .between(JobFlowRun::getEndTime, startTime, endTime));
         if ("-id".equals(sort)) {
             queryWrapper.orderByDesc(JobFlowRun::getId);
         }
@@ -116,8 +107,7 @@ public class JobFlowRunController {
 
     @GetMapping(value = "/kill/{flowRunId}")
     public ResultInfo<Long> kill(
-            @RequestAttribute(value = Constant.SESSION_USER) User loginUser,
-            @PathVariable Long flowRunId) {
+            @RequestAttribute(value = Constant.SESSION_USER) User loginUser, @PathVariable Long flowRunId) {
         JobFlowRun jobFlowRun = jobFlowRunService.getById(flowRunId);
         ExecutionStatus status = jobFlowRun.getStatus();
         if (status != null && status.isTerminalState()) {
@@ -130,8 +120,7 @@ public class JobFlowRunController {
 
     @GetMapping(value = "/purge/{flowRunId}")
     public ResultInfo<Long> purge(
-            @RequestAttribute(value = Constant.SESSION_USER) User loginUser,
-            @PathVariable long flowRunId) {
+            @RequestAttribute(value = Constant.SESSION_USER) User loginUser, @PathVariable long flowRunId) {
         JobFlowRun jobFlowRun = jobFlowRunService.getById(flowRunId);
         if (jobFlowRun == null) {
             return failure(ERROR_PARAMETER);

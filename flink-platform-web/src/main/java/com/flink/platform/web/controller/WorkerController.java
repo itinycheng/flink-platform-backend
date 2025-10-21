@@ -50,8 +50,7 @@ public class WorkerController {
 
     @PostMapping(value = "/create")
     public ResultInfo<Long> create(
-            @RequestAttribute(value = Constant.SESSION_USER) User loginUser,
-            @RequestBody WorkerRequest workerRequest) {
+            @RequestAttribute(value = Constant.SESSION_USER) User loginUser, @RequestBody WorkerRequest workerRequest) {
         String errorMsg = workerRequest.validateOnCreate();
         if (StringUtils.isNotBlank(errorMsg)) {
             return failure(ERROR_PARAMETER, errorMsg);
@@ -69,8 +68,7 @@ public class WorkerController {
 
     @PostMapping(value = "/update")
     public ResultInfo<Long> update(
-            @RequestAttribute(value = Constant.SESSION_USER) User loginUser,
-            @RequestBody WorkerRequest workerRequest) {
+            @RequestAttribute(value = Constant.SESSION_USER) User loginUser, @RequestBody WorkerRequest workerRequest) {
         String errorMsg = workerRequest.validateOnUpdate();
         if (StringUtils.isNotBlank(errorMsg)) {
             return failure(ERROR_PARAMETER, errorMsg);
@@ -93,11 +91,10 @@ public class WorkerController {
             @RequestParam(name = "name", required = false) String name,
             @RequestParam(name = "ip", required = false) String ip) {
         Page<Worker> pager = new Page<>(page, size);
-        LambdaQueryWrapper<Worker> queryWrapper =
-                new QueryWrapper<Worker>()
-                        .lambda()
-                        .like(Objects.nonNull(name), Worker::getName, name)
-                        .like(Objects.nonNull(ip), Worker::getIp, ip);
+        LambdaQueryWrapper<Worker> queryWrapper = new QueryWrapper<Worker>()
+                .lambda()
+                .like(Objects.nonNull(name), Worker::getName, name)
+                .like(Objects.nonNull(ip), Worker::getIp, ip);
 
         if (role != null) {
             queryWrapper.eq(Worker::getRole, role);
@@ -116,8 +113,7 @@ public class WorkerController {
 
     @GetMapping(value = "/delete/{workerId}")
     public ResultInfo<Long> delete(
-            @RequestAttribute(value = Constant.SESSION_USER) User loginUser,
-            @PathVariable long workerId) {
+            @RequestAttribute(value = Constant.SESSION_USER) User loginUser, @PathVariable long workerId) {
         if (loginUser.getType() != ADMIN) {
             return failure(USER_HAVE_NO_PERMISSION);
         }
@@ -136,8 +132,7 @@ public class WorkerController {
 
     @GetMapping(value = "/purge/{workerId}")
     public ResultInfo<Long> purge(
-            @RequestAttribute(value = Constant.SESSION_USER) User loginUser,
-            @PathVariable long workerId) {
+            @RequestAttribute(value = Constant.SESSION_USER) User loginUser, @PathVariable long workerId) {
         if (loginUser.getType() != ADMIN) {
             return failure(USER_HAVE_NO_PERMISSION);
         }

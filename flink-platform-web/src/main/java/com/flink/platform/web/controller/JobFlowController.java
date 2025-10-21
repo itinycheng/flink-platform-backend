@@ -22,7 +22,6 @@ import com.flink.platform.web.entity.response.ResultInfo;
 import com.flink.platform.web.service.JobFlowQuartzService;
 import com.flink.platform.web.service.QuartzService;
 import lombok.RequiredArgsConstructor;
-import lombok.var;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -146,8 +145,7 @@ public class JobFlowController {
 
     @GetMapping(value = "/purge/{flowId}")
     public ResultInfo<Long> purge(
-            @RequestAttribute(value = Constant.SESSION_USER) User loginUser,
-            @PathVariable long flowId) {
+            @RequestAttribute(value = Constant.SESSION_USER) User loginUser, @PathVariable long flowId) {
         JobFlow jobFlow = jobFlowService.getById(flowId);
         if (jobFlow == null) {
             return failure(ERROR_PARAMETER);
@@ -174,15 +172,14 @@ public class JobFlowController {
             @RequestParam(name = "sort", required = false) String sort) {
         Page<JobFlow> pager = new Page<>(page, size);
 
-        LambdaQueryWrapper<JobFlow> queryWrapper =
-                new QueryWrapper<JobFlow>()
-                        .lambda()
-                        .select(JobFlow.class, field -> !"flow".equals(field.getProperty()))
-                        .eq(JobFlow::getUserId, loginUser.getId())
-                        .eq(id != null, JobFlow::getId, id)
-                        .eq(type != null, JobFlow::getType, type)
-                        .like(isNotEmpty(name), JobFlow::getName, name)
-                        .like(isNotEmpty(tagCode), JobFlow::getTags, tagCode);
+        LambdaQueryWrapper<JobFlow> queryWrapper = new QueryWrapper<JobFlow>()
+                .lambda()
+                .select(JobFlow.class, field -> !"flow".equals(field.getProperty()))
+                .eq(JobFlow::getUserId, loginUser.getId())
+                .eq(id != null, JobFlow::getId, id)
+                .eq(type != null, JobFlow::getType, type)
+                .like(isNotEmpty(name), JobFlow::getName, name)
+                .like(isNotEmpty(tagCode), JobFlow::getTags, tagCode);
 
         if (status != null) {
             queryWrapper.eq(JobFlow::getStatus, status);
@@ -203,27 +200,21 @@ public class JobFlowController {
             @RequestAttribute(value = Constant.SESSION_USER) User loginUser,
             @RequestParam(name = "name", required = false) String name,
             @RequestParam(name = "status", required = false) List<JobFlowStatus> status) {
-        List<Map<String, Object>> listMap =
-                jobFlowService
-                        .list(
-                                new QueryWrapper<JobFlow>()
-                                        .lambda()
-                                        .select(JobFlow::getId, JobFlow::getName)
-                                        .eq(JobFlow::getUserId, loginUser.getId())
-                                        .like(isNotBlank(name), JobFlow::getName, name)
-                                        .in(
-                                                CollectionUtils.isNotEmpty(status),
-                                                JobFlow::getStatus,
-                                                status))
-                        .stream()
-                        .map(
-                                jobFlow -> {
-                                    Map<String, Object> map = new HashMap<>(2);
-                                    map.put("id", jobFlow.getId());
-                                    map.put("name", jobFlow.getName());
-                                    return map;
-                                })
-                        .collect(toList());
+        List<Map<String, Object>> listMap = jobFlowService
+                .list(new QueryWrapper<JobFlow>()
+                        .lambda()
+                        .select(JobFlow::getId, JobFlow::getName)
+                        .eq(JobFlow::getUserId, loginUser.getId())
+                        .like(isNotBlank(name), JobFlow::getName, name)
+                        .in(CollectionUtils.isNotEmpty(status), JobFlow::getStatus, status))
+                .stream()
+                .map(jobFlow -> {
+                    Map<String, Object> map = new HashMap<>(2);
+                    map.put("id", jobFlow.getId());
+                    map.put("name", jobFlow.getName());
+                    return map;
+                })
+                .collect(toList());
         return success(listMap);
     }
 
@@ -293,8 +284,7 @@ public class JobFlowController {
     }
 
     @PostMapping(value = "/schedule/runOnce/{flowId}")
-    public ResultInfo<Long> runOnce(
-            @PathVariable Long flowId, @RequestBody(required = false) ExecutionConfig config) {
+    public ResultInfo<Long> runOnce(@PathVariable Long flowId, @RequestBody(required = false) ExecutionConfig config) {
         var jobFlow = jobFlowService.getById(flowId);
         var status = jobFlow.getStatus();
         if (status == null || !status.isRunnable()) {

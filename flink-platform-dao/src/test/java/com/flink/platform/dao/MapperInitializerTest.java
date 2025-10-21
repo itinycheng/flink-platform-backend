@@ -12,11 +12,7 @@ import org.junit.Test;
 
 /** Unit test for simple App. */
 public class MapperInitializerTest {
-    /**
-     * Rigorous Test :-).
-     *
-     * @throws JsonProcessingException exception.
-     */
+    /** Rigorous Test :-). */
     @Test
     public void shouldAnswerWithTrue() throws JsonProcessingException {
         LongArrayList longs = new LongArrayList();

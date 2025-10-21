@@ -1,11 +1,12 @@
 package com.flink.platform.storage.hdfs;
 
+import com.flink.platform.common.constants.Constant;
 import com.flink.platform.common.util.Preconditions;
 import com.flink.platform.storage.StorageProperties;
 import com.flink.platform.storage.base.StorageStatus;
 import com.flink.platform.storage.base.StorageSystem;
+import jakarta.annotation.Nonnull;
 import lombok.extern.slf4j.Slf4j;
-import lombok.var;
 import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
@@ -14,41 +15,45 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.Trash;
 import org.apache.hadoop.hdfs.HdfsConfiguration;
 
-import javax.annotation.Nonnull;
-
 import java.io.IOException;
 import java.time.Instant;
 import java.time.LocalDateTime;
 
 import static com.flink.platform.common.constants.Constant.GLOBAL_ZONE_ID;
+import static java.lang.String.format;
 
-/** hdfs storage system. */
+/**
+ * hdfs storage system.
+ */
 @Slf4j
 public class HdfsStorageSystem implements StorageSystem {
 
     protected final StorageProperties properties;
     protected FileSystem fs;
+    protected String rootPath;
 
     public HdfsStorageSystem(@Nonnull StorageProperties properties) {
         this.properties = Preconditions.checkNotNull(properties);
     }
 
-    public void open() throws IOException {
-        System.setProperty("HADOOP_USER_NAME", properties.getUsername());
-        org.apache.hadoop.conf.Configuration conf = new HdfsConfiguration();
-        properties.getProperties().forEach(conf::set);
-        fs = FileSystem.newInstance(conf);
-        // Log configuration information.
-        StringBuilder builder = new StringBuilder();
-        builder.append("=============== [storage configuration info start.] ===============\n");
-        builder.append("[hdfs conf size]: ").append(conf.size()).append("\n");
-        builder.append("[hdfs uri]: ").append(fs.getUri()).append("\n");
-        builder.append("[fs.defaultFS]: ").append(conf.get("fs.defaultFS")).append("\n");
-        builder.append("[fs.hdfs.impl]: ").append(conf.get("fs.hdfs.impl")).append("\n");
-        builder.append("[fileSystem scheme]: ").append(fs.getScheme()).append("\n");
-        builder.append(conf).append("\n");
-        builder.append("=============== [storage configuration info end.] ===============");
-        log.info("Hdfs FileSystem initialized successfully.\n{}", builder);
+    @Override
+    public String getRootPath() {
+        return rootPath;
+    }
+
+    @Override
+    public boolean isDistributed() {
+        return true;
+    }
+
+    @Override
+    public String getFileSeparator() {
+        return Constant.SLASH;
+    }
+
+    @Override
+    public String getParentPath(String filePath) {
+        return new Path(filePath).getParent().toString();
     }
 
     @Override
@@ -56,7 +61,7 @@ public class HdfsStorageSystem implements StorageSystem {
         var path = new Path(filePath);
         FileStatus status = fs.getFileStatus(path);
 
-        long modificationTime = status.getModificationTime();
+        var modificationTime = status.getModificationTime();
         var instant = Instant.ofEpochMilli(modificationTime);
         var localDateTime = LocalDateTime.ofInstant(instant, GLOBAL_ZONE_ID);
         return StorageStatus.of(status.getLen(), localDateTime);
@@ -80,10 +85,8 @@ public class HdfsStorageSystem implements StorageSystem {
         if (local.exists(localPath)) {
             FileStatus localFileStatus = local.getFileStatus(localPath);
             FileStatus hdfsFileStatus = fs.getFileStatus(hdfsPath);
-            isCopy =
-                    localFileStatus.getLen() != hdfsFileStatus.getLen()
-                            || localFileStatus.getModificationTime()
-                                    < hdfsFileStatus.getModificationTime();
+            isCopy = localFileStatus.getLen() != hdfsFileStatus.getLen()
+                    || localFileStatus.getModificationTime() < hdfsFileStatus.getModificationTime();
         }
         if (isCopy) {
             fs.copyToLocalFile(hdfsPath, localPath);
@@ -152,8 +155,49 @@ public class HdfsStorageSystem implements StorageSystem {
         return hdfsPath.isAbsolute();
     }
 
+    // ==================================================================
+    // ========================= init and close =========================
+    // ==================================================================
+
+    @Override
+    public void open() throws IOException {
+        System.setProperty("HADOOP_USER_NAME", properties.getUsername());
+        org.apache.hadoop.conf.Configuration conf = new HdfsConfiguration();
+        properties.getProperties().forEach(conf::set);
+        fs = FileSystem.newInstance(conf);
+        // create and get root path.
+        rootPath = initializeRootPath();
+        // Log configuration information.
+        StringBuilder builder = new StringBuilder();
+        builder.append("=============== [storage configuration info start.] ===============\n");
+        builder.append("[hdfs conf size]: ").append(conf.size()).append("\n");
+        builder.append("[hdfs uri]: ").append(fs.getUri()).append("\n");
+        builder.append("[fs.defaultFS]: ").append(conf.get("fs.defaultFS")).append("\n");
+        builder.append("[fs.hdfs.impl]: ").append(conf.get("fs.hdfs.impl")).append("\n");
+        builder.append("[fileSystem scheme]: ").append(fs.getScheme()).append("\n");
+        builder.append(conf).append("\n");
+        builder.append("=============== [storage configuration info end.] ===============");
+        log.info("Hdfs FileSystem initialized successfully.\n{}", builder);
+    }
+
     @Override
     public void close() throws IOException {
         fs.close();
+    }
+
+    private String initializeRootPath() throws IOException {
+        String storageBasePath = properties.getStorageBasePath();
+        Path basePath = new Path(storageBasePath);
+        if (fs.exists(basePath)) {
+            log.info("storage base dir: {} already exists", storageBasePath);
+        }
+
+        if (fs.mkdirs(basePath)) {
+            log.info("storage base dir: {} created successfully.", storageBasePath);
+        } else {
+            throw new RuntimeException(format("create storage base dir: %s failed.", storageBasePath));
+        }
+
+        return normalizePath(storageBasePath);
     }
 }

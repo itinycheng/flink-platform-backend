@@ -1,7 +1,6 @@
 package com.flink.platform.web;
 
 import com.flink.platform.web.util.ThreadUtil;
-import lombok.var;
 import org.junit.Test;
 import org.quartz.CronExpression;
 
@@ -21,30 +20,28 @@ public class QuartzTest {
         LocalDateTime of = LocalDateTime.of(2021, 5, 21, 3, 0);
         Date from = Date.from(of.toInstant(ZoneOffset.of("+8")));
         System.out.println(cronExpression.getNextValidTimeAfter(from));
-        System.out.println(
-                cronExpression.getNextValidTimeAfter(cronExpression.getNextValidTimeAfter(from)));
+        System.out.println(cronExpression.getNextValidTimeAfter(cronExpression.getNextValidTimeAfter(from)));
     }
 
     @Test
     public void testVirtualThreadPool() {
-        var executorService =
-                (ThreadPoolExecutor) ThreadUtil.newFixedVirtualThreadExecutor("v-thread", 500_000);
-        AtomicInteger adder = new AtomicInteger(0);
-        for (int i = 0; i < 1000_000; i++) {
-            executorService.submit(
-                    () -> {
-                        try {
-                            System.out.printf(
-                                    "name: %s, virtual: %s, active thread num: %s, adder: %s%n",
-                                    Thread.currentThread().getName(),
-                                    Thread.currentThread().isDaemon(),
-                                    0, // inefficient, executorService.getActiveCount(),
-                                    adder.incrementAndGet());
-                            Thread.sleep(3000);
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                        }
-                    });
+        try (var executorService = (ThreadPoolExecutor) ThreadUtil.newFixedVirtualThreadExecutor("v-thread", 500_000)) {
+            AtomicInteger adder = new AtomicInteger(0);
+            for (int i = 0; i < 1000_000; i++) {
+                executorService.submit(() -> {
+                    try {
+                        System.out.printf(
+                                "name: %s, virtual: %s, active thread num: %s, adder: %s%n",
+                                Thread.currentThread().getName(),
+                                Thread.currentThread().isVirtual(),
+                                0, // inefficient, executorService.getActiveCount(),
+                                adder.incrementAndGet());
+                        Thread.sleep(3000);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                });
+            }
         }
     }
 }

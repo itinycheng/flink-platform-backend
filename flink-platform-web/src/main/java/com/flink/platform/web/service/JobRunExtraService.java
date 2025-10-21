@@ -1,5 +1,6 @@
 package com.flink.platform.web.service;
 
+import com.flink.platform.common.util.DateUtil;
 import com.flink.platform.common.util.JsonUtil;
 import com.flink.platform.dao.entity.JobInfo;
 import com.flink.platform.dao.entity.JobRunInfo;
@@ -7,7 +8,6 @@ import com.flink.platform.dao.service.JobRunInfoService;
 import com.flink.platform.web.enums.Placeholder;
 import com.flink.platform.web.enums.Variable;
 import lombok.RequiredArgsConstructor;
-import lombok.var;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,7 +16,13 @@ import org.springframework.stereotype.Service;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import static com.flink.platform.common.constants.Constant.DOT;
+import static com.flink.platform.common.constants.JobConstant.JOB_DIR_FORMAT;
+import static com.flink.platform.common.constants.JobConstant.JOB_RUN_DIR;
+import static com.flink.platform.common.constants.JobConstant.USER_DIR_FORMAT;
 import static com.flink.platform.common.enums.ExecutionStatus.CREATED;
+import static com.flink.platform.common.util.DateUtil.DATE_FORMAT;
+import static com.flink.platform.common.util.DateUtil.READABLE_TIMESTAMP_FORMAT;
 
 /** addition method. */
 @Service
@@ -27,11 +33,12 @@ public class JobRunExtraService {
 
     private final WorkerApplyService workerApplyService;
 
+    private final StorageService storageService;
+
     public Long createJobRun(JobInfo jobInfo, Long flowRunId) {
         var worker = workerApplyService.randomWorker(jobInfo.getRouteUrl());
         if (worker == null || StringUtils.isEmpty(worker.getIp())) {
-            throw new IllegalStateException(
-                    "No available worker found for job: " + jobInfo.getName());
+            throw new IllegalStateException("No available worker found for job: " + jobInfo.getName());
         }
 
         var jobRun = createFrom(jobInfo, flowRunId, worker.getIp());
@@ -60,8 +67,7 @@ public class JobRunExtraService {
 
     public Map<String, Object> parseVariables(JobRunInfo jobRun) {
         var variableMap = new LinkedHashMap<String, Object>();
-        var content =
-                String.join(", ", jobRun.getSubject(), JsonUtil.toJsonString(jobRun.getConfig()));
+        var content = String.join(", ", jobRun.getSubject(), JsonUtil.toJsonString(jobRun.getConfig()));
         for (Placeholder placeholder : Placeholder.values()) {
             if (!content.contains(placeholder.wildcard)) {
                 continue;
@@ -87,5 +93,25 @@ public class JobRunExtraService {
         }
 
         return variableMap;
+    }
+
+    // e.g.: /root/job_run/20250910/user_1/flink_sql/job_328/job_328.20250910153012.sql
+    public String buildStoragePath(JobRunInfo jobRun, String fileSuffix) {
+        var fileSeparator = storageService.getFileSeparator();
+        var relativePath = String.join(
+                fileSeparator,
+                JOB_RUN_DIR,
+                DateUtil.format(jobRun.getCreateTime(), DATE_FORMAT),
+                String.format(USER_DIR_FORMAT, jobRun.getUserId()),
+                jobRun.getType().name().toLowerCase(),
+                String.format(JOB_DIR_FORMAT, jobRun.getJobId()),
+                buildTimestampedFileName(jobRun, fileSuffix));
+        return String.join(fileSeparator, storageService.getRootPath(), relativePath);
+    }
+
+    // buildFileName(jobRun, fileSuffix)
+    private String buildTimestampedFileName(JobRunInfo jobRun, String fileSuffix) {
+        var readableTime = DateUtil.format(jobRun.getCreateTime(), READABLE_TIMESTAMP_FORMAT);
+        return String.join(DOT, jobRun.getJobCode(), readableTime, fileSuffix);
     }
 }

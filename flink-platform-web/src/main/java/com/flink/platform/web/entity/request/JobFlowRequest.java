@@ -24,7 +24,8 @@ public class JobFlowRequest {
 
     private static WorkerConfig workerConfig_;
 
-    @Delegate private final JobFlow jobFlow = new JobFlow();
+    @Delegate
+    private final JobFlow jobFlow = new JobFlow();
 
     public String validateOnCreate() {
         String msg = verifyName();

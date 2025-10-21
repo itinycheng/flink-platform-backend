@@ -13,7 +13,8 @@ import static com.flink.platform.common.util.Preconditions.requireNotNull;
 @NoArgsConstructor
 public class DatasourceRequest {
 
-    @Delegate private final Datasource datasource = new Datasource();
+    @Delegate
+    private final Datasource datasource = new Datasource();
 
     public String validateOnCreate() {
         String msg = nameNotNull();

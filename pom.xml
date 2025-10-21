@@ -8,7 +8,7 @@
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-dependencies</artifactId>
-		<version>2.7.15</version>
+		<version>3.5.6</version>
 	</parent>
 
 	<groupId>com.flink.platform</groupId>
@@ -44,37 +44,32 @@
 			</properties>
 		</profile>
 	</profiles>
-	
+
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<maven.compiler.source>1.8</maven.compiler.source>
-		<maven.compiler.target>1.8</maven.compiler.target>
-		<spring.boot.version>2.4.4</spring.boot.version>
-		<oshi.version>6.4.5</oshi.version>
+		<maven.compiler.source>21</maven.compiler.source>
+		<maven.compiler.target>21</maven.compiler.target>
+		<scope.provided>provided</scope.provided>
 		<commons-lang3.version>3.11</commons-lang3.version>
 		<commons-collections4.version>4.4</commons-collections4.version>
-		<commons-text.version>1.12.0</commons-text.version>
-		<lombok.version>1.18.22</lombok.version>
-		<log4j2.version>2.17.1</log4j2.version>
-		<slf4j.version>1.7.30</slf4j.version>
+		<commons-text.version>1.14.0</commons-text.version>
 		<mysql.version>8.0.32</mysql.version>
 		<clickhouse-jdbc.version>0.3.1</clickhouse-jdbc.version>
-		<druid.version>1.2.19</druid.version>
-		<flink.version>1.12.0</flink.version>
-		<flink.scope>provided</flink.scope>
 		<hadoop.version>3.3.5</hadoop.version>
-		<hive.version>2.1.1</hive.version>
-		<mybatis-plus.version>3.5.3.2</mybatis-plus.version>
-		<dynamic-datasource.version>4.1.3</dynamic-datasource.version>
-		<janino.version>3.1.10</janino.version>
-		<grpc.version>1.58.0</grpc.version>
-		<jsr305.version>3.0.2</jsr305.version>
+		<hive.version>2.3.9</hive.version>
+		<mybatis-plus.version>3.5.14</mybatis-plus.version>
+		<dynamic-datasource.version>4.3.1</dynamic-datasource.version>
+		<grpc.version>1.63.0</grpc.version>
 		<auto-service.version>1.1.1</auto-service.version>
-		<grpc-spring-boot.version>2.14.0.RELEASE</grpc-spring-boot.version>
-		<maven-checkstyle-plugin.version>3.3.0</maven-checkstyle-plugin.version>
-		<spotless-maven-plugin.version>2.30.0</spotless-maven-plugin.version>
-		<maven-shade-plugin.version>3.5.0</maven-shade-plugin.version>
-		<maven-compiler-plugin.version>3.11.0</maven-compiler-plugin.version>
+		<javax.annotation.version>1.3.2</javax.annotation.version>
+		<grpc-spring-boot.version>3.1.0.RELEASE</grpc-spring-boot.version>
+		<maven-checkstyle-plugin.version>3.6.0</maven-checkstyle-plugin.version>
+		<palantir-java-format.version>2.38.0</palantir-java-format.version>
+		<spotless-maven-plugin.version>3.0.0</spotless-maven-plugin.version>
+		<maven-shade-plugin.version>3.6.1</maven-shade-plugin.version>
+		<rewrite-maven-plugin.version>6.20.1</rewrite-maven-plugin.version>
+		<rewrite-migrate-java.version>3.18.0</rewrite-migrate-java.version>
+		<maven-compiler-plugin.version>3.14.1</maven-compiler-plugin.version>
 	</properties>
 
 	<dependencies>
@@ -84,28 +79,23 @@
 			<scope>test</scope>
 		</dependency>
 		<dependency>
-			<groupId>javax.annotation</groupId>
-			<artifactId>javax.annotation-api</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>com.google.code.findbugs</groupId>
-			<artifactId>jsr305</artifactId>
-			<version>${jsr305.version}</version>
+			<groupId>org.projectlombok</groupId>
+			<artifactId>lombok</artifactId>
+			<scope>${scope.provided}</scope>
 		</dependency>
 	</dependencies>
 
 	<dependencyManagement>
 		<dependencies>
 			<dependency>
+				<groupId>javax.annotation</groupId>
+				<artifactId>javax.annotation-api</artifactId>
+				<version>${javax.annotation.version}</version>
+			</dependency>
+			<dependency>
 				<groupId>org.apache.commons</groupId>
 				<artifactId>commons-collections4</artifactId>
 				<version>${commons-collections4.version}</version>
-			</dependency>
-			<!-- OS -->
-			<dependency>
-				<groupId>com.github.oshi</groupId>
-				<artifactId>oshi-core</artifactId>
-				<version>${oshi.version}</version>
 			</dependency>
 			<dependency>
 				<groupId>org.apache.commons</groupId>
@@ -114,13 +104,13 @@
 			</dependency>
 			<!-- spring -->
 			<dependency>
-				<groupId>com.alibaba</groupId>
-				<artifactId>druid-spring-boot-starter</artifactId>
-				<version>${druid.version}</version>
+				<groupId>com.baomidou</groupId>
+				<artifactId>mybatis-plus-jsqlparser</artifactId>
+				<version>${mybatis-plus.version}</version>
 			</dependency>
 			<dependency>
 				<groupId>com.baomidou</groupId>
-				<artifactId>mybatis-plus-boot-starter</artifactId>
+				<artifactId>mybatis-plus-spring-boot3-starter</artifactId>
 				<version>${mybatis-plus.version}</version>
 				<exclusions>
 					<exclusion>
@@ -131,7 +121,7 @@
 			</dependency>
 			<dependency>
 				<groupId>com.baomidou</groupId>
-				<artifactId>dynamic-datasource-spring-boot-starter</artifactId>
+				<artifactId>dynamic-datasource-spring-boot3-starter</artifactId>
 				<version>${dynamic-datasource.version}</version>
 			</dependency>
 			<dependency>
@@ -159,18 +149,6 @@
 				<groupId>io.grpc</groupId>
 				<artifactId>grpc-protobuf</artifactId>
 				<version>${grpc.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>io.grpc</groupId>
-				<artifactId>grpc-api</artifactId>
-				<version>${grpc.version}</version>
-			</dependency>
-			<!-- flink -->
-			<dependency>
-				<groupId>org.apache.flink</groupId>
-				<artifactId>flink-table-common</artifactId>
-				<version>${flink.version}</version>
-				<scope>${flink.scope}</scope>
 			</dependency>
 			<!-- hadoop -->
 			<dependency>
@@ -303,22 +281,15 @@
 						<groupId>org.apache.ant</groupId>
 					</exclusion>
 					<exclusion>
-						<groupId>org.apache.derby</groupId>
-						<artifactId>derby</artifactId>
+						<artifactId>*</artifactId>
+						<groupId>org.apache.logging.log4j</groupId>
 					</exclusion>
 				</exclusions>
-			</dependency>
-			<!-- java compiler -->
-			<dependency>
-				<groupId>org.codehaus.janino</groupId>
-				<artifactId>janino</artifactId>
-				<version>${janino.version}</version>
 			</dependency>
 		</dependencies>
 	</dependencyManagement>
 
 	<build>
-
 		<plugins>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
@@ -328,8 +299,7 @@
 					<dependency>
 						<groupId>com.puppycrawl.tools</groupId>
 						<artifactId>checkstyle</artifactId>
-						<!-- Note: match version with docs/flinkDev/ide_setup.md -->
-						<version>8.23</version>
+						<version>9.3</version>
 					</dependency>
 				</dependencies>
 				<executions>
@@ -355,10 +325,9 @@
 				<version>${spotless-maven-plugin.version}</version>
 				<configuration>
 					<java>
-						<googleJavaFormat>
-							<version>1.7</version>
-							<style>AOSP</style>
-						</googleJavaFormat>
+						<palantirJavaFormat>
+							<version>${palantir-java-format.version}</version>
+						</palantirJavaFormat>
 						<!-- \# refers to the static imports -->
 						<importOrder>
 							<order>org.apache.flink,org.apache.flink.shaded,,javax,java,scala,\#
@@ -376,6 +345,33 @@
 						</goals>
 					</execution>
 				</executions>
+			</plugin>
+			<plugin>
+				<groupId>org.openrewrite.maven</groupId>
+				<artifactId>rewrite-maven-plugin</artifactId>
+				<version>${rewrite-maven-plugin.version}</version>
+				<configuration>
+					<activeRecipes>
+						<recipe>org.openrewrite.java.migrate.UpgradeToJava21</recipe>
+					</activeRecipes>
+					<failOnDryRunResults>true</failOnDryRunResults>
+				</configuration>
+				<executions>
+					<execution>
+						<id>rewrite-dry-run</id>
+						<phase>deploy</phase>
+						<goals>
+							<goal>dryRun</goal>
+						</goals>
+					</execution>
+				</executions>
+				<dependencies>
+					<dependency>
+						<groupId>org.openrewrite.recipe</groupId>
+						<artifactId>rewrite-migrate-java</artifactId>
+						<version>${rewrite-migrate-java.version}</version>
+					</dependency>
+				</dependencies>
 			</plugin>
 		</plugins>
 
@@ -427,10 +423,11 @@
 		<module>flink-platform-common</module>
 		<module>flink-platform-udf</module>
 		<module>flink-platform-alert</module>
-		<module>flink-platform-monitor</module>
+		<module>flink-platform-cron</module>
 		<module>flink-platform-dao</module>
 		<module>flink-platform-grpc</module>
 		<module>flink-sql-submit</module>
+		<module>flink-platform-ui</module>
 		<module>flink-platform-storage</module>
 		<module>flink-platform-plugin</module>
 		<module>flink-platform-web</module>

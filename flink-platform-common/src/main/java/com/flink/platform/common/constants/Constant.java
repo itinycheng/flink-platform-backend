@@ -23,7 +23,9 @@ public class Constant {
 
     public static final String USER_DIR;
 
-    public static final String FILE_SEPARATOR = File.separator;
+    public static final String TMP_DIR;
+
+    public static final String OS_FILE_SEPARATOR = File.separator;
 
     public static final String COMMA = ",";
 
@@ -49,6 +51,8 @@ public class Constant {
 
     public static final String SLASH = "/";
 
+    public static final String TMP = "tmp";
+
     public static final String SESSION_USER = "session.user";
 
     public static final String FLINK = "FLINK";
@@ -73,6 +77,9 @@ public class Constant {
 
     static {
         USER_DIR = System.getProperty("user.dir");
+        String tmpDir = System.getProperty("java.io.tmpdir");
+        TMP_DIR = tmpDir.endsWith(OS_FILE_SEPARATOR) ? tmpDir.substring(0, tmpDir.length() - 1) : tmpDir;
+
         HOST_IP = checkNotNull(getFirstNoLoopbackIP4Address());
         HOSTNAME = getHostname();
 

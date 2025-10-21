@@ -2,7 +2,6 @@ package com.flink.platform.web.util;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import lombok.extern.slf4j.Slf4j;
-import lombok.var;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -17,7 +16,7 @@ public class ThreadUtil {
 
     public static final int MIN_SLEEP_TIME_MILLIS = 3000;
 
-    public static final int MAX_SLEEP_TIME_MILLIS = 60_000;
+    public static final int DEFAULT_SLEEP_TIME_MILLIS = 5000;
 
     public static ThreadPoolExecutor newFixedThreadExecutor(String namePrefix, int threadsNum) {
         var threadFactory = namedThreadFactory(namePrefix, false);
@@ -25,18 +24,16 @@ public class ThreadUtil {
     }
 
     public static ExecutorService newVirtualThreadExecutor(String namePrefix) {
-        var factory = namedThreadFactory(namePrefix + "-", false);
-        return Executors.newCachedThreadPool(factory);
+        var factory = Thread.ofVirtual().name(namePrefix + "-", 1).factory();
+        return Executors.newThreadPerTaskExecutor(factory);
     }
 
-    public static ThreadPoolExecutor newFixedVirtualThreadExecutor(
-            String namePrefix, int threadsNum) {
-        var factory = namedThreadFactory(namePrefix + "-", false);
+    public static ThreadPoolExecutor newFixedVirtualThreadExecutor(String namePrefix, int threadsNum) {
+        var factory = Thread.ofVirtual().name(namePrefix + "-", 1).factory();
         return (ThreadPoolExecutor) Executors.newFixedThreadPool(threadsNum, factory);
     }
 
-    public static ThreadPoolExecutor newDaemonFixedThreadExecutor(
-            String namePrefix, int threadsNum) {
+    public static ThreadPoolExecutor newDaemonFixedThreadExecutor(String namePrefix, int threadsNum) {
         var threadFactory = namedThreadFactory(namePrefix, true);
         return (ThreadPoolExecutor) Executors.newFixedThreadPool(threadsNum, threadFactory);
     }
@@ -47,38 +44,27 @@ public class ThreadUtil {
     }
 
     public static ThreadFactory namedThreadFactory(String prefix, boolean isDaemon) {
-        return new ThreadFactoryBuilder().setDaemon(isDaemon).setNameFormat(prefix + "-%d").build();
+        return new ThreadFactoryBuilder()
+                .setDaemon(isDaemon)
+                .setNameFormat(prefix + "-%d")
+                .build();
     }
 
     public static void addShutdownHook(ExecutorService service, String name) {
-        Runtime.getRuntime()
-                .addShutdownHook(
-                        new Thread(
-                                () -> {
-                                    try {
-                                        log.info(
-                                                "JVM is shutting down, closing thread pool {}",
-                                                name);
-                                        service.shutdown();
-                                        if (!service.awaitTermination(10, TimeUnit.SECONDS)) {
-                                            log.info("Force shutting down thread pool {}", name);
-                                            service.shutdownNow();
-                                        }
-                                    } catch (Exception exception) {
-                                        log.error(
-                                                "Error while shutting down thread pool {}",
-                                                name,
-                                                exception);
-                                        service.shutdownNow();
-                                        Thread.currentThread().interrupt();
-                                    }
-                                }));
-    }
-
-    public static void sleepRetry(int retryAttempt) {
-        int mills = Math.min(retryAttempt * MIN_SLEEP_TIME_MILLIS, MAX_SLEEP_TIME_MILLIS);
-        mills = Math.max(mills, MIN_SLEEP_TIME_MILLIS);
-        sleep(mills);
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            try {
+                log.info("JVM is shutting down, closing thread pool {}", name);
+                service.shutdown();
+                if (!service.awaitTermination(10, TimeUnit.SECONDS)) {
+                    log.info("Force shutting down thread pool {}", name);
+                    service.shutdownNow();
+                }
+            } catch (Exception exception) {
+                log.error("Error while shutting down thread pool {}", name, exception);
+                service.shutdownNow();
+                Thread.currentThread().interrupt();
+            }
+        }));
     }
 
     public static void safeSleep(final long millis) {

@@ -48,8 +48,7 @@ public class TagInfoController {
     @ApiException
     @PostMapping(value = "/create")
     public ResultInfo<Long> create(
-            @RequestAttribute(value = Constant.SESSION_USER) User loginUser,
-            @RequestBody TagInfoRequest tagRequest) {
+            @RequestAttribute(value = Constant.SESSION_USER) User loginUser, @RequestBody TagInfoRequest tagRequest) {
         String errorMsg = tagRequest.validateOnCreate();
         if (StringUtils.isNotBlank(errorMsg)) {
             return failure(ERROR_PARAMETER, errorMsg);
@@ -87,18 +86,14 @@ public class TagInfoController {
     @GetMapping(value = "/delete/{tagId}")
     public ResultInfo<Boolean> delete(@PathVariable Long tagId) {
         TagInfo tagInfo = tagInfoService.getById(tagId);
-        JobFlow jobFlow =
-                jobFlowService.getOne(
-                        new QueryWrapper<JobFlow>()
-                                .lambda()
-                                .like(JobFlow::getTags, tagInfo.getCode())
-                                .last("LIMIT 1"));
+        JobFlow jobFlow = jobFlowService.getOne(new QueryWrapper<JobFlow>()
+                .lambda()
+                .like(JobFlow::getTags, tagInfo.getCode())
+                .last("LIMIT 1"));
         if (jobFlow != null) {
             return failure(
                     OPERATION_NOT_ALLOWED,
-                    format(
-                            "The tag is being used in jobFlow: %s, cannot be removed",
-                            jobFlow.getName()));
+                    format("The tag is being used in jobFlow: %s, cannot be removed", jobFlow.getName()));
         }
 
         boolean bool = tagInfoService.removeById(tagId);
@@ -112,13 +107,12 @@ public class TagInfoController {
             @RequestParam(name = "size", required = false, defaultValue = "20") Integer size,
             @RequestParam(name = "name", required = false) String name) {
         Page<TagInfo> pager = new Page<>(page, size);
-        IPage<TagInfo> iPage =
-                tagInfoService.page(
-                        pager,
-                        new QueryWrapper<TagInfo>()
-                                .lambda()
-                                .eq(TagInfo::getUserId, loginUser.getId())
-                                .like(nonNull(name), TagInfo::getName, name));
+        IPage<TagInfo> iPage = tagInfoService.page(
+                pager,
+                new QueryWrapper<TagInfo>()
+                        .lambda()
+                        .eq(TagInfo::getUserId, loginUser.getId())
+                        .like(nonNull(name), TagInfo::getName, name));
 
         return success(iPage);
     }
@@ -128,13 +122,11 @@ public class TagInfoController {
             @RequestAttribute(value = Constant.SESSION_USER) User loginUser,
             @RequestParam(name = "name", required = false) String name,
             @RequestParam(name = "status", required = false) Status status) {
-        List<TagInfo> list =
-                tagInfoService.list(
-                        new QueryWrapper<TagInfo>()
-                                .lambda()
-                                .eq(TagInfo::getUserId, loginUser.getId())
-                                .eq(nonNull(status), TagInfo::getStatus, status)
-                                .like(nonNull(name), TagInfo::getName, name));
+        List<TagInfo> list = tagInfoService.list(new QueryWrapper<TagInfo>()
+                .lambda()
+                .eq(TagInfo::getUserId, loginUser.getId())
+                .eq(nonNull(status), TagInfo::getStatus, status)
+                .like(nonNull(name), TagInfo::getName, name));
         return success(list);
     }
 }

@@ -16,7 +16,6 @@ import com.flink.platform.web.service.StorageService;
 import com.flink.platform.web.util.ResourceUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import lombok.var;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.fs.Path;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -114,11 +113,10 @@ public class ResourceController {
             @RequestParam(name = "name", required = false) String name,
             @RequestParam(name = "pid", required = false) Long pid) {
         Page<Resource> pager = new Page<>(page, size);
-        LambdaQueryWrapper<Resource> queryWrapper =
-                new QueryWrapper<Resource>()
-                        .lambda()
-                        .eq(Resource::getUserId, loginUser.getId())
-                        .like(Objects.nonNull(name), Resource::getName, name);
+        LambdaQueryWrapper<Resource> queryWrapper = new QueryWrapper<Resource>()
+                .lambda()
+                .eq(Resource::getUserId, loginUser.getId())
+                .like(Objects.nonNull(name), Resource::getName, name);
         if (pid != null) {
             queryWrapper.eq(Resource::getPid, pid);
         } else {
@@ -133,12 +131,10 @@ public class ResourceController {
     public ResultInfo<List<Resource>> list(
             @RequestAttribute(value = Constant.SESSION_USER) User loginUser,
             @RequestParam(name = "type", required = false) ResourceType type) {
-        List<Resource> list =
-                resourceService.list(
-                        new QueryWrapper<Resource>()
-                                .lambda()
-                                .eq(Resource::getUserId, loginUser.getId())
-                                .eq(Objects.nonNull(type), Resource::getType, type));
+        List<Resource> list = resourceService.list(new QueryWrapper<Resource>()
+                .lambda()
+                .eq(Resource::getUserId, loginUser.getId())
+                .eq(Objects.nonNull(type), Resource::getType, type));
         return ResultInfo.success(list);
     }
 
@@ -156,20 +152,19 @@ public class ResourceController {
                 Resource resource = resourceService.getById(pid);
                 parentDir = resource.getFullName();
             }
-            String fullStorageFileName =
-                    ResourceUtil.getFullStorageFilePath(
-                            loginUser.getId(), parentDir, file.getOriginalFilename());
-            if (id == null && storageService.exists(fullStorageFileName)) {
+            String absStorageFilePath = resourceManageService.getAbsStorageFilePath(
+                    loginUser.getId(), parentDir, file.getOriginalFilename());
+            if (id == null && storageService.exists(absStorageFilePath)) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(FILE_EXISTS.getDesc());
             }
 
             localFileName = ResourceUtil.randomLocalTmpFile();
             ResourceUtil.copyToLocal(file, localFileName);
-            storageService.copyFromLocal(localFileName, fullStorageFileName, true, true);
+            storageService.copyFromLocal(localFileName, absStorageFilePath, true, true);
 
             Resource resource = new Resource();
-            resource.setFullName(fullStorageFileName);
-            resource.setName(new Path(fullStorageFileName).getName());
+            resource.setFullName(absStorageFilePath);
+            resource.setName(new Path(absStorageFilePath).getName());
             return ResponseEntity.status(HttpStatus.OK).body(success(resource));
         } catch (Exception e) {
             log.error("upload file error", e);

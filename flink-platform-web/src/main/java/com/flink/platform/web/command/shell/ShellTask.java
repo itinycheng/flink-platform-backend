@@ -9,7 +9,6 @@ import com.flink.platform.web.util.SystemUtil;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
-import lombok.var;
 
 import java.io.InputStream;
 import java.util.Map;
@@ -78,8 +77,8 @@ public class ShellTask extends AbstractTask {
         this.processId = CommandUtil.getProcessId(process);
         try (InputStream stdStream = process.getInputStream();
                 InputStream errStream = process.getErrorStream()) {
-            Thread stdThread = new Thread(new CollectLogRunnable(stdStream, STD, logConsumer));
-            Thread errThread = new Thread(new CollectLogRunnable(errStream, ERR, logConsumer));
+            Thread stdThread = Thread.ofVirtual().unstarted(new CollectLogRunnable(stdStream, STD, logConsumer));
+            Thread errThread = Thread.ofVirtual().unstarted(new CollectLogRunnable(errStream, ERR, logConsumer));
 
             try {
                 stdThread.start();

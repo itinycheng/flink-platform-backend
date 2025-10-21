@@ -3,10 +3,20 @@ package com.flink.platform.storage.base;
 import java.io.Closeable;
 import java.io.IOException;
 
-/** storage system. */
+/**
+ * storage system.
+ */
 public interface StorageSystem extends Closeable {
 
     void open() throws IOException;
+
+    String getRootPath();
+
+    boolean isDistributed();
+
+    String getFileSeparator();
+
+    String getParentPath(String filePath);
 
     StorageStatus getFileStatus(String filePath) throws IOException;
 
@@ -14,8 +24,7 @@ public interface StorageSystem extends Closeable {
 
     void copyToLocalFileIfChanged(String hdfsFile, String localFile) throws IOException;
 
-    void copyFromLocalFile(String srcFile, String dstFile, boolean delSrc, boolean overwrite)
-            throws IOException;
+    void copyFromLocalFile(String srcFile, String dstFile, boolean delSrc, boolean overwrite) throws IOException;
 
     void createFile(String filePath, String data, boolean overwrite) throws IOException;
 

@@ -74,12 +74,10 @@ public class ReactiveController {
 
     @GetMapping(value = "/execLog/{execId}")
     public ResultInfo<?> execLog(
-            @PathVariable String execId,
-            @RequestParam(name = "worker", required = false) Long worker) {
+            @PathVariable String execId, @RequestParam(name = "worker", required = false) Long worker) {
         String routeUrl = workerApplyService.chooseWorker(Collections.singletonList(worker));
         if (HttpUtil.isRemoteUrl(routeUrl)) {
-            return restTemplate.getForObject(
-                    routeUrl + "/reactive/execLog/" + execId, ResultInfo.class);
+            return restTemplate.getForObject(routeUrl + "/reactive/execLog/" + execId, ResultInfo.class);
         }
 
         List<String> dataList = reactiveService.getBufferByExecId(execId);
@@ -100,8 +98,7 @@ public class ReactiveController {
         try {
             String routeUrl = workerApplyService.chooseWorker(reactiveRequest.getRouteUrl());
             if (HttpUtil.isRemoteUrl(routeUrl)) {
-                return restTemplate.postForObject(
-                        routeUrl + "/reactive/execJob", reactiveRequest, ResultInfo.class);
+                return restTemplate.postForObject(routeUrl + "/reactive/execJob", reactiveRequest, ResultInfo.class);
             }
 
             if (SQL.equals(reactiveRequest.getType().getClassification())) {
@@ -115,14 +112,12 @@ public class ReactiveController {
             throw new RuntimeException("unsupported job type: " + reactiveRequest.getType());
         } catch (Exception e) {
             ReactiveDataVo reactiveDataVo =
-                    new ReactiveDataVo(
-                            execId, new String[] {"exception"}, null, ExceptionUtil.stackTrace(e));
+                    new ReactiveDataVo(execId, new String[] {"exception"}, null, ExceptionUtil.stackTrace(e));
             return success(reactiveDataVo);
         }
     }
 
-    private ResultInfo<?> execFlink(String execId, ReactiveRequest reactiveRequest)
-            throws Exception {
+    private ResultInfo<?> execFlink(String execId, ReactiveRequest reactiveRequest) throws Exception {
         FlinkJob flinkJob = reactiveRequest.getConfig().unwrap(FlinkJob.class);
         if (flinkJob == null) {
             return failure(ERROR_PARAMETER);
@@ -137,13 +132,11 @@ public class ReactiveController {
         reactiveRequest.setName(execId);
 
         ReactiveExecVo reactiveExecVo =
-                reactiveService.execFlink(
-                        execId, reactiveRequest.getJobInfo(), reactiveRequest.getEnvProps());
+                reactiveService.execFlink(execId, reactiveRequest.getJobInfo(), reactiveRequest.getEnvProps());
         return success(reactiveExecVo);
     }
 
-    private ResultInfo<ReactiveDataVo> execSql(String execId, ReactiveRequest reactiveRequest)
-            throws Exception {
+    private ResultInfo<ReactiveDataVo> execSql(String execId, ReactiveRequest reactiveRequest) throws Exception {
         SqlJob sqlJob = reactiveRequest.getConfig().unwrap(SqlJob.class);
         if (sqlJob == null) {
             return failure(ERROR_PARAMETER);
@@ -159,8 +152,7 @@ public class ReactiveController {
             return failure(DATASOURCE_NOT_FOUND);
         }
 
-        ReactiveDataVo reactiveDataVo =
-                reactiveService.execSql(execId, reactiveRequest.getJobInfo(), datasource);
+        ReactiveDataVo reactiveDataVo = reactiveService.execSql(execId, reactiveRequest.getJobInfo(), datasource);
         return success(reactiveDataVo);
     }
 

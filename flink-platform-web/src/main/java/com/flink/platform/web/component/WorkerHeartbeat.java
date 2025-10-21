@@ -8,13 +8,12 @@ import com.flink.platform.dao.service.JobFlowRunService;
 import com.flink.platform.dao.service.WorkerService;
 import com.flink.platform.web.service.JobFlowScheduleService;
 import com.flink.platform.web.util.ThreadUtil;
+import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.Configuration;
+import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
-
-import javax.annotation.PostConstruct;
 
 import java.util.List;
 import java.util.Random;
@@ -29,6 +28,7 @@ import static com.flink.platform.common.enums.WorkerStatus.DELETED;
 import static com.flink.platform.common.enums.WorkerStatus.FOLLOWER;
 import static com.flink.platform.common.enums.WorkerStatus.INACTIVE;
 import static com.flink.platform.common.enums.WorkerStatus.LEADER;
+import static com.flink.platform.common.enums.WorkerStatus.isActiveStatus;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static java.util.stream.Collectors.toList;
 import static org.springframework.transaction.annotation.Isolation.SERIALIZABLE;
@@ -43,7 +43,7 @@ import static org.springframework.transaction.annotation.Isolation.SERIALIZABLE;
  * <p>3. Check if any workers are inactive and reassign jobs owned by these workers.
  */
 @Slf4j
-@Configuration
+@Component
 public class WorkerHeartbeat {
 
     private static final ScheduledExecutorService EXECUTOR_SERVICE =
@@ -75,8 +75,7 @@ public class WorkerHeartbeat {
 
     @PostConstruct
     public void initHeartbeat() {
-        EXECUTOR_SERVICE.scheduleWithFixedDelay(
-                this::heartbeat, new Random().nextInt(50) + 10, 60, SECONDS);
+        EXECUTOR_SERVICE.scheduleWithFixedDelay(this::heartbeat, new Random().nextInt(50) + 10, 60, SECONDS);
     }
 
     public synchronized void heartbeat() {
@@ -94,6 +93,11 @@ public class WorkerHeartbeat {
             worker.setGrpcPort(grpcPort);
             worker.setRole(FOLLOWER);
         }
+
+        if (!isActiveStatus(worker.getRole())) {
+            worker.setRole(FOLLOWER);
+        }
+
         workerService.saveOrUpdate(worker);
 
         // 2. Try to be the leader.
@@ -107,8 +111,9 @@ public class WorkerHeartbeat {
             return;
         }
 
-        List<JobFlowRun> unfinishedList =
-                getInvalidWorkers().stream().flatMap(this::getUnfinishedByWorker).collect(toList());
+        List<JobFlowRun> unfinishedList = getInvalidWorkers().stream()
+                .flatMap(this::getUnfinishedByWorker)
+                .toList();
         if (unfinishedList.isEmpty()) {
             return;
         }
@@ -120,16 +125,14 @@ public class WorkerHeartbeat {
     }
 
     private void updateJobFlowRunHost(List<JobFlowRun> list) {
-        jobFlowRunService.updateBatchById(
-                list.stream()
-                        .map(
-                                jobFlowRun -> {
-                                    JobFlowRun newJobFlowRun = new JobFlowRun();
-                                    newJobFlowRun.setId(jobFlowRun.getId());
-                                    newJobFlowRun.setHost(HOST_IP);
-                                    return newJobFlowRun;
-                                })
-                        .collect(toList()));
+        jobFlowRunService.updateBatchById(list.stream()
+                .map(jobFlowRun -> {
+                    JobFlowRun newJobFlowRun = new JobFlowRun();
+                    newJobFlowRun.setId(jobFlowRun.getId());
+                    newJobFlowRun.setHost(HOST_IP);
+                    return newJobFlowRun;
+                })
+                .toList());
     }
 
     @Transactional(isolation = SERIALIZABLE, rollbackFor = Throwable.class)
@@ -138,11 +141,10 @@ public class WorkerHeartbeat {
             return;
         }
 
-        workerService.update(
-                new UpdateWrapper<Worker>()
-                        .lambda()
-                        .set(Worker::getRole, FOLLOWER)
-                        .eq(Worker::getRole, LEADER));
+        workerService.update(new UpdateWrapper<Worker>()
+                .lambda()
+                .set(Worker::getRole, FOLLOWER)
+                .eq(Worker::getRole, LEADER));
 
         Worker worker = new Worker();
         worker.setId(workerId);
@@ -151,23 +153,20 @@ public class WorkerHeartbeat {
     }
 
     public boolean hasValidLeader() {
-        List<Worker> list =
-                workerService.list(
-                        new QueryWrapper<Worker>()
-                                .lambda()
-                                .select(Worker::getId, Worker::getHeartbeat)
-                                .eq(Worker::getRole, LEADER)
-                                .ne(Worker::getIp, LOCALHOST));
-        return list.size() == 1 && list.get(0).isActive();
+        List<Worker> list = workerService.list(new QueryWrapper<Worker>()
+                .lambda()
+                .select(Worker::getId, Worker::getHeartbeat)
+                .eq(Worker::getRole, LEADER)
+                .ne(Worker::getIp, LOCALHOST));
+        return list.size() == 1 && list.getFirst().isActive();
     }
 
     public List<Worker> getInvalidWorkers() {
         return workerService
-                .list(
-                        new QueryWrapper<Worker>()
-                                .lambda()
-                                .ne(Worker::getRole, DELETED)
-                                .ne(Worker::getIp, LOCALHOST))
+                .list(new QueryWrapper<Worker>()
+                        .lambda()
+                        .ne(Worker::getRole, DELETED)
+                        .ne(Worker::getIp, LOCALHOST))
                 .stream()
                 .filter(worker -> !worker.isActive() || INACTIVE.equals(worker.getRole()))
                 .collect(toList());
@@ -175,11 +174,10 @@ public class WorkerHeartbeat {
 
     public Stream<JobFlowRun> getUnfinishedByWorker(Worker invalidWorker) {
         return jobFlowRunService
-                .list(
-                        new QueryWrapper<JobFlowRun>()
-                                .lambda()
-                                .eq(JobFlowRun::getHost, invalidWorker.getIp())
-                                .in(JobFlowRun::getStatus, getNonTerminals()))
+                .list(new QueryWrapper<JobFlowRun>()
+                        .lambda()
+                        .eq(JobFlowRun::getHost, invalidWorker.getIp())
+                        .in(JobFlowRun::getStatus, getNonTerminals()))
                 .stream();
     }
 }

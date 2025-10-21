@@ -42,15 +42,13 @@ public class JobFlowDag extends DAG<Long, JobVertex, JobEdge> {
             case ONLY_CUR_JOB:
                 JobVertex vertex = super.getVertex(config.getStartJobId());
                 if (vertex == null) {
-                    throw new IllegalArgumentException(
-                            "Start vertex not found: " + config.getStartJobId());
+                    throw new IllegalArgumentException("Start vertex not found: " + config.getStartJobId());
                 }
                 return Collections.singleton(vertex);
             case ALL_POST_JOBS:
             case ALL_PRE_JOBS:
             default:
-                throw new IllegalArgumentException(
-                        "Unsupported execution strategy: " + config.getStrategy());
+                throw new IllegalArgumentException("Unsupported execution strategy: " + config.getStrategy());
         }
     }
 
@@ -66,8 +64,7 @@ public class JobFlowDag extends DAG<Long, JobVertex, JobEdge> {
             case ALL_POST_JOBS:
             case ALL_PRE_JOBS:
             default:
-                throw new IllegalArgumentException(
-                        "Unsupported execution strategy: " + config.getStrategy());
+                throw new IllegalArgumentException("Unsupported execution strategy: " + config.getStrategy());
         }
     }
 
@@ -87,8 +84,7 @@ public class JobFlowDag extends DAG<Long, JobVertex, JobEdge> {
             case ALL_POST_JOBS:
             case ALL_PRE_JOBS:
             default:
-                throw new IllegalArgumentException(
-                        "Unsupported execution strategy: " + config.getStrategy());
+                throw new IllegalArgumentException("Unsupported execution strategy: " + config.getStrategy());
         }
     }
 
@@ -103,28 +99,19 @@ public class JobFlowDag extends DAG<Long, JobVertex, JobEdge> {
             case ALL_POST_JOBS:
             case ALL_PRE_JOBS:
             default:
-                throw new IllegalArgumentException(
-                        "Unsupported execution strategy: " + config.getStrategy());
+                throw new IllegalArgumentException("Unsupported execution strategy: " + config.getStrategy());
         }
     }
 
     @JsonIgnore
     @Override
     public boolean isValid() {
-        boolean isValidVertices =
-                this.getVertices().stream()
-                        .allMatch(
-                                vertex ->
-                                        vertex.getId() != null
-                                                && vertex.getJobId() != null
-                                                && vertex.getPrecondition() != null);
-        boolean isValidEdges =
-                this.getEdges().stream()
-                        .allMatch(
-                                edge ->
-                                        edge.getFromVId() != null
-                                                && edge.getToVId() != null
-                                                && edge.getExpectStatus() != null);
+        boolean isValidVertices = this.getVertices().stream()
+                .allMatch(vertex ->
+                        vertex.getId() != null && vertex.getJobId() != null && vertex.getPrecondition() != null);
+        boolean isValidEdges = this.getEdges().stream()
+                .allMatch(
+                        edge -> edge.getFromVId() != null && edge.getToVId() != null && edge.getExpectStatus() != null);
 
         return isValidVertices && isValidEdges && super.isValid();
     }

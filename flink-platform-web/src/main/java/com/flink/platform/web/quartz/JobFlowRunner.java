@@ -19,7 +19,6 @@ import com.flink.platform.web.common.SpringContext;
 import com.flink.platform.web.config.WorkerConfig;
 import com.flink.platform.web.service.JobFlowScheduleService;
 import lombok.extern.slf4j.Slf4j;
-import lombok.var;
 import org.quartz.Job;
 import org.quartz.JobDataMap;
 import org.quartz.JobExecutionContext;
@@ -41,18 +40,15 @@ public class JobFlowRunner implements Job {
 
     private final JobFlowService jobFlowService = SpringContext.getBean(JobFlowService.class);
 
-    private final JobFlowRunService jobFlowRunService =
-            SpringContext.getBean(JobFlowRunService.class);
+    private final JobFlowRunService jobFlowRunService = SpringContext.getBean(JobFlowRunService.class);
 
     private final JobInfoService jobInfoService = SpringContext.getBean(JobInfoService.class);
 
     private final JobRunInfoService jobRunService = SpringContext.getBean(JobRunInfoService.class);
 
-    private final JobFlowScheduleService jobFlowScheduleService =
-            SpringContext.getBean(JobFlowScheduleService.class);
+    private final JobFlowScheduleService jobFlowScheduleService = SpringContext.getBean(JobFlowScheduleService.class);
 
-    private final AlertSendingService alertSendingService =
-            SpringContext.getBean(AlertSendingService.class);
+    private final AlertSendingService alertSendingService = SpringContext.getBean(AlertSendingService.class);
 
     private final WorkerConfig workerConfig = SpringContext.getBean(WorkerConfig.class);
 
@@ -65,12 +61,10 @@ public class JobFlowRunner implements Job {
 
         synchronized (getProcessLock(code)) {
             // Get job flow info.
-            var jobFlow =
-                    jobFlowService.getOne(
-                            new QueryWrapper<JobFlow>()
-                                    .lambda()
-                                    .eq(JobFlow::getCode, code)
-                                    .in(JobFlow::getStatus, ONLINE, SCHEDULING));
+            var jobFlow = jobFlowService.getOne(new QueryWrapper<JobFlow>()
+                    .lambda()
+                    .eq(JobFlow::getCode, code)
+                    .in(JobFlow::getStatus, ONLINE, SCHEDULING));
             if (jobFlow == null) {
                 log.warn("The job flow: {} isn't exists or not in scheduling status", code);
                 return;
@@ -86,21 +80,18 @@ public class JobFlowRunner implements Job {
                             "The job: {} is in non-terminal status, job run id: {}",
                             runningJob.getName(),
                             runningJob.getId());
-                    alertSendingService.sendErrAlerts(
-                            jobFlow, "There is already a running job: " + runningJob.getId());
+                    alertSendingService.sendErrAlerts(jobFlow, "There is already a running job: " + runningJob.getId());
                     return;
                 }
             } else {
-                var runningFlow =
-                        jobFlowRunService.findRunningFlow(jobFlow.getId(), executionConfig);
+                var runningFlow = jobFlowRunService.findRunningFlow(jobFlow.getId(), executionConfig);
                 if (runningFlow != null) {
                     log.warn(
                             "The job flow: {} is in non-terminal status, run id: {}",
                             jobFlow.getName(),
                             runningFlow.getId());
                     alertSendingService.sendErrAlerts(
-                            jobFlow,
-                            "There is already a running jobFlowRun: " + runningFlow.getId());
+                            jobFlow, "There is already a running jobFlowRun: " + runningFlow.getId());
                     return;
                 }
             }
@@ -109,11 +100,7 @@ public class JobFlowRunner implements Job {
             var jobFlowRun = new JobFlowRun();
             jobFlowRun.setFlowId(jobFlow.getId());
             jobFlowRun.setName(
-                    String.join(
-                            "-",
-                            jobFlow.getName(),
-                            jobFlow.getCode(),
-                            String.valueOf(System.currentTimeMillis())));
+                    String.join("-", jobFlow.getName(), jobFlow.getCode(), String.valueOf(System.currentTimeMillis())));
             if (JOB_LIST.equals(jobFlow.getType())) {
                 jobFlowRun.setFlow(createFlowFromConfig(executionConfig));
             } else {
@@ -154,17 +141,15 @@ public class JobFlowRunner implements Job {
     }
 
     private ExecutionConfig getOrMergeExecutionConfig(JobDataMap dataMap, JobFlow jobFlow) {
-        ExecutionConfig baseConfig =
-                JsonUtil.toBean(dataMap.getString(CONFIG), ExecutionConfig.class);
+        ExecutionConfig baseConfig = JsonUtil.toBean(dataMap.getString(CONFIG), ExecutionConfig.class);
         if (baseConfig == null) {
             baseConfig = new ExecutionConfig();
         }
 
         ExecutionConfig templateConfig = jobFlow.getConfig();
-        int parallelism =
-                templateConfig != null && templateConfig.getParallelism() > 0
-                        ? templateConfig.getParallelism()
-                        : workerConfig.getPerFlowExecThreads();
+        int parallelism = templateConfig != null && templateConfig.getParallelism() > 0
+                ? templateConfig.getParallelism()
+                : workerConfig.getPerFlowExecThreads();
         baseConfig.setParallelism(parallelism);
         return baseConfig;
     }
