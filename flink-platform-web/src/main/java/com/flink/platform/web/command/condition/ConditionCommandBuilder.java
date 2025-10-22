@@ -87,7 +87,7 @@ public class ConditionCommandBuilder implements CommandBuilder {
     private ExecutionStatus getExpectedStatus(JobFlowDag flow, Long fromJobId, Long toJobId) {
         JobEdge edge = flow.getEdge(fromJobId, toJobId);
         if (edge == null) {
-            throw new RuntimeException(String.format("No edge found, fromVId: %d, toVid: %d", fromJobId, toJobId));
+            throw new RuntimeException("No edge found, fromVId: %d, toVid: %d".formatted(fromJobId, toJobId));
         }
         return edge.getExpectStatus();
     }

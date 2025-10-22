@@ -32,7 +32,6 @@ import static com.flink.platform.common.enums.ResponseStatus.ERROR_PARAMETER;
 import static com.flink.platform.common.enums.ResponseStatus.OPERATION_NOT_ALLOWED;
 import static com.flink.platform.web.entity.response.ResultInfo.failure;
 import static com.flink.platform.web.entity.response.ResultInfo.success;
-import static java.lang.String.format;
 import static java.util.Objects.nonNull;
 
 /** Job flow tag controller. */
@@ -93,7 +92,7 @@ public class TagInfoController {
         if (jobFlow != null) {
             return failure(
                     OPERATION_NOT_ALLOWED,
-                    format("The tag is being used in jobFlow: %s, cannot be removed", jobFlow.getName()));
+                    "The tag is being used in jobFlow: %s, cannot be removed".formatted(jobFlow.getName()));
         }
 
         boolean bool = tagInfoService.removeById(tagId);

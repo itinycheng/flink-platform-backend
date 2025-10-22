@@ -4,8 +4,8 @@ import com.flink.platform.common.graph.DAG;
 import com.flink.platform.common.model.JobEdge;
 import com.flink.platform.common.model.JobVertex;
 import com.flink.platform.dao.util.JobFlowDagHelper;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.Set;
 
@@ -14,12 +14,12 @@ import static com.flink.platform.common.enums.ExecutionStatus.FAILURE;
 import static com.flink.platform.common.enums.ExecutionStatus.SUCCESS;
 
 /** job flow dag helper test. */
-public class JobFlowDagHelperTest {
+class JobFlowDagHelperTest {
 
     private DAG<Long, JobVertex, JobEdge> dag;
 
-    @Before
-    public void before() {
+    @BeforeEach
+    void before() {
         dag = new DAG<>();
         JobVertex jobVertex1 = new JobVertex(1L, 1L);
         JobVertex jobVertex2 = new JobVertex(2L, 2L);
@@ -57,25 +57,25 @@ public class JobFlowDagHelperTest {
     }
 
     @Test
-    public void test1() {
+    void test1() {
         Set<JobVertex> executableVertices = JobFlowDagHelper.getExecutableVertices(dag);
         System.out.println(executableVertices);
     }
 
     @Test
-    public void test2() {
+    void test2() {
         Set<JobVertex> executableVertices = JobFlowDagHelper.getExecutableVertices(dag);
         System.out.println(executableVertices);
     }
 
     @Test
-    public void test3() {
+    void test3() {
         Set<JobVertex> executableVertices = JobFlowDagHelper.getExecutableVertices(dag);
         System.out.println(executableVertices);
     }
 
     @Test
-    public void test4() {
+    void test4() {
         JobVertex vertex = dag.getVertex(2L);
         vertex.setJobRunStatus(SUCCESS);
 
@@ -85,7 +85,7 @@ public class JobFlowDagHelperTest {
     }
 
     @Test
-    public void test5() {
+    void test5() {
         JobVertex vertex = dag.getVertex(2L);
         vertex.setJobRunStatus(SUCCESS);
 
@@ -96,21 +96,7 @@ public class JobFlowDagHelperTest {
     }
 
     @Test
-    public void test6() {
-        JobVertex vertex = dag.getVertex(2L);
-        vertex.setJobRunStatus(SUCCESS);
-
-        vertex = dag.getVertex(1L);
-        vertex.setJobRunStatus(SUCCESS);
-
-        vertex = dag.getVertex(3L);
-
-        Set<JobVertex> executableVertices = JobFlowDagHelper.getExecutableVertices(dag);
-        System.out.println(executableVertices);
-    }
-
-    @Test
-    public void test7() {
+    void test6() {
         JobVertex vertex = dag.getVertex(2L);
         vertex.setJobRunStatus(SUCCESS);
 
@@ -118,6 +104,20 @@ public class JobFlowDagHelperTest {
         vertex.setJobRunStatus(SUCCESS);
 
         vertex = dag.getVertex(3L);
+
+        Set<JobVertex> executableVertices = JobFlowDagHelper.getExecutableVertices(dag);
+        System.out.println(executableVertices);
+    }
+
+    @Test
+    void test7() {
+        JobVertex vertex = dag.getVertex(2L);
+        vertex.setJobRunStatus(SUCCESS);
+
+        vertex = dag.getVertex(1L);
+        vertex.setJobRunStatus(SUCCESS);
+
+        vertex = dag.getVertex(3L);
         vertex.setJobRunStatus(SUCCESS);
 
         Set<JobVertex> executableVertices = JobFlowDagHelper.getExecutableVertices(dag);
@@ -125,7 +125,7 @@ public class JobFlowDagHelperTest {
     }
 
     @Test
-    public void test8() {
+    void test8() {
         JobVertex vertex = dag.getVertex(2L);
         vertex.setJobRunStatus(SUCCESS);
 
@@ -143,7 +143,7 @@ public class JobFlowDagHelperTest {
     }
 
     @Test
-    public void test9() {
+    void test9() {
         JobVertex vertex = dag.getVertex(2L);
         vertex.setJobRunStatus(SUCCESS);
 
@@ -164,7 +164,7 @@ public class JobFlowDagHelperTest {
     }
 
     @Test
-    public void test10() {
+    void test10() {
         JobVertex vertex = dag.getVertex(2L);
         vertex.setJobRunStatus(FAILURE);
 
@@ -173,7 +173,7 @@ public class JobFlowDagHelperTest {
     }
 
     @Test
-    public void test11() {
+    void test11() {
         JobVertex vertex = dag.getVertex(2L);
         vertex.setJobRunStatus(FAILURE);
 
@@ -185,7 +185,7 @@ public class JobFlowDagHelperTest {
     }
 
     @Test
-    public void test12() {
+    void test12() {
         JobVertex vertex = dag.getVertex(2L);
         vertex.setJobRunStatus(FAILURE);
 
@@ -197,7 +197,7 @@ public class JobFlowDagHelperTest {
     }
 
     @Test
-    public void test13() {
+    void test13() {
         JobVertex vertex = dag.getVertex(2L);
         vertex.setJobRunStatus(FAILURE);
 

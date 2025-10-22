@@ -1,13 +1,13 @@
 package com.flink.platform.udf;
 
 import com.flink.platform.udf.business.PositionParserFunction;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /** Annotation test. */
-public class AnnotationTest {
+class AnnotationTest {
 
     @Test
-    public void test() {
+    void test() {
         PositionParserFunction func = new PositionParserFunction();
         System.out.println(func);
     }

@@ -102,9 +102,9 @@ public class JobRunExtraService {
                 fileSeparator,
                 JOB_RUN_DIR,
                 DateUtil.format(jobRun.getCreateTime(), DATE_FORMAT),
-                String.format(USER_DIR_FORMAT, jobRun.getUserId()),
+                USER_DIR_FORMAT.formatted(jobRun.getUserId()),
                 jobRun.getType().name().toLowerCase(),
-                String.format(JOB_DIR_FORMAT, jobRun.getJobId()),
+                JOB_DIR_FORMAT.formatted(jobRun.getJobId()),
                 buildTimestampedFileName(jobRun, fileSuffix));
         return String.join(fileSeparator, storageService.getRootPath(), relativePath);
     }

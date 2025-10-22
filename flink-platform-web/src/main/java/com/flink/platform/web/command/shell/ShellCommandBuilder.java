@@ -15,7 +15,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
-import java.nio.file.Paths;
+import java.nio.file.Path;
 
 import static com.flink.platform.common.enums.JobType.SHELL;
 import static com.flink.platform.web.util.CommandUtil.commandType;
@@ -44,7 +44,7 @@ public class ShellCommandBuilder implements CommandBuilder {
         storageService.createFile(storageFilePath, jobRun.getSubject(), true);
 
         var commandFilePath = dispatcherService.buildLocalEnvFilePath(jobRun, commandType());
-        var commandPath = Paths.get(commandFilePath);
+        var commandPath = Path.of(commandFilePath);
         FileUtil.rewriteFile(commandPath, jobRun.getSubject());
         FileUtil.setPermissions(commandPath, "rwxr--r--");
 

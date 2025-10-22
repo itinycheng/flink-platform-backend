@@ -76,11 +76,11 @@ public class AlertSender {
                 .eq(JobRunInfo::getFlowRunId, flowRunId));
 
         StringBuilder buffer = new StringBuilder();
-        jobRuns.forEach(jobRun -> buffer.append(
-                        String.format("%-10s", jobRun.getStatus().name()))
-                .append(" : ")
-                .append(jobRun.getName())
-                .append("\n"));
+        jobRuns.forEach(
+                jobRun -> buffer.append("%-10s".formatted(jobRun.getStatus().name()))
+                        .append(" : ")
+                        .append(jobRun.getName())
+                        .append("\n"));
         return buffer.toString();
     }
 

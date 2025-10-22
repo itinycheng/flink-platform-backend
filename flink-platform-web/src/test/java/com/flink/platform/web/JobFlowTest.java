@@ -8,7 +8,7 @@ import com.flink.platform.dao.entity.JobFlowDag;
 import com.flink.platform.dao.entity.alert.AlertConfigList;
 import com.flink.platform.web.entity.request.JobFlowRequest;
 import org.apache.commons.lang3.ObjectUtils;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.concurrent.PriorityBlockingQueue;
 
@@ -16,10 +16,10 @@ import static com.flink.platform.common.enums.ExecutionStatus.SUCCESS;
 import static com.flink.platform.common.enums.JobFlowStatus.OFFLINE;
 
 /** job flow manager test. */
-public class JobFlowTest {
+class JobFlowTest {
 
     @Test
-    public void test1() {
+    void test1() {
         JobFlowDag dag = new JobFlowDag();
         JobVertex jobVertex1 = new JobVertex(19L, 19L);
         JobVertex jobVertex2 = new JobVertex(20L, 20L);
@@ -44,7 +44,7 @@ public class JobFlowTest {
     }
 
     @Test
-    public void test2() {
+    void test2() {
         PriorityBlockingQueue<Integer> queue = new PriorityBlockingQueue<>(5, (o1, o2) -> ObjectUtils.compare(o2, o1));
         queue.offer(3);
         queue.offer(2);

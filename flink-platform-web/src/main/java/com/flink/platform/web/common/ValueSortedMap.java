@@ -67,7 +67,11 @@ public class ValueSortedMap<K, V extends Comparable<V>> {
     public V getFirst() {
         lock.readLock().lock();
         try {
-            return valSet.getFirst();
+            if (valSet.isEmpty()) {
+                return null;
+            }
+
+            return valSet.first();
         } finally {
             lock.readLock().unlock();
         }

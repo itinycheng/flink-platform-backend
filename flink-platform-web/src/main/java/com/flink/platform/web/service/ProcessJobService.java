@@ -38,7 +38,7 @@ public class ProcessJobService {
         // step 1: get job info
         var jobRunInfo = jobRunInfoService.getById(jobRunId);
         if (jobRunInfo == null) {
-            throw new UnrecoverableException(String.format("The job run: %s is no longer exists.", jobRunId));
+            throw new UnrecoverableException("The job run: %s is no longer exists.".formatted(jobRunId));
         }
 
         // step 2: Update jobRun and prepare environment before execution.
