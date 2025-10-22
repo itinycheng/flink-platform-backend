@@ -1,19 +1,15 @@
 package com.flink.platform.plugin;
 
-import org.junit.Test;
-
-import static org.junit.Assert.assertTrue;
+import org.junit.jupiter.api.Test;
 
 /**
  * Unit test for simple App.
  */
-public class AppTest {
+class AppTest {
 
     /**
      * Rigourous Test.
      */
     @Test
-    public void testApp() {
-        assertTrue(true);
-    }
+    void app() {}
 }

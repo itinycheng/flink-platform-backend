@@ -10,7 +10,7 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
-import java.nio.file.Paths;
+import java.nio.file.Path;
 
 import static com.flink.platform.common.constants.Constant.DOT;
 import static com.flink.platform.common.constants.Constant.OS_FILE_SEPARATOR;
@@ -50,7 +50,7 @@ public class DispatcherService {
         switch (deployMode) {
             case RUN_LOCAL:
             case FLINK_YARN_PER:
-                FileUtil.rewriteFile(Paths.get(filePath), content);
+                FileUtil.rewriteFile(Path.of(filePath), content);
                 break;
             case FLINK_YARN_SESSION:
             case FLINK_YARN_RUN_APPLICATION:

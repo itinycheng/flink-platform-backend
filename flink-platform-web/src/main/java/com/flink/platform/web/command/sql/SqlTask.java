@@ -70,7 +70,7 @@ public class SqlTask extends AbstractTask {
                     // execute sql.
                     if (!stmt.execute(executingSql)) {
                         Map<String, Object> itemMap = new HashMap<>(1);
-                        itemMap.put("_no_result_" + j, String.format("executed: %s", executingSql));
+                        itemMap.put("_no_result_" + j, "executed: %s".formatted(executingSql));
                         dataList.add(itemMap);
                         continue;
                     }

@@ -106,7 +106,7 @@ public class SqlContextHelper {
     public List<Sql> toSqls(String subject) {
         var sqlList = SqlUtil.convertToSqls(subject);
         if (sqlList.isEmpty()) {
-            throw new CommandUnableGenException(String.format("no sql found or parsing failed, subject: %s", subject));
+            throw new CommandUnableGenException("no sql found or parsing failed, subject: %s".formatted(subject));
         }
         return sqlList;
     }

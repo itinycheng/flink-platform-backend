@@ -1,10 +1,9 @@
 package com.flink.platform.web;
 
 import com.flink.platform.web.util.ThreadUtil;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.quartz.CronExpression;
 
-import java.text.ParseException;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.Date;
@@ -12,10 +11,10 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /** Quartz test. */
-public class QuartzTest {
+class QuartzTest {
 
     @Test
-    public void test() throws ParseException {
+    void test() throws Exception {
         CronExpression cronExpression = new CronExpression("0 43 1 * * ?");
         LocalDateTime of = LocalDateTime.of(2021, 5, 21, 3, 0);
         Date from = Date.from(of.toInstant(ZoneOffset.of("+8")));
@@ -24,7 +23,7 @@ public class QuartzTest {
     }
 
     @Test
-    public void testVirtualThreadPool() {
+    void virtualThreadPool() {
         try (var executorService = (ThreadPoolExecutor) ThreadUtil.newFixedVirtualThreadExecutor("v-thread", 500_000)) {
             AtomicInteger adder = new AtomicInteger(0);
             for (int i = 0; i < 1000_000; i++) {

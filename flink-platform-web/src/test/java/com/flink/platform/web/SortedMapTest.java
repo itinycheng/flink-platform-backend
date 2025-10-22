@@ -3,15 +3,17 @@ package com.flink.platform.web;
 import com.flink.platform.web.command.JobCommand;
 import com.flink.platform.web.command.dependent.DependentCommand;
 import com.flink.platform.web.common.ValueSortedMap;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.time.LocalDateTime;
 
-public class SortedMapTest {
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+
+class SortedMapTest {
 
     @Test
-    public void test() {
+    void test() {
         var map = new ValueSortedMap<Long, JobCommand>();
         LocalDateTime now = LocalDateTime.now();
         JobCommand dependentCommand = new DependentCommand(1, false, null);
@@ -39,11 +41,11 @@ public class SortedMapTest {
         dependentCommand.setExpectedStopTime(now);
         map.put(7L, dependentCommand);
 
-        Assert.assertEquals(7, map.size());
+        assertEquals(7, map.size());
 
         map.remove(4L);
         map.remove(1L);
-        Assert.assertNotNull(map.removeFirst());
-        Assert.assertEquals(map.getKvMap().size(), map.getValSet().size());
+        assertNotNull(map.removeFirst());
+        assertEquals(map.getKvMap().size(), map.getValSet().size());
     }
 }

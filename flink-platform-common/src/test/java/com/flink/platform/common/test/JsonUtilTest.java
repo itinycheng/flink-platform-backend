@@ -7,17 +7,17 @@ import com.flink.platform.common.job.Sql;
 import com.flink.platform.common.job.SqlContext;
 import com.flink.platform.common.util.JsonUtil;
 import lombok.Data;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
 /** json test. */
-public class JsonUtilTest {
+class JsonUtilTest {
 
     @Test
-    public void testEnum() {
+    void testEnum() {
         SqlContext sqlContext = new SqlContext();
         sqlContext.setId("a");
 
@@ -36,7 +36,7 @@ public class JsonUtilTest {
     }
 
     @Test
-    public void test() {
+    void test() {
         String listString =
                 "[{\"symbol\":\"BILI\",\"costLevel\":1,\"strike\":\"\",\"currency\":\"USD\",\"expiry\":\"\",\"right\":\"\",\"status\":\"LONG\",\"timestamp\":1621990862104},{\"symbol\":\"BIDU\",\"costLevel\":1,\"strike\":\"\",\"currency\":\"USD\",\"expiry\":\"\",\"right\":\"\",\"status\":\"LONG\",\"timestamp\":1621990862101}]";
         CollectionLikeType positionListType =
@@ -49,14 +49,14 @@ public class JsonUtilTest {
     }
 
     @Test
-    public void test0() {
+    void test0() {
         String listString = "[\"symbol\",\"BILI\"]";
         List<String> strings = JsonUtil.toList(listString);
         System.out.println(strings);
     }
 
     @Test
-    public void test1() {
+    void test1() {
         String json =
                 "{\"symbol\":\"BILI\",\"costLevel\":1,\"strike\":\"\",\"currency\":\"USD\",\"expiry\":\"\",\"right\":\"\",\"status\":\"LONG\",\"timestamp\":1621990862104}";
         Map<String, Object> map = JsonUtil.toMap(json);
@@ -64,7 +64,7 @@ public class JsonUtilTest {
     }
 
     @Test
-    public void test2() {
+    void test2() {
         String json =
                 "{\"symbol\":\"BILI\",\"costLevel\":1,\"strike\":\"\",\"currency\":\"USD\",\"expiry\":\"\",\"right\":\"\",\"status\":\"LONG\",\"timestamp\":1621990862104}";
         Map<String, String> strMap = JsonUtil.toStrMap(json);

@@ -1,14 +1,10 @@
 package com.flink.platform.cron;
 
-import org.junit.Test;
-
-import static org.junit.Assert.assertTrue;
+import org.junit.jupiter.api.Test;
 
 /** Unit test for simple App. */
-public class MapperInitializerTest {
+class MapperInitializerTest {
 
     @Test
-    public void shouldAnswerWithTrue() {
-        assertTrue(true);
-    }
+    void shouldAnswerWithTrue() {}
 }

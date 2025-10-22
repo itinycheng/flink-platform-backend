@@ -35,8 +35,8 @@ public class UnscheduledJobFlowChecker {
         }
 
         jobFlowService.getUnscheduledJobFlows().forEach(jobFlow -> {
-            String content = String.format(
-                    ALERT_TEMPLATE, jobFlow.getName(), jobFlow.getStatus().name());
+            String content = ALERT_TEMPLATE.formatted(
+                    jobFlow.getName(), jobFlow.getStatus().name());
             alertSendingService.sendErrAlerts(jobFlow, content);
         });
     }

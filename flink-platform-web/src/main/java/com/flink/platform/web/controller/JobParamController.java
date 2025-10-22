@@ -33,7 +33,6 @@ import static com.flink.platform.common.enums.ResponseStatus.ERROR_PARAMETER;
 import static com.flink.platform.common.enums.ResponseStatus.OPERATION_NOT_ALLOWED;
 import static com.flink.platform.web.entity.response.ResultInfo.failure;
 import static com.flink.platform.web.entity.response.ResultInfo.success;
-import static java.lang.String.format;
 import static java.util.Objects.nonNull;
 
 /** Alert controller. */
@@ -102,12 +101,12 @@ public class JobParamController {
             JobInfo jobInfo = jobService.getOne(new QueryWrapper<JobInfo>()
                     .lambda()
                     .eq(JobInfo::getUserId, jobParam.getUserId())
-                    .like(JobInfo::getSubject, format(PARAM_FORMAT, jobParam.getParamName()))
+                    .like(JobInfo::getSubject, PARAM_FORMAT.formatted(jobParam.getParamName()))
                     .last("LIMIT 1"));
             if (jobInfo != null) {
                 return failure(
                         OPERATION_NOT_ALLOWED,
-                        format("The param is being used in job: %s, cannot be removed", jobInfo.getName()));
+                        "The param is being used in job: %s, cannot be removed".formatted(jobInfo.getName()));
             }
         }
 
