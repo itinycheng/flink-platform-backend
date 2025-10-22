@@ -19,16 +19,17 @@
 package com.flink.platform.common.test;
 
 import com.flink.platform.common.util.DurationUtil;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /** Tests for Duration, copy from flink. */
-public class DurationTest {
+class DurationTest {
 
     @Test
-    public void testParseNanos() {
+    void parseNanos() {
         assertEquals(424562, DurationUtil.parse("424562ns").getNano());
         assertEquals(424562, DurationUtil.parse("424562nano").getNano());
         assertEquals(424562, DurationUtil.parse("424562nanos").getNano());
@@ -38,7 +39,7 @@ public class DurationTest {
     }
 
     @Test
-    public void testParseMicros() {
+    void parseMicros() {
         assertEquals(565731 * 1000L, DurationUtil.parse("565731µs").getNano());
         assertEquals(565731 * 1000L, DurationUtil.parse("565731micro").getNano());
         assertEquals(565731 * 1000L, DurationUtil.parse("565731micros").getNano());
@@ -48,7 +49,7 @@ public class DurationTest {
     }
 
     @Test
-    public void testParseMillis() {
+    void parseMillis() {
         assertEquals(1234, DurationUtil.parse("1234").toMillis());
         assertEquals(1234, DurationUtil.parse("1234ms").toMillis());
         assertEquals(1234, DurationUtil.parse("1234milli").toMillis());
@@ -59,7 +60,7 @@ public class DurationTest {
     }
 
     @Test
-    public void testParseSeconds() {
+    void parseSeconds() {
         assertEquals(667766, DurationUtil.parse("667766s").getSeconds());
         assertEquals(667766, DurationUtil.parse("667766sec").getSeconds());
         assertEquals(667766, DurationUtil.parse("667766secs").getSeconds());
@@ -69,7 +70,7 @@ public class DurationTest {
     }
 
     @Test
-    public void testParseMinutes() {
+    void parseMinutes() {
         assertEquals(7657623, DurationUtil.parse("7657623m").toMinutes());
         assertEquals(7657623, DurationUtil.parse("7657623min").toMinutes());
         assertEquals(7657623, DurationUtil.parse("7657623minute").toMinutes());
@@ -78,7 +79,7 @@ public class DurationTest {
     }
 
     @Test
-    public void testParseHours() {
+    void parseHours() {
         assertEquals(987654, DurationUtil.parse("987654h").toHours());
         assertEquals(987654, DurationUtil.parse("987654hour").toHours());
         assertEquals(987654, DurationUtil.parse("987654hours").toHours());
@@ -86,7 +87,7 @@ public class DurationTest {
     }
 
     @Test
-    public void testParseDays() {
+    void parseDays() {
         assertEquals(987654, DurationUtil.parse("987654d").toDays());
         assertEquals(987654, DurationUtil.parse("987654day").toDays());
         assertEquals(987654, DurationUtil.parse("987654days").toDays());
@@ -94,7 +95,7 @@ public class DurationTest {
     }
 
     @Test
-    public void testParseUpperCase() {
+    void parseUpperCase() {
         assertEquals(1L, DurationUtil.parse("1 NS").toNanos());
         assertEquals(1000L, DurationUtil.parse("1 MICRO").toNanos());
         assertEquals(1L, DurationUtil.parse("1 MS").toMillis());
@@ -105,13 +106,13 @@ public class DurationTest {
     }
 
     @Test
-    public void testParseTrim() {
+    void parseTrim() {
         assertEquals(155L, DurationUtil.parse("      155      ").toMillis());
         assertEquals(155L, DurationUtil.parse("      155      ms   ").toMillis());
     }
 
     @Test
-    public void testParseInvalid() {
+    void parseInvalid() {
         // empty
         try {
             DurationUtil.parse("");
@@ -155,8 +156,8 @@ public class DurationTest {
         }
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void testParseNumberOverflow() {
-        DurationUtil.parse("100000000000000000000000000000000 ms");
+    @Test
+    void parseNumberOverflow() {
+        assertThrows(IllegalArgumentException.class, () -> DurationUtil.parse("100000000000000000000000000000000 ms"));
     }
 }

@@ -69,13 +69,14 @@
 		<maven-shade-plugin.version>3.6.1</maven-shade-plugin.version>
 		<rewrite-maven-plugin.version>6.20.1</rewrite-maven-plugin.version>
 		<rewrite-migrate-java.version>3.18.0</rewrite-migrate-java.version>
+		<rewrite-testing-frameworks.version>3.18.0</rewrite-testing-frameworks.version>
 		<maven-compiler-plugin.version>3.14.1</maven-compiler-plugin.version>
 	</properties>
 
 	<dependencies>
 		<dependency>
-			<groupId>junit</groupId>
-			<artifactId>junit</artifactId>
+			<groupId>org.junit.jupiter</groupId>
+			<artifactId>junit-jupiter</artifactId>
 			<scope>test</scope>
 		</dependency>
 		<dependency>
@@ -346,33 +347,6 @@
 					</execution>
 				</executions>
 			</plugin>
-			<plugin>
-				<groupId>org.openrewrite.maven</groupId>
-				<artifactId>rewrite-maven-plugin</artifactId>
-				<version>${rewrite-maven-plugin.version}</version>
-				<configuration>
-					<activeRecipes>
-						<recipe>org.openrewrite.java.migrate.UpgradeToJava21</recipe>
-					</activeRecipes>
-					<failOnDryRunResults>true</failOnDryRunResults>
-				</configuration>
-				<executions>
-					<execution>
-						<id>rewrite-dry-run</id>
-						<phase>deploy</phase>
-						<goals>
-							<goal>dryRun</goal>
-						</goals>
-					</execution>
-				</executions>
-				<dependencies>
-					<dependency>
-						<groupId>org.openrewrite.recipe</groupId>
-						<artifactId>rewrite-migrate-java</artifactId>
-						<version>${rewrite-migrate-java.version}</version>
-					</dependency>
-				</dependencies>
-			</plugin>
 		</plugins>
 
 		<pluginManagement>
@@ -385,6 +359,39 @@
 						<source>${maven.compiler.source}</source>
 						<target>${maven.compiler.target}</target>
 					</configuration>
+				</plugin>
+				<plugin>
+					<groupId>org.openrewrite.maven</groupId>
+					<artifactId>rewrite-maven-plugin</artifactId>
+					<version>${rewrite-maven-plugin.version}</version>
+					<configuration>
+						<activeRecipes>
+							<recipe>org.openrewrite.java.migrate.UpgradeToJava21</recipe>
+							<recipe>org.openrewrite.java.testing.junit5.JUnit5BestPractices</recipe>
+						</activeRecipes>
+						<failOnDryRunResults>true</failOnDryRunResults>
+					</configuration>
+					<executions>
+						<execution>
+							<id>rewrite-dry-run</id>
+							<phase>prepare-package</phase>
+							<goals>
+								<goal>dryRun</goal>
+							</goals>
+						</execution>
+					</executions>
+					<dependencies>
+						<dependency>
+							<groupId>org.openrewrite.recipe</groupId>
+							<artifactId>rewrite-migrate-java</artifactId>
+							<version>${rewrite-migrate-java.version}</version>
+						</dependency>
+						<dependency>
+							<groupId>org.openrewrite.recipe</groupId>
+							<artifactId>rewrite-testing-frameworks</artifactId>
+							<version>${rewrite-testing-frameworks.version}</version>
+						</dependency>
+					</dependencies>
 				</plugin>
 				<plugin>
 					<groupId>org.apache.maven.plugins</groupId>

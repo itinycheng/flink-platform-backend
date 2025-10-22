@@ -15,7 +15,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 
-import java.nio.file.Paths;
+import java.nio.file.Path;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -97,7 +97,7 @@ public enum Placeholder {
             // TODO: Should only for executable files.
             if (SHELL.equals(jobRun.getType())) {
                 try {
-                    FileUtil.setPermissions(Paths.get(localPath), "rwxr--r--");
+                    FileUtil.setPermissions(Path.of(localPath), "rwxr--r--");
                 } catch (Exception e) {
                     log.error("Failed to set file permissions", e);
                 }
@@ -115,7 +115,7 @@ public enum Placeholder {
 
         Map<String, Object> result = new HashMap<>();
         jobParams.forEach(jobParam -> {
-            String param = String.format(PARAM_FORMAT, jobParam.getParamName());
+            String param = PARAM_FORMAT.formatted(jobParam.getParamName());
             if (content.contains(param)) {
                 result.put(param, jobParam.getParamValue());
             }

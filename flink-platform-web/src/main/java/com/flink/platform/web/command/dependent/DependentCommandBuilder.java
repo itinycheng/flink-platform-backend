@@ -56,9 +56,9 @@ public class DependentCommandBuilder implements CommandBuilder {
                 : dependentItems.stream().allMatch(this::populateAndEvaluateConditions);
 
         String message = dependentItems.stream()
-                .map(item -> String.format(
-                        "flowRunId: %s, jobRunId: %s, status: %s, Verification passed: %s",
-                        item.getLatestFlowRunId(), item.getLatestJobRunId(), item.getLatestStatus(), matched))
+                .map(item -> "flowRunId: %s, jobRunId: %s, status: %s, Verification passed: %s"
+                        .formatted(
+                                item.getLatestFlowRunId(), item.getLatestJobRunId(), item.getLatestStatus(), matched))
                 .collect(joining(LINE_SEPARATOR));
 
         DependentCommand dependentCommand = new DependentCommand(jobRunId, matched, message);

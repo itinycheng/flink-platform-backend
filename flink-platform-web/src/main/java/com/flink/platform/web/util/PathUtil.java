@@ -1,6 +1,6 @@
 package com.flink.platform.web.util;
 
-import java.nio.file.Paths;
+import java.nio.file.Path;
 
 import static com.flink.platform.common.constants.Constant.OS_FILE_SEPARATOR;
 import static com.flink.platform.common.constants.Constant.USER_DIR;
@@ -16,7 +16,7 @@ public class PathUtil {
     }
 
     public static String getLocalWorkRootPath() {
-        if (Paths.get(WORK_DIR).isAbsolute()) {
+        if (Path.of(WORK_DIR).isAbsolute()) {
             return WORK_DIR;
         }
 

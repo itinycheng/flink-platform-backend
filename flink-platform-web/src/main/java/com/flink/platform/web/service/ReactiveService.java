@@ -102,7 +102,7 @@ public class ReactiveService {
             throw new RuntimeException("Only one sql can be executed at a time");
         }
 
-        String statement = sqls.get(0).toSqlString();
+        String statement = sqls.getFirst().toSqlString();
         try (Connection connection = createConnection(datasource.getType(), datasource.getParams());
                 Statement stmt = connection.createStatement()) {
             String[] columnNames;
@@ -173,8 +173,8 @@ public class ReactiveService {
     private Object toJavaObject(DbType dbType, Object dbObject) throws Exception {
         switch (dbType) {
             case CLICKHOUSE:
-                if (dbObject instanceof Array) {
-                    Object objectArray = ((Array) dbObject).getArray();
+                if (dbObject instanceof Array array) {
+                    Object objectArray = array.getArray();
                     int arrayLength = java.lang.reflect.Array.getLength(objectArray);
                     Object[] javaObjectArray = new Object[arrayLength];
                     for (int i = 0; i < arrayLength; i++) {

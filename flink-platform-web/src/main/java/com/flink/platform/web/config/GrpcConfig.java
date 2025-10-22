@@ -15,9 +15,8 @@ class GrpcConfig {
     @Bean
     public GrpcServerConfigurer serverConfigurer() {
         return serverBuilder -> {
-            if (serverBuilder instanceof NettyServerBuilder) {
-                ((NettyServerBuilder) serverBuilder)
-                        .executor(ThreadUtil.newVirtualThreadExecutor("GrpcServerThread"))
+            if (serverBuilder instanceof NettyServerBuilder builder) {
+                builder.executor(ThreadUtil.newVirtualThreadExecutor("GrpcServerThread"))
                         .permitKeepAliveWithoutCalls(true);
             }
         };

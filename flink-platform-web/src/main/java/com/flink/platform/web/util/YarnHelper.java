@@ -10,7 +10,7 @@ public class YarnHelper {
     private static final String APP_TAG_FORMAT = "tag_%s";
 
     public static String getApplicationTag(Long jobRunId) {
-        return String.format(APP_TAG_FORMAT, jobRunId);
+        return APP_TAG_FORMAT.formatted(jobRunId);
     }
 
     public static ExecutionStatus getStatus(ApplicationReport applicationReport) {

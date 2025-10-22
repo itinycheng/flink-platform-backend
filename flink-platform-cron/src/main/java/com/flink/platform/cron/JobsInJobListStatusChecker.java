@@ -39,8 +39,8 @@ public class JobsInJobListStatusChecker {
         }
 
         jobRunInfoService.getJobRunsWithUnexpectedStatus().forEach(jobRun -> {
-            String content = String.format(
-                    ALERT_TEMPLATE, jobRun.getName(), jobRun.getStatus().name());
+            String content = ALERT_TEMPLATE.formatted(
+                    jobRun.getName(), jobRun.getStatus().name());
             JobFlowRun jobFlowRun = jobFlowRunService.getById(jobRun.getFlowRunId());
             alertSendingService.sendAlerts(jobFlowRun, content);
         });
