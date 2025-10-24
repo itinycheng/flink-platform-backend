@@ -84,25 +84,20 @@ public class AlertController {
             @RequestParam(name = "size", required = false, defaultValue = "20") Integer size,
             @RequestParam(name = "name", required = false) String name) {
         Page<AlertInfo> pager = new Page<>(page, size);
-        IPage<AlertInfo> iPage =
-                alertService.page(
-                        pager,
-                        new QueryWrapper<AlertInfo>()
-                                .lambda()
-                                .eq(AlertInfo::getUserId, loginUser.getId())
-                                .like(Objects.nonNull(name), AlertInfo::getName, name));
+        IPage<AlertInfo> iPage = alertService.page(
+                pager,
+                new QueryWrapper<AlertInfo>()
+                        .lambda()
+                        .eq(AlertInfo::getUserId, loginUser.getId())
+                        .like(Objects.nonNull(name), AlertInfo::getName, name));
 
         return success(iPage);
     }
 
     @GetMapping(value = "/list")
-    public ResultInfo<List<AlertInfo>> list(
-            @RequestAttribute(value = Constant.SESSION_USER) User loginUser) {
+    public ResultInfo<List<AlertInfo>> list(@RequestAttribute(value = Constant.SESSION_USER) User loginUser) {
         List<AlertInfo> list =
-                alertService.list(
-                        new QueryWrapper<AlertInfo>()
-                                .lambda()
-                                .eq(AlertInfo::getUserId, loginUser.getId()));
+                alertService.list(new QueryWrapper<AlertInfo>().lambda().eq(AlertInfo::getUserId, loginUser.getId()));
         return success(list);
     }
 }

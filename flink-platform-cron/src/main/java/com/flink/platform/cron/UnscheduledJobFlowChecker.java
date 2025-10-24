@@ -1,4 +1,4 @@
-package com.flink.platform.monitor;
+package com.flink.platform.cron;
 
 import com.flink.platform.alert.AlertSendingService;
 import com.flink.platform.dao.entity.Worker;
@@ -34,16 +34,10 @@ public class UnscheduledJobFlowChecker {
             return;
         }
 
-        jobFlowService
-                .getUnscheduledJobFlows()
-                .forEach(
-                        jobFlow -> {
-                            String content =
-                                    String.format(
-                                            ALERT_TEMPLATE,
-                                            jobFlow.getName(),
-                                            jobFlow.getStatus().name());
-                            alertSendingService.sendErrAlerts(jobFlow, content);
-                        });
+        jobFlowService.getUnscheduledJobFlows().forEach(jobFlow -> {
+            String content = ALERT_TEMPLATE.formatted(
+                    jobFlow.getName(), jobFlow.getStatus().name());
+            alertSendingService.sendErrAlerts(jobFlow, content);
+        });
     }
 }

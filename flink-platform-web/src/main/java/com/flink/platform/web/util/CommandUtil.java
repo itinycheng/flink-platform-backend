@@ -1,15 +1,11 @@
 package com.flink.platform.web.util;
 
-import com.flink.platform.common.constants.Constant;
 import com.flink.platform.common.util.OSUtil;
 import com.flink.platform.dao.entity.result.ShellCallback;
-import com.sun.jna.platform.win32.Kernel32;
-import com.sun.jna.platform.win32.WinNT;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -45,27 +41,22 @@ public class CommandUtil {
         List<String> stdList = Collections.synchronizedList(new ArrayList<>());
         List<String> errList = Collections.synchronizedList(new ArrayList<>());
 
-        ShellCallback callback =
-                exec(
-                        command,
-                        envProps,
-                        timeoutMills,
-                        (inputType, value) -> {
-                            switch (inputType) {
-                                case STD:
-                                    if (stdList.size() <= MAX_LOG_ROWS) {
-                                        stdList.add(value);
-                                    }
-                                    break;
-                                case ERR:
-                                    if (errList.size() <= MAX_LOG_ROWS) {
-                                        errList.add(value);
-                                    }
-                                    break;
-                                default:
-                                    log.error("unknown command log type: {}", inputType);
-                            }
-                        });
+        ShellCallback callback = exec(command, envProps, timeoutMills, (inputType, value) -> {
+            switch (inputType) {
+                case STD:
+                    if (stdList.size() <= MAX_LOG_ROWS) {
+                        stdList.add(value);
+                    }
+                    break;
+                case ERR:
+                    if (errList.size() <= MAX_LOG_ROWS) {
+                        errList.add(value);
+                    }
+                    break;
+                default:
+                    log.error("unknown command log type: {}", inputType);
+            }
+        });
 
         callback.setStdMsg(String.join(LINE_SEPARATOR, stdList));
         callback.setErrMsg(String.join(LINE_SEPARATOR, errList));
@@ -84,8 +75,8 @@ public class CommandUtil {
 
         try (InputStream stdStream = process.getInputStream();
                 InputStream errStream = process.getErrorStream()) {
-            Thread stdThread = new Thread(new CollectLogRunnable(stdStream, STD, logConsumer));
-            Thread errThread = new Thread(new CollectLogRunnable(errStream, ERR, logConsumer));
+            Thread stdThread = Thread.ofVirtual().unstarted(new CollectLogRunnable(stdStream, STD, logConsumer));
+            Thread errThread = Thread.ofVirtual().unstarted(new CollectLogRunnable(errStream, ERR, logConsumer));
 
             try {
                 stdThread.start();
@@ -128,43 +119,35 @@ public class CommandUtil {
             return;
         }
 
-        Process process = null;
+        ProcessHandle.of(processId).ifPresent(CommandUtil::recursiveForceKill);
+    }
+
+    private static void recursiveForceKill(ProcessHandle handle) {
+        ProcessHandle[] children = handle.children().toArray(ProcessHandle[]::new);
+
         try {
-            String command = String.format("kill -9 %d", processId);
-            process = Runtime.getRuntime().exec(command, new String[0]);
-            process.waitFor();
-        } catch (Exception e) {
-            log.error("force kill process {} failed, envs: {}", processId, new String[0]);
-        } finally {
-            if (process != null) {
-                process.destroy();
-            }
+            handle.destroyForcibly();
+        } catch (Throwable t) {
+            log.error("Destroy process: {} failed", handle.pid(), t);
+        }
+
+        for (ProcessHandle child : children) {
+            recursiveForceKill(child);
         }
     }
 
     /** Get process id. */
     public static Long getProcessId(Process process) {
         try {
-            Field f = process.getClass().getDeclaredField(Constant.PID);
-            f.setAccessible(true);
-
-            int processId;
-            if (OSUtil.isWindows()) {
-                WinNT.HANDLE handle = (WinNT.HANDLE) f.get(process);
-                processId = Kernel32.INSTANCE.GetProcessId(handle);
-            } else {
-                processId = f.getInt(process);
-            }
-
-            return (long) processId;
+            return process.pid();
         } catch (Throwable e) {
-            log.error(e.getMessage(), e);
+            log.error("Get process id failed", e);
             return null;
         }
     }
 
     public static Long[] getSubprocessIds(Process process) {
-        return new Long[0];
+        return process.children().map(ProcessHandle::pid).toArray(Long[]::new);
     }
 
     public static String commandDriver() {

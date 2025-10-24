@@ -1,8 +1,10 @@
 package com.flink.platform.plugin.apollo;
 
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
-/** namespace data. */
+/**
+ * namespace data.
+ */
 public interface NamespaceBean {
 
     @Nonnull

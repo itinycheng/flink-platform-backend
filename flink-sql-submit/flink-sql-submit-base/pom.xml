@@ -29,5 +29,11 @@
 			<artifactId>flink-platform-udf</artifactId>
 			<version>${project.version}</version>
 		</dependency>
+		<!-- provided dependencies for compile -->
+		<dependency>
+			<groupId>org.apache.hadoop</groupId>
+			<artifactId>hadoop-client</artifactId>
+			<scope>${scope.provided}</scope>
+		</dependency>
 	</dependencies>
 </project>

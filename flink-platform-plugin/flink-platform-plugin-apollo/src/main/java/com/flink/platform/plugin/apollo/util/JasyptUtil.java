@@ -2,7 +2,9 @@ package com.flink.platform.plugin.apollo.util;
 
 import org.jasypt.intf.service.JasyptStatelessService;
 
-/** Jasypt utils. */
+/**
+ * Jasypt utils.
+ */
 public class JasyptUtil {
 
     private static final String ENCRYPTED_VALUE_PREFIX = "ENC(";
@@ -11,7 +13,9 @@ public class JasyptUtil {
 
     private static final JasyptStatelessService SERVICE = new JasyptStatelessService();
 
-    /** decrypt. */
+    /**
+     * decrypt.
+     */
     public static String decrypt(String wrappedInput, String password) {
         return SERVICE.decrypt(
                 getEncryptedValue(wrappedInput),
@@ -41,13 +45,13 @@ public class JasyptUtil {
                 null);
     }
 
-    /** encrypt. */
+    /**
+     * encrypt.
+     */
     public static String encrypt(String input, String password) {
-        String encrypt =
-                SERVICE.encrypt(
-                        input, password, null, null, null, null, null, null, null, null, null, null,
-                        null, null, null, null, null, null, null, null, null, null, null, null,
-                        null);
+        String encrypt = SERVICE.encrypt(
+                input, password, null, null, null, null, null, null, null, null, null, null, null, null, null, null,
+                null, null, null, null, null, null, null, null, null);
         return ENCRYPTED_VALUE_PREFIX + encrypt + ENCRYPTED_VALUE_SUFFIX;
     }
 
@@ -57,8 +61,7 @@ public class JasyptUtil {
         }
 
         final String trimmed = value.trim();
-        return trimmed.startsWith(ENCRYPTED_VALUE_PREFIX)
-                && trimmed.endsWith(ENCRYPTED_VALUE_SUFFIX);
+        return trimmed.startsWith(ENCRYPTED_VALUE_PREFIX) && trimmed.endsWith(ENCRYPTED_VALUE_SUFFIX);
     }
 
     private static String getEncryptedValue(final String value) {

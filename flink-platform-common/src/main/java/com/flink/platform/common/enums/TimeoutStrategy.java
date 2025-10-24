@@ -1,6 +1,8 @@
 package com.flink.platform.common.enums;
 
-/** Timeout strategy. */
+/**
+ * Timeout strategy.
+ */
 public enum TimeoutStrategy {
     ALARM,
     FAILURE

@@ -1,6 +1,7 @@
 package com.flink.platform.web.common;
 
 import com.flink.platform.web.util.ThreadUtil;
+import jakarta.annotation.Nonnull;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeansException;
@@ -8,8 +9,6 @@ import org.springframework.beans.factory.DisposableBean;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.stereotype.Component;
-
-import javax.annotation.Nonnull;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -20,12 +19,17 @@ import java.util.List;
 public class SpringContext implements ApplicationContextAware, DisposableBean {
 
     /** Spring application context. */
-    @Getter private static ApplicationContext applicationContext;
+    @Getter
+    private static ApplicationContext applicationContext;
+
+    @Getter
+    private static String applicationName;
 
     /** set application context. */
     @Override
     public void setApplicationContext(@Nonnull ApplicationContext applicationContext) {
         SpringContext.applicationContext = applicationContext;
+        applicationName = applicationContext.getEnvironment().getProperty("spring.application.name");
     }
 
     /** get bean from applicationContext. */
@@ -66,5 +70,6 @@ public class SpringContext implements ApplicationContextAware, DisposableBean {
     public void destroy() throws Exception {
         log.info("Clean ApplicationContext instance in SpringContext class");
         applicationContext = null;
+        applicationName = null;
     }
 }

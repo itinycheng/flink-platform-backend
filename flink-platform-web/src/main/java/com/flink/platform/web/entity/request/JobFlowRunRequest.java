@@ -10,7 +10,8 @@ import lombok.experimental.Delegate;
 @NoArgsConstructor
 public class JobFlowRunRequest {
 
-    @Delegate private final JobFlowRun jobFlowRun = new JobFlowRun();
+    @Delegate
+    private final JobFlowRun jobFlowRun = new JobFlowRun();
 
     public String validateOnUpdate() {
         return verifyId();

@@ -46,11 +46,10 @@ public class FlinkCommand extends JobCommand {
             command.append(optionArgs).append(LINE_SEPARATOR);
         }
         configs.forEach((k, v) -> command.append(String.format("-D%s=%s" + LINE_SEPARATOR, k, v)));
-        classpaths.forEach(
-                classpath -> command.append(String.format("-C %s" + LINE_SEPARATOR, classpath)));
+        classpaths.forEach(classpath -> command.append(String.format("-C %s" + LINE_SEPARATOR, classpath)));
         command.append(String.format("-c %s" + LINE_SEPARATOR, mainClass))
                 .append(String.format("%s" + LINE_SEPARATOR, mainJar))
-                .append(String.format(" %s ", StringUtils.defaultString(mainArgs, "")));
+                .append(" %s ".formatted(StringUtils.defaultString(mainArgs, "")));
         return command.toString();
     }
 }

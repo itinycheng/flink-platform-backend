@@ -1,17 +1,17 @@
 package com.flink.platform.common.test;
 
 import com.flink.platform.common.enums.SqlType;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.stream.Stream;
 
 /** sql type test. */
-public class SqlTypeTest {
+class SqlTypeTest {
 
     @Test
-    public void test0() {
+    void test0() {
         System.out.println(SqlType.parse("select  \n * from table "));
         System.out.println(SqlType.parse("insert into \n table select "));
         System.out.println(SqlType.parse("insert \n overwrite     "));
@@ -20,7 +20,7 @@ public class SqlTypeTest {
     }
 
     @Test
-    public void test1() {
+    void test1() {
         System.out.println(SqlType.parse("create  \n database \n test   "));
         System.out.println(SqlType.parse("create  \n table \n test   "));
         System.out.println(SqlType.parse("create table \n test   "));
@@ -40,7 +40,7 @@ public class SqlTypeTest {
     }
 
     @Test
-    public void test2() {
+    void test2() {
         System.out.println(SqlType.parse("drop\n database \n db"));
         System.out.println(SqlType.parse("drop\n table \n tab"));
         System.out.println(SqlType.parse("drop\n temporary \n view v"));
@@ -52,7 +52,7 @@ public class SqlTypeTest {
     }
 
     @Test
-    public void test3() {
+    void test3() {
         System.out.println(SqlType.parse("alter\n database \n db"));
         System.out.println(SqlType.parse("alter\n table \n tb"));
         System.out.println(SqlType.parse("alter\n temporary \n function f"));
@@ -61,12 +61,12 @@ public class SqlTypeTest {
     }
 
     @Test
-    public void test4() {
+    void test4() {
         Stream.iterate(0, i -> i + 1).limit(3).forEach(System.out::println);
     }
 
     @Test
-    public void test5() {
+    void test5() {
         System.out.println(SqlType.parse("show  catalogs "));
         System.out.println(SqlType.parse("show  \n  databases "));
         System.out.println(SqlType.parse("show tables   "));
@@ -78,13 +78,13 @@ public class SqlTypeTest {
     }
 
     @Test
-    public void test6() {
+    void test6() {
         System.out.println(SqlType.parse("set  \n a =  b   "));
         System.out.println("~end6~");
     }
 
     @Test
-    public void test7() {
+    void test7() {
         Map<Integer, String> map = new TreeMap<>();
         map.put(1, "1");
         map.put(0, "0");
@@ -93,7 +93,7 @@ public class SqlTypeTest {
     }
 
     @Test
-    public void test8() {
+    void test8() {
         System.out.println(SqlType.parse("select  \n * from table limit 10"));
         System.out.println(SqlType.parse("select  \n * from table limit \n   10000"));
         System.out.println(SqlType.parse("select  \n * from table limit 2,  10000"));

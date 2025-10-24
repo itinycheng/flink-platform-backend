@@ -3,8 +3,7 @@ package com.flink.platform.web.command;
 import com.flink.platform.common.enums.JobType;
 import com.flink.platform.dao.entity.result.JobCallback;
 import com.flink.platform.web.common.ValueSortedMap;
-
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 import static com.flink.platform.common.enums.ExecutionStatus.KILLABLE;
 import static com.flink.platform.common.enums.ExecutionStatus.KILLED;
@@ -17,7 +16,9 @@ public interface CommandExecutor {
     @SuppressWarnings("unused")
     CommandMonitor MONITOR = new CommandMonitor(RUNNING_MAP).start();
 
-    /** whether support. */
+    /**
+     * whether support.
+     */
     boolean isSupported(JobType jobType);
 
     @Nonnull
@@ -39,18 +40,19 @@ public interface CommandExecutor {
     default void kill(long jobRunId) {
         JobCommand jobCommand = RUNNING_MAP.get(jobRunId);
         if (jobCommand == null) {
-            jobCommand =
-                    new JobCommand(jobRunId) {
-                        @Override
-                        public String toCommandString() {
-                            return "no class matched";
-                        }
-                    };
+            jobCommand = new JobCommand(jobRunId) {
+                @Override
+                public String toCommandString() {
+                    return "no class matched";
+                }
+            };
         }
         killCommand(jobCommand);
     }
 
-    /** execute command. */
+    /**
+     * execute command.
+     */
     @Nonnull
     JobCallback execCommand(@Nonnull JobCommand command) throws Exception;
 

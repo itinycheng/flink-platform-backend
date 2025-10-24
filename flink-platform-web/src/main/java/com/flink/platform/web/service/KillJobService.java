@@ -37,24 +37,23 @@ public class KillJobService {
 
     private final JobFlowRunService jobFlowRunService;
 
-    /** Get unfinished jobs and kill them concurrently. */
+    /**
+     * Get unfinished jobs and kill them concurrently.
+     */
     public boolean killRemoteFlow(Long userId, Long flowRunId) {
-        List<JobRunInfo> jobRunList =
-                jobRunInfoService.list(
-                        new QueryWrapper<JobRunInfo>()
-                                .lambda()
-                                .select(JobRunInfo::getId, JobRunInfo::getHost)
-                                .eq(JobRunInfo::getFlowRunId, flowRunId)
-                                .eq(JobRunInfo::getUserId, userId)
-                                .in(JobRunInfo::getStatus, getNonTerminals()));
+        List<JobRunInfo> jobRunList = jobRunInfoService.list(new QueryWrapper<JobRunInfo>()
+                .lambda()
+                .select(JobRunInfo::getId, JobRunInfo::getHost)
+                .eq(JobRunInfo::getFlowRunId, flowRunId)
+                .eq(JobRunInfo::getUserId, userId)
+                .in(JobRunInfo::getStatus, getNonTerminals()));
         if (CollectionUtils.isEmpty(jobRunList)) {
             jobFlowRunService.updateStatusById(flowRunId, KILLED);
             return true;
         }
 
         jobFlowRunService.updateStatusById(flowRunId, KILLABLE);
-        return jobRunList
-                .parallelStream()
+        return jobRunList.parallelStream()
                 .map(this::attemptToKillJob)
                 .reduce((bool1, bool2) -> bool1 && bool2)
                 .orElse(false);
@@ -70,13 +69,11 @@ public class KillJobService {
     }
 
     public void killJob(final long jobRunId) {
-        JobRunInfo jobRun =
-                jobRunInfoService.getOne(
-                        new QueryWrapper<JobRunInfo>()
-                                .lambda()
-                                .select(JobRunInfo::getType)
-                                .eq(JobRunInfo::getId, jobRunId)
-                                .in(JobRunInfo::getStatus, getNonTerminals()));
+        JobRunInfo jobRun = jobRunInfoService.getOne(new QueryWrapper<JobRunInfo>()
+                .lambda()
+                .select(JobRunInfo::getType)
+                .eq(JobRunInfo::getId, jobRunId)
+                .in(JobRunInfo::getStatus, getNonTerminals()));
         if (jobRun == null) {
             return;
         }
@@ -89,12 +86,10 @@ public class KillJobService {
                 .orElseThrow(() -> new UnrecoverableException("No available job command executor"))
                 .kill(jobRunId);
 
-        jobRun =
-                jobRunInfoService.getOne(
-                        new QueryWrapper<JobRunInfo>()
-                                .lambda()
-                                .select(JobRunInfo::getStatus)
-                                .eq(JobRunInfo::getId, jobRunId));
+        jobRun = jobRunInfoService.getOne(new QueryWrapper<JobRunInfo>()
+                .lambda()
+                .select(JobRunInfo::getStatus)
+                .eq(JobRunInfo::getId, jobRunId));
 
         // set status to KILLED
         // Better in a transaction with serializable isolation level.
@@ -113,7 +108,8 @@ public class KillJobService {
     private boolean killRemoteJob(JobRunInfo jobRun) {
         String host = jobRun.getHost();
         JobGrpcServiceGrpc.JobGrpcServiceBlockingStub stub = jobGrpcClient.grpcClient(host);
-        KillJobRequest request = KillJobRequest.newBuilder().setJobRunId(jobRun.getId()).build();
+        KillJobRequest request =
+                KillJobRequest.newBuilder().setJobRunId(jobRun.getId()).build();
         stub.killJob(request);
         return true;
     }

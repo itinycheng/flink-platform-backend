@@ -54,35 +54,23 @@ public class ReactiveService {
 
     @Autowired
     public ReactiveService(
-            WorkerConfig workerConfig,
-            List<CommandBuilder> commandBuilders,
-            JobRunExtraService jobRunExtraService) {
+            WorkerConfig workerConfig, List<CommandBuilder> commandBuilders, JobRunExtraService jobRunExtraService) {
         this.workerConfig = workerConfig;
         this.commandBuilders = commandBuilders;
         this.jobRunExtraService = jobRunExtraService;
-        this.executor =
-                ThreadUtil.newDaemonFixedThreadExecutor(
-                        "Reactive-job", workerConfig.getReactiveExecThreads());
+        this.executor = ThreadUtil.newDaemonFixedThreadExecutor("Reactive-job", workerConfig.getReactiveExecThreads());
         this.cmdOutputBufferMap = new ConcurrentHashMap<>();
     }
 
-    public ReactiveExecVo execFlink(String execId, JobInfo jobInfo, String[] envProps)
-            throws Exception {
+    public ReactiveExecVo execFlink(String execId, JobInfo jobInfo, String[] envProps) throws Exception {
         JobRunInfo jobRun = jobRunExtraService.createFrom(jobInfo, null, Constant.HOST_IP);
         jobRun.setId(0L);
-        String command =
-                commandBuilders.stream()
-                        .filter(
-                                builder ->
-                                        builder.isSupported(
-                                                jobInfo.getType(), jobInfo.getVersion()))
-                        .findFirst()
-                        .orElseThrow(
-                                () ->
-                                        new UnrecoverableException(
-                                                "No available job command builder"))
-                        .buildCommand(null, jobRun)
-                        .toCommandString();
+        String command = commandBuilders.stream()
+                .filter(builder -> builder.isSupported(jobInfo.getType(), jobInfo.getVersion()))
+                .findFirst()
+                .orElseThrow(() -> new UnrecoverableException("No available job command builder"))
+                .buildCommand(null, jobRun)
+                .toCommandString();
 
         CompletableFuture.runAsync(
                         () -> {
@@ -97,28 +85,25 @@ public class ReactiveService {
                             }
                         },
                         executor)
-                .whenComplete(
-                        (unused, throwable) -> {
-                            try {
-                                ThreadUtil.sleep(5000);
-                            } finally {
-                                cmdOutputBufferMap.remove(execId);
-                            }
-                        });
+                .whenComplete((unused, throwable) -> {
+                    try {
+                        ThreadUtil.sleep(5000);
+                    } finally {
+                        cmdOutputBufferMap.remove(execId);
+                    }
+                });
 
         return new ReactiveExecVo(execId);
     }
 
-    public ReactiveDataVo execSql(String execId, JobInfo jobInfo, Datasource datasource)
-            throws Exception {
+    public ReactiveDataVo execSql(String execId, JobInfo jobInfo, Datasource datasource) throws Exception {
         List<Sql> sqls = SqlUtil.convertToSqls(jobInfo.getSubject());
         if (sqls.size() != 1) {
             throw new RuntimeException("Only one sql can be executed at a time");
         }
 
-        String statement = sqls.get(0).toSqlString();
-        try (Connection connection =
-                        createConnection(datasource.getType(), datasource.getParams());
+        String statement = sqls.getFirst().toSqlString();
+        try (Connection connection = createConnection(datasource.getType(), datasource.getParams());
                 Statement stmt = connection.createStatement()) {
             String[] columnNames;
             List<Object[]> dataList = new ArrayList<>();
@@ -188,13 +173,12 @@ public class ReactiveService {
     private Object toJavaObject(DbType dbType, Object dbObject) throws Exception {
         switch (dbType) {
             case CLICKHOUSE:
-                if (dbObject instanceof Array) {
-                    Object objectArray = ((Array) dbObject).getArray();
+                if (dbObject instanceof Array array) {
+                    Object objectArray = array.getArray();
                     int arrayLength = java.lang.reflect.Array.getLength(objectArray);
                     Object[] javaObjectArray = new Object[arrayLength];
                     for (int i = 0; i < arrayLength; i++) {
-                        javaObjectArray[i] =
-                                toJavaObject(dbType, java.lang.reflect.Array.get(objectArray, i));
+                        javaObjectArray[i] = toJavaObject(dbType, java.lang.reflect.Array.get(objectArray, i));
                     }
                     return javaObjectArray;
                 } else {

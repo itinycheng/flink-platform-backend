@@ -3,11 +3,10 @@ package com.flink.platform.web.service;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.flink.platform.dao.entity.JobFlowRun;
 import com.flink.platform.dao.service.JobFlowRunService;
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-
-import javax.annotation.PostConstruct;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -27,20 +26,18 @@ public class InitJobFlowScheduler {
 
     @PostConstruct
     public void init() {
-        CompletableFuture.runAsync(
-                () -> {
-                    quartzService.waitForStarted();
-                    appendOwnedJobFlowRunToScheduler();
-                });
+        CompletableFuture.runAsync(() -> {
+            quartzService.waitForStarted();
+            appendOwnedJobFlowRunToScheduler();
+        });
     }
 
     public void appendOwnedJobFlowRunToScheduler() {
         jobFlowRunService
-                .list(
-                        new QueryWrapper<JobFlowRun>()
-                                .lambda()
-                                .eq(JobFlowRun::getHost, HOST_IP)
-                                .in(JobFlowRun::getStatus, getNonTerminals()))
+                .list(new QueryWrapper<JobFlowRun>()
+                        .lambda()
+                        .eq(JobFlowRun::getHost, HOST_IP)
+                        .in(JobFlowRun::getStatus, getNonTerminals()))
                 .forEach(jobFlowScheduleService::registerToScheduler);
     }
 }

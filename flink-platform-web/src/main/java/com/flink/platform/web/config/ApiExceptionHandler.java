@@ -20,12 +20,11 @@ public class ApiExceptionHandler {
 
     @ExceptionHandler(value = Exception.class)
     public ResultInfo<Object> exceptionHandler(Exception e) {
-        if (e instanceof UncaughtException) {
-            throw (UncaughtException) e;
+        if (e instanceof UncaughtException exception) {
+            throw exception;
         }
 
-        if (e instanceof DefinitionException) {
-            DefinitionException exception = (DefinitionException) e;
+        if (e instanceof DefinitionException exception) {
             return failure(exception.getStatus());
         }
 

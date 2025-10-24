@@ -12,6 +12,7 @@ import com.flink.platform.dao.service.UserService;
 import com.flink.platform.dao.service.WorkerService;
 import com.flink.platform.web.entity.request.UserRequest;
 import com.flink.platform.web.entity.response.ResultInfo;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -24,8 +25,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-
-import javax.servlet.http.HttpServletRequest;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -59,8 +58,7 @@ public class UserController {
 
     @PostMapping(value = "/create")
     public ResultInfo<Long> create(
-            @RequestAttribute(value = Constant.SESSION_USER) User loginUser,
-            @RequestBody UserRequest userRequest) {
+            @RequestAttribute(value = Constant.SESSION_USER) User loginUser, @RequestBody UserRequest userRequest) {
         String errorMsg = userRequest.validateOnCreate();
         if (StringUtils.isNotBlank(errorMsg)) {
             return failure(ERROR_PARAMETER, errorMsg);
@@ -78,15 +76,13 @@ public class UserController {
 
     @PostMapping(value = "/update")
     public ResultInfo<Long> update(
-            @RequestAttribute(value = Constant.SESSION_USER) User loginUser,
-            @RequestBody UserRequest userRequest) {
+            @RequestAttribute(value = Constant.SESSION_USER) User loginUser, @RequestBody UserRequest userRequest) {
         String errorMsg = userRequest.validateOnUpdate();
         if (StringUtils.isNotBlank(errorMsg)) {
             return failure(ERROR_PARAMETER, errorMsg);
         }
 
-        if (!Objects.equals(userRequest.getId(), loginUser.getId())
-                && loginUser.getType() != ADMIN) {
+        if (!Objects.equals(userRequest.getId(), loginUser.getId()) && loginUser.getType() != ADMIN) {
             return failure(USER_HAVE_NO_PERMISSION);
         }
 
@@ -102,9 +98,7 @@ public class UserController {
             @RequestParam(name = "size", required = false, defaultValue = "20") Integer size,
             @RequestParam(name = "name", required = false) String name) {
         LambdaQueryWrapper<User> queryWrapper =
-                new QueryWrapper<User>()
-                        .lambda()
-                        .like(Objects.nonNull(name), User::getUsername, name);
+                new QueryWrapper<User>().lambda().like(Objects.nonNull(name), User::getUsername, name);
 
         if (loginUser.getType() != ADMIN) {
             queryWrapper.eq(User::getId, loginUser.getId());
@@ -126,20 +120,17 @@ public class UserController {
     }
 
     @GetMapping(value = "/workers")
-    public ResultInfo<List<Worker>> workers(
-            @RequestAttribute(value = Constant.SESSION_USER) User loginUser) {
+    public ResultInfo<List<Worker>> workers(@RequestAttribute(value = Constant.SESSION_USER) User loginUser) {
         User user = userService.getById(loginUser.getId());
         LongArrayList workerIdList = user.getWorkers();
         if (CollectionUtils.isEmpty(workerIdList)) {
             return success(Collections.emptyList());
         }
 
-        List<Worker> list =
-                workerService.list(
-                        new QueryWrapper<Worker>()
-                                .lambda()
-                                .in(Worker::getId, workerIdList)
-                                .ne(Worker::getRole, INACTIVE));
+        List<Worker> list = workerService.list(new QueryWrapper<Worker>()
+                .lambda()
+                .in(Worker::getId, workerIdList)
+                .ne(Worker::getRole, INACTIVE));
         return success(list);
     }
 }

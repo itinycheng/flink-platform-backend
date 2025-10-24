@@ -23,8 +23,9 @@ public class DependentJob extends BaseJob {
 
     /**
      * dependent item. <br>
-     * trigger sequence: $prev < $cur <= now < $next; It's easy to figure out $next. $prev is the
-     * second element in front of $next.
+     * trigger sequence: $prev < $cur <= now < $next;
+     * It's easy to figure out $next.
+     * $prev is the second element in front of $next.
      */
     @Data
     @NoArgsConstructor

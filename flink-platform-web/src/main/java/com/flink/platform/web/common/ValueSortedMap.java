@@ -9,7 +9,9 @@ import java.util.TreeSet;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-/** Value sorted map, thread safety. */
+/**
+ * Value sorted map, thread safety.
+ */
 @Getter
 public class ValueSortedMap<K, V extends Comparable<V>> {
 

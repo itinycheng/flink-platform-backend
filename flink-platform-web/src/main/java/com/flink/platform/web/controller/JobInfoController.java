@@ -119,28 +119,20 @@ public class JobInfoController {
             @RequestParam(name = "flowId", required = false) Long flowId,
             @RequestParam(name = "name", required = false) String name,
             @RequestParam(name = "status", required = false) JobStatus status,
-            @RequestParam(name = "includeJobRuns", required = false, defaultValue = "false")
-                    boolean includeJobRuns,
+            @RequestParam(name = "includeJobRuns", required = false, defaultValue = "false") boolean includeJobRuns,
             @RequestParam(name = "excludeJobsInFlow", required = false, defaultValue = "false")
                     boolean excludeJobsInFlow,
-            @DateTimeFormat(pattern = GLOBAL_DATE_TIME_FORMAT)
-                    @RequestParam(name = "startTime", required = false)
+            @DateTimeFormat(pattern = GLOBAL_DATE_TIME_FORMAT) @RequestParam(name = "startTime", required = false)
                     LocalDateTime startTime,
-            @DateTimeFormat(pattern = GLOBAL_DATE_TIME_FORMAT)
-                    @RequestParam(name = "endTime", required = false)
+            @DateTimeFormat(pattern = GLOBAL_DATE_TIME_FORMAT) @RequestParam(name = "endTime", required = false)
                     LocalDateTime endTime,
             @RequestParam(name = "sort", required = false) String sort) {
-        LambdaQueryWrapper<JobInfo> queryWrapper =
-                new QueryWrapper<JobInfo>()
-                        .lambda()
-                        .eq(nonNull(id), JobInfo::getId, id)
-                        .eq(nonNull(flowId), JobInfo::getFlowId, flowId)
-                        .like(nonNull(name), JobInfo::getName, name)
-                        .between(
-                                nonNull(startTime) && nonNull(endTime),
-                                JobInfo::getCreateTime,
-                                startTime,
-                                endTime);
+        LambdaQueryWrapper<JobInfo> queryWrapper = new QueryWrapper<JobInfo>()
+                .lambda()
+                .eq(nonNull(id), JobInfo::getId, id)
+                .eq(nonNull(flowId), JobInfo::getFlowId, flowId)
+                .like(nonNull(name), JobInfo::getName, name)
+                .between(nonNull(startTime) && nonNull(endTime), JobInfo::getCreateTime, startTime, endTime);
 
         if (status != null) {
             queryWrapper.eq(JobInfo::getStatus, status);
@@ -164,19 +156,16 @@ public class JobInfoController {
         // Add jobRun info.
         if (includeJobRuns && CollectionUtils.isNotEmpty(result.getRecords())) {
             List<Long> jobIds = result.getRecords().stream().map(JobInfo::getId).collect(toList());
-            Map<Long, JobRunInfo> runningJobsMap =
-                    jobRunService.listLastWithoutLargeFields(null, jobIds).stream()
-                            .collect(toMap(JobRunInfo::getJobId, jobRun -> jobRun));
-            result.getRecords()
-                    .forEach(
-                            job -> {
-                                JobRunInfo jobRun = runningJobsMap.get(job.getId());
-                                if (jobRun != null) {
-                                    job.setJobRunId(jobRun.getId());
-                                    job.setJobRunStatus(jobRun.getStatus());
-                                    job.setFlowRunId(jobRun.getFlowRunId());
-                                }
-                            });
+            Map<Long, JobRunInfo> runningJobsMap = jobRunService.listLastWithoutLargeFields(null, jobIds).stream()
+                    .collect(toMap(JobRunInfo::getJobId, jobRun -> jobRun));
+            result.getRecords().forEach(job -> {
+                JobRunInfo jobRun = runningJobsMap.get(job.getId());
+                if (jobRun != null) {
+                    job.setJobRunId(jobRun.getId());
+                    job.setJobRunStatus(jobRun.getStatus());
+                    job.setFlowRunId(jobRun.getFlowRunId());
+                }
+            });
         }
 
         return success(result);
@@ -191,15 +180,11 @@ public class JobInfoController {
             jobIds = getJobIdsInFlow(flowId);
         }
 
-        List<JobInfo> list =
-                jobInfoService.list(
-                        new QueryWrapper<JobInfo>()
-                                .lambda()
-                                .select(
-                                        JobInfo.class,
-                                        field -> !LARGE_FIELDS.contains(field.getProperty()))
-                                .eq(JobInfo::getFlowId, flowId)
-                                .in(isNotEmpty(jobIds), JobInfo::getId, jobIds));
+        List<JobInfo> list = jobInfoService.list(new QueryWrapper<JobInfo>()
+                .lambda()
+                .select(JobInfo.class, field -> !LARGE_FIELDS.contains(field.getProperty()))
+                .eq(JobInfo::getFlowId, flowId)
+                .in(isNotEmpty(jobIds), JobInfo::getId, jobIds));
         return success(list);
     }
 
@@ -209,14 +194,10 @@ public class JobInfoController {
             return success(Collections.emptyList());
         }
 
-        List<JobInfo> jobs =
-                jobInfoService.list(
-                        new QueryWrapper<JobInfo>()
-                                .lambda()
-                                .select(
-                                        JobInfo.class,
-                                        field -> !LARGE_FIELDS.contains(field.getProperty()))
-                                .in(JobInfo::getId, ids));
+        List<JobInfo> jobs = jobInfoService.list(new QueryWrapper<JobInfo>()
+                .lambda()
+                .select(JobInfo.class, field -> !LARGE_FIELDS.contains(field.getProperty()))
+                .in(JobInfo::getId, ids));
         return success(jobs);
     }
 
@@ -228,13 +209,11 @@ public class JobInfoController {
             return failure(NOT_RUNNABLE_STATUS);
         }
 
-        JobRunInfo unfinishedJob =
-                jobRunService.getOne(
-                        new QueryWrapper<JobRunInfo>()
-                                .lambda()
-                                .eq(JobRunInfo::getJobId, jobId)
-                                .in(JobRunInfo::getStatus, getNonTerminals())
-                                .last("limit 1"));
+        JobRunInfo unfinishedJob = jobRunService.getOne(new QueryWrapper<JobRunInfo>()
+                .lambda()
+                .eq(JobRunInfo::getJobId, jobId)
+                .in(JobRunInfo::getStatus, getNonTerminals())
+                .last("limit 1"));
         if (unfinishedJob != null) {
             return failure(EXIST_UNFINISHED_PROCESS);
         }
@@ -264,8 +243,7 @@ public class JobInfoController {
 
     @GetMapping(value = "/purge/{jobId}")
     public ResultInfo<Long> purge(
-            @RequestAttribute(value = Constant.SESSION_USER) User loginUser,
-            @PathVariable long jobId) {
+            @RequestAttribute(value = Constant.SESSION_USER) User loginUser, @PathVariable long jobId) {
         JobInfo jobInfo = jobInfoService.getById(jobId);
         if (jobInfo == null) {
             return failure(ERROR_PARAMETER);

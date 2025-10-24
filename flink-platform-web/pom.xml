@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0"
-		 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-		 xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<parent>
 		<artifactId>flink-platform-backend</artifactId>
@@ -47,7 +47,7 @@
 		</dependency>
 		<dependency>
 			<groupId>com.flink.platform</groupId>
-			<artifactId>flink-platform-monitor</artifactId>
+			<artifactId>flink-platform-cron</artifactId>
 			<version>${project.version}</version>
 		</dependency>
 		<dependency>
@@ -90,10 +90,6 @@
 			<scope>test</scope>
 		</dependency>
 		<!-- spring end -->
-		<dependency>
-			<groupId>com.github.oshi</groupId>
-			<artifactId>oshi-core</artifactId>
-		</dependency>
 		<dependency>
 			<groupId>com.mysql</groupId>
 			<artifactId>mysql-connector-j</artifactId>
@@ -162,12 +158,23 @@
 							<resources>
 								<resource>
 									<targetPath>${basedir}/src/main/resources/static</targetPath>
-									<directory>${project.parent.basedir}/flink-platform-ui/frontend/dist</directory>
+									<directory>
+										${project.parent.basedir}/flink-platform-ui/frontend/dist
+									</directory>
 								</resource>
 							</resources>
 						</configuration>
 					</execution>
 				</executions>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<configuration>
+					<!-- https://github.com/spring-projects/spring-framework/issues/31675 -->
+					<!-- https://github.com/spring-projects/spring-framework/issues/31671 -->
+					<parameters>true</parameters>
+				</configuration>
 			</plugin>
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
@@ -180,7 +187,6 @@
 					</execution>
 				</executions>
 			</plugin>
-
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-assembly-plugin</artifactId>
@@ -195,7 +201,8 @@
 						<configuration>
 							<archive>
 								<manifest>
-									<mainClass>com.flink.platform.web.PlatformWebApplication</mainClass>
+									<mainClass>com.flink.platform.web.PlatformWebApplication
+									</mainClass>
 								</manifest>
 							</archive>
 							<descriptors>

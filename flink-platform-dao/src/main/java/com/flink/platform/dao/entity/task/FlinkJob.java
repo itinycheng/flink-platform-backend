@@ -30,6 +30,4 @@ public class FlinkJob extends BaseJob {
 
     /** main class. */
     private String mainClass;
-
-    private transient List<String> extJarPaths;
 }

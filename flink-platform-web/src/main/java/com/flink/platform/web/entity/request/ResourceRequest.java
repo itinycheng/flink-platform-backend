@@ -21,7 +21,8 @@ public class ResourceRequest {
 
     private static final Pattern NAME_PATTERN = Pattern.compile(NAME_REGEX);
 
-    @Delegate private final Resource resource = new Resource();
+    @Delegate
+    private final Resource resource = new Resource();
 
     public String validateOnCreate() {
         String msg = verifyName();

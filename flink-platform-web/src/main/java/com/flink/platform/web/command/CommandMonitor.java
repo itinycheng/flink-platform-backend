@@ -6,7 +6,6 @@ import com.flink.platform.web.common.ValueSortedMap;
 import com.flink.platform.web.service.KillJobService;
 import com.flink.platform.web.util.ThreadUtil;
 import lombok.extern.slf4j.Slf4j;
-import lombok.var;
 
 import java.time.LocalDateTime;
 import java.util.concurrent.ExecutorService;
@@ -14,7 +13,9 @@ import java.util.concurrent.ScheduledExecutorService;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
 
-/** Command monitor. */
+/**
+ * Command monitor.
+ */
 @Slf4j
 public class CommandMonitor {
 
@@ -58,11 +59,10 @@ public class CommandMonitor {
             this.service = SpringContext.waitFor(KillJobService.class);
         }
 
-        canceler.submit(
-                () -> {
-                    final var service = this.service;
-                    service.killJob(command.getJobRunId());
-                    runningJobMap.remove(command.getJobRunId());
-                });
+        canceler.submit(() -> {
+            final var service = this.service;
+            service.killJob(command.getJobRunId());
+            runningJobMap.remove(command.getJobRunId());
+        });
     }
 }

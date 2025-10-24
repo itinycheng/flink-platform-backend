@@ -21,9 +21,6 @@ import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Stream;
-
-import static java.util.stream.Collectors.toSet;
 
 /**
  * job config info. <br>
@@ -34,8 +31,7 @@ import static java.util.stream.Collectors.toSet;
 @TableName(value = "t_job", autoResultMap = true)
 public class JobInfo implements Serializable {
 
-    public static final Set<String> LARGE_FIELDS =
-            Stream.of("config", "variables", "subject").collect(toSet());
+    public static final Set<String> LARGE_FIELDS = Set.of("config", "variables", "subject");
 
     @TableId(value = "id", type = IdType.AUTO)
     private Long id;
@@ -76,8 +72,7 @@ public class JobInfo implements Serializable {
     private String subject;
 
     /**
-     * route url. <br>
-     * refer to: t_worker
+     * route url. <br> refer to: t_worker
      */
     @TableField(typeHandler = JacksonTypeHandler.class)
     private LongArrayList routeUrl;
@@ -98,11 +93,15 @@ public class JobInfo implements Serializable {
     @TableField(exist = false)
     private Long jobRunId;
 
-    /** flow run id. */
+    /**
+     * flow run id.
+     */
     @TableField(exist = false)
     private Long flowRunId;
 
-    /** job run status. */
+    /**
+     * job run status.
+     */
     @TableField(exist = false)
     private ExecutionStatus jobRunStatus;
 }

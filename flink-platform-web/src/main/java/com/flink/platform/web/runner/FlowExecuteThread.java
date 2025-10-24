@@ -14,10 +14,8 @@ import com.flink.platform.web.config.AppRunner;
 import com.flink.platform.web.config.WorkerConfig;
 import com.flink.platform.web.service.KillJobService;
 import com.flink.platform.web.util.ThreadUtil;
+import jakarta.annotation.Nonnull;
 import lombok.extern.slf4j.Slf4j;
-import lombok.var;
-
-import javax.annotation.Nonnull;
 
 import java.time.LocalDateTime;
 import java.util.Map;
@@ -33,8 +31,7 @@ import static com.flink.platform.common.enums.ExecutionStatus.RUNNING;
 @Slf4j
 public class FlowExecuteThread implements Runnable {
 
-    private static final ExecutorService jobExecService =
-            ThreadUtil.newVirtualThreadExecutor("JobExecuteThread");
+    private static final ExecutorService jobExecService = ThreadUtil.newVirtualThreadExecutor("JobExecuteThread");
 
     private final JobFlowRun jobFlowRun;
 
@@ -44,11 +41,9 @@ public class FlowExecuteThread implements Runnable {
 
     private final Map<Long, CompletableFuture<Void>> runningJobs = new ConcurrentHashMap<>();
 
-    private final JobFlowRunService jobFlowRunService =
-            SpringContext.getBean(JobFlowRunService.class);
+    private final JobFlowRunService jobFlowRunService = SpringContext.getBean(JobFlowRunService.class);
 
-    private final AlertSendingService alertSendingService =
-            SpringContext.getBean(AlertSendingService.class);
+    private final AlertSendingService alertSendingService = SpringContext.getBean(AlertSendingService.class);
 
     private final KillJobService killJobService = SpringContext.getBean(KillJobService.class);
 
@@ -106,13 +101,8 @@ public class FlowExecuteThread implements Runnable {
     private void handleTimeout(TimeoutStrategy[] strategies) {
         for (var strategy : strategies) {
             switch (strategy) {
-                case ALARM:
-                    alertSendingService.sendAlerts(jobFlowRun, "execution timeout");
-                    break;
-                case FAILURE:
-                    killJobService.killRemoteFlow(jobFlowRun.getUserId(), jobFlowRun.getId());
-                    break;
-                default:
+                case ALARM -> alertSendingService.sendAlerts(jobFlowRun, "execution timeout");
+                case FAILURE -> killJobService.killRemoteFlow(jobFlowRun.getUserId(), jobFlowRun.getId());
             }
         }
     }
@@ -131,8 +121,7 @@ public class FlowExecuteThread implements Runnable {
         alertSendingService.sendAlerts(jobFlowRun);
     }
 
-    // ! synchronized won't unmount the virtual thread, and thus block both its carrier and the
-    // underlying OS thread.
+    // ! synchronized won't unmount the virtual thread, and thus block both its carrier and the underlying OS thread.
     // ! This doesn't make an application incorrect, but it might hinder its scalability.
     private synchronized void execVertex(JobVertex jobVertex, JobFlowDag flow) {
         if (!isRunning || AppRunner.isStopped()) {
@@ -145,12 +134,9 @@ public class FlowExecuteThread implements Runnable {
         }
 
         Supplier<JobResponse> runnable =
-                new SemaphoreSupplier(
-                        semaphore,
-                        new JobExecuteThread(jobFlowRun.getId(), jobVertex, workerConfig));
-        CompletableFuture<Void> jobVertexFuture =
-                CompletableFuture.supplyAsync(runnable, jobExecService)
-                        .thenAccept(response -> handleResponse(response, jobVertex, flow));
+                new SemaphoreSupplier(semaphore, new JobExecuteThread(jobFlowRun.getId(), jobVertex, workerConfig));
+        CompletableFuture<Void> jobVertexFuture = CompletableFuture.supplyAsync(runnable, jobExecService)
+                .thenAccept(response -> handleResponse(response, jobVertex, flow));
         runningJobs.put(jobVertex.getId(), jobVertexFuture);
     }
 

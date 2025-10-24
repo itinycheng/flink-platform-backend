@@ -13,13 +13,19 @@ public abstract class JobCommand implements Comparable<JobCommand> {
 
     protected AbstractTask task;
 
-    /** Set a timeout for the job, only used to transfer value to the task. */
+    /**
+     * Set a timeout for the job, only used to transfer value to the task.
+     */
     protected Duration timeout;
 
-    /** Set a time to stop the job, leave it null if no need to monitor and kill the job. */
+    /**
+     * Set a time to stop the job, leave it null if no need to monitor and kill the job.
+     */
     protected LocalDateTime expectedStopTime;
 
-    /** Compare the expected stop time first, then compare the job run id. */
+    /**
+     * Compare the expected stop time first, then compare the job run id.
+     */
     @Override
     public int compareTo(JobCommand o) {
         LocalDateTime t1 = this.expectedStopTime;

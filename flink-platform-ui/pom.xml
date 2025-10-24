@@ -1,6 +1,6 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0"
-		 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-		 xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<parent>
 		<groupId>com.flink.platform</groupId>
@@ -15,7 +15,7 @@
 	<url>http://maven.apache.org</url>
 
 	<properties>
-		<frontend-maven-plugin.version>1.15.0</frontend-maven-plugin.version>
+		<frontend-maven-plugin.version>1.15.4</frontend-maven-plugin.version>
 		<skip.frontend>false</skip.frontend>
 	</properties>
 
@@ -33,12 +33,14 @@
 				<executions>
 					<execution>
 						<id>install node and npm</id>
+						<phase>initialize</phase>
 						<goals>
 							<goal>install-node-and-npm</goal>
 						</goals>
 					</execution>
 					<execution>
 						<id>npm install</id>
+						<phase>generate-resources</phase>
 						<goals>
 							<goal>npm</goal>
 						</goals>
@@ -48,6 +50,7 @@
 					</execution>
 					<execution>
 						<id>npm run build</id>
+						<phase>compile</phase>
 						<goals>
 							<goal>npm</goal>
 						</goals>

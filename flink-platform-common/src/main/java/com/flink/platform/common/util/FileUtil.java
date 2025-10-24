@@ -7,23 +7,15 @@ import java.nio.file.Path;
 import java.nio.file.attribute.PosixFilePermissions;
 
 import static java.nio.file.StandardOpenOption.CREATE;
-import static java.nio.file.StandardOpenOption.SYNC;
 import static java.nio.file.StandardOpenOption.TRUNCATE_EXISTING;
 
 /** File utils. */
 public class FileUtil {
 
     public static void rewriteFile(Path file, String data) throws IOException {
-        Path parent = file.getParent();
-        if (!Files.exists(parent)) {
-            Files.createDirectories(parent);
-        }
-
-        if (!Files.exists(file)) {
-            Files.createFile(file);
-        }
-
-        Files.write(file, data.getBytes(StandardCharsets.UTF_8), CREATE, TRUNCATE_EXISTING, SYNC);
+        Files.createDirectories(file.getParent());
+        // TODO：this code is not atomic, consider using a temp file and then rename it.
+        Files.write(file, data.getBytes(StandardCharsets.UTF_8), CREATE, TRUNCATE_EXISTING);
     }
 
     public static void setPermissions(Path file, String permissions) throws IOException {

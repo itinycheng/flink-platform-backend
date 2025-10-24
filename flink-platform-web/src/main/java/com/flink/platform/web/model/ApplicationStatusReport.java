@@ -2,11 +2,9 @@ package com.flink.platform.web.model;
 
 import com.flink.platform.common.enums.ExecutionStatus;
 import com.flink.platform.web.util.YarnHelper;
+import jakarta.annotation.Nonnull;
 import lombok.Data;
-import lombok.var;
 import org.apache.hadoop.yarn.api.records.ApplicationReport;
-
-import javax.annotation.Nonnull;
 
 import static com.flink.platform.common.util.Preconditions.checkNotNull;
 

@@ -16,7 +16,8 @@ public class CollectLogRunnable implements Runnable {
 
     private static final AtomicInteger COUNTER = new AtomicInteger(0);
 
-    @Getter private final String name;
+    @Getter
+    private final String name;
 
     private final InputStream inputStream;
 
@@ -24,10 +25,7 @@ public class CollectLogRunnable implements Runnable {
 
     private final BiConsumer<CmdOutType, String> consumer;
 
-    public CollectLogRunnable(
-            InputStream inputStream,
-            CmdOutType inputType,
-            BiConsumer<CmdOutType, String> consumer) {
+    public CollectLogRunnable(InputStream inputStream, CmdOutType inputType, BiConsumer<CmdOutType, String> consumer) {
         this.name = "collect-stream-log-" + COUNTER.incrementAndGet();
         this.inputStream = inputStream;
         this.inputType = inputType;
@@ -36,8 +34,7 @@ public class CollectLogRunnable implements Runnable {
 
     @Override
     public void run() {
-        try (BufferedReader reader =
-                new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8))) {
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8))) {
             String line;
             while ((line = reader.readLine()) != null) {
                 consumer.accept(inputType, line);

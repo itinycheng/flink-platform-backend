@@ -5,6 +5,9 @@ import com.flink.platform.common.constants.Constant;
 import com.flink.platform.dao.entity.User;
 import com.flink.platform.dao.service.SessionService;
 import com.flink.platform.dao.service.UserService;
+import jakarta.annotation.Nonnull;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -12,10 +15,6 @@ import org.apache.http.HttpStatus;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerInterceptor;
-
-import javax.annotation.Nonnull;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 
 /** Login interceptor. */
 @Slf4j
@@ -29,9 +28,7 @@ public class LoginInterceptor implements HandlerInterceptor {
 
     @Override
     public boolean preHandle(
-            @Nonnull HttpServletRequest request,
-            @Nonnull HttpServletResponse response,
-            @Nonnull Object handler) {
+            @Nonnull HttpServletRequest request, @Nonnull HttpServletResponse response, @Nonnull Object handler) {
 
         // get token
         String token = request.getHeader("X-Token");
@@ -39,13 +36,11 @@ public class LoginInterceptor implements HandlerInterceptor {
             return false;
         }
 
-        User user =
-                userService.getOne(
-                        new QueryWrapper<User>()
-                                .lambda()
-                                .like(User::getEmail, token.trim())
-                                .orderByDesc(User::getId)
-                                .last("LIMIT 1"));
+        User user = userService.getOne(new QueryWrapper<User>()
+                .lambda()
+                .like(User::getEmail, token.trim())
+                .orderByDesc(User::getId)
+                .last("LIMIT 1"));
         if (user == null) {
             return false;
         }
