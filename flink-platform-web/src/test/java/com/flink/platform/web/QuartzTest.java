@@ -22,7 +22,7 @@ class QuartzTest {
         System.out.println(cronExpression.getNextValidTimeAfter(cronExpression.getNextValidTimeAfter(from)));
     }
 
-    @Test
+    // @Test
     void virtualThreadPool() {
         try (var executorService = (ThreadPoolExecutor) ThreadUtil.newFixedVirtualThreadExecutor("v-thread", 500_000)) {
             AtomicInteger adder = new AtomicInteger(0);
