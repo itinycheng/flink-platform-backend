@@ -20,7 +20,6 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 
 import static com.flink.platform.common.constants.Constant.GLOBAL_ZONE_ID;
-import static java.lang.String.format;
 
 /**
  * hdfs storage system.
@@ -195,7 +194,7 @@ public class HdfsStorageSystem implements StorageSystem {
         if (fs.mkdirs(basePath)) {
             log.info("storage base dir: {} created successfully.", storageBasePath);
         } else {
-            throw new RuntimeException(format("create storage base dir: %s failed.", storageBasePath));
+            throw new RuntimeException("create storage base dir: %s failed.".formatted(storageBasePath));
         }
 
         return normalizePath(storageBasePath);

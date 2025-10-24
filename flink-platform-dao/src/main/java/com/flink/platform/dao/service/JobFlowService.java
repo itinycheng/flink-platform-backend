@@ -25,7 +25,6 @@ import java.util.List;
 import static com.flink.platform.common.enums.JobFlowStatus.OFFLINE;
 import static com.flink.platform.common.enums.JobFlowStatus.ONLINE;
 import static com.flink.platform.common.enums.JobFlowType.JOB_LIST;
-import static java.lang.String.format;
 import static java.util.stream.Collectors.toList;
 import static org.apache.commons.collections4.CollectionUtils.isNotEmpty;
 
@@ -47,7 +46,7 @@ public class JobFlowService extends ServiceImpl<JobFlowMapper, JobFlow> {
         final var jobFlow = getById(flowId);
         jobFlow.setId(null);
 
-        var nameCopied = format("%s-copy_%d", jobFlow.getName(), System.currentTimeMillis());
+        var nameCopied = "%s-copy_%d".formatted(jobFlow.getName(), System.currentTimeMillis());
         jobFlow.setName(StringUtil.truncateByBytes(nameCopied, 64, true));
         jobFlow.setCode(UuidGenerator.generateShortUuid());
         jobFlow.setStatus(OFFLINE);
@@ -65,7 +64,7 @@ public class JobFlowService extends ServiceImpl<JobFlowMapper, JobFlow> {
             var jobInfo = jobInfoService.getById(vertex.getJobId());
             jobInfo.setId(null);
             jobInfo.setFlowId(jobFlow.getId());
-            jobInfo.setName(format("%s-copy", jobInfo.getName()));
+            jobInfo.setName("%s-copy".formatted(jobInfo.getName()));
             jobInfoService.save(jobInfo);
             newIdMap.put(vertex.getJobId(), jobInfo.getId());
         }
@@ -112,7 +111,7 @@ public class JobFlowService extends ServiceImpl<JobFlowMapper, JobFlow> {
                     .forEach(jobInfo -> {
                         jobInfo.setId(null);
                         jobInfo.setFlowId(jobFlow.getId());
-                        jobInfo.setName(format("%s-copy", jobInfo.getName()));
+                        jobInfo.setName("%s-copy".formatted(jobInfo.getName()));
                         jobInfoService.save(jobInfo);
                     });
         }

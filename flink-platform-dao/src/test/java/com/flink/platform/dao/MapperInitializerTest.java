@@ -1,6 +1,5 @@
 package com.flink.platform.dao;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.flink.platform.common.enums.ExecutionStatus;
 import com.flink.platform.common.util.JsonUtil;
@@ -8,13 +7,13 @@ import com.flink.platform.dao.entity.JobInfo;
 import com.flink.platform.dao.entity.JobRunInfo;
 import com.flink.platform.dao.entity.LongArrayList;
 import com.flink.platform.dao.entity.result.JobCallback;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /** Unit test for simple App. */
-public class MapperInitializerTest {
+class MapperInitializerTest {
     /** Rigorous Test :-). */
     @Test
-    public void shouldAnswerWithTrue() throws JsonProcessingException {
+    void shouldAnswerWithTrue() throws Exception {
         LongArrayList longs = new LongArrayList();
         longs.add(1L);
         longs.add(2L);
@@ -30,7 +29,7 @@ public class MapperInitializerTest {
     }
 
     @Test
-    public void testCallback() {
+    void callback() {
         JobRunInfo jobRunInfo = new JobRunInfo();
         JobCallback jobCallback = new JobCallback();
         jobCallback.setJobId("job_id");

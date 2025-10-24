@@ -83,8 +83,7 @@ public class ResourceManageService {
         var rootPath = storageService.getRootPath();
         storagePath = storageService.normalizePath(storagePath);
         if (!storagePath.startsWith(rootPath)) {
-            throw new IllegalArgumentException(
-                    String.format("storage path %s not in root path %s", storagePath, rootPath));
+            throw new IllegalArgumentException("storage path %s not in root path %s".formatted(storagePath, rootPath));
         }
 
         var storageSeparator = storageService.getFileSeparator();

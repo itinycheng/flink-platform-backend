@@ -22,7 +22,6 @@ import org.springframework.context.annotation.Lazy;
 
 import java.io.IOException;
 import java.net.URL;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -79,7 +78,7 @@ public abstract class FlinkCommandBuilder implements CommandBuilder {
 
         var deployMode = jobRun.getDeployMode();
         var command = new FlinkCommand(jobRun.getId(), deployMode);
-        var execMode = String.format(EXEC_MODE, deployMode.mode, deployMode.target);
+        var execMode = EXEC_MODE.formatted(deployMode.mode, deployMode.target);
         command.setPrefix(flinkConfig.getCommandPath() + execMode);
 
         // add configurations.
@@ -154,7 +153,7 @@ public abstract class FlinkCommandBuilder implements CommandBuilder {
         for (var extJar : extJarList) {
             var localPath = resourceManageService.copyFromStorageToLocal(extJar);
             copyToRemoteIfChanged(localPath, extJar);
-            jarUrls.add(Paths.get(localPath).toUri().toURL());
+            jarUrls.add(java.nio.file.Path.of(localPath).toUri().toURL());
         }
         return jarUrls;
     }
@@ -172,7 +171,7 @@ public abstract class FlinkCommandBuilder implements CommandBuilder {
         try {
             hadoopService.copyIfNewHdfsAndFileChanged(localFile, hdfsFile);
         } catch (Exception e) {
-            throw new RuntimeException(String.format("Copy %s from local to remote hdfs failed", localFile), e);
+            throw new RuntimeException("Copy %s from local to remote hdfs failed".formatted(localFile), e);
         }
     }
 
@@ -180,7 +179,7 @@ public abstract class FlinkCommandBuilder implements CommandBuilder {
         try {
             storageService.copyFileToLocalIfChanged(hdfsFile, localFile);
         } catch (Exception e) {
-            throw new RuntimeException(String.format("Copy %s from hdfs to local disk failed", hdfsFile), e);
+            throw new RuntimeException("Copy %s from hdfs to local disk failed".formatted(hdfsFile), e);
         }
     }
 

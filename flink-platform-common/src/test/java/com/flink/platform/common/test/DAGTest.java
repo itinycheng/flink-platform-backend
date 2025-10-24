@@ -3,13 +3,13 @@ package com.flink.platform.common.test;
 import com.flink.platform.common.graph.DAG;
 import com.flink.platform.common.graph.Edge;
 import com.flink.platform.common.graph.Vertex;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /** Junit test for DAG. */
-public class DAGTest {
+class DAGTest {
 
     @Test
-    public void test() {
+    void test() {
         DAG<Long, Vertex<Long>, Edge<Long>> dag = new DAG<>();
         dag.addVertex(new Vertex<>(1L));
         dag.addVertex(new Vertex<>(2L));

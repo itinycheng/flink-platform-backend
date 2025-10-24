@@ -43,7 +43,7 @@ public class SqlCommandBuilder implements CommandBuilder {
 
         if (sqlList.isEmpty()) {
             throw new CommandUnableGenException(
-                    String.format("No available sql or parsing failed, subject: %s", jobRun.getSubject()));
+                    "No available sql or parsing failed, subject: %s".formatted(jobRun.getSubject()));
         }
 
         SqlCommand sqlCommand = new SqlCommand(jobRun.getId(), sqlJob.getDsId(), sqlList);
