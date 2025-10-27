@@ -23,7 +23,6 @@ import java.util.Map;
 
 import static com.flink.platform.common.constants.Constant.EMPTY;
 import static com.flink.platform.common.constants.JobConstant.HADOOP_USER_NAME;
-import static com.flink.platform.common.enums.ExecutionStatus.FAILURE;
 import static com.flink.platform.common.enums.ExecutionStatus.SUBMITTED;
 import static com.flink.platform.common.enums.ExecutionStatus.SUCCESS;
 
@@ -74,29 +73,24 @@ public class FlinkCommandExecutor implements CommandExecutor {
             return new JobCallback(jobId, appId, null, callback, EMPTY, task.finalStatus());
         }
 
-        // Get the application report from Hadoop Yarn.
-        if (StringUtils.isNotEmpty(appId) && StringUtils.isNotEmpty(jobId)) {
-            var status = SUBMITTED;
-            var trackingUrl = EMPTY;
-            try {
-                var jobRunId = command.getJobRunId();
-                var applicationTag = YarnHelper.getApplicationTag(jobRunId);
-                var statusReport = hadoopService.getStatusReportWithRetry(applicationTag);
-                status = statusReport.getStatus();
-                trackingUrl = statusReport.getTrackingUrl();
-            } catch (Exception e) {
-                log.error("Failed to get ApplicationReport after command executed", e);
-            }
-            return new JobCallback(jobId, appId, trackingUrl, callback, EMPTY, status);
-        }
-
         // If both appId and jobId are empty, means that there is no need to submit task to Yarn.
         if (StringUtils.isEmpty(appId) && StringUtils.isEmpty(jobId)) {
             return new JobCallback(jobId, appId, EMPTY, callback, EMPTY, SUCCESS);
         }
 
-        // If one of appId and jobId is empty, means that there is a problem with the submitted task.
-        return new JobCallback(jobId, appId, EMPTY, callback, EMPTY, FAILURE);
+        // Get the application report from Hadoop Yarn.
+        var status = SUBMITTED;
+        var trackingUrl = EMPTY;
+        try {
+            var jobRunId = command.getJobRunId();
+            var applicationTag = YarnHelper.getApplicationTag(jobRunId);
+            var statusReport = hadoopService.getStatusReportWithRetry(applicationTag);
+            status = statusReport.getStatus();
+            trackingUrl = statusReport.getTrackingUrl();
+        } catch (Exception e) {
+            log.error("Failed to get ApplicationReport after command executed", e);
+        }
+        return new JobCallback(jobId, appId, trackingUrl, callback, EMPTY, status);
     }
 
     @Override
