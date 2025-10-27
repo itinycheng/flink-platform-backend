@@ -37,12 +37,12 @@ public class JobGrpcServer extends JobGrpcServiceGrpc.JobGrpcServiceImplBase {
     private final FlinkJobService flinkJobService;
 
     @Override
-    public void processJob(
-            ProcessJobRequest request, StreamObserver<ProcessJobReply> responseObserver) {
+    public void processJob(ProcessJobRequest request, StreamObserver<ProcessJobReply> responseObserver) {
         long jobRunId = request.getJobRunId();
         try {
             processJobService.processJob(jobRunId);
-            ProcessJobReply reply = ProcessJobReply.newBuilder().setJobRunId(jobRunId).build();
+            ProcessJobReply reply =
+                    ProcessJobReply.newBuilder().setJobRunId(jobRunId).build();
             responseObserver.onNext(reply);
         } catch (Exception e) {
             log.error("process job via grpc failed, jobRunId: {}", jobRunId, e);
@@ -52,8 +52,7 @@ public class JobGrpcServer extends JobGrpcServiceGrpc.JobGrpcServiceImplBase {
     }
 
     @Override
-    public void getJobStatus(
-            JobStatusRequest request, StreamObserver<JobStatusReply> responseObserver) {
+    public void getJobStatus(JobStatusRequest request, StreamObserver<JobStatusReply> responseObserver) {
         try {
             JobStatusReply reply = processJobStatusService.getStatus(request);
             responseObserver.onNext(reply);
@@ -79,12 +78,12 @@ public class JobGrpcServer extends JobGrpcServiceGrpc.JobGrpcServiceImplBase {
     }
 
     @Override
-    public void savepointJob(
-            SavepointRequest request, StreamObserver<SavepointReply> responseObserver) {
+    public void savepointJob(SavepointRequest request, StreamObserver<SavepointReply> responseObserver) {
         long jobRunId = request.getJobRunId();
         try {
             flinkJobService.savepoint(jobRunId);
-            SavepointReply reply = SavepointReply.newBuilder().setJobRunId(jobRunId).build();
+            SavepointReply reply =
+                    SavepointReply.newBuilder().setJobRunId(jobRunId).build();
             responseObserver.onNext(reply);
         } catch (Exception e) {
             log.error("flink job savepoint via grpc failed, jobRUnId: {}", jobRunId, e);
@@ -95,8 +94,6 @@ public class JobGrpcServer extends JobGrpcServiceGrpc.JobGrpcServiceImplBase {
 
     private Exception buildGrpcException(Exception e) {
         Status status = e instanceof UnrecoverableException ? Status.UNAVAILABLE : Status.INTERNAL;
-        return status.withCause(e)
-                .withDescription(ExceptionUtil.stackTrace(e))
-                .asRuntimeException();
+        return status.withCause(e).withDescription(ExceptionUtil.stackTrace(e)).asRuntimeException();
     }
 }

@@ -1,13 +1,12 @@
 package com.flink.platform.web.service;
 
 import com.flink.platform.storage.base.StorageSystem;
+import jakarta.annotation.PreDestroy;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
-import javax.annotation.PreDestroy;
 
 import java.io.IOException;
 
@@ -18,6 +17,22 @@ import java.io.IOException;
 public class StorageService {
 
     private final StorageSystem storageSystem;
+
+    public boolean isDistributed() {
+        return storageSystem.isDistributed();
+    }
+
+    public String getRootPath() {
+        return storageSystem.getRootPath();
+    }
+
+    public String getFileSeparator() {
+        return storageSystem.getFileSeparator();
+    }
+
+    public String getParentPath(String filePath) {
+        return storageSystem.getParentPath(filePath);
+    }
 
     public void copyFileToLocalIfChanged(String hdfsFile, String localFile) throws IOException {
         storageSystem.copyToLocalFileIfChanged(hdfsFile, localFile);
@@ -35,9 +50,12 @@ public class StorageService {
         return storageSystem.delete(path, recursive);
     }
 
-    public void copyFromLocal(String srcFile, String dstFile, boolean deleteSrc, boolean overwrite)
-            throws IOException {
+    public void copyFromLocal(String srcFile, String dstFile, boolean deleteSrc, boolean overwrite) throws IOException {
         storageSystem.copyFromLocalFile(srcFile, dstFile, deleteSrc, overwrite);
+    }
+
+    public void createFile(String filePath, String data, boolean overwrite) throws IOException {
+        storageSystem.createFile(filePath, data, overwrite);
     }
 
     public boolean mkDir(String path) throws IOException {

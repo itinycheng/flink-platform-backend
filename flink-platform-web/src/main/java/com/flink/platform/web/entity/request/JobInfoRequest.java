@@ -30,7 +30,8 @@ public class JobInfoRequest {
 
     private static final Pattern JOB_NAME_PATTERN = Pattern.compile(JOB_NAME_REGEX);
 
-    @Delegate private final JobInfo jobInfo = new JobInfo();
+    @Delegate
+    private final JobInfo jobInfo = new JobInfo();
 
     public String validateOnCreate() {
         String msg = verifyName();

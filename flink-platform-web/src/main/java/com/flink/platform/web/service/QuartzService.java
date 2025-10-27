@@ -5,6 +5,7 @@ import com.flink.platform.common.util.ExceptionUtil;
 import com.flink.platform.web.common.QuartzException;
 import com.flink.platform.web.config.AppRunner;
 import com.flink.platform.web.entity.IQuartzInfo;
+import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.quartz.CronExpression;
 import org.quartz.CronTrigger;
@@ -17,8 +18,6 @@ import org.quartz.Trigger;
 import org.quartz.TriggerBuilder;
 import org.quartz.TriggerKey;
 import org.springframework.stereotype.Service;
-
-import javax.annotation.Resource;
 
 import java.text.ParseException;
 import java.util.Date;
@@ -99,16 +98,16 @@ public class QuartzService {
 
             TriggerKey originTriggerKey = quartzInfo.getTriggerKey();
             String newTriggerGroup = String.join("_", originTriggerKey.getGroup(), GROUP_RUN_ONCE);
-            TriggerKey newTriggerKey =
-                    TriggerKey.triggerKey(originTriggerKey.getName(), newTriggerGroup);
+            TriggerKey newTriggerKey = TriggerKey.triggerKey(originTriggerKey.getName(), newTriggerGroup);
 
-            JobDetail jobDetail =
-                    newJob(quartzInfo.getJobClass())
-                            .withIdentity(newJobKey)
-                            .usingJobData(new JobDataMap(quartzInfo.getData()))
-                            .build();
-            Trigger simpleTrigger =
-                    TriggerBuilder.newTrigger().withIdentity(newTriggerKey).startNow().build();
+            JobDetail jobDetail = newJob(quartzInfo.getJobClass())
+                    .withIdentity(newJobKey)
+                    .usingJobData(new JobDataMap(quartzInfo.getData()))
+                    .build();
+            Trigger simpleTrigger = TriggerBuilder.newTrigger()
+                    .withIdentity(newTriggerKey)
+                    .startNow()
+                    .build();
             scheduler.scheduleJob(jobDetail, simpleTrigger);
             return true;
         } catch (Exception e) {
@@ -144,17 +143,15 @@ public class QuartzService {
     }
 
     private void scheduleJob(IQuartzInfo quartzInfo) throws SchedulerException {
-        JobDetail jobDetail =
-                newJob(quartzInfo.getJobClass())
-                        .withIdentity(quartzInfo.getJobKey())
-                        .usingJobData(new JobDataMap(quartzInfo.getData()))
-                        .build();
-        CronTrigger trigger =
-                newTrigger()
-                        .withIdentity(quartzInfo.getTriggerKey())
-                        .withSchedule(cronSchedule(quartzInfo.getCron()))
-                        .startNow()
-                        .build();
+        JobDetail jobDetail = newJob(quartzInfo.getJobClass())
+                .withIdentity(quartzInfo.getJobKey())
+                .usingJobData(new JobDataMap(quartzInfo.getData()))
+                .build();
+        CronTrigger trigger = newTrigger()
+                .withIdentity(quartzInfo.getTriggerKey())
+                .withSchedule(cronSchedule(quartzInfo.getCron()))
+                .startNow()
+                .build();
         scheduler.scheduleJob(jobDetail, trigger);
     }
 

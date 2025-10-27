@@ -1,10 +1,9 @@
 package com.flink.platform.web.util;
 
 import com.flink.platform.web.common.SpringContext;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-
-import javax.servlet.http.HttpServletRequest;
 
 import static com.flink.platform.common.constants.Constant.COLON;
 import static com.flink.platform.common.constants.Constant.COMMA;

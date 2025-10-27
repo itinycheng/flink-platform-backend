@@ -25,7 +25,6 @@ import com.flink.platform.web.monitor.StatusInfo;
 import com.flink.platform.web.service.JobRunExtraService;
 import com.flink.platform.web.util.ThreadUtil;
 import lombok.extern.slf4j.Slf4j;
-import lombok.var;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.tuple.Pair;
 
@@ -41,6 +40,7 @@ import static com.flink.platform.common.enums.ExecutionStatus.KILLED;
 import static com.flink.platform.common.enums.ExecutionStatus.NOT_EXIST;
 import static com.flink.platform.common.enums.ExecutionStatus.SUCCESS;
 import static com.flink.platform.grpc.JobGrpcServiceGrpc.JobGrpcServiceBlockingStub;
+import static com.flink.platform.web.util.ThreadUtil.DEFAULT_SLEEP_TIME_MILLIS;
 import static com.flink.platform.web.util.ThreadUtil.MIN_SLEEP_TIME_MILLIS;
 import static java.util.Objects.nonNull;
 
@@ -124,10 +124,7 @@ public class JobExecuteThread implements Supplier<JobResponse> {
             }
 
             // sleep and retry if exception found or status isn't success.
-            log.warn(
-                    "Execute jobRun: {} and wait for complete failed, retry attempt: {}.",
-                    jobRunId,
-                    retryAttempt);
+            log.warn("Execute jobRun: {} and wait for complete failed, retry attempt: {}.", jobRunId, retryAttempt);
             if (retryAttempt < retryTimes) {
                 sleepRetry(retryInterval);
             }
@@ -144,12 +141,10 @@ public class JobExecuteThread implements Supplier<JobResponse> {
         JobRunInfo jobRun = null;
         try {
             // Get job info, return if not found.
-            JobInfo jobInfo =
-                    jobInfoService.getOne(
-                            new QueryWrapper<JobInfo>()
-                                    .lambda()
-                                    .eq(JobInfo::getId, jobId)
-                                    .eq(JobInfo::getStatus, JobStatus.ONLINE));
+            JobInfo jobInfo = jobInfoService.getOne(new QueryWrapper<JobInfo>()
+                    .lambda()
+                    .eq(JobInfo::getId, jobId)
+                    .eq(JobInfo::getStatus, JobStatus.ONLINE));
             if (jobInfo == null) {
                 log.warn("The job:{} is no longer exists or not in ready/scheduled status.", jobId);
                 jobRunStatus = NOT_EXIST;
@@ -161,11 +156,7 @@ public class JobExecuteThread implements Supplier<JobResponse> {
                 jobRun = getOrCreateJobRun(jobInfo);
             } else {
                 jobRun = jobRunInfoService.getById(jobRunId);
-                log.info(
-                        "Job:{} already submitted, runId = {}, status: {}.",
-                        jobId,
-                        jobRunId,
-                        jobRun.getStatus());
+                log.info("Job:{} already submitted, runId = {}, status: {}.", jobId, jobRunId, jobRun.getStatus());
             }
 
             // Update jobRunId and jobRunStatus in memory.
@@ -190,10 +181,8 @@ public class JobExecuteThread implements Supplier<JobResponse> {
             }
         } catch (Exception e) {
             jobRunStatus = ERROR;
-            updateJobRunIfNeeded(
-                    jobRun, new StatusInfo(ERROR, null, System.currentTimeMillis()), e);
-            log.error(
-                    "Exception found when executing jobRun: {} and wait for complete", jobRunId, e);
+            updateJobRunIfNeeded(jobRun, new StatusInfo(ERROR, null, System.currentTimeMillis()), e);
+            log.error("Exception found when executing jobRun: {} and wait for complete", jobRunId, e);
         }
     }
 
@@ -216,16 +205,14 @@ public class JobExecuteThread implements Supplier<JobResponse> {
         int retry = 0;
         while (AppRunner.isRunning() && retry++ < 3) {
             try {
-                List<JobRunInfo> jobRuns =
-                        jobRunInfoService.list(
-                                new QueryWrapper<JobRunInfo>()
-                                        .lambda()
-                                        .select(JobRunInfo::getId, JobRunInfo::getStatus)
-                                        .eq(JobRunInfo::getJobId, jobId)
-                                        .eq(JobRunInfo::getFlowRunId, flowRunId)
-                                        .orderByDesc(JobRunInfo::getId));
+                List<JobRunInfo> jobRuns = jobRunInfoService.list(new QueryWrapper<JobRunInfo>()
+                        .lambda()
+                        .select(JobRunInfo::getId, JobRunInfo::getStatus)
+                        .eq(JobRunInfo::getJobId, jobId)
+                        .eq(JobRunInfo::getFlowRunId, flowRunId)
+                        .orderByDesc(JobRunInfo::getId));
                 if (CollectionUtils.isNotEmpty(jobRuns)) {
-                    return Pair.of(jobRuns.size(), jobRuns.get(0));
+                    return Pair.of(jobRuns.size(), jobRuns.getFirst());
                 } else {
                     return Pair.of(0, null);
                 }
@@ -243,7 +230,7 @@ public class JobExecuteThread implements Supplier<JobResponse> {
     // --------------------------------------------------------------------------------------------
 
     public void sleepRetry(Duration interval) {
-        if (interval == null || interval.isZero() || interval.isNegative()) {
+        if (interval == null || !interval.isPositive()) {
             ThreadUtil.sleep(MIN_SLEEP_TIME_MILLIS);
             return;
         }
@@ -261,14 +248,12 @@ public class JobExecuteThread implements Supplier<JobResponse> {
     }
 
     private JobRunInfo getOrCreateJobRun(JobInfo jobInfo) {
-        JobRunInfo jobRun =
-                jobRunInfoService.getOne(
-                        new QueryWrapper<JobRunInfo>()
-                                .lambda()
-                                .eq(JobRunInfo::getJobId, jobInfo.getId())
-                                .eq(nonNull(flowRunId), JobRunInfo::getFlowRunId, flowRunId)
-                                .eq(JobRunInfo::getStatus, CREATED)
-                                .last("LIMIT 1"));
+        JobRunInfo jobRun = jobRunInfoService.getOne(new QueryWrapper<JobRunInfo>()
+                .lambda()
+                .eq(JobRunInfo::getJobId, jobInfo.getId())
+                .eq(nonNull(flowRunId), JobRunInfo::getFlowRunId, flowRunId)
+                .eq(JobRunInfo::getStatus, CREATED)
+                .last("LIMIT 1"));
         if (jobRun != null) {
             return jobRun;
         }
@@ -285,7 +270,6 @@ public class JobExecuteThread implements Supplier<JobResponse> {
     }
 
     public StatusInfo updateAndWaitForComplete(JobGrpcServiceBlockingStub stub, JobRunInfo jobRun) {
-        int retryTimes = 0;
         while (AppRunner.isRunning()) {
             try {
                 // Get and correct job status.
@@ -293,10 +277,7 @@ public class JobExecuteThread implements Supplier<JobResponse> {
                 JobStatusReply jobStatusReply = stub.getJobStatus(request);
                 StatusInfo statusInfo = StatusInfo.fromReplay(jobStatusReply);
                 log.info(
-                        "Job runId: {}, name: {} Status: {}",
-                        jobRun.getId(),
-                        jobRun.getName(),
-                        statusInfo.getStatus());
+                        "Job runId: {}, name: {} Status: {}", jobRun.getId(), jobRun.getName(), statusInfo.getStatus());
                 updateJobRunIfNeeded(jobRun, statusInfo, null);
                 if (statusInfo.getStatus().isTerminalState()) {
                     return statusInfo;
@@ -305,7 +286,7 @@ public class JobExecuteThread implements Supplier<JobResponse> {
                 log.error("Fetch job status failed", e);
             }
 
-            ThreadUtil.sleepRetry(++retryTimes);
+            ThreadUtil.sleep(DEFAULT_SLEEP_TIME_MILLIS);
         }
 
         return null;
@@ -320,8 +301,7 @@ public class JobExecuteThread implements Supplier<JobResponse> {
                 .build();
     }
 
-    private void updateJobRunIfNeeded(
-            JobRunInfo jobRunInfo, StatusInfo statusInfo, Exception exception) {
+    private void updateJobRunIfNeeded(JobRunInfo jobRunInfo, StatusInfo statusInfo, Exception exception) {
         try {
             if (jobRunInfo == null || jobRunInfo.getId() == null) {
                 return;
@@ -355,12 +335,10 @@ public class JobExecuteThread implements Supplier<JobResponse> {
 
     private boolean isFlowRunStopped() {
         try {
-            JobFlowRun jobFlowRun =
-                    jobFlowRunService.getOne(
-                            new QueryWrapper<JobFlowRun>()
-                                    .lambda()
-                                    .select(JobFlowRun::getStatus)
-                                    .eq(JobFlowRun::getId, flowRunId));
+            JobFlowRun jobFlowRun = jobFlowRunService.getOne(new QueryWrapper<JobFlowRun>()
+                    .lambda()
+                    .select(JobFlowRun::getStatus)
+                    .eq(JobFlowRun::getId, flowRunId));
             ExecutionStatus flowStatus = jobFlowRun.getStatus();
             return KILLABLE.equals(flowStatus) || flowStatus.isTerminalState();
         } catch (Exception exception) {

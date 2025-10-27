@@ -2,9 +2,8 @@ package com.flink.platform.web.controller;
 
 import com.flink.platform.web.config.annotation.ApiException;
 import com.flink.platform.web.entity.response.ResultInfo;
-import com.flink.platform.web.external.LocalHadoopService;
+import com.flink.platform.web.environment.HadoopService;
 import lombok.extern.slf4j.Slf4j;
-import lombok.var;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -23,19 +22,18 @@ import static java.util.stream.Collectors.toMap;
 @RequestMapping("/stats")
 public class StatsController {
 
-    private final LocalHadoopService localHadoopService;
+    private final HadoopService hadoopService;
 
     @Autowired
-    public StatsController(@Lazy LocalHadoopService localHadoopService) {
-        this.localHadoopService = localHadoopService;
+    public StatsController(@Lazy HadoopService hadoopService) {
+        this.hadoopService = hadoopService;
     }
 
     @ApiException
     @GetMapping(value = "/runningYarnJobStatusList")
     public ResultInfo<Map<?, ?>> runningYarnJobStatusList() {
-        var runningApplications =
-                localHadoopService.getRunningApplications().entrySet().stream()
-                        .collect(toMap(Entry::getKey, entry -> entry.getValue().toString()));
+        var runningApplications = hadoopService.getRunningApplications().entrySet().stream()
+                .collect(toMap(Entry::getKey, entry -> entry.getValue().toString()));
         return success(runningApplications);
     }
 }

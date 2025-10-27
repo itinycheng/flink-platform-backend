@@ -1,7 +1,6 @@
 package com.flink.platform.web.config;
 
 import com.fasterxml.jackson.databind.Module;
-import lombok.var;
 import org.springframework.boot.autoconfigure.jackson.Jackson2ObjectMapperBuilderCustomizer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -14,7 +13,9 @@ import static com.flink.platform.common.util.JsonUtil.defaultGlobalTimeZone;
 @Configuration
 public class JacksonConfig {
 
-    /** Customize the SpringBoot's default Jackson ObjectMapper. */
+    /**
+     * Customize the SpringBoot's default Jackson ObjectMapper.
+     */
     @Bean
     public Jackson2ObjectMapperBuilderCustomizer customizeObjectMapper() {
         return builder -> {
@@ -28,14 +29,12 @@ public class JacksonConfig {
     }
 
     private void addGlobalFeaturesTo(Jackson2ObjectMapperBuilder builder) {
-        defaultGlobalFeatures()
-                .forEach(
-                        (feature, enable) -> {
-                            if (enable) {
-                                builder.featuresToEnable(feature);
-                            } else {
-                                builder.featuresToDisable(feature);
-                            }
-                        });
+        defaultGlobalFeatures().forEach((feature, enable) -> {
+            if (enable) {
+                builder.featuresToEnable(feature);
+            } else {
+                builder.featuresToDisable(feature);
+            }
+        });
     }
 }

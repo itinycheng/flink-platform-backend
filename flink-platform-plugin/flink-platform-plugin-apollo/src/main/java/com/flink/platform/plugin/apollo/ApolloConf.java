@@ -8,7 +8,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
 
-/** apollo configuration. */
+/**
+ * apollo configuration.
+ */
 @Configuration
 @EnableApolloConfig
 public class ApolloConf {
@@ -20,8 +22,7 @@ public class ApolloConf {
     private final String secretKey;
 
     public ApolloConf() {
-        try (InputStream input =
-                Thread.currentThread().getContextClassLoader().getResourceAsStream(CONFIG)) {
+        try (InputStream input = Thread.currentThread().getContextClassLoader().getResourceAsStream(CONFIG)) {
             if (input == null) {
                 throw new IOException("No apollo config file found, path: " + CONFIG);
             }

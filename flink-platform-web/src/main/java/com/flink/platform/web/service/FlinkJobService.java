@@ -6,7 +6,6 @@ import com.flink.platform.dao.service.JobRunInfoService;
 import com.flink.platform.web.config.FlinkConfig;
 import com.flink.platform.web.util.CommandUtil;
 import lombok.RequiredArgsConstructor;
-import lombok.var;
 import org.apache.commons.text.StringSubstitutor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -17,7 +16,9 @@ import java.util.Map;
 
 import static com.flink.platform.common.enums.ResponseStatus.OPERATION_NOT_ALLOWED;
 
-/** flink job service. */
+/**
+ * flink job service.
+ */
 @Service
 @RequiredArgsConstructor(onConstructor_ = @Autowired)
 public class FlinkJobService {
@@ -39,11 +40,10 @@ public class FlinkJobService {
 
     public void savepoint(Long jobRunId) {
         var jobRun = jobRunService.getById(jobRunId);
-        var flinkConfig =
-                flinkConfigs.stream()
-                        .filter(config -> config.getVersion().equals(jobRun.getVersion()))
-                        .findAny()
-                        .orElseThrow(() -> new DefinitionException(OPERATION_NOT_ALLOWED));
+        var flinkConfig = flinkConfigs.stream()
+                .filter(config -> config.getVersion().equals(jobRun.getVersion()))
+                .findAny()
+                .orElseThrow(() -> new DefinitionException(OPERATION_NOT_ALLOWED));
 
         var backInfo = jobRun.getBackInfo();
         var argsMap = new HashMap<String, String>();

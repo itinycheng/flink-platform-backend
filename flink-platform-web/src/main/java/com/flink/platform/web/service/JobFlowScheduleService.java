@@ -9,7 +9,6 @@ import com.flink.platform.web.config.WorkerConfig;
 import com.flink.platform.web.runner.FlowExecuteThread;
 import com.flink.platform.web.util.ThreadUtil;
 import lombok.extern.slf4j.Slf4j;
-import lombok.var;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -39,19 +38,14 @@ public class JobFlowScheduleService {
 
     @Autowired
     public JobFlowScheduleService(
-            WorkerConfig workerConfig,
-            JobFlowRunService jobFlowRunService,
-            AlertSendingService alertSendingService) {
+            WorkerConfig workerConfig, JobFlowRunService jobFlowRunService, AlertSendingService alertSendingService) {
         this.workerConfig = workerConfig;
         this.jobFlowRunService = jobFlowRunService;
         this.alertSendingService = alertSendingService;
         this.flowExecService =
-                ThreadUtil.newFixedVirtualThreadExecutor(
-                        "FlowExecThread", workerConfig.getFlowExecThreads());
-        this.inFlightFlows =
-                new PriorityBlockingQueue<>(
-                        workerConfig.getFlowExecThreads(),
-                        (o1, o2) -> ObjectUtils.compare(o2.getPriority(), o1.getPriority()));
+                ThreadUtil.newFixedVirtualThreadExecutor("FlowExecThread", workerConfig.getFlowExecThreads());
+        this.inFlightFlows = new PriorityBlockingQueue<>(
+                workerConfig.getFlowExecThreads(), (o1, o2) -> ObjectUtils.compare(o2.getPriority(), o1.getPriority()));
     }
 
     @Scheduled(fixedDelay = 1000)
@@ -75,17 +69,14 @@ public class JobFlowScheduleService {
     }
 
     public synchronized void registerToScheduler(JobFlowRun jobFlowRun) {
-        if (inFlightFlows.stream()
-                .anyMatch(inQueue -> inQueue.getId().equals(jobFlowRun.getId()))) {
+        if (inFlightFlows.stream().anyMatch(inQueue -> inQueue.getId().equals(jobFlowRun.getId()))) {
             log.warn("The JobFlowRun already registered, jobFlowRun: {} ", jobFlowRun);
             return;
         }
 
         JobFlowDag flow = jobFlowRun.getFlow();
         if (flow == null || CollectionUtils.isEmpty(flow.getVertices())) {
-            log.warn(
-                    "No JobVertex found, no scheduling required, flow run id: {}",
-                    jobFlowRun.getId());
+            log.warn("No JobVertex found, no scheduling required, flow run id: {}", jobFlowRun.getId());
             failAndUpdateJobFlowRun(jobFlowRun);
             alertSendingService.sendAlerts(jobFlowRun, "No job vertex found");
             return;

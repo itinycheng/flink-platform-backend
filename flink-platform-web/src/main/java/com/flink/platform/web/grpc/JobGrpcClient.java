@@ -6,13 +6,12 @@ import com.flink.platform.dao.service.WorkerService;
 import com.flink.platform.grpc.JobGrpcServiceGrpc;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
+import jakarta.annotation.PreDestroy;
 import lombok.extern.slf4j.Slf4j;
 import net.devh.boot.grpc.client.inject.GrpcClient;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
-import javax.annotation.PreDestroy;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -27,7 +26,8 @@ import static com.flink.platform.grpc.JobGrpcServiceGrpc.JobGrpcServiceBlockingS
 @Service
 public class JobGrpcClient {
 
-    @Autowired private WorkerService workerService;
+    @Autowired
+    private WorkerService workerService;
 
     @GrpcClient("local-grpc-server")
     private JobGrpcServiceBlockingStub localGrpcStub;
@@ -47,8 +47,7 @@ public class JobGrpcClient {
             return stub;
         }
 
-        Worker worker =
-                workerService.getOne(new QueryWrapper<Worker>().lambda().eq(Worker::getIp, ip));
+        Worker worker = workerService.getOne(new QueryWrapper<Worker>().lambda().eq(Worker::getIp, ip));
         return grpcClient(key, worker);
     }
 
@@ -59,15 +58,11 @@ public class JobGrpcClient {
             return stub;
         }
 
-        ManagedChannel channel =
-                channelMap.computeIfAbsent(
-                        key,
-                        s ->
-                                ManagedChannelBuilder.forAddress(
-                                                worker.getIp(), worker.getGrpcPort())
-                                        .keepAliveWithoutCalls(true)
-                                        .usePlaintext()
-                                        .build());
+        ManagedChannel channel = channelMap.computeIfAbsent(
+                key, s -> ManagedChannelBuilder.forAddress(worker.getIp(), worker.getGrpcPort())
+                        .keepAliveWithoutCalls(true)
+                        .usePlaintext()
+                        .build());
         stub = JobGrpcServiceGrpc.newBlockingStub(channel);
         grpcStubMap.put(key, stub);
         return stub;
@@ -80,14 +75,13 @@ public class JobGrpcClient {
     @PreDestroy
     public void destroy() {
         log.debug("Initiating manually created grpc ManagedChannel shutdown.");
-        channelMap.forEach(
-                (key, channel) -> {
-                    try {
-                        channel.shutdown().awaitTermination(2, TimeUnit.SECONDS);
-                    } catch (Exception e) {
-                        log.error("Shutdown grpc ManagedChannel failed, host: {}", key, e);
-                    }
-                });
+        channelMap.forEach((key, channel) -> {
+            try {
+                channel.shutdown().awaitTermination(2, TimeUnit.SECONDS);
+            } catch (Exception e) {
+                log.error("Shutdown grpc ManagedChannel failed, host: {}", key, e);
+            }
+        });
 
         grpcStubMap.clear();
         channelMap.clear();

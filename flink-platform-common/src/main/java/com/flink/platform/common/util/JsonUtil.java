@@ -41,10 +41,9 @@ public class JsonUtil {
     public static final ObjectMapper MAPPER;
 
     static {
-        MAPPER =
-                jacksonBuilderWithGlobalConfigs()
-                        .serializationInclusion(JsonInclude.Include.ALWAYS)
-                        .build();
+        MAPPER = jacksonBuilderWithGlobalConfigs()
+                .serializationInclusion(JsonInclude.Include.ALWAYS)
+                .build();
     }
 
     public static List<String> toList(String json) {
@@ -114,6 +113,10 @@ public class JsonUtil {
 
     public static <T> T toBean(Path path, Class<T> clazz) throws IOException {
         InputStream inputStream = Files.newInputStream(path);
+        return toBean(inputStream, clazz);
+    }
+
+    public static <T> T toBean(InputStream inputStream, Class<T> clazz) throws IOException {
         return MAPPER.readValue(inputStream, clazz);
     }
 
@@ -136,9 +139,7 @@ public class JsonUtil {
 
     public static JsonMapper.Builder jacksonBuilderWithGlobalConfigs() {
         Builder builder =
-                JsonMapper.builder()
-                        .addModules(defaultGlobalModules())
-                        .defaultTimeZone(defaultGlobalTimeZone());
+                JsonMapper.builder().addModules(defaultGlobalModules()).defaultTimeZone(defaultGlobalTimeZone());
         addDefaultGlobalFeaturesTo(builder);
         return builder;
     }
@@ -159,30 +160,27 @@ public class JsonUtil {
                 new Jdk8Module(),
                 new JavaTimeModule()
                         .addSerializer(
-                                LocalDateTime.class,
-                                new LocalDateTimeSerializer(ofPattern(GLOBAL_DATE_TIME_FORMAT)))
+                                LocalDateTime.class, new LocalDateTimeSerializer(ofPattern(GLOBAL_DATE_TIME_FORMAT)))
                         .addDeserializer(
                                 LocalDateTime.class,
                                 new LocalDateTimeDeserializer(ofPattern(GLOBAL_DATE_TIME_FORMAT))));
     }
 
     private static void addDefaultGlobalFeaturesTo(JsonMapper.Builder builder) {
-        defaultGlobalFeatures()
-                .forEach(
-                        (feature, enable) -> {
-                            if (enable) {
-                                if (feature instanceof MapperFeature) {
-                                    builder.enable((MapperFeature) feature);
-                                } else if (feature instanceof DeserializationFeature) {
-                                    builder.enable((DeserializationFeature) feature);
-                                }
-                            } else {
-                                if (feature instanceof MapperFeature) {
-                                    builder.disable((MapperFeature) feature);
-                                } else if (feature instanceof DeserializationFeature) {
-                                    builder.disable((DeserializationFeature) feature);
-                                }
-                            }
-                        });
+        defaultGlobalFeatures().forEach((feature, enable) -> {
+            if (enable) {
+                if (feature instanceof MapperFeature) {
+                    builder.enable((MapperFeature) feature);
+                } else if (feature instanceof DeserializationFeature) {
+                    builder.enable((DeserializationFeature) feature);
+                }
+            } else {
+                if (feature instanceof MapperFeature) {
+                    builder.disable((MapperFeature) feature);
+                } else if (feature instanceof DeserializationFeature) {
+                    builder.disable((DeserializationFeature) feature);
+                }
+            }
+        });
     }
 }

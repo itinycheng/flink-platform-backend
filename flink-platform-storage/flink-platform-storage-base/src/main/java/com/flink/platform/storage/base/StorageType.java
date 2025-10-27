@@ -2,7 +2,9 @@ package com.flink.platform.storage.base;
 
 import lombok.Getter;
 
-/** Storage type. */
+/**
+ * Storage type.
+ */
 @Getter
 public enum StorageType {
     LOCAL(0, "local"),

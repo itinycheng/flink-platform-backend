@@ -16,8 +16,7 @@ import java.util.Properties;
 public class JdbcUtil {
 
     /** create datasource. */
-    public static Connection createConnection(DbType dbType, DatasourceParam params)
-            throws Exception {
+    public static Connection createConnection(DbType dbType, DatasourceParam params) throws Exception {
         log.info("create connection. dbType: {}, params: {}", dbType, params);
         Class.forName(dbType.getDriver());
         Properties properties = new Properties();
@@ -51,13 +50,12 @@ public class JdbcUtil {
     public static Object toJavaObject(Object dbObject, DbType dbType) throws SQLException {
         switch (dbType) {
             case CLICKHOUSE:
-                if (dbObject instanceof Array) {
-                    Object objectArray = ((Array) dbObject).getArray();
+                if (dbObject instanceof Array array) {
+                    Object objectArray = array.getArray();
                     int arrayLength = java.lang.reflect.Array.getLength(objectArray);
                     Object[] javaObjectArray = new Object[arrayLength];
                     for (int i = 0; i < arrayLength; i++) {
-                        javaObjectArray[i] =
-                                toJavaObject(java.lang.reflect.Array.get(objectArray, i), dbType);
+                        javaObjectArray[i] = toJavaObject(java.lang.reflect.Array.get(objectArray, i), dbType);
                     }
                     return javaObjectArray;
                 } else {

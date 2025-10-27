@@ -8,12 +8,11 @@ import com.flink.platform.web.command.AbstractTask;
 import com.flink.platform.web.command.CommandExecutor;
 import com.flink.platform.web.command.JobCommand;
 import com.flink.platform.web.config.WorkerConfig;
+import jakarta.annotation.Nonnull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-
-import javax.annotation.Nonnull;
 
 import java.time.Duration;
 
@@ -37,16 +36,13 @@ public class ShellCommandExecutor implements CommandExecutor {
     public JobCallback execCommand(@Nonnull JobCommand command) throws Exception {
         ShellCommand shellCommand = (ShellCommand) command;
         Duration timeout = shellCommand.getTimeout();
-        ShellTask task =
-                new ShellTask(
-                        shellCommand.getJobRunId(),
-                        shellCommand.getScript(),
-                        shellCommand.getEnvp(),
-                        timeout != null
-                                ? Math.min(
-                                        workerConfig.getMaxShellExecTimeoutMills(),
-                                        timeout.toMillis())
-                                : workerConfig.getMaxShellExecTimeoutMills());
+        ShellTask task = new ShellTask(
+                shellCommand.getJobRunId(),
+                shellCommand.getScript(),
+                shellCommand.getEnvp(),
+                timeout != null
+                        ? Math.min(workerConfig.getMaxShellExecTimeoutMills(), timeout.toMillis())
+                        : workerConfig.getMaxShellExecTimeoutMills());
         shellCommand.setTask(task);
         task.run();
 

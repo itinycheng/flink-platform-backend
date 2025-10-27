@@ -1,4 +1,4 @@
-package com.flink.platform.monitor;
+package com.flink.platform.cron;
 
 import com.flink.platform.alert.AlertSendingService;
 import com.flink.platform.dao.entity.JobFlowRun;
@@ -38,18 +38,11 @@ public class JobsInJobListStatusChecker {
             return;
         }
 
-        jobRunInfoService
-                .getJobRunsWithUnexpectedStatus()
-                .forEach(
-                        jobRun -> {
-                            String content =
-                                    String.format(
-                                            ALERT_TEMPLATE,
-                                            jobRun.getName(),
-                                            jobRun.getStatus().name());
-                            JobFlowRun jobFlowRun =
-                                    jobFlowRunService.getById(jobRun.getFlowRunId());
-                            alertSendingService.sendAlerts(jobFlowRun, content);
-                        });
+        jobRunInfoService.getJobRunsWithUnexpectedStatus().forEach(jobRun -> {
+            String content = ALERT_TEMPLATE.formatted(
+                    jobRun.getName(), jobRun.getStatus().name());
+            JobFlowRun jobFlowRun = jobFlowRunService.getById(jobRun.getFlowRunId());
+            alertSendingService.sendAlerts(jobFlowRun, content);
+        });
     }
 }

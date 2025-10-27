@@ -4,7 +4,9 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.flink.platform.common.enums.ExecutionStrategy;
 import lombok.Data;
 
-/** JobFlow execution config. */
+/**
+ * JobFlow execution config.
+ */
 @Data
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class ExecutionConfig {
@@ -15,6 +17,8 @@ public class ExecutionConfig {
 
     private boolean visibleToDependent;
 
-    /** Both used in JobFlow and JobFlowRun. */
+    /**
+     * Both used in JobFlow and JobFlowRun.
+     */
     private int parallelism;
 }

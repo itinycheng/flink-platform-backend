@@ -2,6 +2,7 @@ package com.flink.platform.dao.entity;
 
 import com.flink.platform.common.enums.TimeoutStrategy;
 import com.flink.platform.common.util.DurationUtil;
+import jakarta.annotation.Nonnull;
 import lombok.AccessLevel;
 import lombok.Data;
 import lombok.Getter;
@@ -9,12 +10,12 @@ import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ArrayUtils;
 
-import javax.annotation.Nonnull;
-
 import java.time.Duration;
 import java.time.LocalDateTime;
 
-/** Timeout config of Job/JobFlow. */
+/**
+ * Timeout config of Job/JobFlow.
+ */
 @Slf4j
 @Data
 public class Timeout {
@@ -33,9 +34,8 @@ public class Timeout {
         return enable
                 && ArrayUtils.isNotEmpty(this.strategies)
                 && Duration.between(startTime, LocalDateTime.now())
-                                .minus(calcThresholdValue())
-                                .toMillis()
-                        > 0;
+                        .minus(calcThresholdValue())
+                        .isPositive();
     }
 
     private Duration calcThresholdValue() {

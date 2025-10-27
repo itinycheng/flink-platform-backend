@@ -14,28 +14,25 @@ import java.util.List;
 public class Catalogs {
 
     public static void registerCatalogsToTableEnv(TableEnvironment tEnv, List<Catalog> catalogs) {
-        catalogs.forEach(
-                catalog -> {
-                    if (StringUtils.isNotBlank(catalog.getCreateSql())) {
-                        tEnv.executeSql(catalog.getCreateSql());
-                    } else {
-                        addCatalog(tEnv, catalog);
-                    }
-                });
+        catalogs.forEach(catalog -> {
+            if (StringUtils.isNotBlank(catalog.getCreateSql())) {
+                tEnv.executeSql(catalog.getCreateSql());
+            } else {
+                addCatalog(tEnv, catalog);
+            }
+        });
     }
 
     /** Better use sql instead. */
     @Deprecated
     private static void addCatalog(TableEnvironment tEnv, Catalog catalog) {
         if (catalog.getType() == CatalogType.MEMORY) {
-            GenericInMemoryCatalog memoryCatalog =
-                    new GenericInMemoryCatalog(catalog.getName(), "default");
+            GenericInMemoryCatalog memoryCatalog = new GenericInMemoryCatalog(catalog.getName(), "default");
             tEnv.registerCatalog(catalog.getName(), memoryCatalog);
         } else {
-            throw new FlinkJobGenException(
-                    String.format(
-                            "Calling %s catalog from API isn't supported yet, please use create statement instead.",
-                            catalog.getType().name()));
+            throw new FlinkJobGenException(String.format(
+                    "Calling %s catalog from API isn't supported yet, please use create statement instead.",
+                    catalog.getType().name()));
         }
     }
 }

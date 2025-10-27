@@ -1,18 +1,17 @@
-package com.flink.platform.web.external;
+package com.flink.platform.web.environment;
 
 import com.flink.platform.web.model.ApplicationStatusReport;
 import com.flink.platform.web.util.ThreadUtil;
 import com.google.common.collect.Lists;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.PostConstruct;
+import jakarta.annotation.PreDestroy;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
-import lombok.var;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.RandomUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.LocalFileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.yarn.api.records.ApplicationReport;
 import org.apache.hadoop.yarn.client.api.YarnClient;
@@ -24,10 +23,6 @@ import org.springframework.retry.annotation.Backoff;
 import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.Nonnull;
-import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
-
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
@@ -38,25 +33,26 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledExecutorService;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.apache.commons.lang3.ArrayUtils.EMPTY_STRING_ARRAY;
 
 /**
- * Yarn client service. <br>
- * 1. Manage the lifecycle of YarnClient and FileSystem. <br>
- * 2. Loads hadoop configuration from local disk to initialize Yarn and HDFS clients. <br>
+ * Yarn client service. <br> 1. Manage the lifecycle of YarnClient and FileSystem. <br> 2. Loads
+ * hadoop configuration from local disk to initialize Yarn and HDFS clients. <br>
  */
 @Slf4j
 @Lazy
-@Component
-public class LocalHadoopService {
+@Component("environmentHadoopService")
+public class HadoopService {
 
     private static final int REQUEST_APP_REPORT_BATCH_SIZE = 100;
 
-    private final String clusterIdPath;
+    private final String primaryClusterIdFilePath;
 
     // tag -> ApplicationStatusReport.
-    @Getter private final Map<String, ApplicationStatusReport> runningApplications;
+    @Getter
+    private final Map<String, ApplicationStatusReport> runningApplications;
 
     private final ScheduledExecutorService reportRefreshExecutor;
 
@@ -64,22 +60,20 @@ public class LocalHadoopService {
 
     private FileSystem hdfsClient;
 
-    private boolean isOnMain = true;
+    private boolean isPrimaryCluster = true;
 
     @Autowired
-    public LocalHadoopService(@Qualifier("clusterIdPath") String clusterIdPath) {
-        this.clusterIdPath = clusterIdPath;
+    public HadoopService(@Qualifier("primaryClusterIdFilePath") String primaryClusterIdFilePath) {
+        this.primaryClusterIdFilePath = primaryClusterIdFilePath;
         this.runningApplications = new ConcurrentHashMap<>();
-        this.reportRefreshExecutor =
-                ThreadUtil.newDaemonSingleScheduledExecutor("yarn-application-report-refresh");
+        this.reportRefreshExecutor = ThreadUtil.newDaemonSingleScheduledExecutor("yarn-application-report-refresh");
     }
 
     @SuppressWarnings("unused")
     @PostConstruct
     public void initHadoopClient() {
-        log.info(
-                "Init Yarn and FileSystem clients of hadoop corresponding to the current running instance.");
-        Configuration conf = HadoopUtil.getHadoopConfiguration();
+        log.info("Init Yarn and FileSystem clients of hadoop corresponding to the current running instance.");
+        var conf = HadoopHelper.getHadoopConfiguration();
         yarnClient = YarnClient.createYarnClient();
         yarnClient.init(new YarnConfiguration(conf));
         yarnClient.start();
@@ -91,23 +85,22 @@ public class LocalHadoopService {
         }
 
         try {
-            isOnMain = clusterIdPath.contains("hdfs") && hdfsClient.exists(new Path(clusterIdPath));
+            isPrimaryCluster =
+                    primaryClusterIdFilePath.contains("hdfs") && hdfsClient.exists(new Path(primaryClusterIdFilePath));
         } catch (Exception e) {
             throw new RuntimeException("check cluster id failed");
         }
 
         // start the application report refresh thread.
-        reportRefreshExecutor.scheduleWithFixedDelay(
-                this::refreshReport, RandomUtils.nextInt(10, 30), 40, SECONDS);
+        reportRefreshExecutor.scheduleWithFixedDelay(this::refreshReport, RandomUtils.nextInt(10, 30), 40, SECONDS);
     }
 
     @Retryable(
-            value = Exception.class,
+            retryFor = Exception.class,
             maxAttempts = 4,
             backoff = @Backoff(delay = 1500, multiplier = 2),
             exceptionExpression = "@appRunnerChecker.shouldRetry(#root)")
-    public ApplicationStatusReport getStatusReportWithRetry(String applicationTag)
-            throws Exception {
+    public ApplicationStatusReport getStatusReportWithRetry(String applicationTag) throws Exception {
         if (StringUtils.isEmpty(applicationTag)) {
             log.warn("The application tag is empty.");
             return null;
@@ -116,13 +109,13 @@ public class LocalHadoopService {
         var statusReport = runningApplications.get(applicationTag);
         if (statusReport == null) {
             var applicationTags = Collections.singleton(applicationTag);
-            List<ApplicationReport> applications = getReportsWithRetry(applicationTags);
+            var applications = getReportsWithRetry(applicationTags);
             if (CollectionUtils.isEmpty(applications)) {
                 log.warn("No application found for tag: {}", applicationTag);
                 return null;
             }
 
-            var report = applications.get(0);
+            var report = applications.getFirst();
             statusReport = new ApplicationStatusReport(report);
             runningApplications.put(applicationTag, statusReport);
         }
@@ -137,37 +130,32 @@ public class LocalHadoopService {
     public void killApplication(String applicationTag) throws Exception {
         var statusReport = getStatusReportWithRetry(applicationTag);
         if (statusReport == null || statusReport.isTerminalState()) {
-            log.warn(
-                    "The application with tag: {} does not exist or is in terminal state.",
-                    applicationTag);
+            log.warn("The application with tag: {} does not exist or is in terminal state.", applicationTag);
             return;
         }
 
         var report = statusReport.getReport();
         yarnClient.killApplication(report.getApplicationId());
-        log.info(
-                "Kill application id: {}, tag: {} successfully.",
-                report.getApplicationId(),
-                applicationTag);
+        // remove cached report.
+        runningApplications.remove(applicationTag);
+        log.info("Kill application id: {}, tag: {} successfully.", report.getApplicationId(), applicationTag);
     }
 
     public void copyIfNewHdfsAndFileChanged(String localFile, String hdfsFile) throws IOException {
-        if (isOnMain) {
+        if (isPrimaryCluster) {
             return;
         }
 
-        Path localPath = new Path(localFile);
-        Path hdfsPath = new Path(hdfsFile);
+        var localPath = new Path(localFile);
+        var hdfsPath = new Path(hdfsFile);
 
         boolean isCopy = true;
         if (hdfsClient.exists(hdfsPath)) {
-            LocalFileSystem local = FileSystem.getLocal(hdfsClient.getConf());
-            FileStatus localFileStatus = local.getFileStatus(localPath);
-            FileStatus hdfsFileStatus = hdfsClient.getFileStatus(hdfsPath);
-            isCopy =
-                    localFileStatus.getLen() != hdfsFileStatus.getLen()
-                            || localFileStatus.getModificationTime()
-                                    > hdfsFileStatus.getModificationTime();
+            var local = FileSystem.getLocal(hdfsClient.getConf());
+            var localFileStatus = local.getFileStatus(localPath);
+            var hdfsFileStatus = hdfsClient.getFileStatus(hdfsPath);
+            isCopy = localFileStatus.getLen() != hdfsFileStatus.getLen()
+                    || localFileStatus.getModificationTime() > hdfsFileStatus.getModificationTime();
         }
 
         if (isCopy) {
@@ -175,21 +163,20 @@ public class LocalHadoopService {
         }
     }
 
-    private List<ApplicationReport> getReportsWithRetry(@Nonnull Set<String> applicationTags)
-            throws Exception {
-        var applications = yarnClient.getApplications(null, null, applicationTags);
-        if (CollectionUtils.isEmpty(applications)) {
-            ThreadUtil.sleep(1500);
-            applications = yarnClient.getApplications(null, null, applicationTags);
+    public void writeToFilePath(String filePath, String content) throws IOException {
+        if (isPrimaryCluster) {
+            return;
         }
-        return applications;
+        var path = new Path(filePath);
+        try (var out = hdfsClient.create(path, true)) {
+            out.write(content.getBytes(UTF_8));
+        }
     }
 
     private void refreshReport() {
-        String[] allTags = this.runningApplications.keySet().toArray(EMPTY_STRING_ARRAY);
-        List<List<String>> partitions =
-                Lists.partition(Arrays.asList(allTags), REQUEST_APP_REPORT_BATCH_SIZE);
-        for (List<String> partition : partitions) {
+        var allTags = this.runningApplications.keySet().toArray(EMPTY_STRING_ARRAY);
+        var partitions = Lists.partition(Arrays.asList(allTags), REQUEST_APP_REPORT_BATCH_SIZE);
+        for (var partition : partitions) {
             try {
                 var partitionTags = new HashSet<>(partition);
                 var partitionReports = getReportsWithRetry(partitionTags);
@@ -199,11 +186,10 @@ public class LocalHadoopService {
                         continue;
                     }
 
-                    String tag =
-                            applicationTags.stream()
-                                    .filter(partitionTags::contains)
-                                    .findFirst()
-                                    .orElse(null);
+                    var tag = applicationTags.stream()
+                            .filter(partitionTags::contains)
+                            .findFirst()
+                            .orElse(null);
 
                     if (tag != null) {
                         runningApplications.put(tag, new ApplicationStatusReport(partitionReport));
@@ -215,6 +201,15 @@ public class LocalHadoopService {
                 log.error("refresh application report failed", e);
             }
         }
+    }
+
+    private List<ApplicationReport> getReportsWithRetry(@Nonnull Set<String> applicationTags) throws Exception {
+        var applications = yarnClient.getApplications(null, null, applicationTags);
+        if (CollectionUtils.isEmpty(applications)) {
+            ThreadUtil.sleep(1500);
+            applications = yarnClient.getApplications(null, null, applicationTags);
+        }
+        return applications;
     }
 
     @PreDestroy

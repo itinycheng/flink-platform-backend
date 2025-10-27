@@ -4,7 +4,9 @@ import static com.flink.platform.common.constants.Constant.ELLIPSIS;
 import static com.flink.platform.common.constants.Constant.EMPTY;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
-/** string util. */
+/**
+ * string util.
+ */
 public class StringUtil {
 
     public static int byteLength(String str) {

@@ -1,11 +1,11 @@
 package com.flink.platform.web.util;
 
-import lombok.var;
-
 import java.util.HashMap;
 import java.util.Map;
 
-/** SystemUtil. */
+/**
+ * SystemUtil.
+ */
 public class SystemUtil {
 
     public static Map<String, String> mergeEnv(Map<String, String> overrideVars) {

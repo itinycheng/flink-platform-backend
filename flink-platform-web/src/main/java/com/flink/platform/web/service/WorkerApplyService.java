@@ -4,12 +4,11 @@ import com.flink.platform.common.constants.Constant;
 import com.flink.platform.dao.entity.Worker;
 import com.flink.platform.dao.service.WorkerService;
 import com.flink.platform.web.util.HttpUtil;
+import jakarta.annotation.Nullable;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
-import javax.annotation.Nullable;
 
 import java.util.List;
 import java.util.Random;
@@ -23,7 +22,7 @@ public class WorkerApplyService {
 
     private final Random random = new Random();
 
-    @Deprecated
+    @Deprecated(since = "Use chooseWorker(List<Long> workerIds) instead. ")
     public String chooseWorker(List<Long> workerIds) {
         if (CollectionUtils.isEmpty(workerIds)) {
             return HttpUtil.getDefaultUrl();

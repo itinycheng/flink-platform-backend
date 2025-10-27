@@ -4,7 +4,6 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.flink.platform.common.enums.ExecutionCondition;
 import com.flink.platform.common.enums.ExecutionStatus;
 import com.flink.platform.common.enums.JobType;
-import com.flink.platform.common.exception.CommandUnableGenException;
 import com.flink.platform.common.model.JobEdge;
 import com.flink.platform.common.model.JobVertex;
 import com.flink.platform.dao.entity.JobFlowDag;
@@ -15,13 +14,12 @@ import com.flink.platform.dao.service.JobFlowRunService;
 import com.flink.platform.dao.service.JobRunInfoService;
 import com.flink.platform.web.command.CommandBuilder;
 import com.flink.platform.web.command.JobCommand;
+import jakarta.annotation.Nonnull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-
-import javax.annotation.Nonnull;
 
 import java.util.List;
 
@@ -60,47 +58,26 @@ public class ConditionCommandBuilder implements CommandBuilder {
             return new ConditionCommand(jobRunId, true);
         }
 
-        List<JobRunInfo> prevJobRunList =
-                jobRunInfoService.list(
-                        new QueryWrapper<JobRunInfo>()
-                                .lambda()
-                                .eq(JobRunInfo::getFlowRunId, flowRunId)
-                                .in(JobRunInfo::getJobId, jobIds));
+        List<JobRunInfo> prevJobRunList = jobRunInfoService.list(new QueryWrapper<JobRunInfo>()
+                .lambda()
+                .eq(JobRunInfo::getFlowRunId, flowRunId)
+                .in(JobRunInfo::getJobId, jobIds));
 
-        boolean success;
         Long toVertexId = jobRunInfo.getJobId();
         ExecutionCondition condition =
                 jobRunInfo.getConfig().unwrap(ConditionJob.class).getCondition();
-        switch (condition) {
-            case AND:
-                success =
-                        CollectionUtils.isNotEmpty(prevJobRunList)
-                                && jobIds.size() == prevJobRunList.size()
-                                && prevJobRunList.stream()
-                                        .allMatch(
-                                                jobRun ->
-                                                        jobRun.getStatus()
-                                                                == getExpectedStatus(
-                                                                        flow,
-                                                                        jobRun.getJobId(),
-                                                                        toVertexId));
-                break;
-            case OR:
-                success =
-                        CollectionUtils.isNotEmpty(prevJobRunList)
-                                && prevJobRunList.stream()
-                                        .anyMatch(
-                                                jobRun ->
-                                                        jobRun.getStatus()
-                                                                == getExpectedStatus(
-                                                                        flow,
-                                                                        jobRun.getJobId(),
-                                                                        toVertexId));
-                break;
-            default:
-                throw new CommandUnableGenException(
-                        "Unsupported execution condition: " + condition);
-        }
+        boolean success =
+                switch (condition) {
+                    case AND -> CollectionUtils.isNotEmpty(prevJobRunList)
+                            && jobIds.size() == prevJobRunList.size()
+                            && prevJobRunList.stream()
+                                    .allMatch(jobRun -> jobRun.getStatus()
+                                            == getExpectedStatus(flow, jobRun.getJobId(), toVertexId));
+                    case OR -> CollectionUtils.isNotEmpty(prevJobRunList)
+                            && prevJobRunList.stream()
+                                    .anyMatch(jobRun -> jobRun.getStatus()
+                                            == getExpectedStatus(flow, jobRun.getJobId(), toVertexId));
+                };
 
         ConditionCommand conditionCommand = new ConditionCommand(jobRunId, success);
         populateTimeout(conditionCommand, jobRunInfo);
@@ -110,8 +87,7 @@ public class ConditionCommandBuilder implements CommandBuilder {
     private ExecutionStatus getExpectedStatus(JobFlowDag flow, Long fromJobId, Long toJobId) {
         JobEdge edge = flow.getEdge(fromJobId, toJobId);
         if (edge == null) {
-            throw new RuntimeException(
-                    String.format("No edge found, fromVId: %d, toVid: %d", fromJobId, toJobId));
+            throw new RuntimeException("No edge found, fromVId: %d, toVid: %d".formatted(fromJobId, toJobId));
         }
         return edge.getExpectStatus();
     }

@@ -24,7 +24,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.stream.Collectors;
 
 import static com.flink.platform.common.constants.Constant.FLINK;
 import static com.flink.platform.common.constants.Constant.FULL_VERSION;
@@ -66,11 +65,10 @@ public class AttrsController {
     public ResultInfo<List<String>> versions(String type) {
         List<String> versions = new ArrayList<>();
         if (FLINK.equals(type)) {
-            versions.addAll(
-                    flinkConfigs.stream()
-                            .map(FlinkConfig::getVersion)
-                            .filter(Objects::nonNull)
-                            .collect(Collectors.toList()));
+            versions.addAll(flinkConfigs.stream()
+                    .map(FlinkConfig::getVersion)
+                    .filter(Objects::nonNull)
+                    .toList());
         } else {
             versions.add(FULL_VERSION);
         }

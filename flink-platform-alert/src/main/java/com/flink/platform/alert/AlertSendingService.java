@@ -38,10 +38,8 @@ public class AlertSendingService {
 
         ExecutionStatus finalStatus = jobFlowRun.getStatus();
         alerts.stream()
-                .filter(
-                        alert ->
-                                CollectionUtils.isEmpty(alert.getStatuses())
-                                        || alert.getStatuses().contains(finalStatus))
+                .filter(alert -> CollectionUtils.isEmpty(alert.getStatuses())
+                        || alert.getStatuses().contains(finalStatus))
                 .forEach(alert -> alertSender.sendAlert(alert.getAlertId(), jobFlowRun, alertMsg));
     }
 

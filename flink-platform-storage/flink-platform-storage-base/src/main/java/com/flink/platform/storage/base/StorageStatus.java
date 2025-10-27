@@ -1,26 +1,28 @@
 package com.flink.platform.storage.base;
 
+import jakarta.annotation.Nonnull;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import javax.annotation.Nonnull;
-
 import java.time.LocalDateTime;
 
-/** file status. */
+import static com.flink.platform.common.util.Preconditions.checkNotNull;
+
+/**
+ * file status.
+ */
 @Data
 @NoArgsConstructor
 public class StorageStatus {
 
-    @Nonnull private Long byteLength;
+    private long byteLength;
 
-    @Nonnull private LocalDateTime modificationTime;
+    private LocalDateTime modificationTime;
 
-    public static StorageStatus of(
-            @Nonnull Long byteLength, @Nonnull LocalDateTime modificationTime) {
+    public static StorageStatus of(long byteLength, @Nonnull LocalDateTime modificationTime) {
         StorageStatus storageStatus = new StorageStatus();
         storageStatus.byteLength = byteLength;
-        storageStatus.modificationTime = modificationTime;
+        storageStatus.modificationTime = checkNotNull(modificationTime);
         return storageStatus;
     }
 }

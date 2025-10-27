@@ -8,9 +8,8 @@ import com.flink.platform.common.enums.JobFlowType;
 import com.flink.platform.common.enums.JobStatus;
 import com.flink.platform.dao.entity.JobRunInfo;
 import com.flink.platform.dao.mapper.JobRunInfoMapper;
+import jakarta.annotation.Nonnull;
 import org.springframework.stereotype.Service;
-
-import javax.annotation.Nonnull;
 
 import java.util.List;
 
@@ -27,12 +26,11 @@ public class JobRunInfoService extends ServiceImpl<JobRunInfoMapper, JobRunInfo>
     }
 
     public JobRunInfo findRunningJob(@Nonnull Long jobId) {
-        return getOne(
-                new QueryWrapper<JobRunInfo>()
-                        .lambda()
-                        .eq(JobRunInfo::getJobId, jobId)
-                        .in(JobRunInfo::getStatus, getNonTerminals())
-                        .last("limit 1"));
+        return getOne(new QueryWrapper<JobRunInfo>()
+                .lambda()
+                .eq(JobRunInfo::getJobId, jobId)
+                .in(JobRunInfo::getStatus, getNonTerminals())
+                .last("limit 1"));
     }
 
     public List<JobRunInfo> getJobRunsWithUnexpectedStatus() {

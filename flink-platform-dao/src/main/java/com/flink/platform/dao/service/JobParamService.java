@@ -20,7 +20,8 @@ import java.util.List;
 @DS("master_platform")
 public class JobParamService extends ServiceImpl<JobParamMapper, JobParam> {
 
-    @Autowired private JobInfoService jobInfoService;
+    @Autowired
+    private JobInfoService jobInfoService;
 
     public List<JobParam> getJobParams(Long jobId) {
         JobInfo jobInfo = jobInfoService.getById(jobId);
@@ -28,16 +29,12 @@ public class JobParamService extends ServiceImpl<JobParamMapper, JobParam> {
             return Collections.emptyList();
         }
 
-        return this.list(
-                new QueryWrapper<JobParam>()
-                        .lambda()
-                        .nested(
-                                qw ->
-                                        qw.eq(JobParam::getFlowId, jobInfo.getFlowId())
-                                                .or()
-                                                .eq(JobParam::getType, JobParamType.GLOBAL))
-                        .eq(JobParam::getStatus, Status.ENABLE)
-                        .eq(JobParam::getUserId, jobInfo.getUserId())
-                        .orderByAsc(Arrays.asList(JobParam::getType, JobParam::getId)));
+        return this.list(new QueryWrapper<JobParam>()
+                .lambda()
+                .nested(qw ->
+                        qw.eq(JobParam::getFlowId, jobInfo.getFlowId()).or().eq(JobParam::getType, JobParamType.GLOBAL))
+                .eq(JobParam::getStatus, Status.ENABLE)
+                .eq(JobParam::getUserId, jobInfo.getUserId())
+                .orderByAsc(Arrays.asList(JobParam::getType, JobParam::getId)));
     }
 }
