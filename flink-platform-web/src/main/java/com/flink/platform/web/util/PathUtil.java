@@ -9,7 +9,7 @@ import static com.flink.platform.common.constants.JobConstant.JOB_RUN_DIR;
 /** Env path. */
 public class PathUtil {
 
-    public static final String WORK_DIR = "platform";
+    public static final String WORK_DIR = "/data0/project/platform";
 
     public static String getExecJobRootPath() {
         return String.join(OS_FILE_SEPARATOR, getLocalWorkRootPath(), JOB_RUN_DIR);
