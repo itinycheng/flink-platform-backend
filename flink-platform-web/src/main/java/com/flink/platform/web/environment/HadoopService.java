@@ -164,9 +164,6 @@ public class HadoopService {
     }
 
     public void writeToFilePath(String filePath, String content) throws IOException {
-        if (isPrimaryCluster) {
-            return;
-        }
         var path = new Path(filePath);
         try (var out = hdfsClient.create(path, true)) {
             out.write(content.getBytes(UTF_8));
