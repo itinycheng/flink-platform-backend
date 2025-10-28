@@ -87,8 +87,8 @@ checkListenStatus() {
       return 0
     fi
 
-    # 读取监听端口的进程pid，最多重试10次(变量: maxCheckTimes)，休眠间隔为5秒(变量: sleepTime)
-    maxCheckTimes=10
+    # 读取监听端口的进程pid，最多重试20次(变量: maxCheckTimes)，休眠间隔为5秒(变量: sleepTime)
+    maxCheckTimes=20
     sleepTime=5
 
     printf "Detecting server listening status, port:%s\n" "${checkPort}"
