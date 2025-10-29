@@ -28,6 +28,7 @@ public enum JobType {
     CONDITION(Constant.CONDITION, null),
 
     DEPENDENT(Constant.DEPENDENT, null),
+    SUB_FLOW(Constant.SUB_FLOW, null),
     ;
 
     private final String classification;

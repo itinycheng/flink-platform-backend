@@ -5,6 +5,7 @@ import com.flink.platform.alert.AlertSendingService;
 import com.flink.platform.common.constants.Constant;
 import com.flink.platform.common.model.JobVertex;
 import com.flink.platform.common.util.JsonUtil;
+import com.flink.platform.common.util.NumberUtil;
 import com.flink.platform.dao.entity.ExecutionConfig;
 import com.flink.platform.dao.entity.JobFlow;
 import com.flink.platform.dao.entity.JobFlowDag;
@@ -27,6 +28,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static com.flink.platform.common.constants.JobConstant.CONFIG;
+import static com.flink.platform.common.constants.JobConstant.FLOW_RUN_ID;
 import static com.flink.platform.common.enums.ExecutionStatus.SUBMITTED;
 import static com.flink.platform.common.enums.JobFlowStatus.ONLINE;
 import static com.flink.platform.common.enums.JobFlowStatus.SCHEDULING;
@@ -70,7 +72,7 @@ public class JobFlowRunner implements Job {
                 return;
             }
 
-            // execution config.
+            var flowRunId = NumberUtil.toLong(dataMap.get(FLOW_RUN_ID));
             var executionConfig = getOrMergeExecutionConfig(dataMap, jobFlow);
 
             if (JOB_LIST.equals(jobFlow.getType())) {
@@ -85,7 +87,7 @@ public class JobFlowRunner implements Job {
                 }
             } else {
                 var runningFlow = jobFlowRunService.findRunningFlow(jobFlow.getId(), executionConfig);
-                if (runningFlow != null) {
+                if (runningFlow != null && !runningFlow.getId().equals(flowRunId)) {
                     log.warn(
                             "The job flow: {} is in non-terminal status, run id: {}",
                             jobFlow.getName(),
@@ -98,6 +100,7 @@ public class JobFlowRunner implements Job {
 
             // Create job flow run instance.
             var jobFlowRun = new JobFlowRun();
+            jobFlowRun.setId(flowRunId);
             jobFlowRun.setFlowId(jobFlow.getId());
             jobFlowRun.setName(
                     String.join("-", jobFlow.getName(), jobFlow.getCode(), String.valueOf(System.currentTimeMillis())));
@@ -116,7 +119,7 @@ public class JobFlowRunner implements Job {
             jobFlowRun.setAlerts(jobFlow.getAlerts());
             jobFlowRun.setTimeout(jobFlow.getTimeout());
             jobFlowRun.setStatus(SUBMITTED);
-            jobFlowRunService.save(jobFlowRun);
+            jobFlowRunService.saveOrUpdate(jobFlowRun);
 
             // register job flow run.
             jobFlowScheduleService.registerToScheduler(jobFlowRun);

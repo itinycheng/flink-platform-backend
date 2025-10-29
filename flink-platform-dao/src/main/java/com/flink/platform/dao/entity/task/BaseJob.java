@@ -15,7 +15,10 @@ import java.time.Duration;
 import static com.fasterxml.jackson.annotation.JsonTypeInfo.As;
 import static com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 
-/** base job. */
+/**
+ * base job.
+ * Refer to the enums in JobType.
+ */
 @Data
 @NoArgsConstructor
 @JsonTypeInfo(use = Id.NAME, include = As.EXISTING_PROPERTY, property = "type", visible = true)
@@ -29,6 +32,7 @@ import static com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
     @JsonSubTypes.Type(value = ShellJob.class, name = "SHELL"),
     @JsonSubTypes.Type(value = ConditionJob.class, name = "CONDITION"),
     @JsonSubTypes.Type(value = DependentJob.class, name = "DEPENDENT"),
+    @JsonSubTypes.Type(value = FlowJob.class, name = "SUB_FLOW"),
 })
 public class BaseJob {
 

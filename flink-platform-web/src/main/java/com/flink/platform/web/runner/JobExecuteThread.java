@@ -13,9 +13,7 @@ import com.flink.platform.dao.entity.task.BaseJob;
 import com.flink.platform.dao.service.JobFlowRunService;
 import com.flink.platform.dao.service.JobInfoService;
 import com.flink.platform.dao.service.JobRunInfoService;
-import com.flink.platform.grpc.JobStatusReply;
 import com.flink.platform.grpc.JobStatusRequest;
-import com.flink.platform.grpc.ProcessJobReply;
 import com.flink.platform.grpc.ProcessJobRequest;
 import com.flink.platform.web.common.SpringContext;
 import com.flink.platform.web.config.AppRunner;
@@ -30,7 +28,6 @@ import org.apache.commons.lang3.tuple.Pair;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
-import java.util.List;
 import java.util.function.Supplier;
 
 import static com.flink.platform.common.enums.ExecutionStatus.CREATED;
@@ -141,7 +138,7 @@ public class JobExecuteThread implements Supplier<JobResponse> {
         JobRunInfo jobRun = null;
         try {
             // Get job info, return if not found.
-            JobInfo jobInfo = jobInfoService.getOne(new QueryWrapper<JobInfo>()
+            var jobInfo = jobInfoService.getOne(new QueryWrapper<JobInfo>()
                     .lambda()
                     .eq(JobInfo::getId, jobId)
                     .eq(JobInfo::getStatus, JobStatus.ONLINE));
@@ -164,7 +161,7 @@ public class JobExecuteThread implements Supplier<JobResponse> {
             jobRunStatus = jobRun.getStatus();
 
             // Get a grpc client.
-            JobGrpcServiceBlockingStub stub = jobGrpcClient.grpcClient(jobRun.getHost());
+            var stub = jobGrpcClient.grpcClient(jobRun.getHost());
 
             // Process job.
             if (CREATED.equals(jobRunStatus)) {
@@ -174,7 +171,7 @@ public class JobExecuteThread implements Supplier<JobResponse> {
 
             // Wait for job to complete and get status
             if (jobRunStatus == null || !jobRunStatus.isTerminalState()) {
-                StatusInfo statusInfo = updateAndWaitForComplete(stub, jobRun);
+                var statusInfo = updateAndWaitForComplete(stub, jobRun);
                 if (statusInfo != null) {
                     jobRunStatus = statusInfo.getStatus();
                 }
@@ -190,7 +187,7 @@ public class JobExecuteThread implements Supplier<JobResponse> {
         int retry = 0;
         while (AppRunner.isRunning() && retry++ < 3) {
             try {
-                JobInfo jobInfo = jobInfoService.getById(jobId);
+                var jobInfo = jobInfoService.getById(jobId);
                 return jobInfo.getConfig();
             } catch (Throwable t) {
                 log.error("Get base job info failed", t);
@@ -205,7 +202,7 @@ public class JobExecuteThread implements Supplier<JobResponse> {
         int retry = 0;
         while (AppRunner.isRunning() && retry++ < 3) {
             try {
-                List<JobRunInfo> jobRuns = jobRunInfoService.list(new QueryWrapper<JobRunInfo>()
+                var jobRuns = jobRunInfoService.list(new QueryWrapper<JobRunInfo>()
                         .lambda()
                         .select(JobRunInfo::getId, JobRunInfo::getStatus)
                         .eq(JobRunInfo::getJobId, jobId)
@@ -248,7 +245,7 @@ public class JobExecuteThread implements Supplier<JobResponse> {
     }
 
     private JobRunInfo getOrCreateJobRun(JobInfo jobInfo) {
-        JobRunInfo jobRun = jobRunInfoService.getOne(new QueryWrapper<JobRunInfo>()
+        var jobRun = jobRunInfoService.getOne(new QueryWrapper<JobRunInfo>()
                 .lambda()
                 .eq(JobRunInfo::getJobId, jobInfo.getId())
                 .eq(nonNull(flowRunId), JobRunInfo::getFlowRunId, flowRunId)
@@ -258,14 +255,14 @@ public class JobExecuteThread implements Supplier<JobResponse> {
             return jobRun;
         }
 
-        Long jobRunId = jobRunExtraService.createJobRun(jobInfo, flowRunId);
+        var jobRunId = jobRunExtraService.createJobRun(jobInfo, flowRunId);
         return jobRunInfoService.getById(jobRunId);
     }
 
     /** process job. */
     private JobRunInfo processRemoteJob(JobGrpcServiceBlockingStub stub, long jobRunId) {
-        ProcessJobRequest.Builder request = ProcessJobRequest.newBuilder().setJobRunId(jobRunId);
-        ProcessJobReply reply = stub.processJob(request.build());
+        var request = ProcessJobRequest.newBuilder().setJobRunId(jobRunId);
+        var reply = stub.processJob(request.build());
         return jobRunInfoService.getById(reply.getJobRunId());
     }
 
@@ -273,9 +270,9 @@ public class JobExecuteThread implements Supplier<JobResponse> {
         while (AppRunner.isRunning()) {
             try {
                 // Get and correct job status.
-                JobStatusRequest request = buildJobStatusRequest(jobRun);
-                JobStatusReply jobStatusReply = stub.getJobStatus(request);
-                StatusInfo statusInfo = StatusInfo.fromReplay(jobStatusReply);
+                var request = buildJobStatusRequest(jobRun);
+                var jobStatusReply = stub.getJobStatus(request);
+                var statusInfo = StatusInfo.fromReplay(jobStatusReply);
                 log.info(
                         "Job runId: {}, name: {} Status: {}", jobRun.getId(), jobRun.getName(), statusInfo.getStatus());
                 updateJobRunIfNeeded(jobRun, statusInfo, null);
@@ -311,7 +308,7 @@ public class JobExecuteThread implements Supplier<JobResponse> {
                 return;
             }
 
-            JobRunInfo newJobRun = new JobRunInfo();
+            var newJobRun = new JobRunInfo();
             newJobRun.setId(jobRunInfo.getId());
             newJobRun.setStatus(statusInfo.getStatus());
             if (statusInfo.getStatus().isTerminalState()) {
@@ -322,7 +319,7 @@ public class JobExecuteThread implements Supplier<JobResponse> {
                 newJobRun.setEndTime(endTime);
             }
             if (exception != null) {
-                String exceptionMsg = ExceptionUtil.stackTrace(exception);
+                var exceptionMsg = ExceptionUtil.stackTrace(exception);
                 newJobRun.setBackInfo(new JobCallback(exceptionMsg, null));
             }
 
@@ -335,11 +332,11 @@ public class JobExecuteThread implements Supplier<JobResponse> {
 
     private boolean isFlowRunStopped() {
         try {
-            JobFlowRun jobFlowRun = jobFlowRunService.getOne(new QueryWrapper<JobFlowRun>()
+            var jobFlowRun = jobFlowRunService.getOne(new QueryWrapper<JobFlowRun>()
                     .lambda()
                     .select(JobFlowRun::getStatus)
                     .eq(JobFlowRun::getId, flowRunId));
-            ExecutionStatus flowStatus = jobFlowRun.getStatus();
+            var flowStatus = jobFlowRun.getStatus();
             return KILLABLE.equals(flowStatus) || flowStatus.isTerminalState();
         } catch (Exception exception) {
             log.error("Get flow run: {} status failed", flowRunId, exception);

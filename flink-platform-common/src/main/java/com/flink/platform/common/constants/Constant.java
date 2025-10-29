@@ -67,6 +67,8 @@ public class Constant {
 
     public static final String DEPENDENT = "DEPENDENT";
 
+    public static final String SUB_FLOW = "SUB_FLOW";
+
     public static final String FULL_VERSION = "FULL_VERSION";
 
     public static final String PID = isWindows() ? "handle" : "pid";
