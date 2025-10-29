@@ -30,7 +30,7 @@ public enum ResponseStatus {
     FILE_EXISTS(10025, "file already exists"),
     JOB_LIST_NOT_SUPPORT_SCHEDULING(10026, "Job list does not support scheduling"),
     FLOW_ALREADY_SCHEDULED(10027, "Workflow already being scheduled"),
-    INVALID_WORKFLOW_TYPE(10028, "invalid workflow type"),
+    INVALID_WORKFLOW_TYPE(10028, "invalid workflow type, only job_flow supported"),
     INVALID_STATUS(10029, "invalid status"),
     ;
 

@@ -29,7 +29,7 @@ public class ShellCommandBuilder implements CommandBuilder {
 
     private final StorageService storageService;
 
-    public final DispatcherService dispatcherService;
+    private final DispatcherService dispatcherService;
 
     private final JobRunExtraService jobRunExtraService;
 

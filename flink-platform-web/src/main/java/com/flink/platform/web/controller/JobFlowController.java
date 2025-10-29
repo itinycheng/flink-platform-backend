@@ -7,6 +7,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.flink.platform.common.constants.Constant;
 import com.flink.platform.common.enums.JobFlowStatus;
 import com.flink.platform.common.enums.JobFlowType;
+import com.flink.platform.common.util.JsonUtil;
 import com.flink.platform.common.util.UuidGenerator;
 import com.flink.platform.dao.entity.ExecutionConfig;
 import com.flink.platform.dao.entity.JobFlow;
@@ -38,6 +39,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static com.flink.platform.common.constants.JobConstant.CONFIG;
 import static com.flink.platform.common.enums.JobFlowStatus.OFFLINE;
 import static com.flink.platform.common.enums.JobFlowStatus.ONLINE;
 import static com.flink.platform.common.enums.JobFlowStatus.SCHEDULING;
@@ -310,7 +312,7 @@ public class JobFlowController {
 
         // run once.
         var quartzInfo = new JobFlowQuartzInfo(jobFlow);
-        quartzInfo.setConfig(config);
+        quartzInfo.addData(CONFIG, JsonUtil.toJsonString(config));
         if (quartzService.runOnce(quartzInfo)) {
             return success(flowId);
         } else {
