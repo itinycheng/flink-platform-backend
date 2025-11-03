@@ -9,6 +9,7 @@ import com.baomidou.mybatisplus.extension.handlers.JacksonTypeHandler;
 import com.flink.platform.common.enums.DeployMode;
 import com.flink.platform.common.enums.ExecutionMode;
 import com.flink.platform.common.enums.ExecutionStatus;
+import com.flink.platform.common.enums.JobFlowStatus;
 import com.flink.platform.common.enums.JobStatus;
 import com.flink.platform.common.enums.JobType;
 import com.flink.platform.dao.entity.task.BaseJob;
@@ -104,4 +105,10 @@ public class JobInfo implements Serializable {
      */
     @TableField(exist = false)
     private ExecutionStatus jobRunStatus;
+
+    @TableField(exist = false)
+    private transient Long jobFlowId;
+
+    @TableField(exist = false)
+    private transient JobFlowStatus jobFlowStatus;
 }

@@ -15,6 +15,7 @@ import com.flink.platform.dao.entity.JobFlowDag;
 import com.flink.platform.dao.entity.User;
 import com.flink.platform.dao.service.JobFlowRunService;
 import com.flink.platform.dao.service.JobFlowService;
+import com.flink.platform.dao.service.JobInfoService;
 import com.flink.platform.dao.service.JobRunInfoService;
 import com.flink.platform.web.config.annotation.ApiException;
 import com.flink.platform.web.entity.JobFlowQuartzInfo;
@@ -43,16 +44,16 @@ import static com.flink.platform.common.constants.JobConstant.CONFIG;
 import static com.flink.platform.common.enums.JobFlowStatus.OFFLINE;
 import static com.flink.platform.common.enums.JobFlowStatus.ONLINE;
 import static com.flink.platform.common.enums.JobFlowStatus.SCHEDULING;
-import static com.flink.platform.common.enums.JobFlowType.JOB_FLOW;
 import static com.flink.platform.common.enums.JobFlowType.JOB_LIST;
+import static com.flink.platform.common.enums.JobFlowType.SUB_FLOW;
 import static com.flink.platform.common.enums.ResponseStatus.ERROR_PARAMETER;
 import static com.flink.platform.common.enums.ResponseStatus.EXIST_UNFINISHED_PROCESS;
 import static com.flink.platform.common.enums.ResponseStatus.FLOW_ALREADY_SCHEDULED;
-import static com.flink.platform.common.enums.ResponseStatus.INVALID_WORKFLOW_TYPE;
-import static com.flink.platform.common.enums.ResponseStatus.JOB_LIST_NOT_SUPPORT_SCHEDULING;
 import static com.flink.platform.common.enums.ResponseStatus.NOT_RUNNABLE_STATUS;
+import static com.flink.platform.common.enums.ResponseStatus.NOT_SUPPORT_SCHEDULING;
 import static com.flink.platform.common.enums.ResponseStatus.NO_CRONTAB_SET;
 import static com.flink.platform.common.enums.ResponseStatus.SERVICE_ERROR;
+import static com.flink.platform.common.enums.ResponseStatus.SUB_FLOW_ALREADY_IN_USE;
 import static com.flink.platform.common.enums.ResponseStatus.UNABLE_SCHEDULING_JOB_FLOW;
 import static com.flink.platform.common.enums.ResponseStatus.USER_HAVE_NO_PERMISSION;
 import static com.flink.platform.web.entity.response.ResultInfo.failure;
@@ -75,6 +76,8 @@ public class JobFlowController {
 
     private final QuartzService quartzService;
 
+    private final JobInfoService jobInfoService;
+
     private final JobRunInfoService jobRunService;
 
     @ApiException
@@ -92,7 +95,7 @@ public class JobFlowController {
         jobFlow.setCode(UuidGenerator.generateShortUuid());
         jobFlow.setUserId(loginUser.getId());
         jobFlow.setStatus(OFFLINE);
-        if (JOB_LIST.equals(jobFlow.getType())) {
+        if (!jobFlow.getType().supportsCron()) {
             jobFlow.setStatus(ONLINE);
             jobFlow.setFlow(new JobFlowDag());
         }
@@ -111,11 +114,21 @@ public class JobFlowController {
         jobFlowRequest.setCode(null);
         jobFlowRequest.setUserId(null);
 
-        if (JOB_LIST.equals(jobFlowRequest.getType())) {
-            JobFlow jobFlow = jobFlowService.getById(jobFlowRequest.getId());
-            if (OFFLINE.equals(jobFlow.getStatus())) {
-                jobFlowRequest.setStatus(ONLINE);
-            }
+        if (!OFFLINE.equals(jobFlowRequest.getStatus())) {
+            jobFlowService.updateById(jobFlowRequest.getJobFlow());
+            return success(jobFlowRequest.getId());
+        }
+
+        var jobFlow = jobFlowService.getById(jobFlowRequest.getId());
+        if (!SUB_FLOW.equals(jobFlow.getType())) {
+            jobFlowService.updateById(jobFlowRequest.getJobFlow());
+            return success(jobFlowRequest.getId());
+        }
+
+        var job = jobInfoService.findRunnableJobUsingSubFlow(jobFlow.getId());
+        if (job != null) {
+            return failure(
+                    SUB_FLOW_ALREADY_IN_USE, "Sub-flow is already used in workflow : %s".formatted(job.getJobFlowId()));
         }
 
         jobFlowService.updateById(jobFlowRequest.getJobFlow());
@@ -235,35 +248,25 @@ public class JobFlowController {
             return failure(NOT_RUNNABLE_STATUS);
         }
 
+        if (!jobFlow.getType().supportsCron()) {
+            return failure(NOT_SUPPORT_SCHEDULING);
+        }
+
         if (SCHEDULING.equals(status)) {
             return failure(FLOW_ALREADY_SCHEDULED);
         }
 
-        if (JOB_FLOW.equals(jobFlow.getType())) {
-            if (StringUtils.isEmpty(jobFlow.getCronExpr())) {
-                return failure(NO_CRONTAB_SET);
-            }
-
-            JobFlowDag flow = jobFlow.getFlow();
-            if (flow == null || CollectionUtils.isEmpty(flow.getVertices())) {
-                return failure(UNABLE_SCHEDULING_JOB_FLOW);
-            }
+        if (StringUtils.isEmpty(jobFlow.getCronExpr())) {
+            return failure(NO_CRONTAB_SET);
         }
 
-        switch (jobFlow.getType()) {
-            case JOB_LIST:
-                JobFlow newJobFlow = new JobFlow();
-                newJobFlow.setId(jobFlow.getId());
-                newJobFlow.setStatus(SCHEDULING);
-                jobFlowService.updateById(newJobFlow);
-                break;
-            case JOB_FLOW:
-                jobFlowQuartzService.scheduleJob(jobFlow);
-                break;
-            default:
-                return failure(INVALID_WORKFLOW_TYPE);
+        JobFlowDag flow = jobFlow.getFlow();
+        if (flow == null || CollectionUtils.isEmpty(flow.getVertices())) {
+            return failure(UNABLE_SCHEDULING_JOB_FLOW);
         }
 
+        // only jobs of JOB_FLOW type needs to be scheduled in quartz.
+        jobFlowQuartzService.scheduleJob(jobFlow);
         return success(flowId);
     }
 
@@ -297,7 +300,7 @@ public class JobFlowController {
         if (JOB_LIST.equals(jobFlow.getType())) {
             // scheduling of job list is unsupported.
             if (config == null || config.getStartJobId() == null) {
-                return failure(JOB_LIST_NOT_SUPPORT_SCHEDULING);
+                return failure(NOT_SUPPORT_SCHEDULING);
             }
 
             // check if the start job is finished.

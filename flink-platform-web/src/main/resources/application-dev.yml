@@ -39,7 +39,7 @@ spring:
             misfireThreshold: 5000
           threadPool:
             class: org.quartz.simpl.SimpleThreadPool
-            threadCount: 200
+            threadCount: 100
             threadPriority: 5
             threadsInheritContextClassLoaderOfInitializingThread: true
 

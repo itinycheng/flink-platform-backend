@@ -27,11 +27,12 @@ public enum ResponseStatus {
     KILL_FLOW_EXCEPTION_FOUND(10022, "Exception raised when terminating workflow"),
     NO_RUNNING_JOB_FOUND(10023, "No running job found"),
     OPERATION_NOT_ALLOWED(10024, "illegal operation"),
-    FILE_EXISTS(10025, "file already exists"),
-    JOB_LIST_NOT_SUPPORT_SCHEDULING(10026, "Job list does not support scheduling"),
+    FILE_EXISTS(10025, "File already exists"),
+    NOT_SUPPORT_SCHEDULING(10026, "Not support scheduling"),
     FLOW_ALREADY_SCHEDULED(10027, "Workflow already being scheduled"),
     INVALID_WORKFLOW_TYPE(10028, "invalid workflow type, only job_flow supported"),
     INVALID_STATUS(10029, "invalid status"),
+    SUB_FLOW_ALREADY_IN_USE(10030, "Sub workflow already in use"),
     ;
 
     private final int code;
