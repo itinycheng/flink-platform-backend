@@ -10,6 +10,7 @@ import com.flink.platform.dao.entity.JobFlowRun;
 import com.flink.platform.dao.entity.JobRunInfo;
 import com.flink.platform.dao.mapper.JobFlowRunMapper;
 import jakarta.annotation.Nonnull;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,10 +21,10 @@ import static com.flink.platform.common.enums.ExecutionStrategy.ONLY_CUR_JOB;
 /** job config info. */
 @Service
 @DS("master_platform")
+@RequiredArgsConstructor(onConstructor_ = @Autowired)
 public class JobFlowRunService extends ServiceImpl<JobFlowRunMapper, JobFlowRun> {
 
-    @Autowired
-    private JobRunInfoService jobRunService;
+    private final JobRunInfoService jobRunService;
 
     @Transactional
     public void deleteAllById(long flowRunId, long userId) {

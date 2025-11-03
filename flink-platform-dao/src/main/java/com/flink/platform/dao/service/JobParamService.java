@@ -8,6 +8,7 @@ import com.flink.platform.common.enums.Status;
 import com.flink.platform.dao.entity.JobInfo;
 import com.flink.platform.dao.entity.JobParam;
 import com.flink.platform.dao.mapper.JobParamMapper;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -18,10 +19,10 @@ import java.util.List;
 /** job param service. */
 @Service
 @DS("master_platform")
+@RequiredArgsConstructor(onConstructor_ = @Autowired)
 public class JobParamService extends ServiceImpl<JobParamMapper, JobParam> {
 
-    @Autowired
-    private JobInfoService jobInfoService;
+    private final JobInfoService jobInfoService;
 
     public List<JobParam> getJobParams(Long jobId) {
         JobInfo jobInfo = jobInfoService.getById(jobId);
