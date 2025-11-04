@@ -6,6 +6,7 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.flink.platform.dao.entity.JobFlowRun;
 import com.flink.platform.dao.entity.JobInfo;
 import com.flink.platform.dao.entity.JobRunInfo;
+import com.flink.platform.dao.entity.task.FlowJob;
 import com.flink.platform.dao.mapper.JobInfoMapper;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.collections4.CollectionUtils;
@@ -17,7 +18,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
-import static com.flink.platform.common.enums.JobType.SUB_FLOW;
 import static com.flink.platform.dao.entity.JobInfo.LARGE_FIELDS;
 import static java.util.stream.Collectors.toSet;
 
@@ -61,14 +61,11 @@ public class JobInfoService extends ServiceImpl<JobInfoMapper, JobInfo> {
     }
 
     public JobInfo findRunnableJobUsingSubFlow(Long flowId) {
-        var jobList = baseMapper.queryJobConfigAndFlowStatus(flowId, SUB_FLOW);
-        if (CollectionUtils.isEmpty(jobList)) {
-            return null;
-        }
+        var jobs = baseMapper.queryRunnableJobUsingSubFlow(flowId);
 
-        return jobList.stream()
-                .filter(job -> job.getJobFlowStatus() != null)
-                .filter(job -> job.getJobFlowStatus().isRunnable())
+        return jobs.stream()
+                .filter(job -> job != null && job.getConfig() instanceof FlowJob)
+                .filter(job -> ((FlowJob) job.getConfig()).getFlowId() == flowId)
                 .findAny()
                 .orElse(null);
     }

@@ -1,9 +1,12 @@
 package com.flink.platform.dao.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
-import com.flink.platform.common.enums.JobType;
+import com.baomidou.mybatisplus.extension.handlers.JacksonTypeHandler;
 import com.flink.platform.dao.entity.JobInfo;
+import com.flink.platform.dao.entity.task.BaseJob;
 import org.apache.ibatis.annotations.Param;
+import org.apache.ibatis.annotations.Result;
+import org.apache.ibatis.annotations.Results;
 import org.apache.ibatis.annotations.Select;
 
 import java.util.List;
@@ -11,6 +14,15 @@ import java.util.List;
 /** job config info Mapper. */
 public interface JobInfoMapper extends BaseMapper<JobInfo> {
 
+    @Results(
+            id = "queryRunnableJobUsingSubFlow",
+            value = {
+                @Result(
+                        property = "config",
+                        column = "config",
+                        typeHandler = JacksonTypeHandler.class,
+                        javaType = BaseJob.class)
+            })
     @Select(
             """
                     <script>
@@ -18,8 +30,9 @@ public interface JobInfoMapper extends BaseMapper<JobInfo> {
                     from t_job j, t_job_flow f
                     where j.flow_id = f.id
                     and j.config like CONCAT('%', #{flowId}, '%')
-                    and j.type = #{jobType}
+                    and j.type = 'SUB_FLOW'
+                    and f.status in ('ONLINE', 'SCHEDULING')
                     </script>
                     """)
-    List<JobInfo> queryJobConfigAndFlowStatus(@Param("flowId") Long flowId, @Param("jobType") JobType jobType);
+    List<JobInfo> queryRunnableJobUsingSubFlow(@Param("flowId") Long flowId);
 }
