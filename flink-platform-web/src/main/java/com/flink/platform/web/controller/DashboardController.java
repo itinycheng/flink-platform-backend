@@ -42,7 +42,7 @@ public class DashboardController {
                     LocalDateTime startTime,
             @DateTimeFormat(pattern = GLOBAL_DATE_TIME_FORMAT) @RequestParam(name = "endTime", required = false)
                     LocalDateTime endTime) {
-        List<Map<String, Object>> maps = jobRunService.listMaps(new QueryWrapper<JobRunInfo>()
+        var maps = jobRunService.listMaps(new QueryWrapper<JobRunInfo>()
                 .select("status, count(id) as count")
                 .groupBy("status")
                 .nested(
@@ -59,7 +59,7 @@ public class DashboardController {
                     LocalDateTime startTime,
             @DateTimeFormat(pattern = GLOBAL_DATE_TIME_FORMAT) @RequestParam(name = "endTime", required = false)
                     LocalDateTime endTime) {
-        List<Map<String, Object>> maps = jobFlowRunService.listMaps(new QueryWrapper<JobFlowRun>()
+        var maps = jobFlowRunService.listMaps(new QueryWrapper<JobFlowRun>()
                 .select("status, count(id) as count")
                 .groupBy("status")
                 .nested(

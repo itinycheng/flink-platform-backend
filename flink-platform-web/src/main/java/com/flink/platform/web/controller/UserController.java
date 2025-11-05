@@ -1,11 +1,9 @@
 package com.flink.platform.web.controller;
 
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.flink.platform.common.constants.Constant;
-import com.flink.platform.dao.entity.LongArrayList;
 import com.flink.platform.dao.entity.User;
 import com.flink.platform.dao.entity.Worker;
 import com.flink.platform.dao.service.UserService;
@@ -58,7 +56,7 @@ public class UserController {
     @PostMapping(value = "/create")
     public ResultInfo<Long> create(
             @RequestAttribute(value = Constant.SESSION_USER) User loginUser, @RequestBody UserRequest userRequest) {
-        String errorMsg = userRequest.validateOnCreate();
+        var errorMsg = userRequest.validateOnCreate();
         if (StringUtils.isNotBlank(errorMsg)) {
             return failure(ERROR_PARAMETER, errorMsg);
         }
@@ -67,7 +65,7 @@ public class UserController {
             return failure(USER_HAVE_NO_PERMISSION);
         }
 
-        User user = userRequest.getUser();
+        var user = userRequest.getUser();
         user.setId(null);
         userService.save(user);
         return success(user.getId());
@@ -76,7 +74,7 @@ public class UserController {
     @PostMapping(value = "/update")
     public ResultInfo<Long> update(
             @RequestAttribute(value = Constant.SESSION_USER) User loginUser, @RequestBody UserRequest userRequest) {
-        String errorMsg = userRequest.validateOnUpdate();
+        var errorMsg = userRequest.validateOnUpdate();
         if (StringUtils.isNotBlank(errorMsg)) {
             return failure(ERROR_PARAMETER, errorMsg);
         }
@@ -85,7 +83,7 @@ public class UserController {
             return failure(USER_HAVE_NO_PERMISSION);
         }
 
-        User user = userRequest.getUser();
+        var user = userRequest.getUser();
         userService.updateById(user);
         return success(user.getId());
     }
@@ -96,21 +94,20 @@ public class UserController {
             @RequestParam(name = "page", required = false, defaultValue = "1") Integer page,
             @RequestParam(name = "size", required = false, defaultValue = "20") Integer size,
             @RequestParam(name = "name", required = false) String name) {
-        LambdaQueryWrapper<User> queryWrapper =
-                new QueryWrapper<User>().lambda().like(Objects.nonNull(name), User::getUsername, name);
+        var queryWrapper = new QueryWrapper<User>().lambda().like(Objects.nonNull(name), User::getUsername, name);
 
         if (loginUser.getType() != ADMIN) {
             queryWrapper.eq(User::getId, loginUser.getId());
         }
 
-        Page<User> pager = new Page<>(page, size);
-        IPage<User> iPage = userService.page(pager, queryWrapper);
+        var pager = new Page<User>(page, size);
+        var iPage = userService.page(pager, queryWrapper);
         return success(iPage);
     }
 
     @GetMapping(value = "/info")
     public ResultInfo<Map<String, Object>> info(@RequestAttribute(value = Constant.SESSION_USER) User loginUser) {
-        Map<String, Object> result = new HashMap<>();
+        var result = new HashMap<String, Object>();
         result.put("roles", Arrays.asList("admin", "common"));
         result.put("introduction", "A fixed user given by the backend");
         result.put("avatar", "https://wpimg.wallstcn.com/f778738c-e4f8-4870-b634-56703b4acafe.gif");
@@ -120,13 +117,13 @@ public class UserController {
 
     @GetMapping(value = "/workers")
     public ResultInfo<List<Worker>> workers(@RequestAttribute(value = Constant.SESSION_USER) User loginUser) {
-        User user = userService.getById(loginUser.getId());
-        LongArrayList workerIdList = user.getWorkers();
+        var user = userService.getById(loginUser.getId());
+        var workerIdList = user.getWorkers();
         if (CollectionUtils.isEmpty(workerIdList)) {
             return success(Collections.emptyList());
         }
 
-        List<Worker> list = workerService.list(new QueryWrapper<Worker>()
+        var list = workerService.list(new QueryWrapper<Worker>()
                 .lambda()
                 .in(Worker::getId, workerIdList)
                 .ne(Worker::getRole, INACTIVE));

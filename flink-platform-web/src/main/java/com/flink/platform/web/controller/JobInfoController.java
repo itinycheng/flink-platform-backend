@@ -1,6 +1,5 @@
 package com.flink.platform.web.controller;
 
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -8,7 +7,6 @@ import com.flink.platform.common.constants.Constant;
 import com.flink.platform.common.enums.JobFlowStatus;
 import com.flink.platform.common.enums.JobStatus;
 import com.flink.platform.common.model.JobVertex;
-import com.flink.platform.dao.entity.JobFlow;
 import com.flink.platform.dao.entity.JobInfo;
 import com.flink.platform.dao.entity.JobRunInfo;
 import com.flink.platform.dao.entity.User;
@@ -36,7 +34,6 @@ import org.springframework.web.bind.annotation.RestController;
 import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 
 import static com.flink.platform.common.enums.ExecutionStatus.getNonTerminals;
 import static com.flink.platform.common.enums.JobStatus.ONLINE;
@@ -74,12 +71,12 @@ public class JobInfoController {
     public ResultInfo<JobInfo> create(
             @RequestAttribute(value = Constant.SESSION_USER) User loginUser,
             @RequestBody JobInfoRequest jobInfoRequest) {
-        String errorMsg = jobInfoRequest.validateOnCreate();
+        var errorMsg = jobInfoRequest.validateOnCreate();
         if (StringUtils.isNotBlank(errorMsg)) {
             return failure(ERROR_PARAMETER, errorMsg);
         }
 
-        JobInfo jobInfo = jobInfoRequest.getJobInfo();
+        var jobInfo = jobInfoRequest.getJobInfo();
         jobInfo.setId(null);
         jobInfo.setStatus(ONLINE);
         jobInfo.setUserId(loginUser.getId());
@@ -89,25 +86,25 @@ public class JobInfoController {
 
     @PostMapping(value = "/update")
     public ResultInfo<JobInfo> update(@RequestBody JobInfoRequest jobInfoRequest) {
-        String errorMsg = jobInfoRequest.validateOnUpdate();
+        var errorMsg = jobInfoRequest.validateOnUpdate();
         if (StringUtils.isNotBlank(errorMsg)) {
             return failure(ERROR_PARAMETER, errorMsg);
         }
 
-        JobInfo jobInfo = jobInfoRequest.getJobInfo();
+        var jobInfo = jobInfoRequest.getJobInfo();
         jobInfoService.updateById(jobInfo);
         return success(jobInfo);
     }
 
     @GetMapping(value = "/get/{jobId}")
     public ResultInfo<JobInfo> get(@PathVariable Long jobId) {
-        JobInfo jobInfo = jobInfoService.getById(jobId);
+        var jobInfo = jobInfoService.getById(jobId);
         return success(jobInfo);
     }
 
     @GetMapping(value = "/delete/{jobId}")
     public ResultInfo<Boolean> delete(@PathVariable Long jobId) {
-        boolean bool = jobInfoService.removeById(jobId);
+        var bool = jobInfoService.removeById(jobId);
         return success(bool);
     }
 
@@ -127,7 +124,7 @@ public class JobInfoController {
             @DateTimeFormat(pattern = GLOBAL_DATE_TIME_FORMAT) @RequestParam(name = "endTime", required = false)
                     LocalDateTime endTime,
             @RequestParam(name = "sort", required = false) String sort) {
-        LambdaQueryWrapper<JobInfo> queryWrapper = new QueryWrapper<JobInfo>()
+        var queryWrapper = new QueryWrapper<JobInfo>()
                 .lambda()
                 .eq(nonNull(id), JobInfo::getId, id)
                 .eq(nonNull(flowId), JobInfo::getFlowId, flowId)
@@ -150,16 +147,16 @@ public class JobInfoController {
             queryWrapper.notIn(isNotEmpty(jobIds), JobInfo::getId, jobIds);
         }
 
-        Page<JobInfo> pager = new Page<>(page, size);
-        Page<JobInfo> result = jobInfoService.page(pager, queryWrapper);
+        var pager = new Page<JobInfo>(page, size);
+        var result = jobInfoService.page(pager, queryWrapper);
 
         // Add jobRun info.
         if (includeJobRuns && CollectionUtils.isNotEmpty(result.getRecords())) {
-            List<Long> jobIds = result.getRecords().stream().map(JobInfo::getId).collect(toList());
-            Map<Long, JobRunInfo> runningJobsMap = jobRunService.listLastWithoutLargeFields(null, jobIds).stream()
+            var jobIds = result.getRecords().stream().map(JobInfo::getId).collect(toList());
+            var runningJobsMap = jobRunService.listLastWithoutLargeFields(null, jobIds).stream()
                     .collect(toMap(JobRunInfo::getJobId, jobRun -> jobRun));
             result.getRecords().forEach(job -> {
-                JobRunInfo jobRun = runningJobsMap.get(job.getId());
+                var jobRun = runningJobsMap.get(job.getId());
                 if (jobRun != null) {
                     job.setJobRunId(jobRun.getId());
                     job.setJobRunStatus(jobRun.getStatus());
@@ -180,7 +177,7 @@ public class JobInfoController {
             jobIds = getJobIdsInFlow(flowId);
         }
 
-        List<JobInfo> list = jobInfoService.list(new QueryWrapper<JobInfo>()
+        var list = jobInfoService.list(new QueryWrapper<JobInfo>()
                 .lambda()
                 .select(JobInfo.class, field -> !LARGE_FIELDS.contains(field.getProperty()))
                 .eq(JobInfo::getFlowId, flowId)
@@ -194,7 +191,7 @@ public class JobInfoController {
             return success(Collections.emptyList());
         }
 
-        List<JobInfo> jobs = jobInfoService.list(new QueryWrapper<JobInfo>()
+        var jobs = jobInfoService.list(new QueryWrapper<JobInfo>()
                 .lambda()
                 .select(JobInfo.class, field -> !LARGE_FIELDS.contains(field.getProperty()))
                 .in(JobInfo::getId, ids));
@@ -204,12 +201,12 @@ public class JobInfoController {
     @Deprecated
     @GetMapping(value = "/schedule/runOnce/{jobId}")
     public ResultInfo<Long> runOnce(@PathVariable long jobId) {
-        JobInfo jobInfo = jobInfoService.getById(jobId);
+        var jobInfo = jobInfoService.getById(jobId);
         if (jobInfo.getStatus() != ONLINE) {
             return failure(NOT_RUNNABLE_STATUS);
         }
 
-        JobRunInfo unfinishedJob = jobRunService.getOne(new QueryWrapper<JobRunInfo>()
+        var unfinishedJob = jobRunService.getOne(new QueryWrapper<JobRunInfo>()
                 .lambda()
                 .eq(JobRunInfo::getJobId, jobId)
                 .in(JobRunInfo::getStatus, getNonTerminals())
@@ -218,7 +215,7 @@ public class JobInfoController {
             return failure(EXIST_UNFINISHED_PROCESS);
         }
 
-        JobQuartzInfo quartzInfo = new JobQuartzInfo(jobInfo);
+        var quartzInfo = new JobQuartzInfo(jobInfo);
         if (quartzService.runOnce(quartzInfo)) {
             return success(jobId);
         } else {
@@ -231,7 +228,7 @@ public class JobInfoController {
             return Collections.emptyList();
         }
 
-        JobFlow jobFlow = jobFlowService.getById(flowId);
+        var jobFlow = jobFlowService.getById(flowId);
         if (jobFlow != null && jobFlow.getFlow() != null) {
             return jobFlow.getFlow().getVertices().stream()
                     .map(JobVertex::getJobId)
@@ -244,7 +241,7 @@ public class JobInfoController {
     @GetMapping(value = "/purge/{jobId}")
     public ResultInfo<Long> purge(
             @RequestAttribute(value = Constant.SESSION_USER) User loginUser, @PathVariable long jobId) {
-        JobInfo jobInfo = jobInfoService.getById(jobId);
+        var jobInfo = jobInfoService.getById(jobId);
         if (jobInfo == null) {
             return failure(ERROR_PARAMETER);
         }
@@ -253,8 +250,8 @@ public class JobInfoController {
             return failure(USER_HAVE_NO_PERMISSION);
         }
 
-        Long flowId = jobInfo.getFlowId();
-        JobFlow jobFlow = jobFlowService.getById(flowId);
+        var flowId = jobInfo.getFlowId();
+        var jobFlow = jobFlowService.getById(flowId);
         if (jobFlow != null && jobFlow.getFlow() != null) {
             if (jobFlow.getFlow().containsVertex(jobId)) {
                 return failure(OPERATION_NOT_ALLOWED, "Job is in flow, can't be deleted");

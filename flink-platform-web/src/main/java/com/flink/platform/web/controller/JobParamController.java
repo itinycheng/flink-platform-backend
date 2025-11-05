@@ -49,12 +49,12 @@ public class JobParamController {
     public ResultInfo<Long> create(
             @RequestAttribute(value = Constant.SESSION_USER) User loginUser,
             @RequestBody JobParamRequest jobParamRequest) {
-        String errorMsg = jobParamRequest.validateOnCreate();
+        var errorMsg = jobParamRequest.validateOnCreate();
         if (StringUtils.isNotBlank(errorMsg)) {
             return failure(ERROR_PARAMETER, errorMsg);
         }
 
-        JobParam existed = jobParamService.getOne(new QueryWrapper<JobParam>()
+        var existed = jobParamService.getOne(new QueryWrapper<JobParam>()
                 .lambda()
                 .eq(JobParam::getParamName, jobParamRequest.getParamName())
                 .eq(JobParam::getType, jobParamRequest.getType())
@@ -65,7 +65,7 @@ public class JobParamController {
             return failure(ERROR_PARAMETER, "param name already exists");
         }
 
-        JobParam jobParam = jobParamRequest.getJobParam();
+        var jobParam = jobParamRequest.getJobParam();
         jobParam.setId(null);
         jobParam.setUserId(loginUser.getId());
         jobParam.setStatus(Status.ENABLE);
@@ -75,12 +75,12 @@ public class JobParamController {
 
     @PostMapping(value = "/update")
     public ResultInfo<Long> update(@RequestBody JobParamRequest jobParamRequest) {
-        String errorMsg = jobParamRequest.validateOnUpdate();
+        var errorMsg = jobParamRequest.validateOnUpdate();
         if (StringUtils.isNotBlank(errorMsg)) {
             return failure(ERROR_PARAMETER, errorMsg);
         }
 
-        JobParam jobParam = jobParamRequest.getJobParam();
+        var jobParam = jobParamRequest.getJobParam();
         jobParam.setUserId(null);
         jobParamService.updateById(jobParam);
         return success(jobParam.getId());
@@ -88,17 +88,17 @@ public class JobParamController {
 
     @GetMapping(value = "/get/{paramId}")
     public ResultInfo<JobParam> get(@PathVariable Long paramId) {
-        JobParam jobParam = jobParamService.getById(paramId);
+        var jobParam = jobParamService.getById(paramId);
         return success(jobParam);
     }
 
     @GetMapping(value = "/delete/{paramId}")
     public ResultInfo<Boolean> delete(@PathVariable Long paramId) {
-        JobParam jobParam = jobParamService.getById(paramId);
+        var jobParam = jobParamService.getById(paramId);
 
         // JobParamType.JOB_FLOW unhandled.
         if (GLOBAL == jobParam.getType()) {
-            JobInfo jobInfo = jobService.getOne(new QueryWrapper<JobInfo>()
+            var jobInfo = jobService.getOne(new QueryWrapper<JobInfo>()
                     .lambda()
                     .eq(JobInfo::getUserId, jobParam.getUserId())
                     .like(JobInfo::getSubject, PARAM_FORMAT.formatted(jobParam.getParamName()))
@@ -110,7 +110,7 @@ public class JobParamController {
             }
         }
 
-        boolean bool = jobParamService.removeById(paramId);
+        var bool = jobParamService.removeById(paramId);
         return success(bool);
     }
 
@@ -120,8 +120,8 @@ public class JobParamController {
             @RequestParam(name = "page", required = false, defaultValue = "1") Integer page,
             @RequestParam(name = "size", required = false, defaultValue = "20") Integer size,
             @RequestParam(name = "name", required = false) String name) {
-        Page<JobParam> pager = new Page<>(page, size);
-        IPage<JobParam> iPage = jobParamService.page(
+        var pager = new Page<JobParam>(page, size);
+        var iPage = jobParamService.page(
                 pager,
                 new QueryWrapper<JobParam>()
                         .lambda()
@@ -136,7 +136,7 @@ public class JobParamController {
             @RequestAttribute(value = Constant.SESSION_USER) User loginUser,
             @RequestParam(name = "flowId", required = false) Long flowId,
             @RequestParam(name = "status", required = false) Status status) {
-        List<JobParam> list = jobParamService.list(new QueryWrapper<JobParam>()
+        var list = jobParamService.list(new QueryWrapper<JobParam>()
                 .lambda()
                 .eq(JobParam::getUserId, loginUser.getId())
                 .eq(nonNull(flowId), JobParam::getFlowId, flowId)

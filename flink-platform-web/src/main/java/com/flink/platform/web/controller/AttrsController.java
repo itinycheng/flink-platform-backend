@@ -7,8 +7,6 @@ import com.flink.platform.common.enums.JobType;
 import com.flink.platform.dao.entity.task.DependentJob;
 import com.flink.platform.web.config.FlinkConfig;
 import com.flink.platform.web.entity.response.ResultInfo;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,10 +15,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -50,7 +48,7 @@ public class AttrsController {
 
     @GetMapping(value = "/preconditions")
     public ResultInfo<List<ExecutionCondition>> precondition() {
-        List<ExecutionCondition> conditions = new ArrayList<>();
+        var conditions = new ArrayList<ExecutionCondition>();
         conditions.add(AND);
         conditions.add(OR);
         return success(conditions);
@@ -63,7 +61,7 @@ public class AttrsController {
 
     @GetMapping(value = "/versions")
     public ResultInfo<List<String>> versions(String type) {
-        List<String> versions = new ArrayList<>();
+        var versions = new ArrayList<String>();
         if (FLINK.equals(type)) {
             versions.addAll(flinkConfigs.stream()
                     .map(FlinkConfig::getVersion)
@@ -106,16 +104,16 @@ public class AttrsController {
     @GetMapping(value = "/enums")
     public ResultInfo<List<Map<String, Object>>> list(
             @RequestParam(name = "className", required = false) String className) {
-        List<Map<String, Object>> enums = Lists.newArrayList();
-        String clazz = CLASS_PATH_PREFIX + "." + className;
+        var enums = new ArrayList<Map<String, Object>>();
+        var clazz = CLASS_PATH_PREFIX + "." + className;
         try {
-            Class<?> clz = Class.forName(clazz);
-            Method values = clz.getMethod("values");
-            Object invoke = values.invoke(null);
-            for (Object obj : (Object[]) invoke) {
-                Method getName = obj.getClass().getMethod("name");
-                Object code = getName.invoke(obj);
-                Map<String, Object> map = Maps.newHashMap();
+            var clz = Class.forName(clazz);
+            var values = clz.getMethod("values");
+            var invoke = values.invoke(null);
+            for (var obj : (Object[]) invoke) {
+                var getName = obj.getClass().getMethod("name");
+                var code = getName.invoke(obj);
+                var map = new HashMap<String, Object>();
                 map.put("name", code);
                 enums.add(map);
             }

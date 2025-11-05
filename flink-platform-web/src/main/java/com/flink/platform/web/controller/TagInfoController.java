@@ -48,12 +48,12 @@ public class TagInfoController {
     @PostMapping(value = "/create")
     public ResultInfo<Long> create(
             @RequestAttribute(value = Constant.SESSION_USER) User loginUser, @RequestBody TagInfoRequest tagRequest) {
-        String errorMsg = tagRequest.validateOnCreate();
+        var errorMsg = tagRequest.validateOnCreate();
         if (StringUtils.isNotBlank(errorMsg)) {
             return failure(ERROR_PARAMETER, errorMsg);
         }
 
-        TagInfo tagInfo = tagRequest.getTagInfo();
+        var tagInfo = tagRequest.getTagInfo();
         tagInfo.setId(null);
         tagInfo.setCode(UuidGenerator.generateShortUuid());
         tagInfo.setUserId(loginUser.getId());
@@ -65,7 +65,7 @@ public class TagInfoController {
     @ApiException
     @PostMapping(value = "/update")
     public ResultInfo<Long> update(@RequestBody TagInfoRequest tagRequest) {
-        String errorMsg = tagRequest.validateOnUpdate();
+        var errorMsg = tagRequest.validateOnUpdate();
         if (StringUtils.isNotBlank(errorMsg)) {
             return failure(ERROR_PARAMETER, errorMsg);
         }
@@ -78,14 +78,14 @@ public class TagInfoController {
 
     @GetMapping(value = "/get/{tagId}")
     public ResultInfo<TagInfo> get(@PathVariable Long tagId) {
-        TagInfo tagInfo = tagInfoService.getById(tagId);
+        var tagInfo = tagInfoService.getById(tagId);
         return success(tagInfo);
     }
 
     @GetMapping(value = "/delete/{tagId}")
     public ResultInfo<Boolean> delete(@PathVariable Long tagId) {
-        TagInfo tagInfo = tagInfoService.getById(tagId);
-        JobFlow jobFlow = jobFlowService.getOne(new QueryWrapper<JobFlow>()
+        var tagInfo = tagInfoService.getById(tagId);
+        var jobFlow = jobFlowService.getOne(new QueryWrapper<JobFlow>()
                 .lambda()
                 .like(JobFlow::getTags, tagInfo.getCode())
                 .last("LIMIT 1"));
@@ -95,7 +95,7 @@ public class TagInfoController {
                     "The tag is being used in jobFlow: %s, cannot be removed".formatted(jobFlow.getName()));
         }
 
-        boolean bool = tagInfoService.removeById(tagId);
+        var bool = tagInfoService.removeById(tagId);
         return success(bool);
     }
 
@@ -105,8 +105,8 @@ public class TagInfoController {
             @RequestParam(name = "page", required = false, defaultValue = "1") Integer page,
             @RequestParam(name = "size", required = false, defaultValue = "20") Integer size,
             @RequestParam(name = "name", required = false) String name) {
-        Page<TagInfo> pager = new Page<>(page, size);
-        IPage<TagInfo> iPage = tagInfoService.page(
+        var pager = new Page<TagInfo>(page, size);
+        var iPage = tagInfoService.page(
                 pager,
                 new QueryWrapper<TagInfo>()
                         .lambda()
@@ -121,7 +121,7 @@ public class TagInfoController {
             @RequestAttribute(value = Constant.SESSION_USER) User loginUser,
             @RequestParam(name = "name", required = false) String name,
             @RequestParam(name = "status", required = false) Status status) {
-        List<TagInfo> list = tagInfoService.list(new QueryWrapper<TagInfo>()
+        var list = tagInfoService.list(new QueryWrapper<TagInfo>()
                 .lambda()
                 .eq(TagInfo::getUserId, loginUser.getId())
                 .eq(nonNull(status), TagInfo::getStatus, status)
