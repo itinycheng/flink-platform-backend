@@ -39,7 +39,7 @@ public class LoginController {
 
     @PostMapping(value = "/login")
     public ResultInfo<Map<String, String>> login(@RequestBody User user, HttpServletRequest request) {
-        User loginUser = userService.getOne(new QueryWrapper<User>()
+        var loginUser = userService.getOne(new QueryWrapper<User>()
                 .lambda()
                 .eq(User::getUsername, user.getUsername())
                 .eq(User::getPassword, user.getPassword()));
@@ -47,8 +47,8 @@ public class LoginController {
             return failure(ResponseStatus.USER_NAME_PASSWD_ERROR);
         }
 
-        String clientIp = HttpUtil.getClientIpAddress(request);
-        Session session = sessionService.getOne(new QueryWrapper<Session>()
+        var clientIp = HttpUtil.getClientIpAddress(request);
+        var session = sessionService.getOne(new QueryWrapper<Session>()
                 .lambda()
                 .eq(Session::getUserId, loginUser.getId())
                 .eq(Session::getIp, clientIp));
@@ -62,7 +62,7 @@ public class LoginController {
             sessionService.save(session);
         }
 
-        Map<String, String> result = new HashMap<>(1);
+        var result = new HashMap<String, String>(1);
         result.put("token", session.getToken());
         return success(result);
     }

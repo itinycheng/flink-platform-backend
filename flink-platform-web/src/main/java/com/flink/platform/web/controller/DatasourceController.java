@@ -47,12 +47,12 @@ public class DatasourceController {
     public ResultInfo<Long> create(
             @RequestAttribute(value = Constant.SESSION_USER) User loginUser,
             @RequestBody DatasourceRequest datasourceRequest) {
-        String errorMsg = datasourceRequest.validateOnCreate();
+        var errorMsg = datasourceRequest.validateOnCreate();
         if (StringUtils.isNotBlank(errorMsg)) {
             return failure(ERROR_PARAMETER, errorMsg);
         }
 
-        Datasource datasource = datasourceRequest.getDatasource();
+        var datasource = datasourceRequest.getDatasource();
         datasource.setId(null);
         datasource.setUserId(loginUser.getId());
         datasourceService.save(datasource);
@@ -61,12 +61,12 @@ public class DatasourceController {
 
     @PostMapping(value = "/update")
     public ResultInfo<Long> update(@RequestBody DatasourceRequest datasourceRequest) {
-        String errorMsg = datasourceRequest.validateOnUpdate();
+        var errorMsg = datasourceRequest.validateOnUpdate();
         if (StringUtils.isNotBlank(errorMsg)) {
             return failure(ERROR_PARAMETER, errorMsg);
         }
 
-        Datasource datasource = datasourceRequest.getDatasource();
+        var datasource = datasourceRequest.getDatasource();
         datasource.setUserId(null);
         datasourceService.updateById(datasource);
         return success(datasource.getId());
@@ -74,19 +74,19 @@ public class DatasourceController {
 
     @GetMapping(value = "/get/{dsId}")
     public ResultInfo<Datasource> get(@PathVariable Long dsId) {
-        Datasource datasource = datasourceService.getById(dsId);
+        var datasource = datasourceService.getById(dsId);
         return success(datasource);
     }
 
     @GetMapping(value = "/delete/{dsId}")
     public ResultInfo<Boolean> delete(@PathVariable Long dsId) {
-        boolean bool = datasourceService.removeById(dsId);
+        var bool = datasourceService.removeById(dsId);
         return success(bool);
     }
 
     @GetMapping(value = "/test/{dsId}")
     public ResultInfo<Boolean> testConnection(@PathVariable Long dsId) {
-        Datasource datasource = datasourceService.getById(dsId);
+        var datasource = datasourceService.getById(dsId);
         try (Connection connection = createConnection(datasource.getType(), datasource.getParams());
                 Statement stmt = connection.createStatement()) {
             stmt.executeQuery(datasource.getType().getConnTestQuery());
@@ -104,8 +104,8 @@ public class DatasourceController {
             @RequestParam(name = "size", required = false, defaultValue = "20") Integer size,
             @RequestParam(name = "name", required = false) String name,
             @RequestParam(name = "type", required = false) DbType type) {
-        Page<Datasource> pager = new Page<>(page, size);
-        IPage<Datasource> iPage = datasourceService.page(
+        var pager = new Page<Datasource>(page, size);
+        var iPage = datasourceService.page(
                 pager,
                 new QueryWrapper<Datasource>()
                         .lambda()
@@ -124,7 +124,7 @@ public class DatasourceController {
             dbType = jobtype.getDbType();
         }
 
-        List<Datasource> list = datasourceService.list(new QueryWrapper<Datasource>()
+        var list = datasourceService.list(new QueryWrapper<Datasource>()
                 .lambda()
                 .eq(Objects.nonNull(dbType), Datasource::getType, dbType)
                 .eq(Datasource::getUserId, loginUser.getId()));

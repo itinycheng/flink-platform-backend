@@ -35,7 +35,7 @@ public class QuartzController {
 
     @GetMapping(value = "/metadata")
     public ResultInfo<Map<String, String>> metadata() {
-        Map<String, String> result = new HashMap<>();
+        var result = new HashMap<String, String>();
         result.put("hostname", Constant.HOSTNAME);
         result.put("ip", Constant.HOST_IP);
         result.put("quartz", quartzService.quartzMetadata());
@@ -45,12 +45,12 @@ public class QuartzController {
     @GetMapping(value = "/parseExpr")
     public ResultInfo<List<String>> parseExpr(@RequestParam(name = "cron") String cron) {
         try {
-            CronExpression cronExpression = new CronExpression(cron);
-            Date fromDate = new Date();
-            int num = 5;
-            List<String> validTimeList = new ArrayList<>(num);
+            var cronExpression = new CronExpression(cron);
+            var fromDate = new Date();
+            var num = 5;
+            var validTimeList = new ArrayList<String>(num);
             for (int i = 0; i < num; i++) {
-                Date validTime = cronExpression.getNextValidTimeAfter(fromDate);
+                var validTime = cronExpression.getNextValidTimeAfter(fromDate);
                 validTimeList.add(format(validTime.getTime(), GLOBAL_DATE_TIME_FORMAT));
                 fromDate = validTime;
             }

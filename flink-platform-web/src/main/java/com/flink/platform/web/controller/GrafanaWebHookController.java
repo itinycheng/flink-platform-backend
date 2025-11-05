@@ -28,8 +28,8 @@ public class GrafanaWebHookController {
     @PostMapping(value = "/forwardToFeiShu")
     public ResultInfo<String> forwardToFeiShu(@RequestBody Map<String, Object> grafanaMap) {
         log.info(JsonUtil.toJsonString(grafanaMap));
-        String message = (String) grafanaMap.get("message");
-        FeiShuAlert feiShuAlert = JsonUtil.toBean(message, FeiShuAlert.class);
+        var message = (String) grafanaMap.get("message");
+        var feiShuAlert = JsonUtil.toBean(message, FeiShuAlert.class);
         String result = null;
         if (feiShuAlert != null) {
             result = alertSender.sendToFeiShu(feiShuAlert);

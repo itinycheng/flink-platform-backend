@@ -42,12 +42,12 @@ public class CatalogInfoController {
     public ResultInfo<Long> create(
             @RequestAttribute(value = Constant.SESSION_USER) User loginUser,
             @RequestBody CatalogInfoRequest catalogInfoRequest) {
-        String errorMsg = catalogInfoRequest.validateOnCreate();
+        var errorMsg = catalogInfoRequest.validateOnCreate();
         if (StringUtils.isNotBlank(errorMsg)) {
             return failure(ERROR_PARAMETER, errorMsg);
         }
 
-        CatalogInfo catalogInfo = catalogInfoRequest.getCatalogInfo();
+        var catalogInfo = catalogInfoRequest.getCatalogInfo();
         catalogInfo.setId(null);
         catalogInfo.setDefaultDatabase(EMPTY);
         catalogInfo.setUserId(loginUser.getId());
@@ -57,12 +57,12 @@ public class CatalogInfoController {
 
     @PostMapping(value = "/update")
     public ResultInfo<Long> update(@RequestBody CatalogInfoRequest catalogInfoRequest) {
-        String errorMsg = catalogInfoRequest.validateOnUpdate();
+        var errorMsg = catalogInfoRequest.validateOnUpdate();
         if (StringUtils.isNotBlank(errorMsg)) {
             return failure(ERROR_PARAMETER, errorMsg);
         }
 
-        CatalogInfo catalogInfo = catalogInfoRequest.getCatalogInfo();
+        var catalogInfo = catalogInfoRequest.getCatalogInfo();
         catalogInfo.setUserId(null);
         catalogService.updateById(catalogInfo);
         return success(catalogInfo.getId());
@@ -70,14 +70,14 @@ public class CatalogInfoController {
 
     @GetMapping(value = "/get/{catalogId}")
     public ResultInfo<CatalogInfo> get(@PathVariable Long catalogId) {
-        CatalogInfo catalogInfo = catalogService.getById(catalogId);
+        var catalogInfo = catalogService.getById(catalogId);
         return success(catalogInfo);
     }
 
     @GetMapping(value = "/delete/{catalogId}")
     public ResultInfo<Boolean> delete(
             @RequestAttribute(value = Constant.SESSION_USER) User loginUser, @PathVariable Long catalogId) {
-        boolean bool = catalogService.remove(new QueryWrapper<CatalogInfo>()
+        var bool = catalogService.remove(new QueryWrapper<CatalogInfo>()
                 .lambda()
                 .eq(CatalogInfo::getId, catalogId)
                 .eq(CatalogInfo::getUserId, loginUser.getId()));
@@ -91,8 +91,8 @@ public class CatalogInfoController {
             @RequestParam(name = "size", required = false, defaultValue = "20") Integer size,
             @RequestParam(name = "name", required = false) String name,
             @RequestParam(name = "type", required = false) CatalogType type) {
-        Page<CatalogInfo> pager = new Page<>(page, size);
-        IPage<CatalogInfo> iPage = catalogService.page(
+        var pager = new Page<CatalogInfo>(page, size);
+        var iPage = catalogService.page(
                 pager,
                 new QueryWrapper<CatalogInfo>()
                         .lambda()
@@ -104,7 +104,7 @@ public class CatalogInfoController {
 
     @GetMapping(value = "/list")
     public ResultInfo<List<CatalogInfo>> list(@RequestAttribute(value = Constant.SESSION_USER) User loginUser) {
-        List<CatalogInfo> list = catalogService.list(
+        var list = catalogService.list(
                 new QueryWrapper<CatalogInfo>().lambda().eq(CatalogInfo::getUserId, loginUser.getId()));
         return success(list);
     }

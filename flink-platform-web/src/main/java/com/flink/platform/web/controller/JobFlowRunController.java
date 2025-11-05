@@ -1,6 +1,5 @@
 package com.flink.platform.web.controller;
 
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -51,13 +50,13 @@ public class JobFlowRunController {
 
     @GetMapping(value = "/get/{flowRunId}")
     public ResultInfo<JobFlowRun> get(@PathVariable long flowRunId) {
-        JobFlowRun jobFlowRun = jobFlowRunService.getById(flowRunId);
+        var jobFlowRun = jobFlowRunService.getById(flowRunId);
         return success(jobFlowRun);
     }
 
     @PostMapping(value = "/update")
     public ResultInfo<Long> update(@RequestBody JobFlowRunRequest flowRunRequest) {
-        String errorMsg = flowRunRequest.validateOnUpdate();
+        var errorMsg = flowRunRequest.validateOnUpdate();
         if (StringUtils.isNotBlank(errorMsg)) {
             return failure(ERROR_PARAMETER, errorMsg);
         }
@@ -84,9 +83,7 @@ public class JobFlowRunController {
             @DateTimeFormat(pattern = GLOBAL_DATE_TIME_FORMAT) @RequestParam(name = "endTime", required = false)
                     LocalDateTime endTime,
             @RequestParam(name = "sort", required = false) String sort) {
-        Page<JobFlowRun> pager = new Page<>(page, size);
-
-        LambdaQueryWrapper<JobFlowRun> queryWrapper = new QueryWrapper<JobFlowRun>()
+        var queryWrapper = new QueryWrapper<JobFlowRun>()
                 .lambda()
                 .select(JobFlowRun.class, field -> !"flow".equals(field.getProperty()))
                 .eq(JobFlowRun::getUserId, loginUser.getId())
@@ -101,27 +98,28 @@ public class JobFlowRunController {
             queryWrapper.orderByDesc(JobFlowRun::getId);
         }
 
-        IPage<JobFlowRun> iPage = jobFlowRunService.page(pager, queryWrapper);
+        var pager = new Page<JobFlowRun>(page, size);
+        var iPage = jobFlowRunService.page(pager, queryWrapper);
         return success(iPage);
     }
 
     @GetMapping(value = "/kill/{flowRunId}")
     public ResultInfo<Long> kill(
             @RequestAttribute(value = Constant.SESSION_USER) User loginUser, @PathVariable Long flowRunId) {
-        JobFlowRun jobFlowRun = jobFlowRunService.getById(flowRunId);
-        ExecutionStatus status = jobFlowRun.getStatus();
+        var jobFlowRun = jobFlowRunService.getById(flowRunId);
+        var status = jobFlowRun.getStatus();
         if (status != null && status.isTerminalState()) {
             return failure(FLOW_ALREADY_TERMINATED);
         }
 
-        boolean isSuccess = killJobService.killRemoteFlow(loginUser.getId(), flowRunId);
+        var isSuccess = killJobService.killRemoteFlow(loginUser.getId(), flowRunId);
         return isSuccess ? success(flowRunId) : failure(KILL_FLOW_EXCEPTION_FOUND);
     }
 
     @GetMapping(value = "/purge/{flowRunId}")
     public ResultInfo<Long> purge(
             @RequestAttribute(value = Constant.SESSION_USER) User loginUser, @PathVariable long flowRunId) {
-        JobFlowRun jobFlowRun = jobFlowRunService.getById(flowRunId);
+        var jobFlowRun = jobFlowRunService.getById(flowRunId);
         if (jobFlowRun == null) {
             return failure(ERROR_PARAMETER);
         }

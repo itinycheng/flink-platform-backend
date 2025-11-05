@@ -1,6 +1,5 @@
 package com.flink.platform.web.controller;
 
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -85,12 +84,12 @@ public class JobFlowController {
     public ResultInfo<Long> create(
             @RequestAttribute(value = Constant.SESSION_USER) User loginUser,
             @RequestBody JobFlowRequest jobFlowRequest) {
-        String errorMsg = jobFlowRequest.validateOnCreate();
+        var errorMsg = jobFlowRequest.validateOnCreate();
         if (StringUtils.isNotBlank(errorMsg)) {
             return failure(ERROR_PARAMETER, errorMsg);
         }
 
-        JobFlow jobFlow = jobFlowRequest.getJobFlow();
+        var jobFlow = jobFlowRequest.getJobFlow();
         jobFlow.setId(null);
         jobFlow.setCode(UuidGenerator.generateShortUuid());
         jobFlow.setUserId(loginUser.getId());
@@ -106,7 +105,7 @@ public class JobFlowController {
     @ApiException
     @PostMapping(value = "/update")
     public ResultInfo<Long> update(@RequestBody JobFlowRequest jobFlowRequest) {
-        String errorMsg = jobFlowRequest.validateOnUpdate();
+        var errorMsg = jobFlowRequest.validateOnUpdate();
         if (StringUtils.isNotBlank(errorMsg)) {
             return failure(ERROR_PARAMETER, errorMsg);
         }
@@ -137,7 +136,7 @@ public class JobFlowController {
 
     @PostMapping(value = "/updateFlow")
     public ResultInfo<Long> updateFlow(@RequestBody JobFlowRequest jobFlowRequest) {
-        String errorMsg = jobFlowRequest.validateOnUpdate();
+        var errorMsg = jobFlowRequest.validateOnUpdate();
         if (StringUtils.isNotBlank(errorMsg)) {
             return failure(ERROR_PARAMETER, errorMsg);
         }
@@ -148,20 +147,20 @@ public class JobFlowController {
 
     @GetMapping(value = "/get/{flowId}")
     public ResultInfo<JobFlow> get(@PathVariable long flowId) {
-        JobFlow jobFlow = jobFlowService.getById(flowId);
+        var jobFlow = jobFlowService.getById(flowId);
         return success(jobFlow);
     }
 
     @GetMapping(value = "/copy/{flowId}")
     public ResultInfo<Long> copy(@PathVariable Long flowId) {
-        JobFlow jobFlow = jobFlowService.cloneJobFlow(flowId);
+        var jobFlow = jobFlowService.cloneJobFlow(flowId);
         return success(jobFlow.getId());
     }
 
     @GetMapping(value = "/purge/{flowId}")
     public ResultInfo<Long> purge(
             @RequestAttribute(value = Constant.SESSION_USER) User loginUser, @PathVariable long flowId) {
-        JobFlow jobFlow = jobFlowService.getById(flowId);
+        var jobFlow = jobFlowService.getById(flowId);
         if (jobFlow == null) {
             return failure(ERROR_PARAMETER);
         }
@@ -185,9 +184,7 @@ public class JobFlowController {
             @RequestParam(name = "status", required = false) JobFlowStatus status,
             @RequestParam(name = "tag", required = false) String tagCode,
             @RequestParam(name = "sort", required = false) String sort) {
-        Page<JobFlow> pager = new Page<>(page, size);
-
-        LambdaQueryWrapper<JobFlow> queryWrapper = new QueryWrapper<JobFlow>()
+        var queryWrapper = new QueryWrapper<JobFlow>()
                 .lambda()
                 .select(JobFlow.class, field -> !"flow".equals(field.getProperty()))
                 .eq(JobFlow::getUserId, loginUser.getId())
@@ -206,7 +203,8 @@ public class JobFlowController {
             queryWrapper.orderByDesc(JobFlow::getId);
         }
 
-        IPage<JobFlow> iPage = jobFlowService.page(pager, queryWrapper);
+        var pager = new Page<JobFlow>(page, size);
+        var iPage = jobFlowService.page(pager, queryWrapper);
         return success(iPage);
     }
 
@@ -214,12 +212,14 @@ public class JobFlowController {
     public ResultInfo<List<Map<String, Object>>> idNameMapList(
             @RequestAttribute(value = Constant.SESSION_USER) User loginUser,
             @RequestParam(name = "name", required = false) String name,
-            @RequestParam(name = "status", required = false) List<JobFlowStatus> status) {
-        List<Map<String, Object>> listMap = jobFlowService
+            @RequestParam(name = "status", required = false) List<JobFlowStatus> status,
+            @RequestParam(name = "type", required = false) JobFlowType type) {
+        var listMap = jobFlowService
                 .list(new QueryWrapper<JobFlow>()
                         .lambda()
                         .select(JobFlow::getId, JobFlow::getName)
                         .eq(JobFlow::getUserId, loginUser.getId())
+                        .eq(type != null, JobFlow::getType, type)
                         .like(isNotBlank(name), JobFlow::getName, name)
                         .in(CollectionUtils.isNotEmpty(status), JobFlow::getStatus, status))
                 .stream()
@@ -235,15 +235,15 @@ public class JobFlowController {
 
     @GetMapping(value = "/schedule/start/{flowId}")
     public ResultInfo<Long> start(@PathVariable Long flowId) {
-        JobFlowRequest jobFlowRequest = new JobFlowRequest();
+        var jobFlowRequest = new JobFlowRequest();
         jobFlowRequest.setId(flowId);
-        String errorMsg = jobFlowRequest.verifyId();
+        var errorMsg = jobFlowRequest.verifyId();
         if (StringUtils.isNotBlank(errorMsg)) {
             return failure(ERROR_PARAMETER, errorMsg);
         }
 
-        JobFlow jobFlow = jobFlowService.getById(flowId);
-        JobFlowStatus status = jobFlow.getStatus();
+        var jobFlow = jobFlowService.getById(flowId);
+        var status = jobFlow.getStatus();
         if (status == null || !status.isRunnable()) {
             return failure(NOT_RUNNABLE_STATUS);
         }
@@ -260,7 +260,7 @@ public class JobFlowController {
             return failure(NO_CRONTAB_SET);
         }
 
-        JobFlowDag flow = jobFlow.getFlow();
+        var flow = jobFlow.getFlow();
         if (flow == null || CollectionUtils.isEmpty(flow.getVertices())) {
             return failure(UNABLE_SCHEDULING_JOB_FLOW);
         }
@@ -272,14 +272,14 @@ public class JobFlowController {
 
     @GetMapping(value = "/schedule/stop/{flowId}")
     public ResultInfo<Long> stop(@PathVariable Long flowId) {
-        JobFlowRequest jobFlowRequest = new JobFlowRequest();
+        var jobFlowRequest = new JobFlowRequest();
         jobFlowRequest.setId(flowId);
-        String errorMsg = jobFlowRequest.verifyId();
+        var errorMsg = jobFlowRequest.verifyId();
         if (StringUtils.isNotBlank(errorMsg)) {
             return failure(ERROR_PARAMETER, errorMsg);
         }
 
-        JobFlow jobFlow = jobFlowService.getById(jobFlowRequest.getId());
+        var jobFlow = jobFlowService.getById(jobFlowRequest.getId());
         if (jobFlow == null) {
             return failure(SERVICE_ERROR, "Job flow not found");
         }

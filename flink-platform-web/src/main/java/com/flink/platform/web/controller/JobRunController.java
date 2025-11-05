@@ -1,12 +1,10 @@
 package com.flink.platform.web.controller;
 
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.flink.platform.common.constants.Constant;
 import com.flink.platform.common.enums.ExecutionStatus;
-import com.flink.platform.dao.entity.JobInfo;
 import com.flink.platform.dao.entity.JobRunInfo;
 import com.flink.platform.dao.entity.User;
 import com.flink.platform.dao.service.JobInfoService;
@@ -30,7 +28,6 @@ import org.springframework.web.bind.annotation.RestController;
 import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.List;
 
 import static com.flink.platform.common.enums.ExecutionStatus.getNonTerminals;
 import static com.flink.platform.common.enums.ResponseStatus.NO_RUNNING_JOB_FOUND;
@@ -55,7 +52,7 @@ public class JobRunController {
 
     @GetMapping(value = "/get/{runId}")
     public ResultInfo<JobRunInfo> get(@PathVariable Long runId) {
-        JobRunInfo jobRunInfo = jobRunInfoService.getById(runId);
+        var jobRunInfo = jobRunInfoService.getById(runId);
         return success(jobRunInfo);
     }
 
@@ -74,7 +71,7 @@ public class JobRunController {
             @DateTimeFormat(pattern = GLOBAL_DATE_TIME_FORMAT) @RequestParam(name = "endTime", required = false)
                     LocalDateTime endTime,
             @RequestParam(name = "sort", required = false) String sort) {
-        LambdaQueryWrapper<JobRunInfo> queryWrapper = new QueryWrapper<JobRunInfo>()
+        var queryWrapper = new QueryWrapper<JobRunInfo>()
                 .lambda()
                 .select(JobRunInfo.class, field -> !LARGE_FIELDS.contains(field.getProperty()))
                 .eq(JobRunInfo::getUserId, loginUser.getId())
@@ -91,8 +88,8 @@ public class JobRunController {
             queryWrapper.orderByDesc(JobRunInfo::getId);
         }
 
-        Page<JobRunInfo> pager = new Page<>(page, size);
-        IPage<JobRunInfo> iPage = jobRunInfoService.page(pager, queryWrapper);
+        var pager = new Page<JobRunInfo>(page, size);
+        var iPage = jobRunInfoService.page(pager, queryWrapper);
         return success(iPage);
     }
 
@@ -102,18 +99,17 @@ public class JobRunController {
             return success(Collections.emptyList());
         }
 
-        List<JobRunInfo> jobRunList =
-                jobRunInfoService.listLastWithoutLargeFields(request.getFlowRunId(), request.getJobIds());
-        List<Long> existedJobs = jobRunList.stream().map(JobRunInfo::getJobId).collect(toList());
-        Collection<Long> unRunJobIds = CollectionUtils.subtract(request.getJobIds(), existedJobs);
-        List<JobInfo> jobList = jobInfoService.listWithoutLargeFields(unRunJobIds);
+        var jobRunList = jobRunInfoService.listLastWithoutLargeFields(request.getFlowRunId(), request.getJobIds());
+        var existedJobs = jobRunList.stream().map(JobRunInfo::getJobId).collect(toList());
+        var unRunJobIds = CollectionUtils.subtract(request.getJobIds(), existedJobs);
+        var jobList = jobInfoService.listWithoutLargeFields(unRunJobIds);
         return success(CollectionUtils.union(jobRunList, jobList));
     }
 
     @GetMapping(value = "/kill/{runId}")
     public ResultInfo<Boolean> kill(
             @RequestAttribute(value = Constant.SESSION_USER) User loginUser, @PathVariable Long runId) {
-        JobRunInfo jobRun = jobRunInfoService.getOne(new QueryWrapper<JobRunInfo>()
+        var jobRun = jobRunInfoService.getOne(new QueryWrapper<JobRunInfo>()
                 .lambda()
                 .eq(JobRunInfo::getId, runId)
                 .eq(JobRunInfo::getUserId, loginUser.getId())
@@ -123,7 +119,7 @@ public class JobRunController {
             return failure(NO_RUNNING_JOB_FOUND);
         }
 
-        boolean bool = killJobService.attemptToKillJob(jobRun);
+        var bool = killJobService.attemptToKillJob(jobRun);
         return success(bool);
     }
 }

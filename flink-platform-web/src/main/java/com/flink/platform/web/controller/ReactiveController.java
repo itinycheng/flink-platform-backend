@@ -3,14 +3,12 @@ package com.flink.platform.web.controller;
 import com.flink.platform.common.enums.DbType;
 import com.flink.platform.common.enums.JobType;
 import com.flink.platform.common.util.ExceptionUtil;
-import com.flink.platform.dao.entity.Datasource;
 import com.flink.platform.dao.entity.task.FlinkJob;
 import com.flink.platform.dao.entity.task.SqlJob;
 import com.flink.platform.dao.service.DatasourceService;
 import com.flink.platform.web.entity.request.ReactiveRequest;
 import com.flink.platform.web.entity.response.ResultInfo;
 import com.flink.platform.web.entity.vo.ReactiveDataVo;
-import com.flink.platform.web.entity.vo.ReactiveExecVo;
 import com.flink.platform.web.service.ReactiveService;
 import com.flink.platform.web.service.WorkerApplyService;
 import com.flink.platform.web.util.HttpUtil;
@@ -31,7 +29,6 @@ import org.springframework.web.client.RestTemplate;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -62,10 +59,10 @@ public class ReactiveController {
 
     @GetMapping(value = "/jobToDbTypes")
     public ResultInfo<Map<JobType, DbType>> jobToDbTypes() {
-        List<JobType> typeList = new ArrayList<>();
+        var typeList = new ArrayList<JobType>();
         typeList.add(JobType.FLINK_SQL);
         typeList.addAll(JobType.from(SQL));
-        Map<JobType, DbType> result = new HashMap<>(typeList.size());
+        var result = new HashMap<JobType, DbType>(typeList.size());
         for (JobType jobType : typeList) {
             result.put(jobType, jobType.getDbType());
         }
@@ -75,18 +72,18 @@ public class ReactiveController {
     @GetMapping(value = "/execLog/{execId}")
     public ResultInfo<?> execLog(
             @PathVariable String execId, @RequestParam(name = "worker", required = false) Long worker) {
-        String routeUrl = workerApplyService.chooseWorker(Collections.singletonList(worker));
+        var routeUrl = workerApplyService.chooseWorker(Collections.singletonList(worker));
         if (HttpUtil.isRemoteUrl(routeUrl)) {
             return restTemplate.getForObject(routeUrl + "/reactive/execLog/" + execId, ResultInfo.class);
         }
 
-        List<String> dataList = reactiveService.getBufferByExecId(execId);
-        String concat = "";
+        var dataList = reactiveService.getBufferByExecId(execId);
+        var concat = "";
         if (CollectionUtils.isNotEmpty(dataList)) {
             concat = String.join(LINE_SEPARATOR, dataList);
         }
 
-        Map<String, Object> resultMap = new HashMap<>();
+        var resultMap = new HashMap<String, Object>();
         resultMap.put("remain", reactiveService.bufferExists(execId));
         resultMap.put("log", concat);
         return success(resultMap);
@@ -94,9 +91,9 @@ public class ReactiveController {
 
     @PostMapping(value = "/execJob")
     public ResultInfo<?> execJob(@RequestBody ReactiveRequest reactiveRequest) {
-        String execId = generateExecId();
+        var execId = generateExecId();
         try {
-            String routeUrl = workerApplyService.chooseWorker(reactiveRequest.getRouteUrl());
+            var routeUrl = workerApplyService.chooseWorker(reactiveRequest.getRouteUrl());
             if (HttpUtil.isRemoteUrl(routeUrl)) {
                 return restTemplate.postForObject(routeUrl + "/reactive/execJob", reactiveRequest, ResultInfo.class);
             }
@@ -118,12 +115,12 @@ public class ReactiveController {
     }
 
     private ResultInfo<?> execFlink(String execId, ReactiveRequest reactiveRequest) throws Exception {
-        FlinkJob flinkJob = reactiveRequest.getConfig().unwrap(FlinkJob.class);
+        var flinkJob = reactiveRequest.getConfig().unwrap(FlinkJob.class);
         if (flinkJob == null) {
             return failure(ERROR_PARAMETER);
         }
 
-        String errorMsg = reactiveRequest.validateFlink();
+        var errorMsg = reactiveRequest.validateFlink();
         if (StringUtils.isNotBlank(errorMsg)) {
             return failure(ERROR_PARAMETER, errorMsg);
         }
@@ -131,28 +128,28 @@ public class ReactiveController {
         reactiveRequest.setId(0L);
         reactiveRequest.setName(execId);
 
-        ReactiveExecVo reactiveExecVo =
+        var reactiveExecVo =
                 reactiveService.execFlink(execId, reactiveRequest.getJobInfo(), reactiveRequest.getEnvProps());
         return success(reactiveExecVo);
     }
 
     private ResultInfo<ReactiveDataVo> execSql(String execId, ReactiveRequest reactiveRequest) throws Exception {
-        SqlJob sqlJob = reactiveRequest.getConfig().unwrap(SqlJob.class);
+        var sqlJob = reactiveRequest.getConfig().unwrap(SqlJob.class);
         if (sqlJob == null) {
             return failure(ERROR_PARAMETER);
         }
 
-        String errorMsg = reactiveRequest.validateSql();
+        var errorMsg = reactiveRequest.validateSql();
         if (StringUtils.isNotBlank(errorMsg)) {
             return failure(ERROR_PARAMETER, errorMsg);
         }
 
-        Datasource datasource = datasourceService.getById(sqlJob.getDsId());
+        var datasource = datasourceService.getById(sqlJob.getDsId());
         if (datasource == null) {
             return failure(DATASOURCE_NOT_FOUND);
         }
 
-        ReactiveDataVo reactiveDataVo = reactiveService.execSql(execId, reactiveRequest.getJobInfo(), datasource);
+        var reactiveDataVo = reactiveService.execSql(execId, reactiveRequest.getJobInfo(), datasource);
         return success(reactiveDataVo);
     }
 
