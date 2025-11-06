@@ -68,7 +68,7 @@
 		<maven-shade-plugin.version>3.6.1</maven-shade-plugin.version>
 		<rewrite-maven-plugin.version>6.22.1</rewrite-maven-plugin.version>
 		<rewrite-migrate-java.version>3.20.0</rewrite-migrate-java.version>
-		<rewrite-testing-frameworks.version>3.20.0</rewrite-testing-frameworks.version>
+		<rewrite-testing-frameworks.version>3.21.2</rewrite-testing-frameworks.version>
 		<maven-compiler-plugin.version>3.14.1</maven-compiler-plugin.version>
 	</properties>
 
