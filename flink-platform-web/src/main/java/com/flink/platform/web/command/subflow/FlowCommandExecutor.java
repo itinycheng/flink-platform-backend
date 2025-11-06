@@ -2,6 +2,7 @@ package com.flink.platform.web.command.subflow;
 
 import com.flink.platform.common.enums.ExecutionStatus;
 import com.flink.platform.common.enums.JobType;
+import com.flink.platform.dao.entity.JobFlow;
 import com.flink.platform.dao.entity.JobFlowDag;
 import com.flink.platform.dao.entity.JobFlowRun;
 import com.flink.platform.dao.entity.result.JobCallback;
@@ -20,9 +21,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import static com.flink.platform.common.constants.JobConstant.FLOW_RUN_ID;
-import static com.flink.platform.common.enums.ExecutionStatus.SUBMITTED;
+import static com.flink.platform.common.enums.ExecutionStatus.CREATED;
 import static com.flink.platform.common.enums.JobFlowType.SUB_FLOW;
-import static com.flink.platform.web.util.ThreadUtil.DEFAULT_SLEEP_TIME_MILLIS;
+import static com.flink.platform.web.util.ThreadUtil.ONE_SECOND_MILLIS;
 
 @Slf4j
 @Component("flowCommandExecutor")
@@ -46,22 +47,21 @@ public class FlowCommandExecutor implements CommandExecutor {
     @Override
     public JobCallback execCommand(@Nonnull JobCommand command) throws Exception {
         var flowId = ((FlowCommand) command).getFlowId();
-        var flowRunId = newAndSaveDefault(flowId);
         var jobFlow = jobFlowService.getById(flowId);
+        var flowRunId = newAndSaveDefault(jobFlow);
         var quartzInfo = new JobFlowQuartzInfo(jobFlow);
         quartzInfo.addData(FLOW_RUN_ID, flowRunId);
         service.runOnce(quartzInfo);
 
-        // wait for flow complete and get status.
+        // wait until job flow run is inserted.
         ExecutionStatus status = null;
         while (AppRunner.isRunning()) {
             var jobFlowRun = jobFlowRunService.getById(flowRunId);
-            status = jobFlowRun.getStatus();
-            if (status.isTerminalState()) {
+            if (jobFlowRun != null && jobFlowRun.getStatus() != null) {
+                status = jobFlowRun.getStatus();
                 break;
             }
-
-            ThreadUtil.sleep(DEFAULT_SLEEP_TIME_MILLIS);
+            ThreadUtil.sleep(ONE_SECOND_MILLIS);
         }
 
         var callback = new JobCallback();
@@ -70,15 +70,15 @@ public class FlowCommandExecutor implements CommandExecutor {
         return callback;
     }
 
-    private Long newAndSaveDefault(Long flowId) {
+    private Long newAndSaveDefault(JobFlow jobFlow) {
         var jobflowRun = new JobFlowRun();
         jobflowRun.setName(DEFAULT_NAME);
-        jobflowRun.setUserId(-1L);
-        jobflowRun.setFlowId(flowId);
+        jobflowRun.setUserId(jobFlow.getUserId());
+        jobflowRun.setFlowId(jobFlow.getId());
         jobflowRun.setType(SUB_FLOW);
         jobflowRun.setHost("");
         jobflowRun.setFlow(new JobFlowDag());
-        jobflowRun.setStatus(SUBMITTED);
+        jobflowRun.setStatus(CREATED);
         jobFlowRunService.save(jobflowRun);
         return jobflowRun.getId();
     }

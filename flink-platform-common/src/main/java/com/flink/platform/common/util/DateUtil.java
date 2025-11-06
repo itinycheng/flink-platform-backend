@@ -29,6 +29,10 @@ public class DateUtil {
     }
 
     public static long timestamp(LocalDateTime dateTime) {
+        if (dateTime == null) {
+            return 0;
+        }
+
         return dateTime.atZone(GLOBAL_ZONE_ID).toInstant().toEpochMilli();
     }
 

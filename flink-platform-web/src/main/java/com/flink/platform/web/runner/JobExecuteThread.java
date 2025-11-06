@@ -17,7 +17,6 @@ import com.flink.platform.grpc.JobStatusRequest;
 import com.flink.platform.grpc.ProcessJobRequest;
 import com.flink.platform.web.common.SpringContext;
 import com.flink.platform.web.config.AppRunner;
-import com.flink.platform.web.config.WorkerConfig;
 import com.flink.platform.web.grpc.JobGrpcClient;
 import com.flink.platform.web.monitor.StatusInfo;
 import com.flink.platform.web.service.JobRunExtraService;
@@ -49,8 +48,6 @@ public class JobExecuteThread implements Supplier<JobResponse> {
 
     private final Long jobId;
 
-    private final int errorRetries;
-
     private final JobInfoService jobInfoService;
 
     private final JobRunInfoService jobRunInfoService;
@@ -65,10 +62,9 @@ public class JobExecuteThread implements Supplier<JobResponse> {
 
     private ExecutionStatus jobRunStatus;
 
-    public JobExecuteThread(Long flowRunId, JobVertex jobVertex, WorkerConfig workerConfig) {
+    public JobExecuteThread(Long flowRunId, JobVertex jobVertex) {
         this.flowRunId = flowRunId;
         this.jobId = jobVertex.getJobId();
-        this.errorRetries = workerConfig.getErrorRetries();
         this.jobInfoService = SpringContext.getBean(JobInfoService.class);
         this.jobRunInfoService = SpringContext.getBean(JobRunInfoService.class);
         this.jobRunExtraService = SpringContext.getBean(JobRunExtraService.class);
@@ -294,7 +290,7 @@ public class JobExecuteThread implements Supplier<JobResponse> {
                 .setJobRunId(jobRun.getId())
                 .setJobId(jobRun.getJobId())
                 .setDeployMode(jobRun.getDeployMode().name())
-                .setRetries(errorRetries)
+                .setType(jobRun.getType().name())
                 .build();
     }
 

@@ -134,7 +134,7 @@ public class FlowExecuteThread implements Runnable {
         }
 
         Supplier<JobResponse> runnable =
-                new SemaphoreSupplier(semaphore, new JobExecuteThread(jobFlowRun.getId(), jobVertex, workerConfig));
+                new SemaphoreSupplier(semaphore, new JobExecuteThread(jobFlowRun.getId(), jobVertex));
         CompletableFuture<Void> jobVertexFuture = CompletableFuture.supplyAsync(runnable, jobExecService)
                 .thenAccept(response -> handleResponse(response, jobVertex, flow));
         runningJobs.put(jobVertex.getId(), jobVertexFuture);

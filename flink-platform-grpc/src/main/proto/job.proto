@@ -35,10 +35,13 @@ message ProcessJobReply {
 }
 
 message JobStatusRequest {
+  reserved 4;
+  reserved "retries";
+
   int64 jobRunId = 1;
   string deployMode = 2;
   int64 jobId = 3;
-  int32 retries = 4;
+  string type = 5;
 }
 
 message JobStatusReply {
