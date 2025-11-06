@@ -8,10 +8,13 @@ import com.flink.platform.dao.entity.JobFlowRun;
 import com.flink.platform.dao.entity.result.JobCallback;
 import com.flink.platform.dao.service.JobFlowRunService;
 import com.flink.platform.dao.service.JobFlowService;
+import com.flink.platform.dao.service.JobRunInfoService;
 import com.flink.platform.web.command.CommandExecutor;
 import com.flink.platform.web.command.JobCommand;
+import com.flink.platform.web.common.SpringContext;
 import com.flink.platform.web.config.AppRunner;
 import com.flink.platform.web.entity.JobFlowQuartzInfo;
+import com.flink.platform.web.service.KillJobService;
 import com.flink.platform.web.service.QuartzService;
 import com.flink.platform.web.util.ThreadUtil;
 import jakarta.annotation.Nonnull;
@@ -37,6 +40,8 @@ public class FlowCommandExecutor implements CommandExecutor {
     private final JobFlowService jobFlowService;
 
     private final JobFlowRunService jobFlowRunService;
+
+    private final JobRunInfoService jobRunService;
 
     @Override
     public boolean isSupported(JobType jobType) {
@@ -68,6 +73,19 @@ public class FlowCommandExecutor implements CommandExecutor {
         callback.setFlowRunId(flowRunId);
         callback.setStatus(status);
         return callback;
+    }
+
+    @Override
+    public void killCommand(@Nonnull JobCommand command) {
+        var jobRun = jobRunService.getById(command.getJobRunId());
+        var backInfo = jobRun.getBackInfo();
+        if (backInfo == null || backInfo.getFlowRunId() == null) {
+            return;
+        }
+
+        // avoid circular dependency.
+        var service = SpringContext.getBean(KillJobService.class);
+        service.killRemoteFlow(backInfo.getFlowRunId());
     }
 
     private Long newAndSaveDefault(JobFlow jobFlow) {

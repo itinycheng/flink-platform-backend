@@ -112,7 +112,11 @@ public class JobFlowRunController {
             return failure(FLOW_ALREADY_TERMINATED);
         }
 
-        var isSuccess = killJobService.killRemoteFlow(loginUser.getId(), flowRunId);
+        if (!jobFlowRun.getUserId().equals(loginUser.getId())) {
+            return failure(USER_HAVE_NO_PERMISSION);
+        }
+
+        var isSuccess = killJobService.killRemoteFlow(flowRunId);
         return isSuccess ? success(flowRunId) : failure(KILL_FLOW_EXCEPTION_FOUND);
     }
 

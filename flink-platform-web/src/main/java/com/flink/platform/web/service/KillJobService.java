@@ -40,12 +40,11 @@ public class KillJobService {
     /**
      * Get unfinished jobs and kill them concurrently.
      */
-    public boolean killRemoteFlow(Long userId, Long flowRunId) {
+    public boolean killRemoteFlow(Long flowRunId) {
         List<JobRunInfo> jobRunList = jobRunInfoService.list(new QueryWrapper<JobRunInfo>()
                 .lambda()
                 .select(JobRunInfo::getId, JobRunInfo::getHost)
                 .eq(JobRunInfo::getFlowRunId, flowRunId)
-                .eq(JobRunInfo::getUserId, userId)
                 .in(JobRunInfo::getStatus, getNonTerminals()));
         if (CollectionUtils.isEmpty(jobRunList)) {
             jobFlowRunService.updateStatusById(flowRunId, KILLED);
