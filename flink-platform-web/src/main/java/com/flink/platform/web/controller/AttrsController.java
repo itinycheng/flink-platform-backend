@@ -87,7 +87,7 @@ public class AttrsController {
 
     @GetMapping(value = "/nodeTypes")
     public ResultInfo<List<JobType>> nodeTypes(String type) {
-        return success(JobType.from(type));
+        return success(JobType.fromClassification(type));
     }
 
     @GetMapping(value = "/nodeClassification")

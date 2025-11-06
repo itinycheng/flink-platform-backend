@@ -61,7 +61,7 @@ public class ReactiveController {
     public ResultInfo<Map<JobType, DbType>> jobToDbTypes() {
         var typeList = new ArrayList<JobType>();
         typeList.add(JobType.FLINK_SQL);
-        typeList.addAll(JobType.from(SQL));
+        typeList.addAll(JobType.fromClassification(SQL));
         var result = new HashMap<JobType, DbType>(typeList.size());
         for (JobType jobType : typeList) {
             result.put(jobType, jobType.getDbType());
