@@ -40,12 +40,12 @@ public class AlertController {
     public ResultInfo<Long> create(
             @RequestAttribute(value = Constant.SESSION_USER) User loginUser,
             @RequestBody AlertInfoRequest alertInfoRequest) {
-        String errorMsg = alertInfoRequest.validateOnCreate();
+        var errorMsg = alertInfoRequest.validateOnCreate();
         if (StringUtils.isNotBlank(errorMsg)) {
             return failure(ERROR_PARAMETER, errorMsg);
         }
 
-        AlertInfo alertInfo = alertInfoRequest.getAlertInfo();
+        var alertInfo = alertInfoRequest.getAlertInfo();
         alertInfo.setId(null);
         alertInfo.setUserId(loginUser.getId());
         alertService.save(alertInfo);
@@ -54,12 +54,12 @@ public class AlertController {
 
     @PostMapping(value = "/update")
     public ResultInfo<Long> update(@RequestBody AlertInfoRequest alertInfoRequest) {
-        String errorMsg = alertInfoRequest.validateOnUpdate();
+        var errorMsg = alertInfoRequest.validateOnUpdate();
         if (StringUtils.isNotBlank(errorMsg)) {
             return failure(ERROR_PARAMETER, errorMsg);
         }
 
-        AlertInfo alertInfo = alertInfoRequest.getAlertInfo();
+        var alertInfo = alertInfoRequest.getAlertInfo();
         alertInfo.setUserId(null);
         alertService.updateById(alertInfo);
         return success(alertInfo.getId());
@@ -67,13 +67,13 @@ public class AlertController {
 
     @GetMapping(value = "/get/{alertId}")
     public ResultInfo<AlertInfo> get(@PathVariable Long alertId) {
-        AlertInfo alertInfo = alertService.getById(alertId);
+        var alertInfo = alertService.getById(alertId);
         return success(alertInfo);
     }
 
     @GetMapping(value = "/delete/{alertId}")
     public ResultInfo<Boolean> delete(@PathVariable Long alertId) {
-        boolean bool = alertService.removeById(alertId);
+        var bool = alertService.removeById(alertId);
         return success(bool);
     }
 
@@ -83,8 +83,8 @@ public class AlertController {
             @RequestParam(name = "page", required = false, defaultValue = "1") Integer page,
             @RequestParam(name = "size", required = false, defaultValue = "20") Integer size,
             @RequestParam(name = "name", required = false) String name) {
-        Page<AlertInfo> pager = new Page<>(page, size);
-        IPage<AlertInfo> iPage = alertService.page(
+        var pager = new Page<AlertInfo>(page, size);
+        var iPage = alertService.page(
                 pager,
                 new QueryWrapper<AlertInfo>()
                         .lambda()
@@ -96,7 +96,7 @@ public class AlertController {
 
     @GetMapping(value = "/list")
     public ResultInfo<List<AlertInfo>> list(@RequestAttribute(value = Constant.SESSION_USER) User loginUser) {
-        List<AlertInfo> list =
+        var list =
                 alertService.list(new QueryWrapper<AlertInfo>().lambda().eq(AlertInfo::getUserId, loginUser.getId()));
         return success(list);
     }

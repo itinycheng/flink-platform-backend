@@ -10,6 +10,8 @@ import lombok.experimental.Delegate;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class JobCallback {
 
+    private Long flowRunId;
+
     /** flink job id. */
     private String jobId;
 

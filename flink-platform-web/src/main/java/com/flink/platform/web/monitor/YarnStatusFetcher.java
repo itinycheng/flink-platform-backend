@@ -1,11 +1,10 @@
 package com.flink.platform.web.monitor;
 
-import com.flink.platform.common.enums.DeployMode;
 import com.flink.platform.common.enums.ExecutionStatus;
 import com.flink.platform.grpc.JobStatusReply;
-import com.flink.platform.grpc.JobStatusRequest;
 import com.flink.platform.web.environment.HadoopService;
 import com.flink.platform.web.util.YarnHelper;
+import jakarta.annotation.Nonnull;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
@@ -28,15 +27,15 @@ public class YarnStatusFetcher implements StatusFetcher {
     }
 
     @Override
-    public boolean isSupported(DeployMode deployMode) {
-        return switch (deployMode) {
+    public boolean isSupported(@Nonnull StatusRequest request) {
+        return switch (request.getDeployMode()) {
             case FLINK_YARN_PER, FLINK_YARN_SESSION, FLINK_YARN_RUN_APPLICATION -> true;
             default -> false;
         };
     }
 
     @Override
-    public JobStatusReply getStatus(JobStatusRequest request) {
+    public JobStatusReply getStatus(@Nonnull StatusRequest request) {
         var applicationTag = YarnHelper.getApplicationTag(request.getJobRunId());
         try {
             var statusReport = hadoopService.getStatusReportWithRetry(applicationTag);

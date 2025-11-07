@@ -6,7 +6,9 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.flink.platform.dao.entity.JobFlowRun;
 import com.flink.platform.dao.entity.JobInfo;
 import com.flink.platform.dao.entity.JobRunInfo;
+import com.flink.platform.dao.entity.task.FlowJob;
 import com.flink.platform.dao.mapper.JobInfoMapper;
+import lombok.RequiredArgsConstructor;
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -22,13 +24,12 @@ import static java.util.stream.Collectors.toSet;
 /** job config info. */
 @Service
 @DS("master_platform")
+@RequiredArgsConstructor(onConstructor_ = @Autowired)
 public class JobInfoService extends ServiceImpl<JobInfoMapper, JobInfo> {
 
-    @Autowired
-    private JobRunInfoService jobRunService;
+    private final JobRunInfoService jobRunService;
 
-    @Autowired
-    private JobFlowRunService jobFlowRunService;
+    private final JobFlowRunService jobFlowRunService;
 
     public List<JobInfo> listWithoutLargeFields(Collection<Long> jobIds) {
         if (CollectionUtils.isEmpty(jobIds)) {
@@ -57,5 +58,15 @@ public class JobInfoService extends ServiceImpl<JobInfoMapper, JobInfo> {
         jobRunService.remove(new QueryWrapper<JobRunInfo>().lambda().in(JobRunInfo::getJobId, jobId));
         jobFlowRunService.remove(new QueryWrapper<JobFlowRun>().lambda().in(JobFlowRun::getId, flowRunIds));
         remove(new QueryWrapper<JobInfo>().lambda().in(JobInfo::getId, jobId));
+    }
+
+    public JobInfo findRunnableJobUsingSubFlow(Long flowId) {
+        var jobs = baseMapper.queryRunnableJobUsingSubFlow(flowId);
+
+        return jobs.stream()
+                .filter(job -> job != null && job.getConfig() instanceof FlowJob)
+                .filter(job -> ((FlowJob) job.getConfig()).getFlowId() == flowId)
+                .findAny()
+                .orElse(null);
     }
 }
