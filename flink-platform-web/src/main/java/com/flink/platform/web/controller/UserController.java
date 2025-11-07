@@ -95,8 +95,7 @@ public class UserController {
             @RequestParam(name = "page", required = false, defaultValue = "1") Integer page,
             @RequestParam(name = "size", required = false, defaultValue = "20") Integer size,
             @RequestParam(name = "name", required = false) String name) {
-        var queryWrapper =
-                new QueryWrapper<User>().lambda().like(Objects.nonNull(name), User::getUsername, name);
+        var queryWrapper = new QueryWrapper<User>().lambda().like(Objects.nonNull(name), User::getUsername, name);
 
         if (loginUser.getType() != ADMIN) {
             queryWrapper.eq(User::getId, loginUser.getId());
