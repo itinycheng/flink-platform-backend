@@ -1,8 +1,6 @@
 package com.flink.platform.web.quartz;
 
 import com.flink.platform.common.model.JobVertex;
-import com.flink.platform.web.common.SpringContext;
-import com.flink.platform.web.config.WorkerConfig;
 import com.flink.platform.web.runner.JobExecuteThread;
 import com.flink.platform.web.runner.JobResponse;
 import com.flink.platform.web.util.ThreadUtil;
@@ -25,8 +23,6 @@ public class JobRunner implements Job {
 
     public static final ExecutorService EXECUTOR = ThreadUtil.newFixedVirtualThreadExecutor("JobRunnerThread", 100);
 
-    private final WorkerConfig workerConfig = SpringContext.getBean(WorkerConfig.class);
-
     @Override
     public void execute(JobExecutionContext context) {
         JobDetail detail = context.getJobDetail();
@@ -36,7 +32,7 @@ public class JobRunner implements Job {
         JobVertex jobVertex = new JobVertex(jobId);
         jobVertex.setPrecondition(AND);
         EXECUTOR.execute(() -> {
-            JobExecuteThread callable = new JobExecuteThread(null, jobVertex, workerConfig);
+            JobExecuteThread callable = new JobExecuteThread(null, jobVertex);
             JobResponse response = callable.get();
             log.info("The job: {} is processed, result: {}", jobId, response);
         });

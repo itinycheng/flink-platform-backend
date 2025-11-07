@@ -28,6 +28,7 @@ public enum JobType {
     CONDITION(Constant.CONDITION, null),
 
     DEPENDENT(Constant.DEPENDENT, null),
+    SUB_FLOW(Constant.SUB_FLOW, null),
     ;
 
     private final String classification;
@@ -39,7 +40,17 @@ public enum JobType {
         this.dbType = dbType;
     }
 
-    public static List<JobType> from(String classification) {
+    public static JobType from(String name) {
+        for (JobType value : values()) {
+            if (value.name().equals(name)) {
+                return value;
+            }
+        }
+
+        throw new IllegalArgumentException("Unknown job type: " + name);
+    }
+
+    public static List<JobType> fromClassification(String classification) {
         return Arrays.stream(values())
                 .filter(jobType -> jobType.classification.equals(classification))
                 .collect(toList());

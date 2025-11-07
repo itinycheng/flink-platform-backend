@@ -102,7 +102,7 @@ public class FlowExecuteThread implements Runnable {
         for (var strategy : strategies) {
             switch (strategy) {
                 case ALARM -> alertSendingService.sendAlerts(jobFlowRun, "execution timeout");
-                case FAILURE -> killJobService.killRemoteFlow(jobFlowRun.getUserId(), jobFlowRun.getId());
+                case FAILURE -> killJobService.killRemoteFlow(jobFlowRun.getId());
             }
         }
     }
@@ -134,7 +134,7 @@ public class FlowExecuteThread implements Runnable {
         }
 
         Supplier<JobResponse> runnable =
-                new SemaphoreSupplier(semaphore, new JobExecuteThread(jobFlowRun.getId(), jobVertex, workerConfig));
+                new SemaphoreSupplier(semaphore, new JobExecuteThread(jobFlowRun.getId(), jobVertex));
         CompletableFuture<Void> jobVertexFuture = CompletableFuture.supplyAsync(runnable, jobExecService)
                 .thenAccept(response -> handleResponse(response, jobVertex, flow));
         runningJobs.put(jobVertex.getId(), jobVertexFuture);

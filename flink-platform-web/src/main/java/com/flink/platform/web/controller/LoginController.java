@@ -30,7 +30,7 @@ public class LoginController {
 
     @PostMapping(value = "/login")
     public ResultInfo<Map<String, String>> login(HttpServletRequest request) {
-        Map<String, String> result = new HashMap<>(1);
+        var result = new HashMap<String, String>(1);
         result.put("token", UUID.randomUUID().toString().replace("-", ""));
         return success(result);
     }

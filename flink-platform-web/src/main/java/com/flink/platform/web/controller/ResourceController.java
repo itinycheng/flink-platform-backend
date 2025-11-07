@@ -60,12 +60,12 @@ public class ResourceController {
             @RequestAttribute(value = Constant.SESSION_USER) User loginUser,
             @RequestBody ResourceRequest resourceRequest)
             throws Exception {
-        String errorMsg = resourceRequest.validateOnCreate();
+        var errorMsg = resourceRequest.validateOnCreate();
         if (StringUtils.isNotBlank(errorMsg)) {
             return failure(ERROR_PARAMETER, errorMsg);
         }
 
-        Resource resource = resourceRequest.getResource();
+        var resource = resourceRequest.getResource();
         resource.setId(null);
         resource.setUserId(loginUser.getId());
         resourceManageService.save(resource);
@@ -74,12 +74,12 @@ public class ResourceController {
 
     @PostMapping(value = "/update")
     public ResultInfo<Long> update(@RequestBody ResourceRequest resourceRequest) {
-        String errorMsg = resourceRequest.validateOnUpdate();
+        var errorMsg = resourceRequest.validateOnUpdate();
         if (StringUtils.isNotBlank(errorMsg)) {
             return failure(ERROR_PARAMETER, errorMsg);
         }
 
-        Resource resource = resourceRequest.getResource();
+        var resource = resourceRequest.getResource();
         resource.setUserId(null);
         resourceService.updateById(resource);
         return ResultInfo.success(resource.getId());
@@ -87,7 +87,7 @@ public class ResourceController {
 
     @GetMapping(value = "/get/{resourceId}")
     public ResultInfo<Resource> get(@PathVariable Long resourceId) {
-        Resource resource = resourceService.getById(resourceId);
+        var resource = resourceService.getById(resourceId);
         return ResultInfo.success(resource);
     }
 
@@ -149,10 +149,10 @@ public class ResourceController {
         try {
             String parentDir = null;
             if (pid != null) {
-                Resource resource = resourceService.getById(pid);
+                var resource = resourceService.getById(pid);
                 parentDir = resource.getFullName();
             }
-            String absStorageFilePath = resourceManageService.getAbsStorageFilePath(
+            var absStorageFilePath = resourceManageService.getAbsStorageFilePath(
                     loginUser.getId(), parentDir, file.getOriginalFilename());
             if (id == null && storageService.exists(absStorageFilePath)) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(FILE_EXISTS.getDesc());
@@ -162,7 +162,7 @@ public class ResourceController {
             ResourceUtil.copyToLocal(file, localFileName);
             storageService.copyFromLocal(localFileName, absStorageFilePath, true, true);
 
-            Resource resource = new Resource();
+            var resource = new Resource();
             resource.setFullName(absStorageFilePath);
             resource.setName(new Path(absStorageFilePath).getName());
             return ResponseEntity.status(HttpStatus.OK).body(success(resource));

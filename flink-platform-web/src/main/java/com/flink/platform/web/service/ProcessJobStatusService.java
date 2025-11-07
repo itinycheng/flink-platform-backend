@@ -1,11 +1,11 @@
 package com.flink.platform.web.service;
 
-import com.flink.platform.common.enums.DeployMode;
 import com.flink.platform.common.exception.JobStatusScrapeException;
 import com.flink.platform.grpc.JobStatusReply;
 import com.flink.platform.grpc.JobStatusRequest;
 import com.flink.platform.web.monitor.DefaultStatusFetcher;
 import com.flink.platform.web.monitor.StatusFetcher;
+import com.flink.platform.web.monitor.StatusRequest;
 import jakarta.annotation.Nonnull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -25,10 +25,10 @@ public class ProcessJobStatusService {
     private final DefaultStatusFetcher defaultStatusFetcher;
 
     @Nonnull
-    public JobStatusReply getStatus(JobStatusRequest request) {
-        final DeployMode deployMode = DeployMode.from(request.getDeployMode());
+    public JobStatusReply getStatus(JobStatusRequest jobStatusRequest) {
+        var request = new StatusRequest(jobStatusRequest);
         StatusFetcher statusFetcher = statusFetchers.stream()
-                .filter(fetcher -> fetcher.isSupported(deployMode))
+                .filter(fetcher -> fetcher.isSupported(request))
                 .findFirst()
                 .orElseThrow(() -> new JobStatusScrapeException("No available job status fetcher"));
 

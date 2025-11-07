@@ -19,6 +19,7 @@ import static com.flink.platform.common.enums.DependentStrategy.LAST_EXECUTION_A
 import static com.flink.platform.common.enums.DependentStrategy.LAST_EXECUTION_AS_EXPECTED;
 import static com.flink.platform.common.enums.JobType.CONDITION;
 import static com.flink.platform.common.enums.JobType.DEPENDENT;
+import static com.flink.platform.common.enums.JobType.SUB_FLOW;
 import static com.flink.platform.common.util.Preconditions.requireNotNull;
 
 /** Job request info. */
@@ -114,7 +115,7 @@ public class JobInfoRequest {
     }
 
     public String verifySubject() {
-        if (getType() == CONDITION || getType() == DEPENDENT) {
+        if (getType() == CONDITION || getType() == DEPENDENT || getType() == SUB_FLOW) {
             setSubject("");
         }
         return requireNotNull(getSubject(), "The job subject cannot be null");

@@ -1,6 +1,5 @@
 package com.flink.platform.web.controller;
 
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -44,14 +43,14 @@ public class WorkerController {
 
     @GetMapping(value = "/get/{workerId}")
     public ResultInfo<Worker> get(@PathVariable Long workerId) {
-        Worker worker = workerService.getById(workerId);
+        var worker = workerService.getById(workerId);
         return success(worker);
     }
 
     @PostMapping(value = "/create")
     public ResultInfo<Long> create(
             @RequestAttribute(value = Constant.SESSION_USER) User loginUser, @RequestBody WorkerRequest workerRequest) {
-        String errorMsg = workerRequest.validateOnCreate();
+        var errorMsg = workerRequest.validateOnCreate();
         if (StringUtils.isNotBlank(errorMsg)) {
             return failure(ERROR_PARAMETER, errorMsg);
         }
@@ -60,7 +59,7 @@ public class WorkerController {
             return failure(USER_HAVE_NO_PERMISSION);
         }
 
-        Worker worker = workerRequest.getWorker();
+        var worker = workerRequest.getWorker();
         worker.setId(null);
         workerService.save(worker);
         return success(worker.getId());
@@ -69,7 +68,7 @@ public class WorkerController {
     @PostMapping(value = "/update")
     public ResultInfo<Long> update(
             @RequestAttribute(value = Constant.SESSION_USER) User loginUser, @RequestBody WorkerRequest workerRequest) {
-        String errorMsg = workerRequest.validateOnUpdate();
+        var errorMsg = workerRequest.validateOnUpdate();
         if (StringUtils.isNotBlank(errorMsg)) {
             return failure(ERROR_PARAMETER, errorMsg);
         }
@@ -78,7 +77,7 @@ public class WorkerController {
             return failure(USER_HAVE_NO_PERMISSION);
         }
 
-        Worker worker = workerRequest.getWorker();
+        var worker = workerRequest.getWorker();
         workerService.updateById(worker);
         return success(worker.getId());
     }
@@ -90,8 +89,8 @@ public class WorkerController {
             @RequestParam(name = "role", required = false) WorkerStatus role,
             @RequestParam(name = "name", required = false) String name,
             @RequestParam(name = "ip", required = false) String ip) {
-        Page<Worker> pager = new Page<>(page, size);
-        LambdaQueryWrapper<Worker> queryWrapper = new QueryWrapper<Worker>()
+        var pager = new Page<Worker>(page, size);
+        var queryWrapper = new QueryWrapper<Worker>()
                 .lambda()
                 .like(Objects.nonNull(name), Worker::getName, name)
                 .like(Objects.nonNull(ip), Worker::getIp, ip);
@@ -102,7 +101,7 @@ public class WorkerController {
             queryWrapper.ne(Worker::getRole, DELETED);
         }
 
-        IPage<Worker> iPage = workerService.page(pager, queryWrapper);
+        var iPage = workerService.page(pager, queryWrapper);
         return success(iPage);
     }
 
@@ -118,7 +117,7 @@ public class WorkerController {
             return failure(USER_HAVE_NO_PERMISSION);
         }
 
-        Worker worker = workerService.getById(workerId);
+        var worker = workerService.getById(workerId);
         if (worker == null) {
             return failure(ERROR_PARAMETER);
         }
@@ -137,7 +136,7 @@ public class WorkerController {
             return failure(USER_HAVE_NO_PERMISSION);
         }
 
-        Worker worker = workerService.getById(workerId);
+        var worker = workerService.getById(workerId);
         if (worker == null) {
             return failure(ERROR_PARAMETER);
         }
