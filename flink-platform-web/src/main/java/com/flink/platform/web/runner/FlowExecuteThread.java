@@ -4,7 +4,6 @@ import com.flink.platform.alert.AlertSendingService;
 import com.flink.platform.common.enums.ExecutionStatus;
 import com.flink.platform.common.enums.TimeoutStrategy;
 import com.flink.platform.common.model.JobVertex;
-import com.flink.platform.dao.entity.ExecutionConfig;
 import com.flink.platform.dao.entity.JobFlowDag;
 import com.flink.platform.dao.entity.JobFlowRun;
 import com.flink.platform.dao.service.JobFlowRunService;
@@ -23,7 +22,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Semaphore;
-import java.util.function.Supplier;
 
 import static com.flink.platform.common.enums.ExecutionStatus.RUNNING;
 
@@ -109,9 +107,9 @@ public class FlowExecuteThread implements Runnable {
 
     /** Update status of jobFlow and send notification. */
     private void completeAndNotify(JobFlowDag flow) {
-        ExecutionStatus finalStatus = JobFlowDagHelper.getFinalStatus(flow);
+        var finalStatus = JobFlowDagHelper.getFinalStatus(flow);
         jobFlowRun.setStatus(finalStatus);
-        JobFlowRun newJobFlowRun = new JobFlowRun();
+        var newJobFlowRun = new JobFlowRun();
         newJobFlowRun.setId(jobFlowRun.getId());
         newJobFlowRun.setEndTime(LocalDateTime.now());
         newJobFlowRun.setStatus(finalStatus);
@@ -133,9 +131,8 @@ public class FlowExecuteThread implements Runnable {
             return;
         }
 
-        Supplier<JobResponse> runnable =
-                new SemaphoreSupplier(semaphore, new JobExecuteThread(jobFlowRun.getId(), jobVertex));
-        CompletableFuture<Void> jobVertexFuture = CompletableFuture.supplyAsync(runnable, jobExecService)
+        var runnable = new SemaphoreSupplier(semaphore, new JobExecuteThread(jobFlowRun.getId(), jobVertex));
+        var jobVertexFuture = CompletableFuture.supplyAsync(runnable, jobExecService)
                 .thenAccept(response -> handleResponse(response, jobVertex, flow));
         runningJobs.put(jobVertex.getId(), jobVertexFuture);
     }
@@ -148,13 +145,13 @@ public class FlowExecuteThread implements Runnable {
         jobVertex.setJobRunId(jobResponse.getJobRunId());
         jobVertex.setJobRunStatus(jobResponse.getStatus());
 
-        ExecutionStatus finalStatus = jobResponse.getStatus();
+        var finalStatus = jobResponse.getStatus();
         if (ExecutionStatus.isStopFlowState(finalStatus)) {
             killFlow();
             return;
         }
 
-        for (JobVertex nextVertex : flow.getNextVertices(jobVertex)) {
+        for (var nextVertex : flow.getNextVertices(jobVertex)) {
             if (flow.isPreconditionSatisfied(nextVertex)) {
                 execVertex(nextVertex, flow);
             }
@@ -170,8 +167,8 @@ public class FlowExecuteThread implements Runnable {
     }
 
     private int getParallelism() {
-        ExecutionConfig config = jobFlowRun.getConfig();
-        int parallelism = config != null ? config.getParallelism() : 0;
+        var config = jobFlowRun.getConfig();
+        var parallelism = config != null ? config.getParallelism() : 0;
         return parallelism > 0 ? parallelism : workerConfig.getPerFlowExecThreads();
     }
 }

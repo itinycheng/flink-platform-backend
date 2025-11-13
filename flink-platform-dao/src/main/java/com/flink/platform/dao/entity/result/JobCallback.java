@@ -54,16 +54,4 @@ public class JobCallback {
         this.message = message;
         this.status = status;
     }
-
-    public JobCallback cloneWithoutMsg() {
-        JobCallback callback = new JobCallback();
-        callback.setJobId(this.getJobId());
-        callback.setAppId(this.getAppId());
-        callback.setTrackingUrl(this.getTrackingUrl());
-        callback.setStatus(this.getStatus());
-        callback.setExited(this.getExited());
-        callback.setExitCode(this.getExitCode());
-        callback.setProcessId(this.getProcessId());
-        return callback;
-    }
 }

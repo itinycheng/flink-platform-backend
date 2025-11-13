@@ -19,14 +19,14 @@ public class JdbcUtil {
     public static Connection createConnection(DbType dbType, DatasourceParam params) throws Exception {
         log.info("create connection. dbType: {}, params: {}", dbType, params);
         Class.forName(dbType.getDriver());
-        Properties properties = new Properties();
+        var properties = new Properties();
 
         switch (dbType) {
             case CLICKHOUSE:
             case MYSQL:
             case HIVE:
                 properties.setProperty("user", PlaceholderUtil.apolloConfig(params.getUsername()));
-                String password = PlaceholderUtil.apolloConfig(params.getPassword());
+                var password = PlaceholderUtil.apolloConfig(params.getPassword());
                 if (password != null) {
                     properties.setProperty("password", password);
                 }
@@ -51,9 +51,9 @@ public class JdbcUtil {
         switch (dbType) {
             case CLICKHOUSE:
                 if (dbObject instanceof Array array) {
-                    Object objectArray = array.getArray();
-                    int arrayLength = java.lang.reflect.Array.getLength(objectArray);
-                    Object[] javaObjectArray = new Object[arrayLength];
+                    var objectArray = array.getArray();
+                    var arrayLength = java.lang.reflect.Array.getLength(objectArray);
+                    var javaObjectArray = new Object[arrayLength];
                     for (int i = 0; i < arrayLength; i++) {
                         javaObjectArray[i] = toJavaObject(java.lang.reflect.Array.get(objectArray, i), dbType);
                     }

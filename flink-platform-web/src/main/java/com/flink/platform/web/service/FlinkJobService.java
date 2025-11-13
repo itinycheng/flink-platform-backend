@@ -31,7 +31,7 @@ public class FlinkJobService {
 
     static {
         var formatMap = new HashMap<DeployMode, String>();
-        String savepointFormat = "${cmdPath} savepoint -yid ${appId} ${jobId}";
+        var savepointFormat = "${cmdPath} savepoint -yid ${appId} ${jobId}";
         formatMap.put(DeployMode.FLINK_YARN_PER, savepointFormat);
         formatMap.put(DeployMode.FLINK_YARN_SESSION, savepointFormat);
         formatMap.put(DeployMode.FLINK_YARN_RUN_APPLICATION, savepointFormat);

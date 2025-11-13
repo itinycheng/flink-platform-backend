@@ -35,7 +35,7 @@ public class HttpUtil {
     }
 
     public static String getClientIpAddress(HttpServletRequest request) {
-        String clientIp = request.getHeader(HTTP_X_FORWARDED_FOR);
+        var clientIp = request.getHeader(HTTP_X_FORWARDED_FOR);
         if (StringUtils.isNotEmpty(clientIp) && !clientIp.equalsIgnoreCase(HTTP_HEADER_UNKNOWN)) {
             int index = clientIp.indexOf(COMMA);
             if (index != -1) {
