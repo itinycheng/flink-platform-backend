@@ -35,7 +35,7 @@ public class ResourceManageService {
                     }
                     parentPath = parentResource.getFullName();
                 }
-                String absolutePath = getAbsStorageFilePath(entity.getUserId(), parentPath, entity.getName());
+                var absolutePath = getAbsStorageFilePath(entity.getUserId(), parentPath, entity.getName());
                 if (!storageService.exists(absolutePath)) {
                     storageService.mkDir(absolutePath);
                     entity.setFullName(absolutePath);
@@ -56,12 +56,12 @@ public class ResourceManageService {
     }
 
     public boolean removeById(Long resourceId) throws Exception {
-        Resource resource = resourceService.getById(resourceId);
+        var resource = resourceService.getById(resourceId);
         if (resource == null) {
             return false;
         }
 
-        String fullName = resource.getFullName();
+        var fullName = resource.getFullName();
         if (storageService.exists(fullName)) {
             storageService.trashOrDelete(fullName, false);
         }

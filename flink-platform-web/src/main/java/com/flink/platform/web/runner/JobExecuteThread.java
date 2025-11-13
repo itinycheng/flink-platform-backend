@@ -80,14 +80,14 @@ public class JobExecuteThread implements Supplier<JobResponse> {
         int retryAttempt;
         try {
             // 1. get retry info.
-            BaseJob baseJob = getRetryConfig();
+            var baseJob = getRetryConfig();
             retryTimes = baseJob.getRetryTimes();
             retryInterval = baseJob.parseRetryInterval();
 
             // 2. load execution count and the last jobRun status if it exists.
-            Pair<Integer, JobRunInfo> pair = getCountAndLastJobRun();
+            var pair = getCountAndLastJobRun();
             retryAttempt = pair.getLeft() - 1;
-            JobRunInfo jobRun = pair.getRight();
+            var jobRun = pair.getRight();
             if (jobRun != null) {
                 jobRunId = jobRun.getId();
                 jobRunStatus = jobRun.getStatus();
@@ -308,7 +308,7 @@ public class JobExecuteThread implements Supplier<JobResponse> {
             newJobRun.setId(jobRunInfo.getId());
             newJobRun.setStatus(statusInfo.getStatus());
             if (statusInfo.getStatus().isTerminalState()) {
-                LocalDateTime endTime = statusInfo.toEndTime();
+                var endTime = statusInfo.toEndTime();
                 if (endTime == null) {
                     endTime = LocalDateTime.now();
                 }

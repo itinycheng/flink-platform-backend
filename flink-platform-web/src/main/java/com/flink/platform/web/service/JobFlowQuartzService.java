@@ -24,10 +24,10 @@ public class JobFlowQuartzService {
 
     @Transactional(rollbackFor = Exception.class)
     public boolean scheduleJob(JobFlow jobFlow) {
-        JobFlowQuartzInfo jobFlowQuartzInfo = new JobFlowQuartzInfo(jobFlow);
-        boolean bool = quartzService.addJobToQuartz(jobFlowQuartzInfo);
+        var jobFlowQuartzInfo = new JobFlowQuartzInfo(jobFlow);
+        var bool = quartzService.addJobToQuartz(jobFlowQuartzInfo);
 
-        JobFlow newJobFlow = new JobFlow();
+        var newJobFlow = new JobFlow();
         newJobFlow.setId(jobFlow.getId());
         newJobFlow.setStatus(SCHEDULING);
         jobFlowService.updateById(newJobFlow);
@@ -37,10 +37,10 @@ public class JobFlowQuartzService {
 
     @Transactional(rollbackFor = Exception.class)
     public void stopJob(JobFlow jobFlow) {
-        JobFlowQuartzInfo quartzInfo = new JobFlowQuartzInfo(jobFlow);
+        var quartzInfo = new JobFlowQuartzInfo(jobFlow);
         quartzService.removeJob(quartzInfo);
 
-        JobFlow newJobFlow = new JobFlow();
+        var newJobFlow = new JobFlow();
         newJobFlow.setId(jobFlow.getId());
         newJobFlow.setStatus(ONLINE);
         jobFlowService.updateById(newJobFlow);

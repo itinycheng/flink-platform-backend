@@ -18,7 +18,7 @@ public class PlaceholderUtil {
 
         Map<String, Object> result = Placeholder.APOLLO.apply(null, param);
         if (!result.isEmpty()) {
-            Object value = result.values().iterator().next();
+            var value = result.values().iterator().next();
             if (value != null) {
                 log.debug("Apollo config found, param:{}, value:{}", param, value);
                 return value.toString();

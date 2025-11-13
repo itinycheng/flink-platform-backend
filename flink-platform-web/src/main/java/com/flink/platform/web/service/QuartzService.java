@@ -8,13 +8,10 @@ import com.flink.platform.web.entity.IQuartzInfo;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.quartz.CronExpression;
-import org.quartz.CronTrigger;
 import org.quartz.JobDataMap;
-import org.quartz.JobDetail;
 import org.quartz.JobKey;
 import org.quartz.Scheduler;
 import org.quartz.SchedulerException;
-import org.quartz.Trigger;
 import org.quartz.TriggerBuilder;
 import org.quartz.TriggerKey;
 import org.springframework.stereotype.Service;
@@ -66,10 +63,10 @@ public class QuartzService {
             checkQuartzSchedulerStarted();
             checkQuartzScheduleInterval(quartzInfo.getCron());
 
-            JobKey jobKey = quartzInfo.getJobKey();
-            TriggerKey triggerKey = quartzInfo.getTriggerKey();
-            boolean jobExists = isJobExists(jobKey);
-            boolean triggerExists = isTriggerExists(triggerKey);
+            var jobKey = quartzInfo.getJobKey();
+            var triggerKey = quartzInfo.getTriggerKey();
+            var jobExists = isJobExists(jobKey);
+            var triggerExists = isTriggerExists(triggerKey);
             if (jobExists || triggerExists) {
                 log.warn("Job or trigger is already exists, quartz info: {}", quartzInfo);
                 return false;
@@ -92,19 +89,19 @@ public class QuartzService {
         try {
             checkQuartzSchedulerStarted();
 
-            JobKey originJobKey = quartzInfo.getJobKey();
-            String newJobGroup = String.join("_", originJobKey.getGroup(), GROUP_RUN_ONCE);
-            JobKey newJobKey = JobKey.jobKey(originJobKey.getName(), newJobGroup);
+            var originJobKey = quartzInfo.getJobKey();
+            var newJobGroup = String.join("_", originJobKey.getGroup(), GROUP_RUN_ONCE);
+            var newJobKey = JobKey.jobKey(originJobKey.getName(), newJobGroup);
 
-            TriggerKey originTriggerKey = quartzInfo.getTriggerKey();
-            String newTriggerGroup = String.join("_", originTriggerKey.getGroup(), GROUP_RUN_ONCE);
-            TriggerKey newTriggerKey = TriggerKey.triggerKey(originTriggerKey.getName(), newTriggerGroup);
+            var originTriggerKey = quartzInfo.getTriggerKey();
+            var newTriggerGroup = String.join("_", originTriggerKey.getGroup(), GROUP_RUN_ONCE);
+            var newTriggerKey = TriggerKey.triggerKey(originTriggerKey.getName(), newTriggerGroup);
 
-            JobDetail jobDetail = newJob(quartzInfo.getJobClass())
+            var jobDetail = newJob(quartzInfo.getJobClass())
                     .withIdentity(newJobKey)
                     .usingJobData(new JobDataMap(quartzInfo.getData()))
                     .build();
-            Trigger simpleTrigger = TriggerBuilder.newTrigger()
+            var simpleTrigger = TriggerBuilder.newTrigger()
                     .withIdentity(newTriggerKey)
                     .startNow()
                     .build();
@@ -133,21 +130,21 @@ public class QuartzService {
     }
 
     private boolean isTriggerExists(TriggerKey triggerKey) throws SchedulerException {
-        Trigger trigger = scheduler.getTrigger(triggerKey);
+        var trigger = scheduler.getTrigger(triggerKey);
         return trigger != null;
     }
 
     private boolean isJobExists(JobKey jobKey) throws SchedulerException {
-        JobDetail jobDetail = scheduler.getJobDetail(jobKey);
+        var jobDetail = scheduler.getJobDetail(jobKey);
         return jobDetail != null;
     }
 
     private void scheduleJob(IQuartzInfo quartzInfo) throws SchedulerException {
-        JobDetail jobDetail = newJob(quartzInfo.getJobClass())
+        var jobDetail = newJob(quartzInfo.getJobClass())
                 .withIdentity(quartzInfo.getJobKey())
                 .usingJobData(new JobDataMap(quartzInfo.getData()))
                 .build();
-        CronTrigger trigger = newTrigger()
+        var trigger = newTrigger()
                 .withIdentity(quartzInfo.getTriggerKey())
                 .withSchedule(cronSchedule(quartzInfo.getCron()))
                 .startNow()
@@ -162,9 +159,9 @@ public class QuartzService {
     }
 
     private void checkQuartzScheduleInterval(String cronExpr) throws ParseException {
-        CronExpression cronExpression = new CronExpression(cronExpr);
-        Date validTime1 = cronExpression.getNextValidTimeAfter(new Date());
-        Date validTime2 = cronExpression.getNextValidTimeAfter(validTime1);
+        var cronExpression = new CronExpression(cronExpr);
+        var validTime1 = cronExpression.getNextValidTimeAfter(new Date());
+        var validTime2 = cronExpression.getNextValidTimeAfter(validTime1);
         if (validTime2.getTime() - validTime1.getTime() < DateUtil.MILLIS_PER_MINUTE) {
             throw new QuartzException(" schedule interval must bigger than 1 minute");
         }

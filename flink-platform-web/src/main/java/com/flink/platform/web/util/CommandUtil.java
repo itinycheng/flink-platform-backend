@@ -5,10 +5,8 @@ import com.flink.platform.dao.entity.result.ShellCallback;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.List;
 import java.util.function.BiConsumer;
 
 import static com.flink.platform.common.constants.Constant.LINE_SEPARATOR;
@@ -38,10 +36,10 @@ public class CommandUtil {
 
     public static ShellCallback exec(String command, String[] envProps, long timeoutMills)
             throws IOException, InterruptedException {
-        List<String> stdList = Collections.synchronizedList(new ArrayList<>());
-        List<String> errList = Collections.synchronizedList(new ArrayList<>());
+        var stdList = Collections.synchronizedList(new ArrayList<String>());
+        var errList = Collections.synchronizedList(new ArrayList<String>());
 
-        ShellCallback callback = exec(command, envProps, timeoutMills, (inputType, value) -> {
+        var callback = exec(command, envProps, timeoutMills, (inputType, value) -> {
             switch (inputType) {
                 case STD:
                     if (stdList.size() <= MAX_LOG_ROWS) {
@@ -70,13 +68,13 @@ public class CommandUtil {
             BiConsumer<CollectLogRunnable.CmdOutType, String> logConsumer)
             throws IOException, InterruptedException {
         log.info("Exec command: {}, env properties: {}", command, envProps);
-        Process process = Runtime.getRuntime().exec(command, envProps);
-        Long processId = getProcessId(process);
+        var process = Runtime.getRuntime().exec(command, envProps);
+        var processId = getProcessId(process);
 
-        try (InputStream stdStream = process.getInputStream();
-                InputStream errStream = process.getErrorStream()) {
-            Thread stdThread = Thread.ofVirtual().unstarted(new CollectLogRunnable(stdStream, STD, logConsumer));
-            Thread errThread = Thread.ofVirtual().unstarted(new CollectLogRunnable(errStream, ERR, logConsumer));
+        try (var stdStream = process.getInputStream();
+                var errStream = process.getErrorStream()) {
+            var stdThread = Thread.ofVirtual().unstarted(new CollectLogRunnable(stdStream, STD, logConsumer));
+            var errThread = Thread.ofVirtual().unstarted(new CollectLogRunnable(errStream, ERR, logConsumer));
 
             try {
                 stdThread.start();
@@ -123,7 +121,7 @@ public class CommandUtil {
     }
 
     private static void recursiveForceKill(ProcessHandle handle) {
-        ProcessHandle[] children = handle.children().toArray(ProcessHandle[]::new);
+        var children = handle.children().toArray(ProcessHandle[]::new);
 
         try {
             handle.destroyForcibly();

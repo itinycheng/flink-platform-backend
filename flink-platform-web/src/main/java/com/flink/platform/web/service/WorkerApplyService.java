@@ -28,19 +28,19 @@ public class WorkerApplyService {
             return HttpUtil.getDefaultUrl();
         }
 
-        List<Worker> workers = workerService.listByIds(workerIds);
+        var workers = workerService.listByIds(workerIds);
 
         if (CollectionUtils.isEmpty(workers)) {
             return HttpUtil.getDefaultUrl();
         }
 
-        String hostIp = Constant.HOST_IP;
+        var hostIp = Constant.HOST_IP;
         if (workers.stream().anyMatch(worker -> hostIp.equals(worker.getIp()))) {
             return HttpUtil.getDefaultUrl();
         }
 
-        int idx = random.nextInt(workers.size());
-        Worker worker = workers.get(idx);
+        var idx = random.nextInt(workers.size());
+        var worker = workers.get(idx);
         return HttpUtil.buildHttpUrl(worker.getIp(), worker.getPort());
     }
 
@@ -49,12 +49,12 @@ public class WorkerApplyService {
             return null;
         }
 
-        List<Worker> workers = workerService.listActiveWorkersByIds(workerIds);
+        var workers = workerService.listActiveWorkersByIds(workerIds);
         if (CollectionUtils.isEmpty(workers)) {
             return null;
         }
 
-        int idx = random.nextInt(workers.size());
+        var idx = random.nextInt(workers.size());
         return workers.get(idx);
     }
 }

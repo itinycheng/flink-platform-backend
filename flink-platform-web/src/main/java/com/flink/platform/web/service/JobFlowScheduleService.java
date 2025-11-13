@@ -1,7 +1,6 @@
 package com.flink.platform.web.service;
 
 import com.flink.platform.alert.AlertSendingService;
-import com.flink.platform.dao.entity.JobFlowDag;
 import com.flink.platform.dao.entity.JobFlowRun;
 import com.flink.platform.dao.service.JobFlowRunService;
 import com.flink.platform.web.config.AppRunner;
@@ -59,7 +58,7 @@ public class JobFlowScheduleService {
                 return;
             }
 
-            JobFlowRun jobFlowRun = inFlightFlows.poll();
+            var jobFlowRun = inFlightFlows.poll();
             if (jobFlowRun == null) {
                 return;
             }
@@ -74,7 +73,7 @@ public class JobFlowScheduleService {
             return;
         }
 
-        JobFlowDag flow = jobFlowRun.getFlow();
+        var flow = jobFlowRun.getFlow();
         if (flow == null || CollectionUtils.isEmpty(flow.getVertices())) {
             log.warn("No JobVertex found, no scheduling required, flow run id: {}", jobFlowRun.getId());
             failAndUpdateJobFlowRun(jobFlowRun);

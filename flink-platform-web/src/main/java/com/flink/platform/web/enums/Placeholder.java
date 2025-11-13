@@ -4,7 +4,6 @@ import com.flink.platform.common.constants.JobConstant;
 import com.flink.platform.common.util.DateUtil;
 import com.flink.platform.common.util.DurationUtil;
 import com.flink.platform.common.util.FileUtil;
-import com.flink.platform.dao.entity.JobParam;
 import com.flink.platform.dao.entity.JobRunInfo;
 import com.flink.platform.dao.service.JobParamService;
 import com.flink.platform.web.common.SpringContext;
@@ -16,7 +15,6 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import java.nio.file.Path;
-import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -24,11 +22,9 @@ import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.function.BiFunction;
 import java.util.function.Supplier;
-import java.util.regex.Matcher;
 
 import static com.flink.platform.common.constants.JobConstant.APOLLO_CONF_PATTERN;
 import static com.flink.platform.common.constants.JobConstant.APOLLO_CONF_PREFIX;
@@ -48,10 +44,10 @@ import static com.flink.platform.web.util.ResourceUtil.getAbsoluteStoragePath;
 @Slf4j
 public enum Placeholder {
     JOB_RUN("${jobRun", (JobRunInfo jobRun, String content) -> {
-        Map<String, Object> result = new HashMap<>();
-        Matcher matcher = JOB_RUN_PLACEHOLDER_PATTERN.matcher(content);
+        var result = new HashMap<String, Object>();
+        var matcher = JOB_RUN_PLACEHOLDER_PATTERN.matcher(content);
         while (matcher.find()) {
-            String field = matcher.group("field");
+            var field = matcher.group("field");
             Object value = null;
             if ("code".equalsIgnoreCase(field)) {
                 value = jobRun.getJobCode();
@@ -64,13 +60,13 @@ public enum Placeholder {
     }),
 
     APOLLO(APOLLO_CONF_PREFIX, uncheckedBiFunction((JobRunInfo jobRun, String content) -> {
-        PluginService pluginService = SpringContext.getBean(PluginService.class);
-        Map<String, Object> result = new HashMap<>();
-        Matcher matcher = APOLLO_CONF_PATTERN.matcher(content);
+        var pluginService = SpringContext.getBean(PluginService.class);
+        var result = new HashMap<String, Object>();
+        var matcher = APOLLO_CONF_PATTERN.matcher(content);
         while (matcher.find()) {
-            String paramName = matcher.group();
-            String namespace = matcher.group("namespace");
-            String key = matcher.group("key");
+            var paramName = matcher.group();
+            var namespace = matcher.group("namespace");
+            var key = matcher.group("key");
             if (StringUtils.isNotBlank(namespace) && StringUtils.isNotBlank(key)) {
                 result.put(paramName, pluginService.getApolloConfig(namespace, key));
             }
@@ -79,18 +75,18 @@ public enum Placeholder {
     })),
 
     RESOURCE("${resource", uncheckedBiFunction((JobRunInfo jobRun, String content) -> {
-        Map<String, Object> result = new HashMap<>();
-        Matcher matcher = RESOURCE_PATTERN.matcher(content);
+        var result = new HashMap<String, Object>();
+        var matcher = RESOURCE_PATTERN.matcher(content);
         while (matcher.find()) {
-            String variable = matcher.group();
-            String filePath = matcher.group("file");
+            var variable = matcher.group();
+            var filePath = matcher.group("file");
             if (StringUtils.isBlank(filePath)) {
                 throw new RuntimeException("Hdfs path not found, variable:" + variable);
             }
 
             // filePath.startsWith("hdfs") ? filePath : getStorageFilePath(filePath, jobRun.getUserId());
-            String absoluteStoragePath = getAbsoluteStoragePath(filePath);
-            String localPath = copyFromStorageToLocal(absoluteStoragePath);
+            var absoluteStoragePath = getAbsoluteStoragePath(filePath);
+            var localPath = copyFromStorageToLocal(absoluteStoragePath);
             result.put(variable, localPath);
 
             // Make the local file readable and executable.
@@ -107,13 +103,13 @@ public enum Placeholder {
     })),
 
     PARAM("${param", (JobRunInfo jobRun, String content) -> {
-        JobParamService jobParamService = SpringContext.getBean(JobParamService.class);
-        List<JobParam> jobParams = jobParamService.getJobParams(jobRun.getJobId());
+        var jobParamService = SpringContext.getBean(JobParamService.class);
+        var jobParams = jobParamService.getJobParams(jobRun.getJobId());
         if (CollectionUtils.isEmpty(jobParams)) {
             return Collections.emptyMap();
         }
 
-        Map<String, Object> result = new HashMap<>();
+        var result = new HashMap<String, Object>();
         jobParams.forEach(jobParam -> {
             String param = PARAM_FORMAT.formatted(jobParam.getParamName());
             if (content.contains(param)) {
@@ -125,23 +121,23 @@ public enum Placeholder {
 
     // ${time:yyyyMMdd[curDate-3d]}
     TIME("${time", (JobRunInfo jobRun, String content) -> {
-        Map<String, Object> result = new HashMap<>();
-        Matcher matcher = TIME_PLACEHOLDER_PATTERN.matcher(content);
+        var result = new HashMap<String, Object>();
+        var matcher = TIME_PLACEHOLDER_PATTERN.matcher(content);
         while (matcher.find()) {
-            String variable = matcher.group();
+            var variable = matcher.group();
             if (result.containsKey(variable)) {
                 continue;
             }
 
-            String format = checkNotNull(matcher.group("format"));
-            String baseTime = checkNotNull(matcher.group("baseTime"));
-            String operator = matcher.group("operator");
-            String duration = matcher.group("duration");
-            BaseTimeUnit baseTimeUnit = BaseTimeUnit.of(baseTime);
-            LocalDateTime destTime = baseTimeUnit.provider.get();
+            var format = checkNotNull(matcher.group("format"));
+            var baseTime = checkNotNull(matcher.group("baseTime"));
+            var operator = matcher.group("operator");
+            var duration = matcher.group("duration");
+            var baseTimeUnit = BaseTimeUnit.of(baseTime);
+            var destTime = baseTimeUnit.provider.get();
             // dest time plus duration.
             if (StringUtils.isNotBlank(duration)) {
-                Duration parsedDuration = DurationUtil.parse(duration);
+                var parsedDuration = DurationUtil.parse(duration);
                 if ("-".equals(operator)) {
                     parsedDuration = parsedDuration.negated();
                 }
@@ -155,14 +151,14 @@ public enum Placeholder {
 
     @Deprecated
     CURRENT_TIMESTAMP(CURRENT_TIMESTAMP_VAR, (JobRunInfo jobRun, String content) -> {
-        Map<String, Object> result = new HashMap<>(1);
+        var result = new HashMap<String, Object>(1);
         result.put(CURRENT_TIMESTAMP_VAR, System.currentTimeMillis());
         return result;
     }),
 
     @Deprecated
     TODAY_YYYYMMDD(TODAY_YYYY_MM_DD_VAR, (JobRunInfo jobRun, String content) -> {
-        Map<String, Object> result = new HashMap<>(1);
+        var result = new HashMap<String, Object>(1);
         result.put(TODAY_YYYY_MM_DD_VAR, DateUtil.format(System.currentTimeMillis(), "yyyyMMdd"));
         return result;
     });
@@ -210,7 +206,7 @@ public enum Placeholder {
     }
 
     public static void main(String[] args) {
-        JobRunInfo jobRun = new JobRunInfo();
+        var jobRun = new JobRunInfo();
 
         jobRun.setSubject(
                 "select count() as date_${time:yyyyMMdd[curDay-1d]} from t where time = ${time:yyyyMMdd[curDay-1d]}");

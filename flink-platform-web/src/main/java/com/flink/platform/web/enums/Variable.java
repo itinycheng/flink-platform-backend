@@ -1,7 +1,6 @@
 package com.flink.platform.web.enums;
 
 import org.codehaus.commons.compiler.CompilerFactoryFactory;
-import org.codehaus.commons.compiler.IScriptEvaluator;
 
 import java.util.Arrays;
 import java.util.function.Function;
@@ -14,12 +13,12 @@ public enum Variable {
     /** variables. */
     // TODO optimize code in the future.
     SCRIPT("${script", uncheckedFunction((methodBody) -> {
-        ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
-        IScriptEvaluator evaluator = CompilerFactoryFactory.getDefaultCompilerFactory(contextClassLoader)
+        var contextClassLoader = Thread.currentThread().getContextClassLoader();
+        var evaluator = CompilerFactoryFactory.getDefaultCompilerFactory(contextClassLoader)
                 .newScriptEvaluator();
         evaluator.setReturnType(String.class);
         evaluator.cook((String) methodBody);
-        Object evaluate = evaluator.evaluate(null);
+        var evaluate = evaluator.evaluate(null);
         return String.valueOf(evaluate);
     }));
 

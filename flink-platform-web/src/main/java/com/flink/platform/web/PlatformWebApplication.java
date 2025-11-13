@@ -23,7 +23,7 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 public class PlatformWebApplication {
 
     public static void main(String[] args) {
-        SpringApplication application = new SpringApplication(PlatformWebApplication.class);
+        var application = new SpringApplication(PlatformWebApplication.class);
         application.addListeners(
                 (ApplicationListener<ContextClosedEvent>) event -> AppRunner.stop(),
                 (ApplicationListener<ContextRefreshedEvent>) event -> contextRefreshed());
