@@ -5,8 +5,8 @@ import com.flink.platform.common.util.JsonUtil;
 import com.flink.platform.dao.entity.JobInfo;
 import com.flink.platform.dao.entity.JobRunInfo;
 import com.flink.platform.dao.service.JobRunInfoService;
-import com.flink.platform.web.enums.Placeholder;
 import com.flink.platform.web.enums.Variable;
+import com.flink.platform.web.variable.VariableResolver;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -14,6 +14,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 import static com.flink.platform.common.constants.Constant.DOT;
@@ -34,6 +35,8 @@ public class JobRunExtraService {
     private final WorkerApplyService workerApplyService;
 
     private final StorageService storageService;
+
+    private final List<VariableResolver> variableResolvers;
 
     public Long createJobRun(JobInfo jobInfo, Long flowRunId) {
         var worker = workerApplyService.randomWorker(jobInfo.getRouteUrl());
@@ -68,12 +71,12 @@ public class JobRunExtraService {
     public Map<String, Object> parseVariables(JobRunInfo jobRun) {
         var variableMap = new LinkedHashMap<String, Object>();
         var content = String.join(", ", jobRun.getSubject(), JsonUtil.toJsonString(jobRun.getConfig()));
-        for (Placeholder placeholder : Placeholder.values()) {
-            if (!content.contains(placeholder.wildcard)) {
+        for (var variableResolver : variableResolvers) {
+            if (!variableResolver.supports(jobRun, content)) {
                 continue;
             }
 
-            var varMap = placeholder.apply(jobRun, content);
+            var varMap = variableResolver.resolve(jobRun, content);
             // Replace placeholders in the content with actual values
             for (var entry : varMap.entrySet()) {
                 content = content.replace(entry.getKey(), entry.getValue().toString());

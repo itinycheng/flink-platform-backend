@@ -11,9 +11,15 @@ import com.flink.platform.dao.entity.JobRunInfo;
 import com.flink.platform.dao.mapper.JobFlowRunMapper;
 import jakarta.annotation.Nonnull;
 import lombok.RequiredArgsConstructor;
+import org.apache.commons.collections4.MapUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import static com.flink.platform.common.enums.ExecutionStatus.getNonTerminals;
 import static com.flink.platform.common.enums.ExecutionStrategy.ONLY_CUR_JOB;
@@ -72,5 +78,43 @@ public class JobFlowRunService extends ServiceImpl<JobFlowRunMapper, JobFlowRun>
                 })
                 .findAny()
                 .orElse(null);
+    }
+
+    @Transactional
+    public void lockAndUpdateSharedVars(Long flowRunId, Map<String, Object> inputVars) {
+        if (MapUtils.isEmpty(inputVars)) {
+            return;
+        }
+
+        var jobFlowRun = baseMapper.querySharedVarsForUpdate(flowRunId);
+        var existingVars = jobFlowRun.getSharedVars();
+        final var sharedVars =
+                existingVars != null ? new HashMap<>(existingVars) : new HashMap<String, Object>(inputVars.size());
+        if (MapUtils.isEmpty(sharedVars)) {
+            sharedVars.putAll(inputVars);
+        } else {
+            inputVars.forEach((k, v) -> {
+                var inValue = v != null ? v.toString() : null;
+                if (inValue == null) {
+                    return;
+                }
+
+                switch (sharedVars.get(k)) {
+                    case null -> sharedVars.put(k, inValue);
+                    case String s -> sharedVars.put(k, List.of(s, inValue));
+                    case List<?> sharedList -> {
+                        var list = new ArrayList<Object>(sharedList);
+                        list.add(inValue);
+                        sharedVars.put(k, list);
+                    }
+                    default -> throw new IllegalStateException("Unexpected value: " + sharedVars.get(k));
+                }
+            });
+        }
+
+        var newFlowRun = new JobFlowRun();
+        newFlowRun.setId(jobFlowRun.getId());
+        newFlowRun.setSharedVars(sharedVars);
+        updateById(newFlowRun);
     }
 }

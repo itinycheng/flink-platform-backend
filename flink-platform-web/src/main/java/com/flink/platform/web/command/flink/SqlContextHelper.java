@@ -10,10 +10,10 @@ import com.flink.platform.common.util.SqlUtil;
 import com.flink.platform.dao.entity.JobRunInfo;
 import com.flink.platform.dao.entity.task.FlinkJob;
 import com.flink.platform.dao.service.CatalogInfoService;
-import com.flink.platform.web.enums.Placeholder;
 import com.flink.platform.web.environment.DispatcherService;
 import com.flink.platform.web.service.JobRunExtraService;
 import com.flink.platform.web.service.StorageService;
+import com.flink.platform.web.variable.ApolloVariableResolver;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
@@ -43,6 +43,8 @@ public class SqlContextHelper {
     private final DispatcherService dispatcherService;
 
     private final JobRunExtraService jobRunExtraService;
+
+    private final ApolloVariableResolver apolloVariableResolver;
 
     public String convertFromAndSaveToFile(JobRunInfo jobRun) throws IOException {
         var sqlContext = convertFrom(jobRun);
@@ -89,7 +91,8 @@ public class SqlContextHelper {
                         }
                     }
 
-                    for (var entry : Placeholder.APOLLO.apply(null, createSql).entrySet()) {
+                    for (var entry :
+                            apolloVariableResolver.resolve(null, createSql).entrySet()) {
                         createSql = createSql.replace(
                                 entry.getKey(), entry.getValue().toString());
                     }

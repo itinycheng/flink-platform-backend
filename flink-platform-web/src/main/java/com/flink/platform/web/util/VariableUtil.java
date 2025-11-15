@@ -1,22 +1,18 @@
 package com.flink.platform.web.util;
 
-import com.flink.platform.web.enums.Placeholder;
+import com.flink.platform.web.common.SpringContext;
+import com.flink.platform.web.variable.ApolloVariableResolver;
 import lombok.extern.slf4j.Slf4j;
-
-import java.util.Map;
 
 /**
  * Apollo utils.
  */
 @Slf4j
-public class PlaceholderUtil {
+public class VariableUtil {
 
     public static String apolloConfig(String param) {
-        if (!param.startsWith(Placeholder.APOLLO.wildcard)) {
-            return param;
-        }
-
-        Map<String, Object> result = Placeholder.APOLLO.apply(null, param);
+        var resolver = SpringContext.getBean(ApolloVariableResolver.class);
+        var result = resolver.resolve(null, param);
         if (!result.isEmpty()) {
             var value = result.values().iterator().next();
             if (value != null) {
@@ -24,7 +20,6 @@ public class PlaceholderUtil {
                 return value.toString();
             }
         }
-
-        throw new RuntimeException("Apollo config not found, param:" + param);
+        return param;
     }
 }
