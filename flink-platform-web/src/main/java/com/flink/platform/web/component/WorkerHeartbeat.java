@@ -16,7 +16,6 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.Random;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.stream.Stream;
 
@@ -75,7 +74,7 @@ public class WorkerHeartbeat {
 
     @PostConstruct
     public void initHeartbeat() {
-        EXECUTOR_SERVICE.scheduleWithFixedDelay(this::heartbeat, new Random().nextInt(50) + 10, 60, SECONDS);
+        EXECUTOR_SERVICE.scheduleWithFixedDelay(this::heartbeat, 5, 60, SECONDS);
     }
 
     public synchronized void heartbeat() {

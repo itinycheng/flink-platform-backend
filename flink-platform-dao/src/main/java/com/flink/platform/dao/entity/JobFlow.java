@@ -16,6 +16,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.LocalDateTime;
+import java.util.Map;
 
 import static com.flink.platform.common.enums.JobFlowType.JOB_FLOW;
 import static com.flink.platform.common.enums.JobFlowType.SUB_FLOW;
@@ -65,6 +66,9 @@ public class JobFlow {
 
     @TableField(typeHandler = JacksonTypeHandler.class)
     private Timeout timeout;
+
+    @TableField(typeHandler = JacksonTypeHandler.class)
+    private Map<String, Object> sharedVars;
 
     /** status. */
     private JobFlowStatus status;

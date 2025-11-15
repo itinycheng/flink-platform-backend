@@ -16,6 +16,7 @@ import org.apache.commons.lang3.time.DurationFormatUtils;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.Map;
 
 import static com.flink.platform.common.constants.Constant.EMPTY;
 
@@ -56,6 +57,9 @@ public class JobFlowRun {
 
     @TableField(typeHandler = JacksonTypeHandler.class)
     private Timeout timeout;
+
+    @TableField(typeHandler = JacksonTypeHandler.class)
+    private Map<String, Object> sharedVars;
 
     private ExecutionStatus status;
 

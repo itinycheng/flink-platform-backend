@@ -3,6 +3,7 @@ package com.flink.platform.common.constants;
 import java.util.regex.Pattern;
 
 /** constant values for key. */
+@SuppressWarnings("MagicConstant")
 public class JobConstant {
 
     public static final Pattern APP_ID_PATTERN = Pattern.compile("application_\\d{10,13}_\\d+");
@@ -24,10 +25,6 @@ public class JobConstant {
 
     public static final String JSON_FILE_SUFFIX = "json";
 
-    public static final String CURRENT_TIMESTAMP_VAR = "${currentTimestamp}";
-
-    public static final String TODAY_YYYY_MM_DD_VAR = "${today_yyyyMMdd}";
-
     public static final int READ_MAX_ROWS = 1000;
 
     public static final String CUR_YEAR = "curYear";
@@ -44,35 +41,41 @@ public class JobConstant {
 
     public static final String CUR_MILLISECOND = "curMillisecond";
 
-    public static final int SQL_PATTERN_CONFIGS = Pattern.CASE_INSENSITIVE | Pattern.MULTILINE | Pattern.DOTALL;
+    public static final int SQL_PATTERN_FLAGS = Pattern.CASE_INSENSITIVE | Pattern.MULTILINE | Pattern.DOTALL;
 
-    public static final Pattern SQL_PATTERN = Pattern.compile("\\S+.*?;\\s*$", SQL_PATTERN_CONFIGS);
+    public static final int VARIABLE_PATTERN_FLAGS = Pattern.CASE_INSENSITIVE | Pattern.MULTILINE;
+
+    public static final Pattern SQL_PATTERN = Pattern.compile("\\S+.*?;\\s*$", SQL_PATTERN_FLAGS);
 
     public static final Pattern LIMIT_PATTERN =
-            Pattern.compile("LIMIT\\s+(?<num1>\\d+)(,\\s*(?<num2>\\d+))?$", SQL_PATTERN_CONFIGS);
+            Pattern.compile("LIMIT\\s+(?<num1>\\d+)(,\\s*(?<num2>\\d+))?$", SQL_PATTERN_FLAGS);
 
     // ${time:yyyyMMdd[curDate-3d]}
-    public static final Pattern TIME_PLACEHOLDER_PATTERN = Pattern.compile(
+    public static final Pattern TIME_PATTERN = Pattern.compile(
             String.format(
                     "\\$\\{\\s*time:(?<format>.+?)\\[(?<baseTime>%s|%s|%s|%s|%s|%s|%s)(?<operator>\\+|-)?(?<duration>\\w+)?\\]\\s*}",
                     CUR_YEAR, CUR_MONTH, CUR_DAY, CUR_HOUR, CUR_MINUTE, CUR_SECOND, CUR_MILLISECOND),
-            Pattern.CASE_INSENSITIVE | Pattern.MULTILINE);
+            VARIABLE_PATTERN_FLAGS);
 
     // ${jobRun:id}
-    public static final Pattern JOB_RUN_PLACEHOLDER_PATTERN =
-            Pattern.compile("\\$\\{\\s*jobRun:(?<field>[^}]+)\\s*}", Pattern.CASE_INSENSITIVE | Pattern.MULTILINE);
+    public static final Pattern JOB_RUN_PATTERN =
+            Pattern.compile("\\$\\{\\s*jobRun:(?<field>[^}]+)\\s*}", VARIABLE_PATTERN_FLAGS);
 
     // ${resource:hdfs:/path/file}
     public static final Pattern RESOURCE_PATTERN =
-            Pattern.compile("\\$\\{\\s*resource:(?<file>[^}]+)\\s*}", Pattern.CASE_INSENSITIVE | Pattern.MULTILINE);
+            Pattern.compile("\\$\\{\\s*resource:(?<file>[^}]+)\\s*}", VARIABLE_PATTERN_FLAGS);
 
     public static final String PARAM_FORMAT = "${param:%s}";
+    // ${param:paramName}
+    public static final Pattern PARAM_PATTERN =
+            Pattern.compile("\\$\\{\\s*param:(?<name>[^}]+)\\s*}", VARIABLE_PATTERN_FLAGS);
 
-    public static final String APOLLO_CONF_PREFIX = "${apollo";
     // ${apollo:namespace:key}
-    public static final Pattern APOLLO_CONF_PATTERN = Pattern.compile(
-            "\\$\\{\\s*apollo:(?<namespace>[^}]+)\\s*:\\s*(?<key>[^}]+)\\s*}",
-            Pattern.CASE_INSENSITIVE | Pattern.MULTILINE);
+    public static final Pattern APOLLO_CONF_PATTERN =
+            Pattern.compile("\\$\\{\\s*apollo:(?<namespace>[^}]+)\\s*:\\s*(?<key>[^}]+)\\s*}", VARIABLE_PATTERN_FLAGS);
+
+    public static final Pattern SET_VALUE_PATTERN = Pattern.compile(
+            "\\$\\{\\s*setValue:(?<key>[^=]+)=(?<value>(?:[^{}]|\\{[^{}]*})+?)\\s*}", VARIABLE_PATTERN_FLAGS);
 
     public static final String CONFIG = "config";
 

@@ -22,3 +22,6 @@ CREATE INDEX t_job_run_name_idx USING BTREE ON platform.t_job_run (name);
 CREATE INDEX t_job_run_stop_time_idx USING BTREE ON platform.t_job_run (stop_time);
 CREATE INDEX t_job_flow_run_end_time_idx USING BTREE ON platform.t_job_flow_run (end_time);
 
+--2025-11-18
+ALTER TABLE platform.t_job_flow ADD COLUMN shared_vars TEXT AFTER `timeout`;
+ALTER TABLE platform.t_job_flow_run ADD COLUMN shared_vars TEXT AFTER `timeout`;
