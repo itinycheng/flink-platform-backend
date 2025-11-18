@@ -30,4 +30,12 @@ public class SetValueVariableResolver implements VariableResolver {
         }
         return result;
     }
+
+    public String getSetValueKey(String value) {
+        var matcher = SET_VALUE_PATTERN.matcher(value);
+        if (matcher.find()) {
+            return matcher.group("key");
+        }
+        return null;
+    }
 }

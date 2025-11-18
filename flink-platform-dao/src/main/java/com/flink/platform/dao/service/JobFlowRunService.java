@@ -81,40 +81,40 @@ public class JobFlowRunService extends ServiceImpl<JobFlowRunMapper, JobFlowRun>
     }
 
     @Transactional
-    public void lockAndUpdateSharedVars(Long flowRunId, Map<String, Object> inputVars) {
-        if (MapUtils.isEmpty(inputVars)) {
+    public void lockAndUpdateParams(Long flowRunId, @Nonnull Map<String, Object> inputParams) {
+        if (MapUtils.isEmpty(inputParams)) {
             return;
         }
 
-        var jobFlowRun = baseMapper.querySharedVarsForUpdate(flowRunId);
-        var existingVars = jobFlowRun.getSharedVars();
-        final var sharedVars =
-                existingVars != null ? new HashMap<>(existingVars) : new HashMap<String, Object>(inputVars.size());
-        if (MapUtils.isEmpty(sharedVars)) {
-            sharedVars.putAll(inputVars);
+        var jobFlowRun = baseMapper.queryParamsForUpdate(flowRunId);
+        var existedParams = jobFlowRun.getParams();
+        final var sharedParams =
+                existedParams != null ? new HashMap<>(existedParams) : new HashMap<String, Object>(inputParams.size());
+        if (MapUtils.isEmpty(sharedParams)) {
+            sharedParams.putAll(inputParams);
         } else {
-            inputVars.forEach((k, v) -> {
+            inputParams.forEach((k, v) -> {
                 var inValue = v != null ? v.toString() : null;
                 if (inValue == null) {
                     return;
                 }
 
-                switch (sharedVars.get(k)) {
-                    case null -> sharedVars.put(k, inValue);
-                    case String s -> sharedVars.put(k, List.of(s, inValue));
+                switch (sharedParams.get(k)) {
+                    case null -> sharedParams.put(k, inValue);
+                    case String s -> sharedParams.put(k, List.of(s, inValue));
                     case List<?> sharedList -> {
                         var list = new ArrayList<Object>(sharedList);
                         list.add(inValue);
-                        sharedVars.put(k, list);
+                        sharedParams.put(k, list);
                     }
-                    default -> throw new IllegalStateException("Unexpected value: " + sharedVars.get(k));
+                    default -> throw new IllegalStateException("Unexpected value: " + sharedParams.get(k));
                 }
             });
         }
 
         var newFlowRun = new JobFlowRun();
         newFlowRun.setId(jobFlowRun.getId());
-        newFlowRun.setSharedVars(sharedVars);
+        newFlowRun.setParams(sharedParams);
         updateById(newFlowRun);
     }
 }

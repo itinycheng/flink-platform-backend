@@ -9,6 +9,7 @@ import com.flink.platform.dao.service.JobFlowRunService;
 import com.flink.platform.dao.service.JobRunInfoService;
 import com.flink.platform.web.command.CommandBuilder;
 import com.flink.platform.web.command.CommandExecutor;
+import com.flink.platform.web.variable.SetValueVariableResolver;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.MapUtils;
@@ -23,7 +24,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import static com.flink.platform.common.constants.Constant.HOST_IP;
-import static com.flink.platform.common.constants.JobConstant.SET_VALUE_PATTERN;
 import static java.util.stream.Collectors.toMap;
 
 /** Process job service. */
@@ -37,6 +37,8 @@ public class ProcessJobService {
     private final JobRunExtraService jobRunExtraService;
 
     private final JobFlowRunService jobFlowRunService;
+
+    private final SetValueVariableResolver setValueResolver;
 
     private final List<CommandBuilder> jobCommandBuilders;
 
@@ -62,18 +64,18 @@ public class ProcessJobService {
 
         var newJobRun = new JobRunInfo();
         newJobRun.setId(jobRun.getId());
-        newJobRun.setVariables(varMap);
+        newJobRun.setParams(varMap);
         newJobRun.setSubject(replacedContent);
         newJobRun.setConfig(replacedConfig);
         newJobRun.setHost(HOST_IP);
         newJobRun.setSubmitTime(submitTime);
         jobRunInfoService.updateById(newJobRun);
 
-        jobRun.setVariables(varMap);
+        jobRun.setParams(varMap);
         jobRun.setSubject(replacedContent);
         jobRun.setConfig(replacedConfig);
         jobRun.setSubmitTime(submitTime);
-        updateSharedVarsInJobFlowRun(jobRun);
+        updateParamsInJobFlowRun(jobRun);
 
         var jobType = jobRun.getType();
         var version = jobRun.getVersion();
@@ -130,28 +132,20 @@ public class ProcessJobService {
     }
 
     // public for testing
-    public void updateSharedVarsInJobFlowRun(JobRunInfo jobRun) {
-        var vars = jobRun.getVariables();
-        if (MapUtils.isEmpty(vars)) {
+    public void updateParamsInJobFlowRun(JobRunInfo jobRun) {
+        var params = jobRun.getParams();
+        if (MapUtils.isEmpty(params)) {
             return;
         }
 
-        var setVars = vars.entrySet().stream()
-                .map(entry -> Pair.of(extractSetValueKey(entry.getKey()), entry.getValue()))
+        params = params.entrySet().stream()
+                .map(entry -> Pair.of(setValueResolver.getSetValueKey(entry.getKey()), entry.getValue()))
                 .filter(pair -> pair.getKey() != null)
                 .collect(toMap(Pair::getKey, Entry::getValue));
-        if (MapUtils.isEmpty(setVars)) {
+        if (MapUtils.isEmpty(params)) {
             return;
         }
 
-        jobFlowRunService.lockAndUpdateSharedVars(jobRun.getFlowRunId(), setVars);
-    }
-
-    private String extractSetValueKey(String value) {
-        var matcher = SET_VALUE_PATTERN.matcher(value);
-        if (matcher.find()) {
-            return matcher.group("key");
-        }
-        return null;
+        jobFlowRunService.lockAndUpdateParams(jobRun.getFlowRunId(), params);
     }
 }

@@ -66,7 +66,7 @@ public class SqlContextHelper {
         sqlContext.setSqls(toSqls(jobRun.getSubject()));
         sqlContext.setExecMode(jobRun.getExecMode());
         sqlContext.setConfigs(toConfigs(flinkJob.getConfigs()));
-        sqlContext.setCatalogs(toCatalogs(flinkJob.getCatalogs(), jobRun.getVariables()));
+        sqlContext.setCatalogs(toCatalogs(flinkJob.getCatalogs(), jobRun.getParams()));
         sqlContext.setFunctions(toFunctions());
         return sqlContext;
     }
@@ -76,7 +76,7 @@ public class SqlContextHelper {
         return emptyList();
     }
 
-    private List<Catalog> toCatalogs(List<Long> catalogs, Map<String, Object> variables) {
+    private List<Catalog> toCatalogs(List<Long> catalogs, Map<String, Object> params) {
         if (CollectionUtils.isEmpty(catalogs)) {
             return emptyList();
         }
@@ -84,8 +84,8 @@ public class SqlContextHelper {
                 .map(catalogInfoService::getById)
                 .map(catalogInfo -> {
                     var createSql = catalogInfo.getCreateSql();
-                    if (variables != null) {
-                        for (var variable : variables.entrySet()) {
+                    if (params != null) {
+                        for (var variable : params.entrySet()) {
                             createSql = createSql.replace(
                                     variable.getKey(), variable.getValue().toString());
                         }

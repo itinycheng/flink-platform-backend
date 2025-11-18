@@ -14,14 +14,14 @@ import java.util.Map;
 public interface JobFlowRunMapper extends BaseMapper<JobFlowRun> {
 
     @Results(
-            id = "querySharedVarsForUpdate",
+            id = "queryParamsForUpdate",
             value = {
                 @Result(
-                        property = "shared_vars",
-                        column = "shared_vars",
+                        property = "params",
+                        column = "params",
                         typeHandler = JacksonTypeHandler.class,
                         javaType = Map.class)
             })
-    @Select("SELECT id, shared_vars FROM t_job_flow_run WHERE id = #{id} FOR UPDATE")
-    JobFlowRun querySharedVarsForUpdate(@Param("id") Long id);
+    @Select("SELECT id, params FROM t_job_flow_run WHERE id = #{id} FOR UPDATE")
+    JobFlowRun queryParamsForUpdate(@Param("id") Long id);
 }
