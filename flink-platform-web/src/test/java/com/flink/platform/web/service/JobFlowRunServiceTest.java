@@ -4,6 +4,7 @@ import com.flink.platform.dao.entity.JobFlowRun;
 import com.flink.platform.dao.entity.JobRunInfo;
 import com.flink.platform.dao.mapper.JobFlowRunMapper;
 import com.flink.platform.dao.service.JobFlowRunService;
+import com.flink.platform.web.variable.SetValueVariableResolver;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -32,6 +33,9 @@ class JobFlowRunServiceTest {
     private JobFlowRunMapper jobFlowRunMapper;
 
     @InjectMocks
+    private SetValueVariableResolver setValueResolver;
+
+    @InjectMocks
     private JobFlowRunService jobFlowRunService;
 
     @InjectMocks
@@ -41,13 +45,14 @@ class JobFlowRunServiceTest {
     void setUp() {
         ReflectionTestUtils.setField(jobFlowRunService, "baseMapper", jobFlowRunMapper);
         ReflectionTestUtils.setField(processJobService, "jobFlowRunService", jobFlowRunService);
+        ReflectionTestUtils.setField(processJobService, "setValueResolver", setValueResolver);
     }
 
     @Test
-    void testUpdateSharedVarsInJobFlowRun_WithSetValueVariables() {
+    void testUpdateParamsInJobFlowRun_WithSetValueVariables() {
         var mockJobFlowRun = new JobFlowRun();
-        mockJobFlowRun.setSharedVars(Map.of("result", "failure", "count", List.of("1", "2")));
-        when(jobFlowRunMapper.querySharedVarsForUpdate(anyLong())).thenReturn(mockJobFlowRun);
+        mockJobFlowRun.setParams(Map.of("result", "failure", "count", List.of("1", "2")));
+        when(jobFlowRunMapper.queryParamsForUpdate(anyLong())).thenReturn(mockJobFlowRun);
         when(jobFlowRunMapper.updateById(any(JobFlowRun.class))).thenReturn(1);
 
         var jobRun = new JobRunInfo();
@@ -56,11 +61,11 @@ class JobFlowRunServiceTest {
         variables.put("${setValue:count=10}", "10");
         variables.put("${setValue:favor=apple}", "apple");
         variables.put("setValue", "should be ignored");
-        jobRun.setVariables(variables);
+        jobRun.setParams(variables);
         jobRun.setFlowRunId(1L);
-        processJobService.updateSharedVarsInJobFlowRun(jobRun);
+        processJobService.updateParamsInJobFlowRun(jobRun);
 
-        verify(jobFlowRunMapper, times(1)).querySharedVarsForUpdate(anyLong());
+        verify(jobFlowRunMapper, times(1)).queryParamsForUpdate(anyLong());
         verify(jobFlowRunMapper, times(1)).updateById(any(JobFlowRun.class));
     }
 }

@@ -60,7 +60,7 @@ public class JobRunExtraService {
         jobRun.setDeployMode(jobInfo.getDeployMode());
         jobRun.setExecMode(jobInfo.getExecMode());
         jobRun.setConfig(jobInfo.getConfig());
-        jobRun.setVariables(jobInfo.getVariables());
+        jobRun.setParams(jobInfo.getParams());
         jobRun.setSubject(jobInfo.getSubject());
         jobRun.setRouteUrl(jobInfo.getRouteUrl());
         jobRun.setHost(host);
@@ -84,9 +84,9 @@ public class JobRunExtraService {
             variableMap.putAll(varMap);
         }
 
-        var variables = jobRun.getVariables();
-        if (MapUtils.isNotEmpty(variables)) {
-            for (var entry : variables.entrySet()) {
+        var params = jobRun.getParams();
+        if (MapUtils.isNotEmpty(params)) {
+            for (var entry : params.entrySet()) {
                 var name = entry.getKey();
                 var sqlVar = Variable.matchPrefix(name);
                 if (sqlVar != null) {

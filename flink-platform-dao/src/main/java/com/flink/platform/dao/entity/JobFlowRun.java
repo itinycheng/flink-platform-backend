@@ -59,7 +59,7 @@ public class JobFlowRun {
     private Timeout timeout;
 
     @TableField(typeHandler = JacksonTypeHandler.class)
-    private Map<String, Object> sharedVars;
+    private Map<String, Object> params;
 
     private ExecutionStatus status;
 

@@ -32,7 +32,7 @@ import java.util.Set;
 @TableName(value = "t_job", autoResultMap = true)
 public class JobInfo implements Serializable {
 
-    public static final Set<String> LARGE_FIELDS = Set.of("config", "variables", "subject");
+    public static final Set<String> LARGE_FIELDS = Set.of("config", "params", "subject");
 
     @TableId(value = "id", type = IdType.AUTO)
     private Long id;
@@ -65,9 +65,9 @@ public class JobInfo implements Serializable {
     @TableField(typeHandler = JacksonTypeHandler.class)
     private BaseJob config;
 
-    /** variables for `subject`. */
+    /** params for `subject`. */
     @TableField(typeHandler = JacksonTypeHandler.class)
-    private Map<String, Object> variables;
+    private Map<String, Object> params;
 
     /** main content to process. */
     private String subject;
