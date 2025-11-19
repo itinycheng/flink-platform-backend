@@ -23,7 +23,7 @@ CREATE INDEX t_job_run_stop_time_idx USING BTREE ON platform.t_job_run (stop_tim
 CREATE INDEX t_job_flow_run_end_time_idx USING BTREE ON platform.t_job_flow_run (end_time);
 
 --2025-11-18
-ALTER TABLE platform.t_job CHANGE COLUMN variables params TEXT COMMENT `params`;
-ALTER TABLE platform.t_job_run CHANGE COLUMN variables params TEXT COMMENT `params`;
+ALTER TABLE platform.t_job CHANGE COLUMN variables params TEXT COMMENT 'params';
+ALTER TABLE platform.t_job_run CHANGE COLUMN variables params TEXT COMMENT 'params';
 ALTER TABLE platform.t_job_flow ADD COLUMN params TEXT AFTER `timeout`;
 ALTER TABLE platform.t_job_flow_run ADD COLUMN params TEXT AFTER `timeout`;

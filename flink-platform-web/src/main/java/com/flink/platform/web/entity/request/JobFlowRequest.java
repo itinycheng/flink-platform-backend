@@ -28,7 +28,7 @@ public class JobFlowRequest {
     private final JobFlow jobFlow = new JobFlow();
 
     public String validateOnCreate() {
-        String msg = verifyName();
+        var msg = verifyName();
         if (msg != null) {
             return msg;
         }
@@ -38,11 +38,16 @@ public class JobFlowRequest {
             return msg;
         }
 
+        msg = verifyParams();
+        if (msg != null) {
+            return msg;
+        }
+
         return verifyCronExpr();
     }
 
     public String validateOnUpdate() {
-        String msg = verifyId();
+        var msg = verifyId();
         if (msg != null) {
             return msg;
         }
@@ -58,6 +63,11 @@ public class JobFlowRequest {
         }
 
         msg = verifyParallelism();
+        if (msg != null) {
+            return msg;
+        }
+
+        msg = verifyParams();
         if (msg != null) {
             return msg;
         }
@@ -109,7 +119,7 @@ public class JobFlowRequest {
 
     public String verifyCronExpr() {
         try {
-            String cronExpr = getCronExpr();
+            var cronExpr = getCronExpr();
             if (StringUtils.isNotBlank(cronExpr)) {
                 CronExpression cronExpression = new CronExpression(cronExpr);
                 Date validTime1 = cronExpression.getNextValidTimeAfter(new Date());
@@ -126,7 +136,7 @@ public class JobFlowRequest {
     }
 
     public String verifyParallelism() {
-        ExecutionConfig config = getConfig();
+        var config = getConfig();
         if (config == null) {
             return null;
         }
@@ -141,13 +151,26 @@ public class JobFlowRequest {
         return null;
     }
 
+    public String verifyParams() {
+        var params = getParams();
+        if (params == null) {
+            return null;
+        }
+
+        if (params.keySet().stream().anyMatch(StringUtils::isBlank)) {
+            return "Param key can't be empty";
+        }
+
+        return null;
+    }
+
     public void setConfig(ExecutionConfig config) {
         if (config == null) {
             config = new ExecutionConfig();
         }
 
         if (config.getParallelism() < 1) {
-            WorkerConfig workerConfig = getOrInitWorkerConfig();
+            var workerConfig = getOrInitWorkerConfig();
             config.setParallelism(workerConfig.getPerFlowExecThreads());
         }
         this.getJobFlow().setConfig(config);
