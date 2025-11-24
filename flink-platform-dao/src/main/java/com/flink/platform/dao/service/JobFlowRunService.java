@@ -88,8 +88,7 @@ public class JobFlowRunService extends ServiceImpl<JobFlowRunMapper, JobFlowRun>
 
         var jobFlowRun = baseMapper.queryParamsForUpdate(flowRunId);
         var existedParams = jobFlowRun.getParams();
-        final var sharedParams =
-                existedParams != null ? new HashMap<>(existedParams) : new HashMap<String, Object>(inputParams.size());
+        var sharedParams = existedParams != null ? new HashMap<>(existedParams) : new HashMap<String, Object>();
         if (MapUtils.isEmpty(sharedParams)) {
             sharedParams.putAll(inputParams);
         } else {

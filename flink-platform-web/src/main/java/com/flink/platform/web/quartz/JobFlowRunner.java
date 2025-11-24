@@ -118,6 +118,7 @@ public class JobFlowRunner implements Job {
             jobFlowRun.setTags(jobFlow.getTags());
             jobFlowRun.setAlerts(jobFlow.getAlerts());
             jobFlowRun.setTimeout(jobFlow.getTimeout());
+            jobFlowRun.setParams(jobFlow.getParams());
             jobFlowRun.setStatus(SUBMITTED);
             jobFlowRunService.saveOrUpdate(jobFlowRun);
 
