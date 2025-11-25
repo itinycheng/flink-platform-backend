@@ -77,6 +77,9 @@ public class JobConstant {
     public static final Pattern SET_VALUE_PATTERN = Pattern.compile(
             "\\$\\{\\s*setValue:(?<key>[^=]+)=(?<value>(?:[^{}]|\\{[^{}]*})+?)\\s*}", VARIABLE_PATTERN_FLAGS);
 
+    public static final Pattern SUBFLOW_PATTERN =
+            Pattern.compile("\\$\\{\\s*subflow:(?<name>[^}]+)\\s*}", VARIABLE_PATTERN_FLAGS);
+
     public static final String CONFIG = "config";
 
     public static final String FLOW_RUN_ID = "flow_run_id";

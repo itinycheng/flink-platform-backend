@@ -364,7 +364,7 @@ CREATE TABLE `t_job_run` (
   `exec_mode` varchar(64) DEFAULT NULL,
   `config` varchar(4096) DEFAULT NULL COMMENT 'config',
   `route_url` varchar(255) DEFAULT NULL COMMENT 'route url',
-  `params` varchar(1024) DEFAULT NULL COMMENT 'param map',
+  `params` text DEFAULT NULL COMMENT 'param map',
   `subject` text COMMENT 'subject',
   `back_info` text COMMENT 'callback info',
   `host` varchar(255) DEFAULT NULL COMMENT 'host ip',

@@ -79,7 +79,7 @@ public class JobRunExtraService {
             var varMap = variableResolver.resolve(jobRun, content);
             // Replace placeholders in the content with actual values
             for (var entry : varMap.entrySet()) {
-                content = content.replace(entry.getKey(), entry.getValue().toString());
+                content = content.replace(entry.getKey(), String.valueOf(entry.getValue()));
             }
             variableMap.putAll(varMap);
         }
