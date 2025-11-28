@@ -126,7 +126,7 @@ public class ProcessJobService {
         }
 
         for (var entry : varValueMap.entrySet()) {
-            content = content.replace(entry.getKey(), entry.getValue().toString());
+            content = content.replace(entry.getKey(), String.valueOf(entry.getValue()));
         }
         return content;
     }
