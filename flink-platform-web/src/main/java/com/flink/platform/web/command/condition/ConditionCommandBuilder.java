@@ -68,15 +68,17 @@ public class ConditionCommandBuilder implements CommandBuilder {
                 jobRunInfo.getConfig().unwrap(ConditionJob.class).getCondition();
         boolean success =
                 switch (condition) {
-                    case AND -> CollectionUtils.isNotEmpty(prevJobRunList)
-                            && jobIds.size() == prevJobRunList.size()
-                            && prevJobRunList.stream()
-                                    .allMatch(jobRun -> jobRun.getStatus()
-                                            == getExpectedStatus(flow, jobRun.getJobId(), toVertexId));
-                    case OR -> CollectionUtils.isNotEmpty(prevJobRunList)
-                            && prevJobRunList.stream()
-                                    .anyMatch(jobRun -> jobRun.getStatus()
-                                            == getExpectedStatus(flow, jobRun.getJobId(), toVertexId));
+                    case AND ->
+                        CollectionUtils.isNotEmpty(prevJobRunList)
+                                && jobIds.size() == prevJobRunList.size()
+                                && prevJobRunList.stream()
+                                        .allMatch(jobRun -> jobRun.getStatus()
+                                                == getExpectedStatus(flow, jobRun.getJobId(), toVertexId));
+                    case OR ->
+                        CollectionUtils.isNotEmpty(prevJobRunList)
+                                && prevJobRunList.stream()
+                                        .anyMatch(jobRun -> jobRun.getStatus()
+                                                == getExpectedStatus(flow, jobRun.getJobId(), toVertexId));
                 };
 
         ConditionCommand conditionCommand = new ConditionCommand(jobRunId, success);

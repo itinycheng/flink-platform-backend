@@ -8,8 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 /** Command test. */
 public class CommandTest {
 
-    public static final String YARN_CLIENT_MESSAGE =
-            """
+    public static final String YARN_CLIENT_MESSAGE = """
             The Flink YARN session cluster has been started in detached mode. In order to stop Flink gracefully, use the following command:
               $ echo "stop" | ./bin/yarn-session.sh -id application_1616984365313_0284
               If this should not be possible, then you can also kill Flink via YARN's web interface or via:

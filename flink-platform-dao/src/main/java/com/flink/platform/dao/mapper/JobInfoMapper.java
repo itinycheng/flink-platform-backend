@@ -23,8 +23,7 @@ public interface JobInfoMapper extends BaseMapper<JobInfo> {
                         typeHandler = JacksonTypeHandler.class,
                         javaType = BaseJob.class)
             })
-    @Select(
-            """
+    @Select("""
                     <script>
                     select j.id, j.config, f.id as job_flow_id, f.status as job_flow_status
                     from t_job j, t_job_flow f
