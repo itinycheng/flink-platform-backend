@@ -11,6 +11,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -44,7 +46,7 @@ public class SubflowVariableResolver implements VariableResolver {
 
     private Map<String, Object> collectSubflowParams(Long flowRunId) {
         var subflowJobRuns = jobRunService.findJobsOfSubflowType(flowRunId);
-        var collectedParams = new HashMap<String, Object>();
+        var mergedParams = new HashMap<String, Object>();
         for (JobRunInfo subflowJobRun : subflowJobRuns) {
             var config = subflowJobRun.getConfig().unwrap(FlowJob.class);
             if (config == null) {
@@ -57,23 +59,45 @@ public class SubflowVariableResolver implements VariableResolver {
             }
 
             switch (config.getInheritParamMode()) {
-                case ALLOW -> collectedParams.putAll(subflowParams);
+                case ALLOW -> subflowParams.forEach((k, v) -> mergeParamIntoMap(mergedParams, k, v));
                 case CUSTOM -> {
                     var inheritableParamNames = config.getParamNames();
                     if (inheritableParamNames == null || inheritableParamNames.isEmpty()) {
                         break;
                     }
 
-                    subflowParams.forEach((name, value) -> {
-                        if (inheritableParamNames.contains(name)) {
-                            collectedParams.put(name, value);
+                    subflowParams.forEach((k, v) -> {
+                        if (inheritableParamNames.contains(k)) {
+                            mergeParamIntoMap(mergedParams, k, v);
                         }
                     });
                 }
                 case null, default -> {}
             }
         }
-        return collectedParams;
+        return mergedParams;
+    }
+
+    @SuppressWarnings("unchecked")
+    private void mergeParamIntoMap(Map<String, Object> targetMap, String key, Object value) {
+        if (key == null || value == null) {
+            return;
+        }
+
+        var existed = targetMap.get(key);
+        if (existed == null) {
+            targetMap.put(key, value);
+            return;
+        }
+
+        if (existed instanceof Collection<?> collection) {
+            ((Collection<Object>) collection).add(value);
+        } else {
+            var list = new ArrayList<>();
+            list.add(existed);
+            list.add(value);
+            targetMap.put(key, list);
+        }
     }
 
     private Map<String, Object> getParamsOfFlowRun(JobRunInfo subflowJobRun) {
