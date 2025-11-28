@@ -14,8 +14,7 @@ import java.util.List;
 /** job run info Mapper. */
 public interface JobRunInfoMapper extends BaseMapper<JobRunInfo> {
 
-    @Select(
-            """
+    @Select("""
                     <script>
                     SELECT t1.id, t1.name, t1.job_id, t1.flow_run_id, t1.user_id, t1.type, t1.version,
                     t1.deploy_mode, t1.exec_mode, t1.host, t1.status, t1.submit_time, t1.stop_time,t1.create_time
@@ -36,8 +35,7 @@ public interface JobRunInfoMapper extends BaseMapper<JobRunInfo> {
                     """)
     List<JobRunInfo> lastJobRunList(@Param("flowRunId") Long flowRunId, @Param("jobIds") List<Long> jobIds);
 
-    @Select(
-            """
+    @Select("""
             <script>
                 SELECT t1.id,
                     t1.name,
