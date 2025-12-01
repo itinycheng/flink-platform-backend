@@ -2,6 +2,7 @@ package com.flink.platform.web.command.subflow;
 
 import com.flink.platform.common.enums.ExecutionStatus;
 import com.flink.platform.common.enums.JobType;
+import com.flink.platform.common.util.ExceptionUtil;
 import com.flink.platform.dao.entity.JobFlow;
 import com.flink.platform.dao.entity.JobFlowDag;
 import com.flink.platform.dao.entity.JobFlowRun;
@@ -22,11 +23,14 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import static com.flink.platform.common.constants.JobConstant.FLOW_RUN_ID;
 import static com.flink.platform.common.enums.ExecutionStatus.CREATED;
+import static com.flink.platform.common.enums.ExecutionStatus.FAILURE;
 import static com.flink.platform.common.enums.JobFlowType.SUB_FLOW;
 import static com.flink.platform.web.util.ThreadUtil.ONE_SECOND_MILLIS;
+import static org.springframework.transaction.annotation.Isolation.SERIALIZABLE;
 
 @Slf4j
 @Component("flowCommandExecutor")
@@ -35,7 +39,7 @@ public class FlowCommandExecutor implements CommandExecutor {
 
     private static final String DEFAULT_NAME = "unnamed";
 
-    private final QuartzService service;
+    private final QuartzService quartzService;
 
     private final JobFlowService jobFlowService;
 
@@ -53,10 +57,15 @@ public class FlowCommandExecutor implements CommandExecutor {
     public JobCallback execCommand(@Nonnull JobCommand command) throws Exception {
         var flowId = ((FlowCommand) command).getFlowId();
         var jobFlow = jobFlowService.getById(flowId);
-        var flowRunId = newAndSaveDefault(jobFlow);
-        var quartzInfo = new JobFlowQuartzInfo(jobFlow);
-        quartzInfo.addData(FLOW_RUN_ID, flowRunId);
-        service.runOnce(quartzInfo);
+        var self = SpringContext.getBean(FlowCommandExecutor.class);
+
+        Long flowRunId;
+        try {
+            flowRunId = self.runOnceInTransaction(jobFlow);
+        } catch (Exception e) {
+            log.error("Subflow run once time failed, flowId: {}", jobFlow.getId(), e);
+            return new JobCallback(ExceptionUtil.stackTrace(e), FAILURE);
+        }
 
         // wait until job flow run is inserted.
         ExecutionStatus status = null;
@@ -86,6 +95,16 @@ public class FlowCommandExecutor implements CommandExecutor {
         // avoid circular dependency.
         var service = SpringContext.getBean(KillJobService.class);
         service.killRemoteFlow(backInfo.getFlowRunId());
+    }
+
+    // Don't use this method outside this class.
+    @Transactional(isolation = SERIALIZABLE)
+    public Long runOnceInTransaction(JobFlow jobFlow) {
+        var flowRunId = newAndSaveDefault(jobFlow);
+        var quartzInfo = new JobFlowQuartzInfo(jobFlow);
+        quartzInfo.addData(FLOW_RUN_ID, flowRunId);
+        quartzService.runOnce(quartzInfo);
+        return flowRunId;
     }
 
     private Long newAndSaveDefault(JobFlow jobFlow) {
