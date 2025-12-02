@@ -1,5 +1,6 @@
 package com.flink.platform.web.command;
 
+import com.flink.platform.common.util.ExceptionUtil;
 import com.flink.platform.common.util.Preconditions;
 import com.flink.platform.web.common.SpringContext;
 import com.flink.platform.web.common.ValueSortedMap;
@@ -34,7 +35,8 @@ public class CommandMonitor {
     }
 
     public CommandMonitor start() {
-        monitor.scheduleWithFixedDelay(this::killTimeoutJobsPeriodically, 5, 2, SECONDS);
+        monitor.scheduleWithFixedDelay(
+                () -> ExceptionUtil.runWithErrorLogging(this::killTimeoutJobsPeriodically), 5, 2, SECONDS);
         log.info("CommandMonitor started.");
         return this;
     }
