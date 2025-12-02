@@ -1,5 +1,6 @@
 package com.flink.platform.web.environment;
 
+import com.flink.platform.common.util.ExceptionUtil;
 import com.flink.platform.web.model.ApplicationStatusReport;
 import com.flink.platform.web.util.ThreadUtil;
 import com.google.common.collect.Lists;
@@ -92,7 +93,8 @@ public class HadoopService {
         }
 
         // start the application report refresh thread.
-        reportRefreshExecutor.scheduleWithFixedDelay(this::refreshReport, RandomUtils.nextInt(10, 30), 40, SECONDS);
+        reportRefreshExecutor.scheduleWithFixedDelay(
+                () -> ExceptionUtil.runWithErrorLogging(this::refreshReport), RandomUtils.nextInt(10, 30), 40, SECONDS);
     }
 
     @Retryable(

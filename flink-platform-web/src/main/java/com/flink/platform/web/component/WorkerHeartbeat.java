@@ -2,6 +2,7 @@ package com.flink.platform.web.component;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
+import com.flink.platform.common.util.ExceptionUtil;
 import com.flink.platform.dao.entity.JobFlowRun;
 import com.flink.platform.dao.entity.Worker;
 import com.flink.platform.dao.service.JobFlowRunService;
@@ -74,7 +75,8 @@ public class WorkerHeartbeat {
 
     @PostConstruct
     public void initHeartbeat() {
-        EXECUTOR_SERVICE.scheduleWithFixedDelay(this::heartbeat, 5, 60, SECONDS);
+        EXECUTOR_SERVICE.scheduleWithFixedDelay(
+                () -> ExceptionUtil.runWithErrorLogging(this::heartbeat), 5, 60, SECONDS);
     }
 
     public synchronized void heartbeat() {
