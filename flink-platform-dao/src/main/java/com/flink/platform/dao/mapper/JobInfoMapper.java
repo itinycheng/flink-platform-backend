@@ -33,5 +33,5 @@ public interface JobInfoMapper extends BaseMapper<JobInfo> {
                     and f.status in ('ONLINE', 'SCHEDULING')
                     </script>
                     """)
-    List<JobInfo> queryRunnableJobUsingSubFlow(@Param("flowId") Long flowId);
+    List<JobInfo> queryRunnableJobUsingJobFlow(@Param("flowId") Long flowId);
 }

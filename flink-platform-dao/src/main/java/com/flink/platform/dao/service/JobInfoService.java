@@ -60,8 +60,8 @@ public class JobInfoService extends ServiceImpl<JobInfoMapper, JobInfo> {
         remove(new QueryWrapper<JobInfo>().lambda().in(JobInfo::getId, jobId));
     }
 
-    public JobInfo findRunnableJobUsingSubFlow(Long flowId) {
-        var jobs = baseMapper.queryRunnableJobUsingSubFlow(flowId);
+    public JobInfo findRunnableJobUsingJobFlow(Long flowId) {
+        var jobs = baseMapper.queryRunnableJobUsingJobFlow(flowId);
 
         return jobs.stream()
                 .filter(job -> job != null && job.getConfig() instanceof FlowJob)

@@ -32,7 +32,7 @@ public enum ResponseStatus {
     FLOW_ALREADY_SCHEDULED(10027, "Workflow already being scheduled"),
     INVALID_WORKFLOW_TYPE(10028, "invalid workflow type, only job_flow supported"),
     INVALID_STATUS(10029, "invalid status"),
-    SUB_FLOW_ALREADY_IN_USE(10030, "Sub workflow already in use"),
+    FLOW_ALREADY_IN_USE(10030, "Sub workflow already in use"),
     ;
 
     private final int code;

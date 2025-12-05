@@ -44,7 +44,6 @@ import static com.flink.platform.common.enums.JobFlowStatus.OFFLINE;
 import static com.flink.platform.common.enums.JobFlowStatus.ONLINE;
 import static com.flink.platform.common.enums.JobFlowStatus.SCHEDULING;
 import static com.flink.platform.common.enums.JobFlowType.JOB_LIST;
-import static com.flink.platform.common.enums.JobFlowType.SUB_FLOW;
 import static com.flink.platform.common.enums.ResponseStatus.ERROR_PARAMETER;
 import static com.flink.platform.common.enums.ResponseStatus.EXIST_UNFINISHED_PROCESS;
 import static com.flink.platform.common.enums.ResponseStatus.FLOW_ALREADY_SCHEDULED;
@@ -52,7 +51,7 @@ import static com.flink.platform.common.enums.ResponseStatus.NOT_RUNNABLE_STATUS
 import static com.flink.platform.common.enums.ResponseStatus.NOT_SUPPORT_SCHEDULING;
 import static com.flink.platform.common.enums.ResponseStatus.NO_CRONTAB_SET;
 import static com.flink.platform.common.enums.ResponseStatus.SERVICE_ERROR;
-import static com.flink.platform.common.enums.ResponseStatus.SUB_FLOW_ALREADY_IN_USE;
+import static com.flink.platform.common.enums.ResponseStatus.FLOW_ALREADY_IN_USE;
 import static com.flink.platform.common.enums.ResponseStatus.UNABLE_SCHEDULING_JOB_FLOW;
 import static com.flink.platform.common.enums.ResponseStatus.USER_HAVE_NO_PERMISSION;
 import static com.flink.platform.web.entity.response.ResultInfo.failure;
@@ -118,16 +117,10 @@ public class JobFlowController {
             return success(jobFlowRequest.getId());
         }
 
-        var jobFlow = jobFlowService.getById(jobFlowRequest.getId());
-        if (!SUB_FLOW.equals(jobFlow.getType())) {
-            jobFlowService.updateById(jobFlowRequest.getJobFlow());
-            return success(jobFlowRequest.getId());
-        }
-
-        var job = jobInfoService.findRunnableJobUsingSubFlow(jobFlow.getId());
+        var job = jobInfoService.findRunnableJobUsingJobFlow(jobFlowRequest.getId());
         if (job != null) {
             return failure(
-                    SUB_FLOW_ALREADY_IN_USE, "Sub-flow is already used in workflow : %s".formatted(job.getJobFlowId()));
+                    FLOW_ALREADY_IN_USE, "Workflow is already used in workflow : %s".formatted(job.getJobFlowId()));
         }
 
         jobFlowService.updateById(jobFlowRequest.getJobFlow());
