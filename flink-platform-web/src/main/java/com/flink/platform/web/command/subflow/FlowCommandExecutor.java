@@ -30,7 +30,6 @@ import static com.flink.platform.common.enums.ExecutionStatus.CREATED;
 import static com.flink.platform.common.enums.ExecutionStatus.FAILURE;
 import static com.flink.platform.common.enums.JobFlowType.SUB_FLOW;
 import static com.flink.platform.web.util.ThreadUtil.ONE_SECOND_MILLIS;
-import static org.springframework.transaction.annotation.Isolation.SERIALIZABLE;
 
 @Slf4j
 @Component("flowCommandExecutor")
@@ -58,6 +57,12 @@ public class FlowCommandExecutor implements CommandExecutor {
         var flowId = ((FlowCommand) command).getFlowId();
         var jobFlow = jobFlowService.getById(flowId);
         var self = SpringContext.getBean(FlowCommandExecutor.class);
+
+        var running = jobFlowRunService.findRunningFlow(flowId, jobFlow.getConfig());
+        if (running != null) {
+            log.info("Job flow is already running, flowId: {}, flowRunId: {}", flowId, running.getId());
+            return new JobCallback("A running jobFlow already exists, flowRunId: " + running.getId(), FAILURE);
+        }
 
         Long flowRunId;
         try {
@@ -98,7 +103,7 @@ public class FlowCommandExecutor implements CommandExecutor {
     }
 
     // Don't use this method outside this class.
-    @Transactional(isolation = SERIALIZABLE)
+    @Transactional
     public Long runOnceInTransaction(JobFlow jobFlow) {
         var flowRunId = newAndSaveDefault(jobFlow);
         var quartzInfo = new JobFlowQuartzInfo(jobFlow);
