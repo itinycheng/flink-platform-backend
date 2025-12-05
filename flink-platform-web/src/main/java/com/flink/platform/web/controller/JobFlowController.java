@@ -46,12 +46,12 @@ import static com.flink.platform.common.enums.JobFlowStatus.SCHEDULING;
 import static com.flink.platform.common.enums.JobFlowType.JOB_LIST;
 import static com.flink.platform.common.enums.ResponseStatus.ERROR_PARAMETER;
 import static com.flink.platform.common.enums.ResponseStatus.EXIST_UNFINISHED_PROCESS;
+import static com.flink.platform.common.enums.ResponseStatus.FLOW_ALREADY_IN_USE;
 import static com.flink.platform.common.enums.ResponseStatus.FLOW_ALREADY_SCHEDULED;
 import static com.flink.platform.common.enums.ResponseStatus.NOT_RUNNABLE_STATUS;
 import static com.flink.platform.common.enums.ResponseStatus.NOT_SUPPORT_SCHEDULING;
 import static com.flink.platform.common.enums.ResponseStatus.NO_CRONTAB_SET;
 import static com.flink.platform.common.enums.ResponseStatus.SERVICE_ERROR;
-import static com.flink.platform.common.enums.ResponseStatus.FLOW_ALREADY_IN_USE;
 import static com.flink.platform.common.enums.ResponseStatus.UNABLE_SCHEDULING_JOB_FLOW;
 import static com.flink.platform.common.enums.ResponseStatus.USER_HAVE_NO_PERMISSION;
 import static com.flink.platform.web.entity.response.ResultInfo.failure;
@@ -206,14 +206,14 @@ public class JobFlowController {
             @RequestAttribute(value = Constant.SESSION_USER) User loginUser,
             @RequestParam(name = "name", required = false) String name,
             @RequestParam(name = "status", required = false) List<JobFlowStatus> status,
-            @RequestParam(name = "type", required = false) JobFlowType type) {
+            @RequestParam(name = "type", required = false) List<JobFlowType> type) {
         var listMap = jobFlowService
                 .list(new QueryWrapper<JobFlow>()
                         .lambda()
                         .select(JobFlow::getId, JobFlow::getName)
                         .eq(JobFlow::getUserId, loginUser.getId())
-                        .eq(type != null, JobFlow::getType, type)
                         .like(isNotBlank(name), JobFlow::getName, name)
+                        .in(CollectionUtils.isNotEmpty(type), JobFlow::getType, type)
                         .in(CollectionUtils.isNotEmpty(status), JobFlow::getStatus, status))
                 .stream()
                 .map(jobFlow -> {
