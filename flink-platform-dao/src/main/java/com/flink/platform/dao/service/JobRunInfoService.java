@@ -15,6 +15,7 @@ import java.util.List;
 
 import static com.flink.platform.common.enums.ExecutionStatus.UNEXPECTED;
 import static com.flink.platform.common.enums.ExecutionStatus.getNonTerminals;
+import static com.flink.platform.common.enums.JobType.SUB_FLOW;
 
 /** job run info. */
 @Service
@@ -36,5 +37,13 @@ public class JobRunInfoService extends ServiceImpl<JobRunInfoMapper, JobRunInfo>
     public List<JobRunInfo> getJobRunsWithUnexpectedStatus() {
         return this.baseMapper.queryLastJobRuns(
                 JobFlowType.JOB_LIST, JobFlowStatus.SCHEDULING, JobStatus.ONLINE, UNEXPECTED);
+    }
+
+    public List<JobRunInfo> findJobsOfSubflowType(@Nonnull Long flowRunId) {
+        return list(new QueryWrapper<JobRunInfo>()
+                .lambda()
+                .select(JobRunInfo::getId, JobRunInfo::getBackInfo, JobRunInfo::getConfig)
+                .eq(JobRunInfo::getFlowRunId, flowRunId)
+                .in(JobRunInfo::getType, SUB_FLOW));
     }
 }

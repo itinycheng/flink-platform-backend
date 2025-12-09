@@ -28,7 +28,7 @@ public class ResourceUtil {
     public static String getAbsoluteStoragePath(String pathOrId) {
         try {
             if (NumberUtils.isParsable(pathOrId)) {
-                long id = NumberUtils.toLong(pathOrId);
+                var id = NumberUtils.toLong(pathOrId);
                 var service = SpringContext.getBean(ResourceService.class);
                 var resource = service.getById(id);
                 pathOrId = resource.getFullName();
@@ -46,13 +46,13 @@ public class ResourceUtil {
     }
 
     public static String randomLocalTmpFile() {
-        String fileName = String.join(DOT, UUID.randomUUID().toString(), TMP);
+        var fileName = String.join(DOT, UUID.randomUUID().toString(), TMP);
         return String.join(SLASH, localRootPath, fileName);
     }
 
     public static void copyToLocal(MultipartFile file, String filePath) throws IOException {
-        File dstFile = new File(filePath);
-        File parentDir = new File(dstFile.getParent());
+        var dstFile = new File(filePath);
+        var parentDir = new File(dstFile.getParent());
 
         if (!parentDir.exists()) {
             Files.createDirectories(parentDir.toPath());

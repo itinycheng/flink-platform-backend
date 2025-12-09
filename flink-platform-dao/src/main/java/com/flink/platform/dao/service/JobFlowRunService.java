@@ -11,9 +11,15 @@ import com.flink.platform.dao.entity.JobRunInfo;
 import com.flink.platform.dao.mapper.JobFlowRunMapper;
 import jakarta.annotation.Nonnull;
 import lombok.RequiredArgsConstructor;
+import org.apache.commons.collections4.MapUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import static com.flink.platform.common.enums.ExecutionStatus.getNonTerminals;
 import static com.flink.platform.common.enums.ExecutionStrategy.ONLY_CUR_JOB;
@@ -72,5 +78,42 @@ public class JobFlowRunService extends ServiceImpl<JobFlowRunMapper, JobFlowRun>
                 })
                 .findAny()
                 .orElse(null);
+    }
+
+    @Transactional
+    public void lockAndUpdateParams(Long flowRunId, @Nonnull Map<String, Object> inputParams) {
+        if (MapUtils.isEmpty(inputParams)) {
+            return;
+        }
+
+        var jobFlowRun = baseMapper.queryParamsForUpdate(flowRunId);
+        var existedParams = jobFlowRun.getParams();
+        var sharedParams = existedParams != null ? new HashMap<>(existedParams) : new HashMap<String, Object>();
+        if (MapUtils.isEmpty(sharedParams)) {
+            sharedParams.putAll(inputParams);
+        } else {
+            inputParams.forEach((k, v) -> {
+                var inValue = v != null ? v.toString() : null;
+                if (inValue == null) {
+                    return;
+                }
+
+                switch (sharedParams.get(k)) {
+                    case null -> sharedParams.put(k, inValue);
+                    case String s -> sharedParams.put(k, List.of(s, inValue));
+                    case List<?> sharedList -> {
+                        var list = new ArrayList<Object>(sharedList);
+                        list.add(inValue);
+                        sharedParams.put(k, list);
+                    }
+                    default -> throw new IllegalStateException("Unexpected value: " + sharedParams.get(k));
+                }
+            });
+        }
+
+        var newFlowRun = new JobFlowRun();
+        newFlowRun.setId(jobFlowRun.getId());
+        newFlowRun.setParams(sharedParams);
+        updateById(newFlowRun);
     }
 }
