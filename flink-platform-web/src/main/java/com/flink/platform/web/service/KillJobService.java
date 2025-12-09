@@ -1,12 +1,10 @@
 package com.flink.platform.web.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import com.flink.platform.common.enums.JobType;
 import com.flink.platform.common.exception.UnrecoverableException;
 import com.flink.platform.dao.entity.JobRunInfo;
 import com.flink.platform.dao.service.JobFlowRunService;
 import com.flink.platform.dao.service.JobRunInfoService;
-import com.flink.platform.grpc.JobGrpcServiceGrpc;
 import com.flink.platform.grpc.KillJobRequest;
 import com.flink.platform.web.command.CommandExecutor;
 import com.flink.platform.web.grpc.JobGrpcClient;
@@ -41,7 +39,7 @@ public class KillJobService {
      * Get unfinished jobs and kill them concurrently.
      */
     public boolean killRemoteFlow(Long flowRunId) {
-        List<JobRunInfo> jobRunList = jobRunInfoService.list(new QueryWrapper<JobRunInfo>()
+        var jobRunList = jobRunInfoService.list(new QueryWrapper<JobRunInfo>()
                 .lambda()
                 .select(JobRunInfo::getId, JobRunInfo::getHost)
                 .eq(JobRunInfo::getFlowRunId, flowRunId)
@@ -68,7 +66,7 @@ public class KillJobService {
     }
 
     public void killJob(final long jobRunId) {
-        JobRunInfo jobRun = jobRunInfoService.getOne(new QueryWrapper<JobRunInfo>()
+        var jobRun = jobRunInfoService.getOne(new QueryWrapper<JobRunInfo>()
                 .lambda()
                 .select(JobRunInfo::getType)
                 .eq(JobRunInfo::getId, jobRunId)
@@ -78,7 +76,7 @@ public class KillJobService {
         }
 
         // exec kill
-        JobType type = jobRun.getType();
+        var type = jobRun.getType();
         jobCommandExecutors.stream()
                 .filter(executor -> executor.isSupported(type))
                 .findFirst()
@@ -93,7 +91,7 @@ public class KillJobService {
         // set status to KILLED
         // Better in a transaction with serializable isolation level.
         if (!jobRun.getStatus().isTerminalState()) {
-            JobRunInfo newJobRun = new JobRunInfo();
+            var newJobRun = new JobRunInfo();
             newJobRun.setId(jobRunId);
             newJobRun.setStatus(KILLED);
             newJobRun.setEndTime(LocalDateTime.now());
@@ -105,10 +103,9 @@ public class KillJobService {
     // ================== Private Methods ==================
 
     private boolean killRemoteJob(JobRunInfo jobRun) {
-        String host = jobRun.getHost();
-        JobGrpcServiceGrpc.JobGrpcServiceBlockingStub stub = jobGrpcClient.grpcClient(host);
-        KillJobRequest request =
-                KillJobRequest.newBuilder().setJobRunId(jobRun.getId()).build();
+        var host = jobRun.getHost();
+        var stub = jobGrpcClient.grpcClient(host);
+        var request = KillJobRequest.newBuilder().setJobRunId(jobRun.getId()).build();
         stub.killJob(request);
         return true;
     }

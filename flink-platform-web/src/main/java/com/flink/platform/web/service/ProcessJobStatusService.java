@@ -27,7 +27,7 @@ public class ProcessJobStatusService {
     @Nonnull
     public JobStatusReply getStatus(JobStatusRequest jobStatusRequest) {
         var request = new StatusRequest(jobStatusRequest);
-        StatusFetcher statusFetcher = statusFetchers.stream()
+        var statusFetcher = statusFetchers.stream()
                 .filter(fetcher -> fetcher.isSupported(request))
                 .findFirst()
                 .orElseThrow(() -> new JobStatusScrapeException("No available job status fetcher"));

@@ -105,8 +105,9 @@ public enum SqlType {
 
     public final Function<String[], Optional<String[]>> operandConverter;
 
+    @SuppressWarnings("MagicConstant")
     SqlType(String regex, Function<String[], Optional<String[]>> operandConverter) {
-        this.pattern = Pattern.compile(regex, JobConstant.SQL_PATTERN_CONFIGS);
+        this.pattern = Pattern.compile(regex, JobConstant.SQL_PATTERN_FLAGS);
         this.operandConverter = operandConverter;
     }
 

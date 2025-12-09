@@ -54,6 +54,7 @@ public class JobFlowRunner implements Job {
 
     private final WorkerConfig workerConfig = SpringContext.getBean(WorkerConfig.class);
 
+    // TODO: handle exceptions ?
     @Override
     public void execute(JobExecutionContext context) {
         var detail = context.getJobDetail();
@@ -118,6 +119,7 @@ public class JobFlowRunner implements Job {
             jobFlowRun.setTags(jobFlow.getTags());
             jobFlowRun.setAlerts(jobFlow.getAlerts());
             jobFlowRun.setTimeout(jobFlow.getTimeout());
+            jobFlowRun.setParams(jobFlow.getParams());
             jobFlowRun.setStatus(SUBMITTED);
             jobFlowRunService.saveOrUpdate(jobFlowRun);
 

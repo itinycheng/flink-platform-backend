@@ -10,10 +10,10 @@ import com.flink.platform.common.util.SqlUtil;
 import com.flink.platform.dao.entity.JobRunInfo;
 import com.flink.platform.dao.entity.task.FlinkJob;
 import com.flink.platform.dao.service.CatalogInfoService;
-import com.flink.platform.web.enums.Placeholder;
 import com.flink.platform.web.environment.DispatcherService;
 import com.flink.platform.web.service.JobRunExtraService;
 import com.flink.platform.web.service.StorageService;
+import com.flink.platform.web.variable.ApolloVariableResolver;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
@@ -44,6 +44,8 @@ public class SqlContextHelper {
 
     private final JobRunExtraService jobRunExtraService;
 
+    private final ApolloVariableResolver apolloVariableResolver;
+
     public String convertFromAndSaveToFile(JobRunInfo jobRun) throws IOException {
         var sqlContext = convertFrom(jobRun);
         var json = JsonUtil.toJsonString(sqlContext);
@@ -64,7 +66,7 @@ public class SqlContextHelper {
         sqlContext.setSqls(toSqls(jobRun.getSubject()));
         sqlContext.setExecMode(jobRun.getExecMode());
         sqlContext.setConfigs(toConfigs(flinkJob.getConfigs()));
-        sqlContext.setCatalogs(toCatalogs(flinkJob.getCatalogs(), jobRun.getVariables()));
+        sqlContext.setCatalogs(toCatalogs(flinkJob.getCatalogs(), jobRun.getParams()));
         sqlContext.setFunctions(toFunctions());
         return sqlContext;
     }
@@ -74,7 +76,7 @@ public class SqlContextHelper {
         return emptyList();
     }
 
-    private List<Catalog> toCatalogs(List<Long> catalogs, Map<String, Object> variables) {
+    private List<Catalog> toCatalogs(List<Long> catalogs, Map<String, Object> params) {
         if (CollectionUtils.isEmpty(catalogs)) {
             return emptyList();
         }
@@ -82,14 +84,15 @@ public class SqlContextHelper {
                 .map(catalogInfoService::getById)
                 .map(catalogInfo -> {
                     var createSql = catalogInfo.getCreateSql();
-                    if (variables != null) {
-                        for (var variable : variables.entrySet()) {
+                    if (params != null) {
+                        for (var variable : params.entrySet()) {
                             createSql = createSql.replace(
                                     variable.getKey(), variable.getValue().toString());
                         }
                     }
 
-                    for (var entry : Placeholder.APOLLO.apply(null, createSql).entrySet()) {
+                    for (var entry :
+                            apolloVariableResolver.resolve(null, createSql).entrySet()) {
                         createSql = createSql.replace(
                                 entry.getKey(), entry.getValue().toString());
                     }

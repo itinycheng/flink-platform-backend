@@ -38,10 +38,10 @@ public class DispatcherService {
         var applicationName = SpringContext.getApplicationName();
         var deployMode = jobRun.getDeployMode();
         return switch (deployMode) {
-            case RUN_LOCAL, FLINK_YARN_PER -> String.join(
-                    OS_FILE_SEPARATOR, getLocalWorkRootPath(), TMP, JOB_RUN_DIR, fileName);
-            case FLINK_YARN_SESSION, FLINK_YARN_RUN_APPLICATION -> String.join(
-                    SLASH, "hdfs:/tmp", applicationName, JOB_RUN_DIR, fileName);
+            case RUN_LOCAL, FLINK_YARN_PER ->
+                String.join(OS_FILE_SEPARATOR, getLocalWorkRootPath(), TMP, JOB_RUN_DIR, fileName);
+            case FLINK_YARN_SESSION, FLINK_YARN_RUN_APPLICATION ->
+                String.join(SLASH, "hdfs:/tmp", applicationName, JOB_RUN_DIR, fileName);
             default -> throw new IllegalArgumentException("Unsupported deploy mode: " + deployMode);
         };
     }

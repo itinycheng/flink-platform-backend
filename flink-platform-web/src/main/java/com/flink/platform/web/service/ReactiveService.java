@@ -3,12 +3,10 @@ package com.flink.platform.web.service;
 import com.flink.platform.common.constants.Constant;
 import com.flink.platform.common.enums.DbType;
 import com.flink.platform.common.exception.UnrecoverableException;
-import com.flink.platform.common.job.Sql;
 import com.flink.platform.common.util.ExceptionUtil;
 import com.flink.platform.common.util.SqlUtil;
 import com.flink.platform.dao.entity.Datasource;
 import com.flink.platform.dao.entity.JobInfo;
-import com.flink.platform.dao.entity.JobRunInfo;
 import com.flink.platform.web.command.CommandBuilder;
 import com.flink.platform.web.config.WorkerConfig;
 import com.flink.platform.web.entity.vo.ReactiveDataVo;
@@ -21,10 +19,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.sql.Array;
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
-import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -63,9 +57,9 @@ public class ReactiveService {
     }
 
     public ReactiveExecVo execFlink(String execId, JobInfo jobInfo, String[] envProps) throws Exception {
-        JobRunInfo jobRun = jobRunExtraService.createFrom(jobInfo, null, Constant.HOST_IP);
+        var jobRun = jobRunExtraService.createFrom(jobInfo, null, Constant.HOST_IP);
         jobRun.setId(0L);
-        String command = commandBuilders.stream()
+        var command = commandBuilders.stream()
                 .filter(builder -> builder.isSupported(jobInfo.getType(), jobInfo.getVersion()))
                 .findFirst()
                 .orElseThrow(() -> new UnrecoverableException("No available job command builder"))
@@ -97,31 +91,31 @@ public class ReactiveService {
     }
 
     public ReactiveDataVo execSql(String execId, JobInfo jobInfo, Datasource datasource) throws Exception {
-        List<Sql> sqls = SqlUtil.convertToSqls(jobInfo.getSubject());
+        var sqls = SqlUtil.convertToSqls(jobInfo.getSubject());
         if (sqls.size() != 1) {
             throw new RuntimeException("Only one sql can be executed at a time");
         }
 
-        String statement = sqls.getFirst().toSqlString();
-        try (Connection connection = createConnection(datasource.getType(), datasource.getParams());
-                Statement stmt = connection.createStatement()) {
+        var statement = sqls.getFirst().toSqlString();
+        try (var connection = createConnection(datasource.getType(), datasource.getParams());
+                var stmt = connection.createStatement()) {
             String[] columnNames;
-            List<Object[]> dataList = new ArrayList<>();
+            var dataList = new ArrayList<Object[]>();
             if (stmt.execute(statement)) {
-                try (ResultSet resultSet = stmt.getResultSet()) {
-                    ResultSetMetaData metaData = resultSet.getMetaData();
+                try (var resultSet = stmt.getResultSet()) {
+                    var metaData = resultSet.getMetaData();
                     // metadata.
-                    int num = metaData.getColumnCount();
+                    var num = metaData.getColumnCount();
                     columnNames = new String[num];
-                    for (int i = 1; i <= num; i++) {
+                    for (var i = 1; i <= num; i++) {
                         columnNames[i - 1] = metaData.getColumnName(i);
                     }
 
                     // data list.
-                    DbType dbType = datasource.getType();
+                    var dbType = datasource.getType();
                     while (resultSet.next()) {
-                        Object[] item = new Object[num];
-                        for (int i = 1; i <= num; i++) {
+                        var item = new Object[num];
+                        for (var i = 1; i <= num; i++) {
                             item[i - 1] = toJavaObject(dbType, resultSet.getObject(i));
                         }
                         dataList.add(item);
@@ -141,9 +135,9 @@ public class ReactiveService {
     }
 
     public List<String> getBufferByExecId(String execId) {
-        BlockingQueue<String> printLogQueue = cmdOutputBufferMap.get(execId);
+        var printLogQueue = cmdOutputBufferMap.get(execId);
         if (printLogQueue != null) {
-            List<String> cmdLogs = new ArrayList<>();
+            var cmdLogs = new ArrayList<String>();
             printLogQueue.drainTo(cmdLogs);
             return cmdLogs;
         } else {
@@ -152,7 +146,7 @@ public class ReactiveService {
     }
 
     private BiConsumer<CollectLogRunnable.CmdOutType, String> collectCmdResult(String execId) {
-        BlockingQueue<String> cmdLogQueue = new ArrayBlockingQueue<>(50_000);
+        var cmdLogQueue = new ArrayBlockingQueue<String>(50_000);
         cmdOutputBufferMap.put(execId, cmdLogQueue);
         return (cmdOutType, line) -> {
             try {
@@ -174,10 +168,10 @@ public class ReactiveService {
         switch (dbType) {
             case CLICKHOUSE:
                 if (dbObject instanceof Array array) {
-                    Object objectArray = array.getArray();
-                    int arrayLength = java.lang.reflect.Array.getLength(objectArray);
-                    Object[] javaObjectArray = new Object[arrayLength];
-                    for (int i = 0; i < arrayLength; i++) {
+                    var objectArray = array.getArray();
+                    var arrayLength = java.lang.reflect.Array.getLength(objectArray);
+                    var javaObjectArray = new Object[arrayLength];
+                    for (var i = 0; i < arrayLength; i++) {
                         javaObjectArray[i] = toJavaObject(dbType, java.lang.reflect.Array.get(objectArray, i));
                     }
                     return javaObjectArray;
