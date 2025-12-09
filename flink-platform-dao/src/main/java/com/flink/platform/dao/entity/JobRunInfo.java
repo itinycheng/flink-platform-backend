@@ -33,7 +33,7 @@ import static org.apache.commons.lang3.StringUtils.defaultString;
 @TableName(value = "t_job_run", autoResultMap = true)
 public class JobRunInfo implements Serializable {
 
-    public static final Set<String> LARGE_FIELDS = Set.of("backInfo", "config", "params", "subject");
+    public static final Set<String> LARGE_FIELDS = Set.of("backInfo", "config", "variables", "subject");
 
     @TableId(value = "id", type = IdType.AUTO)
     private Long id;
@@ -57,7 +57,7 @@ public class JobRunInfo implements Serializable {
     @TableField(typeHandler = JacksonTypeHandler.class)
     private BaseJob config;
 
-    @TableField(typeHandler = JacksonTypeHandler.class)
+    @TableField(value = "variables", typeHandler = JacksonTypeHandler.class)
     private Map<String, Object> params;
 
     private String subject;
