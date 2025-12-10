@@ -13,6 +13,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.RandomUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.time.StopWatch;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.yarn.api.records.ApplicationReport;
@@ -169,6 +170,7 @@ public class HadoopService {
     }
 
     private void refreshReport() {
+        var stopWatch = StopWatch.createStarted();
         var allTags = this.runningApplications.keySet().toArray(EMPTY_STRING_ARRAY);
         var partitions = Lists.partition(Arrays.asList(allTags), REQUEST_APP_REPORT_BATCH_SIZE);
         for (var partition : partitions) {
@@ -196,6 +198,9 @@ public class HadoopService {
                 log.error("refresh application report failed", e);
             }
         }
+
+        stopWatch.stop();
+        log.info("Refresh {} application reports, cost {} ms", allTags.length, stopWatch.getTime());
     }
 
     private List<ApplicationReport> getReportsWithRetry(@Nonnull Set<String> applicationTags) throws Exception {

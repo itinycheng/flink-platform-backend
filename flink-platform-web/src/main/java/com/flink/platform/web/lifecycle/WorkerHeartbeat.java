@@ -11,6 +11,7 @@ import com.flink.platform.web.service.JobFlowScheduleService;
 import com.flink.platform.web.util.ThreadUtil;
 import lombok.extern.slf4j.Slf4j;
 import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
+import org.apache.commons.lang3.time.StopWatch;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -65,6 +66,15 @@ public class WorkerHeartbeat {
     }
 
     public void heartbeat() {
+        var stopwatch = StopWatch.createStarted();
+        reportStatus();
+        recoverJobs();
+
+        stopwatch.stop();
+        log.info("Worker heartbeat completed, cost {} ms", stopwatch.getTime());
+    }
+
+    public void reportStatus() {
         var worker = workerService.getCurWorkerIdAndRole();
         var workerId = worker != null ? worker.getId() : null;
 
@@ -81,8 +91,8 @@ public class WorkerHeartbeat {
         workerService.saveOrUpdate(temp);
     }
 
-    @SchedulerLock(name = "WorkerHeartbeat_takeover", lockAtMostFor = "PT30S", lockAtLeastFor = "PT20S")
-    public void takeover() {
+    @SchedulerLock(name = "WorkerHeartbeat_recoverJobs", lockAtMostFor = "PT30S", lockAtLeastFor = "PT20S")
+    public void recoverJobs() {
         var pendingList = getInvalidWorkers().stream()
                 .flatMap(this::getUnfinishedByWorker)
                 .toList();
@@ -107,7 +117,7 @@ public class WorkerHeartbeat {
                 .toList());
     }
 
-    public List<Worker> getInvalidWorkers() {
+    private List<Worker> getInvalidWorkers() {
         return workerService
                 .list(new QueryWrapper<Worker>()
                         .lambda()
@@ -118,7 +128,7 @@ public class WorkerHeartbeat {
                 .collect(toList());
     }
 
-    public Stream<JobFlowRun> getUnfinishedByWorker(Worker invalidWorker) {
+    private Stream<JobFlowRun> getUnfinishedByWorker(Worker invalidWorker) {
         return jobFlowRunService
                 .list(new QueryWrapper<JobFlowRun>()
                         .lambda()
@@ -141,8 +151,9 @@ public class WorkerHeartbeat {
 
             final var service = SpringContext.getBean(WorkerHeartbeat.class);
             EXECUTOR.scheduleWithFixedDelay(
-                    () -> ExceptionUtil.runWithErrorLogging(service::heartbeat, service::takeover), 0, 30, SECONDS);
+                    () -> ExceptionUtil.runWithErrorLogging(service::heartbeat), 0, 30, SECONDS);
             started = true;
+            log.info("Worker heartbeat scheduler started.");
         }
 
         private static ScheduledExecutorService createExecutor() {
