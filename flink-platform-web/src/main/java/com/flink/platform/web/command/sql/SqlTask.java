@@ -1,6 +1,5 @@
 package com.flink.platform.web.command.sql;
 
-import com.flink.platform.common.enums.DbType;
 import com.flink.platform.common.util.ExceptionUtil;
 import com.flink.platform.common.util.JsonUtil;
 import com.flink.platform.dao.entity.Datasource;
@@ -12,9 +11,6 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -56,9 +52,9 @@ public class SqlTask extends AbstractTask {
     @Override
     public void run() throws Exception {
         Exception exception = null;
-        List<Map<String, Object>> dataList = new ArrayList<>();
-        try (Connection connection = createConnection(datasource.getType(), getDatasourceParam());
-                Statement stmt = connection.createStatement()) {
+        var dataList = new ArrayList<Map<String, Object>>();
+        try (var connection = createConnection(datasource.getType(), getDatasourceParam());
+                var stmt = connection.createStatement()) {
             this.statement = stmt;
             this.beforeExecSql();
 
@@ -69,26 +65,28 @@ public class SqlTask extends AbstractTask {
 
                     // execute sql.
                     if (!stmt.execute(executingSql)) {
-                        Map<String, Object> itemMap = new HashMap<>(1);
-                        itemMap.put("_no_result_" + j, "executed: %s".formatted(executingSql));
+                        var itemMap = new HashMap<String, Object>(1);
+                        itemMap.put(
+                                "_no_result_" + j,
+                                "executed: %s, affected rows: %s".formatted(executingSql, stmt.getUpdateCount()));
                         dataList.add(itemMap);
                         continue;
                     }
 
-                    try (ResultSet resultSet = stmt.getResultSet()) {
+                    try (var resultSet = stmt.getResultSet()) {
                         // metadata.
-                        ResultSetMetaData metaData = resultSet.getMetaData();
-                        int num = metaData.getColumnCount();
-                        String[] columnNames = new String[num];
+                        var metaData = resultSet.getMetaData();
+                        var num = metaData.getColumnCount();
+                        var columnNames = new String[num];
                         for (int i = 1; i <= num; i++) {
                             columnNames[i - 1] = metaData.getColumnName(i);
                         }
 
                         // data list.
-                        DbType dbType = datasource.getType();
-                        int count = 0;
+                        var dbType = datasource.getType();
+                        var count = 0;
                         while (resultSet.next() && count++ < 2000) {
-                            Map<String, Object> itemMap = new HashMap<>(num);
+                            var itemMap = new HashMap<String, Object>(num);
                             for (int i = 1; i <= num; i++) {
                                 itemMap.put(columnNames[i - 1], toJavaObject(resultSet.getObject(i), dbType));
                             }

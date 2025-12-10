@@ -5,6 +5,7 @@ import com.flink.platform.dao.service.JobFlowService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
+import org.apache.commons.lang3.time.StopWatch;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
@@ -27,10 +28,14 @@ public class UnscheduledJobFlowChecker {
             lockAtMostFor = "PT30M",
             lockAtLeastFor = "PT5M")
     public void checkUnscheduledWorkflow() {
+        var stopWatch = StopWatch.createStarted();
         jobFlowService.getUnscheduledJobFlows().forEach(jobFlow -> {
             String content = ALERT_TEMPLATE.formatted(
                     jobFlow.getName(), jobFlow.getStatus().name());
             alertSendingService.sendErrAlerts(jobFlow, content);
         });
+
+        stopWatch.stop();
+        log.info("Checked unscheduled workflows, cost: {} ms", stopWatch.getTime());
     }
 }
