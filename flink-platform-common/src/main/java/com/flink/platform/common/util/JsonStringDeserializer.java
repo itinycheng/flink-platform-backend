@@ -1,12 +1,10 @@
 package com.flink.platform.common.util;
 
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.TreeNode;
-import com.fasterxml.jackson.databind.DeserializationContext;
-import com.fasterxml.jackson.databind.JsonDeserializer;
-import com.fasterxml.jackson.databind.node.TextNode;
-
-import java.io.IOException;
+import tools.jackson.core.JsonParser;
+import tools.jackson.core.TreeNode;
+import tools.jackson.databind.DeserializationContext;
+import tools.jackson.databind.ValueDeserializer;
+import tools.jackson.databind.node.StringNode;
 
 /**
  * warning: this isn't an efficient implementation, improve the code in the future.
@@ -14,13 +12,14 @@ import java.io.IOException;
  * <p>keep a json as string when use jackson to deSerde a string value trim double quotes when a
  * TextNode appears
  */
-public class JsonStringDeserializer extends JsonDeserializer<String> {
+@SuppressWarnings("unused")
+public class JsonStringDeserializer extends ValueDeserializer<String> {
 
     @Override
-    public String deserialize(JsonParser jp, DeserializationContext ctx) throws IOException {
-        TreeNode treeNode = jp.getCodec().readTree(jp);
+    public String deserialize(JsonParser jp, DeserializationContext ctx) {
+        TreeNode treeNode = jp.objectReadContext().readTree(jp);
         String origin = treeNode.toString();
-        if (treeNode instanceof TextNode && origin.startsWith("\"")) {
+        if (treeNode instanceof StringNode && origin.startsWith("\"")) {
             origin = origin.substring(1, origin.length() - 1);
         }
         return origin;

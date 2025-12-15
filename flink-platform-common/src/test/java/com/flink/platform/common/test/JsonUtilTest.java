@@ -1,6 +1,5 @@
 package com.flink.platform.common.test;
 
-import com.fasterxml.jackson.databind.type.CollectionLikeType;
 import com.flink.platform.common.enums.ExecutionMode;
 import com.flink.platform.common.enums.SqlType;
 import com.flink.platform.common.job.Sql;
@@ -8,6 +7,7 @@ import com.flink.platform.common.job.SqlContext;
 import com.flink.platform.common.util.JsonUtil;
 import lombok.Data;
 import org.junit.jupiter.api.Test;
+import tools.jackson.databind.type.CollectionLikeType;
 
 import java.util.Collections;
 import java.util.List;
