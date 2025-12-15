@@ -1,10 +1,10 @@
 package com.flink.platform.dao;
 
-import com.baomidou.mybatisplus.extension.handlers.JacksonTypeHandler;
-import com.fasterxml.jackson.databind.json.JsonMapper;
+import com.baomidou.mybatisplus.extension.handlers.Jackson3TypeHandler;
 import com.flink.platform.common.util.JsonUtil;
 import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.context.annotation.Configuration;
+import tools.jackson.databind.json.JsonMapper;
 
 /** Hello world! */
 @Configuration
@@ -13,6 +13,6 @@ public class MapperInitializer {
 
     static {
         JsonMapper mapper = JsonUtil.jacksonBuilderWithGlobalConfigs().build();
-        JacksonTypeHandler.setObjectMapper(mapper);
+        Jackson3TypeHandler.setObjectMapper(mapper);
     }
 }

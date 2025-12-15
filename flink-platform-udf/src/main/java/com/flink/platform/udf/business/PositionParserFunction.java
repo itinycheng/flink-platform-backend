@@ -4,11 +4,11 @@ import org.apache.flink.table.annotation.DataTypeHint;
 import org.apache.flink.table.annotation.FunctionHint;
 import org.apache.flink.types.Row;
 
-import com.fasterxml.jackson.databind.type.CollectionLikeType;
 import com.flink.platform.common.util.JsonUtil;
 import com.flink.platform.udf.common.FunctionName;
 import com.flink.platform.udf.entity.PositionLabel;
 import org.apache.commons.collections4.CollectionUtils;
+import tools.jackson.databind.type.CollectionLikeType;
 
 import java.util.List;
 

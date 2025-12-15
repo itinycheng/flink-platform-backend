@@ -1,6 +1,7 @@
 package com.flink.platform.web.environment;
 
 import com.flink.platform.common.util.ExceptionUtil;
+import com.flink.platform.web.common.AppRunningRetryPredicate;
 import com.flink.platform.web.model.ApplicationStatusReport;
 import com.flink.platform.web.util.ThreadUtil;
 import com.google.common.collect.Lists;
@@ -20,8 +21,7 @@ import org.apache.hadoop.yarn.conf.YarnConfiguration;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Lazy;
-import org.springframework.retry.annotation.Backoff;
-import org.springframework.retry.annotation.Retryable;
+import org.springframework.resilience.annotation.Retryable;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
@@ -97,11 +97,7 @@ public class HadoopService {
                 () -> ExceptionUtil.runWithErrorLogging(this::refreshReport), RandomUtils.nextInt(10, 30), 40, SECONDS);
     }
 
-    @Retryable(
-            retryFor = Exception.class,
-            maxAttempts = 4,
-            backoff = @Backoff(delay = 1500, multiplier = 2),
-            exceptionExpression = "@appRunnerChecker.shouldRetry(#root)")
+    @Retryable(maxRetries = 4, delay = 1500, multiplier = 2, predicate = AppRunningRetryPredicate.class)
     public ApplicationStatusReport getStatusReportWithRetry(String applicationTag) throws Exception {
         if (StringUtils.isEmpty(applicationTag)) {
             log.warn("The application tag is empty.");
