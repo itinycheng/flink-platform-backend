@@ -65,7 +65,7 @@ public class WorkerHeartbeat {
             JobFlowRunService jobFlowRunService,
             JobFlowScheduleService jobFlowScheduleService,
             @Value("${server.port}") String port,
-            @Value("${grpc.server.port}") int grpcPort) {
+            @Value("${spring.grpc.server.port}") int grpcPort) {
         this.workerService = workerService;
         this.jobFlowRunService = jobFlowRunService;
         this.jobFlowScheduleService = jobFlowScheduleService;
