@@ -8,7 +8,6 @@ import com.flink.platform.common.util.JsonUtil;
 import com.flink.platform.udf.common.FunctionName;
 import com.flink.platform.udf.entity.PositionLabel;
 import org.apache.commons.collections4.CollectionUtils;
-import tools.jackson.databind.type.CollectionLikeType;
 
 import java.util.List;
 
@@ -47,11 +46,8 @@ import java.util.List;
                         "ROW<symbol STRING, expiry STRING, strike STRING, c_right STRING, currency STRING, cost_level INTEGER, status STRING, ts BIGINT>"))
 public class PositionParserFunction extends AbstractTableFunction<PositionLabel, Row> {
 
-    private static final CollectionLikeType positionListType =
-            JsonUtil.MAPPER.getTypeFactory().constructCollectionLikeType(List.class, PositionLabel.class);
-
     public void eval(String str) {
-        List<PositionLabel> positionLabelList = JsonUtil.toList(str, positionListType);
+        List<PositionLabel> positionLabelList = JsonUtil.toList(str, PositionLabel.class);
         positionLabelList.forEach(this::collectOut);
     }
 
