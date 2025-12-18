@@ -21,11 +21,6 @@
 
 	<dependencies>
 		<dependency>
-			<groupId>javax.annotation</groupId>
-			<artifactId>javax.annotation-api</artifactId>
-			<scope>provided</scope>
-		</dependency>
-		<dependency>
 			<groupId>io.grpc</groupId>
 			<artifactId>grpc-stub</artifactId>
 		</dependency>
@@ -36,30 +31,27 @@
 	</dependencies>
 
 	<build>
-		<extensions>
-			<extension>
-				<groupId>kr.motd.maven</groupId>
-				<artifactId>os-maven-plugin</artifactId>
-				<version>${os-maven-plugin.version}</version>
-			</extension>
-		</extensions>
 		<plugins>
+			
 			<plugin>
-				<groupId>org.xolstice.maven.plugins</groupId>
+				<groupId>io.github.ascopes</groupId>
 				<artifactId>protobuf-maven-plugin</artifactId>
-				<version>${protobuf-maven-plugin.version}</version>
+				<version>4.1.1</version>
 				<configuration>
-					<protocArtifact>com.google.protobuf:protoc:${protobuf.version}:exe:${os.detected.classifier}
-					</protocArtifact>
-					<pluginId>grpc-java</pluginId>
-					<pluginArtifact>io.grpc:protoc-gen-grpc-java:${grpc.version}:exe:${os.detected.classifier}
-					</pluginArtifact>
+					<protoc>${protobuf.version}</protoc>
+					<plugins>
+						<plugin kind="binary-maven">
+							<groupId>io.grpc</groupId>
+							<artifactId>protoc-gen-grpc-java</artifactId>
+							<version>${grpc.version}</version>
+						</plugin>
+					</plugins>
 				</configuration>
+
 				<executions>
 					<execution>
 						<goals>
-							<goal>compile</goal>
-							<goal>compile-custom</goal>
+							<goal>generate</goal>
 						</goals>
 					</execution>
 				</executions>
