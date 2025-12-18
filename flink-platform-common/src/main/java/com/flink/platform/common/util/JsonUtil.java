@@ -1,147 +1,71 @@
 package com.flink.platform.common.util;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
+import com.flink.platform.common.util.json.Jackson2Mapper;
+import com.flink.platform.common.util.json.Jackson3Mapper;
+import com.flink.platform.common.util.json.JacksonBaseMapper;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
-import tools.jackson.core.type.TypeReference;
-import tools.jackson.databind.JacksonModule;
-import tools.jackson.databind.JavaType;
-import tools.jackson.databind.ext.javatime.deser.LocalDateTimeDeserializer;
-import tools.jackson.databind.ext.javatime.ser.LocalDateTimeSerializer;
-import tools.jackson.databind.json.JsonMapper;
-import tools.jackson.databind.json.JsonMapper.Builder;
-import tools.jackson.databind.module.SimpleModule;
 
-import java.io.IOException;
 import java.io.InputStream;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.time.LocalDateTime;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-
-import static com.flink.platform.common.constants.Constant.GLOBAL_TIME_ZONE;
-import static com.flink.platform.common.util.DateUtil.GLOBAL_DATE_TIME_FORMAT;
-import static java.time.format.DateTimeFormatter.ofPattern;
-import static tools.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES;
-import static tools.jackson.databind.MapperFeature.PROPAGATE_TRANSIENT_MARKER;
 
 /** json utils. */
 @Slf4j
 public class JsonUtil {
 
-    public static final JsonMapper MAPPER;
+    public static final JacksonBaseMapper<?> MAPPER;
 
     static {
-        MAPPER = jacksonBuilderWithGlobalConfigs()
-                .changeDefaultPropertyInclusion(incl -> incl.withValueInclusion(JsonInclude.Include.ALWAYS))
-                .build();
+        MAPPER = createMapper();
     }
 
     public static List<String> toList(String json) {
-        if (StringUtils.isBlank(json)) {
-            return Collections.emptyList();
-        }
-
-        try {
-            return MAPPER.readValue(json, new TypeReference<List<String>>() {});
-        } catch (Exception e) {
-            log.error("Failed to serial {} to List[String].", json, e);
-            return Collections.emptyList();
-        }
+        return MAPPER.toList(json);
     }
 
-    public static <T> List<T> toList(String json, JavaType javaType) {
-        if (StringUtils.isBlank(json)) {
-            return Collections.emptyList();
-        }
-
-        try {
-            return MAPPER.readValue(json, javaType);
-        } catch (Exception e) {
-            log.error("Failed to serial {} to List[T]", json, e);
-            return Collections.emptyList();
-        }
+    public static <T> List<T> toList(String json, Class<T> clazz) {
+        return MAPPER.toList(json, clazz);
     }
 
     public static Map<String, Object> toMap(String json) {
-        if (StringUtils.isBlank(json)) {
-            return Collections.emptyMap();
-        }
-
-        try {
-            return MAPPER.readValue(json, new TypeReference<Map<String, Object>>() {});
-        } catch (Exception e) {
-            log.error("Failed to serial {} to Map[String, Object].", json, e);
-            return Collections.emptyMap();
-        }
+        return MAPPER.toMap(json);
     }
 
     public static Map<String, String> toStrMap(String json) {
-        if (StringUtils.isBlank(json)) {
-            return Collections.emptyMap();
-        }
-
-        try {
-            return MAPPER.readValue(json, new TypeReference<Map<String, String>>() {});
-        } catch (Exception e) {
-            log.error("Failed to serial {} to Map[String, String].", json, e);
-            return Collections.emptyMap();
-        }
+        return MAPPER.toStrMap(json);
     }
 
     public static <T> T toBean(String json, Class<T> clazz) {
-        if (StringUtils.isBlank(json)) {
-            return null;
-        }
-
-        try {
-            return MAPPER.readValue(json, clazz);
-        } catch (Exception e) {
-            log.error("Failed to serial {} to {}.", json, clazz, e);
-            return null;
-        }
+        return MAPPER.toBean(json, clazz);
     }
 
-    public static <T> T toBean(Path path, Class<T> clazz) throws IOException {
-        InputStream inputStream = Files.newInputStream(path);
-        return toBean(inputStream, clazz);
+    public static <T> T toBean(Path path, Class<T> clazz) throws Exception {
+        return MAPPER.toBean(path, clazz);
     }
 
-    public static <T> T toBean(InputStream inputStream, Class<T> clazz) {
-        return MAPPER.readValue(inputStream, clazz);
+    public static <T> T toBean(InputStream inputStream, Class<T> clazz) throws Exception {
+        return MAPPER.toBean(inputStream, clazz);
     }
 
     public static String toJsonString(Object obj) {
-        if (obj == null) {
-            return null;
-        }
+        return MAPPER.toJsonString(obj);
+    }
 
+    private static JacksonBaseMapper<?> createMapper() {
         try {
-            return MAPPER.writeValueAsString(obj);
+            Class.forName("tools.jackson.databind.json.JsonMapper");
+            log.info("Jackson 3.x found, using Jackson 3.x");
+            return new Jackson3Mapper();
         } catch (Exception e) {
-            log.error("Failed to serial {}.", obj, e);
-            return null;
+            try {
+                // 回退到 Jackson 2
+                Class.forName("com.fasterxml.jackson.databind.json.JsonMapper");
+                log.info("Jackson 3.x not found, fallback to Jackson 2.x");
+                return new Jackson2Mapper();
+            } catch (Exception ex) {
+                throw new RuntimeException("No Jackson library found in classpath", ex);
+            }
         }
-    }
-
-    // ====================================================
-    // ============== jackson global configs ==============
-    // ====================================================
-
-    public static JsonMapper.Builder jacksonBuilderWithGlobalConfigs() {
-        Builder builder =
-                JsonMapper.builder().addModules(defaultGlobalModules()).defaultTimeZone(GLOBAL_TIME_ZONE);
-        builder.configure(PROPAGATE_TRANSIENT_MARKER, true);
-        builder.configure(FAIL_ON_UNKNOWN_PROPERTIES, false);
-        return builder;
-    }
-
-    private static List<JacksonModule> defaultGlobalModules() {
-        return Collections.singletonList(new SimpleModule()
-                .addSerializer(LocalDateTime.class, new LocalDateTimeSerializer(ofPattern(GLOBAL_DATE_TIME_FORMAT)))
-                .addDeserializer(
-                        LocalDateTime.class, new LocalDateTimeDeserializer(ofPattern(GLOBAL_DATE_TIME_FORMAT))));
     }
 }

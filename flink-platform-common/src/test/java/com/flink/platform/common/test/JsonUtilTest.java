@@ -7,7 +7,6 @@ import com.flink.platform.common.job.SqlContext;
 import com.flink.platform.common.util.JsonUtil;
 import lombok.Data;
 import org.junit.jupiter.api.Test;
-import tools.jackson.databind.type.CollectionLikeType;
 
 import java.util.Collections;
 import java.util.List;
@@ -39,9 +38,7 @@ class JsonUtilTest {
     void test() {
         String listString =
                 "[{\"symbol\":\"BILI\",\"costLevel\":1,\"strike\":\"\",\"currency\":\"USD\",\"expiry\":\"\",\"right\":\"\",\"status\":\"LONG\",\"timestamp\":1621990862104},{\"symbol\":\"BIDU\",\"costLevel\":1,\"strike\":\"\",\"currency\":\"USD\",\"expiry\":\"\",\"right\":\"\",\"status\":\"LONG\",\"timestamp\":1621990862101}]";
-        CollectionLikeType positionListType =
-                JsonUtil.MAPPER.getTypeFactory().constructCollectionLikeType(List.class, PositionLabel.class);
-        List<PositionLabel> objList = JsonUtil.toList(listString, positionListType);
+        List<PositionLabel> objList = JsonUtil.toList(listString, PositionLabel.class);
         System.out.println(objList);
 
         String str = JsonUtil.toJsonString(objList);
