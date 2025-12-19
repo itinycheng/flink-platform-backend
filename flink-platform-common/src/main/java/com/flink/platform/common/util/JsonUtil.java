@@ -59,7 +59,6 @@ public class JsonUtil {
             return new Jackson3Mapper();
         } catch (Exception e) {
             try {
-                // 回退到 Jackson 2
                 Class.forName("com.fasterxml.jackson.databind.json.JsonMapper");
                 log.info("Jackson 3.x not found, fallback to Jackson 2.x");
                 return new Jackson2Mapper();
