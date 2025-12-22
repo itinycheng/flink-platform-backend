@@ -30,8 +30,8 @@ public class CommandMonitor {
 
     public CommandMonitor(ValueSortedMap<Long, JobCommand> runningJobMap) {
         this.runningJobMap = Preconditions.checkNotNull(runningJobMap);
-        this.monitor = ThreadUtil.newDaemonSingleScheduledExecutor("CommandMonitor");
-        this.canceler = ThreadUtil.newVirtualThreadExecutor("CommandCanceler");
+        this.monitor = ThreadUtil.newDaemonSingleScheduledExecutor("command-monitor");
+        this.canceler = ThreadUtil.newVirtualThreadExecutor("command-canceler");
     }
 
     public CommandMonitor start() {

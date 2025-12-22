@@ -1,20 +1,19 @@
-package com.flink.platform.web.component;
+package com.flink.platform.web.lifecycle;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.flink.platform.common.util.ExceptionUtil;
 import com.flink.platform.dao.entity.JobFlowRun;
 import com.flink.platform.dao.entity.Worker;
 import com.flink.platform.dao.service.JobFlowRunService;
 import com.flink.platform.dao.service.WorkerService;
+import com.flink.platform.web.common.SpringContext;
 import com.flink.platform.web.service.JobFlowScheduleService;
 import com.flink.platform.web.util.ThreadUtil;
-import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
+import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.concurrent.ScheduledExecutorService;
@@ -27,11 +26,8 @@ import static com.flink.platform.common.enums.ExecutionStatus.getNonTerminals;
 import static com.flink.platform.common.enums.WorkerStatus.DELETED;
 import static com.flink.platform.common.enums.WorkerStatus.FOLLOWER;
 import static com.flink.platform.common.enums.WorkerStatus.INACTIVE;
-import static com.flink.platform.common.enums.WorkerStatus.LEADER;
-import static com.flink.platform.common.enums.WorkerStatus.isActiveStatus;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static java.util.stream.Collectors.toList;
-import static org.springframework.transaction.annotation.Isolation.SERIALIZABLE;
 
 /**
  * Work instance. <br>
@@ -45,9 +41,6 @@ import static org.springframework.transaction.annotation.Isolation.SERIALIZABLE;
 @Slf4j
 @Component
 public class WorkerHeartbeat {
-
-    private static final ScheduledExecutorService EXECUTOR_SERVICE =
-            ThreadUtil.newDaemonSingleScheduledExecutor("WorkerHeartbeat");
 
     private final WorkerService workerService;
 
@@ -73,56 +66,36 @@ public class WorkerHeartbeat {
         this.grpcPort = grpcPort;
     }
 
-    @PostConstruct
-    public void initHeartbeat() {
-        EXECUTOR_SERVICE.scheduleWithFixedDelay(
-                () -> ExceptionUtil.runWithErrorLogging(this::heartbeat), 5, 60, SECONDS);
+    public void heartbeat() {
+        var worker = workerService.getCurWorkerIdAndRole();
+        var workerId = worker != null ? worker.getId() : null;
+
+        var temp = new Worker();
+        temp.setId(workerId);
+        temp.setHeartbeat(System.currentTimeMillis());
+        if (workerId == null) {
+            temp.setName(HOSTNAME);
+            temp.setIp(HOST_IP);
+            temp.setPort(port);
+            temp.setGrpcPort(grpcPort);
+            temp.setRole(FOLLOWER);
+        }
+        workerService.saveOrUpdate(temp);
     }
 
-    public synchronized void heartbeat() {
-        // 1. Update worker heartbeat info.
-        Worker worker = workerService.getCurWorkerIdAndRole();
-        Long workerId = worker != null ? worker.getId() : null;
-
-        worker = new Worker();
-        worker.setId(workerId);
-        worker.setHeartbeat(System.currentTimeMillis());
-        if (workerId == null) {
-            worker.setName(HOSTNAME);
-            worker.setIp(HOST_IP);
-            worker.setPort(port);
-            worker.setGrpcPort(grpcPort);
-            worker.setRole(FOLLOWER);
-        }
-
-        if (!isActiveStatus(worker.getRole())) {
-            worker.setRole(FOLLOWER);
-        }
-
-        workerService.saveOrUpdate(worker);
-
-        // 2. Try to be the leader.
-        if (!hasValidLeader()) {
-            assignLeaderRoleToWorker(worker.getId());
-        }
-
-        // 3. Reassign unfinished workflows belonging to offline workers.
-        worker = workerService.getById(worker.getId());
-        if (!LEADER.equals(worker.getRole())) {
-            return;
-        }
-
-        List<JobFlowRun> unfinishedList = getInvalidWorkers().stream()
+    @SchedulerLock(name = "WorkerHeartbeat_takeover", lockAtMostFor = "PT30S", lockAtLeastFor = "PT20S")
+    public void takeover() {
+        var pendingList = getInvalidWorkers().stream()
                 .flatMap(this::getUnfinishedByWorker)
                 .toList();
-        if (unfinishedList.isEmpty()) {
+        if (pendingList.isEmpty()) {
             return;
         }
 
         // TODO: dispatch JobFlowRun to other active workers?
-        unfinishedList.forEach(jobFlowRun -> jobFlowRun.setHost(HOST_IP));
-        updateJobFlowRunHost(unfinishedList);
-        unfinishedList.forEach(jobFlowScheduleService::registerToScheduler);
+        pendingList.forEach(jobFlowRun -> jobFlowRun.setHost(HOST_IP));
+        updateJobFlowRunHost(pendingList);
+        pendingList.forEach(jobFlowScheduleService::registerToScheduler);
     }
 
     private void updateJobFlowRunHost(List<JobFlowRun> list) {
@@ -134,32 +107,6 @@ public class WorkerHeartbeat {
                     return newJobFlowRun;
                 })
                 .toList());
-    }
-
-    @Transactional(isolation = SERIALIZABLE, rollbackFor = Throwable.class)
-    public void assignLeaderRoleToWorker(long workerId) {
-        if (hasValidLeader()) {
-            return;
-        }
-
-        workerService.update(new UpdateWrapper<Worker>()
-                .lambda()
-                .set(Worker::getRole, FOLLOWER)
-                .eq(Worker::getRole, LEADER));
-
-        Worker worker = new Worker();
-        worker.setId(workerId);
-        worker.setRole(LEADER);
-        workerService.updateById(worker);
-    }
-
-    public boolean hasValidLeader() {
-        List<Worker> list = workerService.list(new QueryWrapper<Worker>()
-                .lambda()
-                .select(Worker::getId, Worker::getHeartbeat)
-                .eq(Worker::getRole, LEADER)
-                .ne(Worker::getIp, LOCALHOST));
-        return list.size() == 1 && list.getFirst().isActive();
     }
 
     public List<Worker> getInvalidWorkers() {
@@ -180,5 +127,30 @@ public class WorkerHeartbeat {
                         .eq(JobFlowRun::getHost, invalidWorker.getIp())
                         .in(JobFlowRun::getStatus, getNonTerminals()))
                 .stream();
+    }
+
+    public static class Scheduler {
+
+        private static final ScheduledExecutorService EXECUTOR = createExecutor();
+
+        private static boolean started = false;
+
+        public static synchronized void start() {
+            if (started) {
+                log.warn("Worker heartbeat scheduler already started.");
+                return;
+            }
+
+            final var service = SpringContext.getBean(WorkerHeartbeat.class);
+            EXECUTOR.scheduleWithFixedDelay(
+                    () -> ExceptionUtil.runWithErrorLogging(service::heartbeat, service::takeover), 0, 30, SECONDS);
+            started = true;
+        }
+
+        private static ScheduledExecutorService createExecutor() {
+            var executor = ThreadUtil.newDaemonSingleScheduledExecutor("worker-heartbeat");
+            ThreadUtil.addShutdownHook(executor, "worker-heartbeat");
+            return executor;
+        }
     }
 }

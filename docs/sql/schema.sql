@@ -345,7 +345,8 @@ CREATE TABLE `t_job_flow_run` (
   KEY `t_job_flow_run_flow_id_idx` (`flow_id`) USING BTREE,
   KEY `t_job_flow_run_create_time_idx` (`create_time`) USING BTREE,
   KEY `t_job_flow_run_name_idx` (`name`) USING BTREE,
-  KEY `t_job_flow_run_end_time_idx` (`end_time`) USING BTREE
+  KEY `t_job_flow_run_end_time_idx` (`end_time`) USING BTREE,
+  KEY `t_job_flow_run_status_idx` (`status`) USING BTREE
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4;
 
 -- ----------------------------
@@ -377,7 +378,8 @@ CREATE TABLE `t_job_run` (
   KEY `t_job_run_job_id_idx` (`job_id`) USING BTREE,
   KEY `t_job_run_flow_run_id_idx` (`flow_run_id`) USING BTREE,
   KEY `t_job_run_name_idx` (`name`) USING BTREE,
-  KEY `t_job_run_stop_time_idx` (`stop_time`) USING BTREE
+  KEY `t_job_run_stop_time_idx` (`stop_time`) USING BTREE,
+  KEY `t_job_run_status_idx` (`status`) USING BTREE
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COMMENT='job run info';
 
 -- ----------------------------
