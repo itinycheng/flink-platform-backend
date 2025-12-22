@@ -15,9 +15,11 @@ public class ExceptionUtil {
         return writer.toString();
     }
 
-    public static void runWithErrorLogging(Runnable runnable) {
+    public static void runWithErrorLogging(Runnable... list) {
         try {
-            runnable.run();
+            for (Runnable runnable : list) {
+                runnable.run();
+            }
         } catch (Throwable throwable) {
             log.error("Unexpected error occurred.", throwable);
         }

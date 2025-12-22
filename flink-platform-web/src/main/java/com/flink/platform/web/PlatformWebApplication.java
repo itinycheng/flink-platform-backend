@@ -1,7 +1,9 @@
 package com.flink.platform.web;
 
-import com.flink.platform.web.common.SystemInfoLogger;
-import com.flink.platform.web.config.AppRunner;
+import com.flink.platform.web.lifecycle.AppRunner;
+import com.flink.platform.web.lifecycle.SystemInfoLogger;
+import com.flink.platform.web.lifecycle.WorkerHeartbeat;
+import net.javacrumbs.shedlock.spring.annotation.EnableSchedulerLock;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.ApplicationListener;
@@ -15,6 +17,7 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 /** starter. */
 @EnableResilientMethods
 @EnableScheduling
+@EnableSchedulerLock(defaultLockAtMostFor = "PT10M")
 @EnableTransactionManagement
 @ComponentScan(value = "com.flink.platform")
 @SpringBootApplication
@@ -24,11 +27,12 @@ public class PlatformWebApplication {
         var application = new SpringApplication(PlatformWebApplication.class);
         application.addListeners(
                 (ApplicationListener<ContextClosedEvent>) event -> AppRunner.stop(),
-                (ApplicationListener<ContextRefreshedEvent>) event -> contextRefreshed());
+                (ApplicationListener<ContextRefreshedEvent>) event -> onApplicationReady());
         application.run(args);
     }
 
-    public static void contextRefreshed() {
+    public static void onApplicationReady() {
         SystemInfoLogger.logDetails();
+        WorkerHeartbeat.Scheduler.start();
     }
 }

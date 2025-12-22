@@ -1,6 +1,6 @@
 package com.flink.platform.web.common;
 
-import com.flink.platform.web.config.AppRunner;
+import com.flink.platform.web.lifecycle.AppRunner;
 import org.springframework.resilience.retry.MethodRetryPredicate;
 
 import java.lang.reflect.Method;

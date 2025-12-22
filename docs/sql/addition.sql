@@ -27,3 +27,7 @@ ALTER TABLE platform.t_job CHANGE COLUMN variables params TEXT COMMENT 'params';
 ALTER TABLE platform.t_job_run CHANGE COLUMN variables params TEXT COMMENT 'params';
 ALTER TABLE platform.t_job_flow ADD COLUMN params TEXT AFTER `timeout`;
 ALTER TABLE platform.t_job_flow_run ADD COLUMN params TEXT AFTER `timeout`;
+
+-- 2025-12-23
+CREATE INDEX t_job_flow_run_status_idx USING BTREE ON platform.t_job_flow_run (status);
+CREATE INDEX t_job_run_status_idx USING BTREE ON platform.t_job_run (status);
