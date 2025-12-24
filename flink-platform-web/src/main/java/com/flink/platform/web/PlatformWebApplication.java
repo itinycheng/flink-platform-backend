@@ -17,7 +17,7 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 /** starter. */
 @EnableResilientMethods
 @EnableScheduling
-@EnableSchedulerLock(defaultLockAtMostFor = "PT10M")
+@EnableSchedulerLock(defaultLockAtMostFor = "PT1H")
 @EnableTransactionManagement
 @ComponentScan(value = "com.flink.platform")
 @SpringBootApplication
@@ -27,11 +27,11 @@ public class PlatformWebApplication {
         var application = new SpringApplication(PlatformWebApplication.class);
         application.addListeners(
                 (ApplicationListener<ContextClosedEvent>) event -> AppRunner.stop(),
-                (ApplicationListener<ContextRefreshedEvent>) event -> onApplicationReady());
+                (ApplicationListener<ContextRefreshedEvent>) event -> contextRefreshed());
         application.run(args);
     }
 
-    public static void onApplicationReady() {
+    public static void contextRefreshed() {
         SystemInfoLogger.logDetails();
         WorkerHeartbeat.Scheduler.start();
     }

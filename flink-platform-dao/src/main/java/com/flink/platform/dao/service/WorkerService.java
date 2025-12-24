@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 
 import static com.flink.platform.common.constants.Constant.HOST_IP;
+import static com.flink.platform.common.enums.WorkerStatus.ACTIVE;
 import static com.flink.platform.common.enums.WorkerStatus.FOLLOWER;
 import static com.flink.platform.common.enums.WorkerStatus.LEADER;
 
@@ -27,8 +28,10 @@ public class WorkerService extends ServiceImpl<WorkerMapper, Worker> {
     }
 
     public List<Worker> listActiveWorkersByIds(List<Long> ids) {
-        List<Worker> workers =
-                list(new QueryWrapper<Worker>().lambda().in(Worker::getId, ids).in(Worker::getRole, LEADER, FOLLOWER));
+        List<Worker> workers = list(new QueryWrapper<Worker>()
+                .lambda()
+                .in(Worker::getId, ids)
+                .in(Worker::getRole, ACTIVE, LEADER, FOLLOWER));
         return workers.stream().filter(Worker::isActive).toList();
     }
 }
