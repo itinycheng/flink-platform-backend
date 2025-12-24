@@ -36,6 +36,14 @@
 			<groupId>com.baomidou</groupId>
 			<artifactId>dynamic-datasource-spring-boot4-starter</artifactId>
 		</dependency>
+		<dependency>
+			<groupId>net.javacrumbs.shedlock</groupId>
+			<artifactId>shedlock-spring</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>net.javacrumbs.shedlock</groupId>
+			<artifactId>shedlock-provider-jdbc-template</artifactId>
+		</dependency>
 	</dependencies>
 
 	<build>

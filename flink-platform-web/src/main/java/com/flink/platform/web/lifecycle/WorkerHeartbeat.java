@@ -23,8 +23,8 @@ import static com.flink.platform.common.constants.Constant.HOSTNAME;
 import static com.flink.platform.common.constants.Constant.HOST_IP;
 import static com.flink.platform.common.constants.Constant.LOCALHOST;
 import static com.flink.platform.common.enums.ExecutionStatus.getNonTerminals;
+import static com.flink.platform.common.enums.WorkerStatus.ACTIVE;
 import static com.flink.platform.common.enums.WorkerStatus.DELETED;
-import static com.flink.platform.common.enums.WorkerStatus.FOLLOWER;
 import static com.flink.platform.common.enums.WorkerStatus.INACTIVE;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static java.util.stream.Collectors.toList;
@@ -34,9 +34,7 @@ import static java.util.stream.Collectors.toList;
  *
  * <p>1. Update worker heartbeat.
  *
- * <p>2. Try to get leader role if no leader alive or there are more than one leader.
- *
- * <p>3. Check if any workers are inactive and reassign jobs owned by these workers.
+ * <p>2. Check if any workers are inactive and reassign jobs owned by these workers.
  */
 @Slf4j
 @Component
@@ -73,12 +71,12 @@ public class WorkerHeartbeat {
         var temp = new Worker();
         temp.setId(workerId);
         temp.setHeartbeat(System.currentTimeMillis());
+        temp.setRole(ACTIVE);
         if (workerId == null) {
             temp.setName(HOSTNAME);
             temp.setIp(HOST_IP);
             temp.setPort(port);
             temp.setGrpcPort(grpcPort);
-            temp.setRole(FOLLOWER);
         }
         workerService.saveOrUpdate(temp);
     }
