@@ -2,6 +2,7 @@ package com.flink.platform.common.graph;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Getter;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 
@@ -24,10 +25,12 @@ public class DAG<VId, V extends Vertex<VId>, E extends Edge<VId>> {
     private final ReadWriteLock lock = new ReentrantReadWriteLock();
 
     @Getter
-    private final Set<V> vertices;
+    @Setter
+    private Set<V> vertices;
 
     @Getter
-    private final Set<E> edges;
+    @Setter
+    private Set<E> edges;
 
     public DAG() {
         vertices = new HashSet<>();
