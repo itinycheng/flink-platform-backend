@@ -15,7 +15,7 @@
 	<url>http://maven.apache.org</url>
 
 	<properties>
-		<frontend-maven-plugin.version>1.15.4</frontend-maven-plugin.version>
+		<frontend-maven-plugin.version>2.0.0</frontend-maven-plugin.version>
 		<skip.frontend>false</skip.frontend>
 	</properties>
 

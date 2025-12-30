@@ -1,4 +1,4 @@
-package com.flink.platform.web.common;
+package com.flink.platform.web.lifecycle;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0"
-		xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-		xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+		 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+		 xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<parent>
 		<artifactId>flink-platform-backend</artifactId>
 		<groupId>com.flink.platform</groupId>
@@ -15,16 +15,10 @@
 
 	<properties>
 		<protobuf.version>3.18.2</protobuf.version>
-		<os-maven-plugin.version>1.7.1</os-maven-plugin.version>
-		<protobuf-maven-plugin.version>0.6.1</protobuf-maven-plugin.version>
+		<protobuf-maven-plugin.version>4.1.2</protobuf-maven-plugin.version>
 	</properties>
 
 	<dependencies>
-		<dependency>
-			<groupId>javax.annotation</groupId>
-			<artifactId>javax.annotation-api</artifactId>
-			<scope>provided</scope>
-		</dependency>
 		<dependency>
 			<groupId>io.grpc</groupId>
 			<artifactId>grpc-stub</artifactId>
@@ -36,32 +30,27 @@
 	</dependencies>
 
 	<build>
-		<extensions>
-			<extension>
-				<groupId>kr.motd.maven</groupId>
-				<artifactId>os-maven-plugin</artifactId>
-				<version>${os-maven-plugin.version}</version>
-			</extension>
-		</extensions>
 		<plugins>
+			
 			<plugin>
-				<groupId>org.xolstice.maven.plugins</groupId>
+				<groupId>io.github.ascopes</groupId>
 				<artifactId>protobuf-maven-plugin</artifactId>
 				<version>${protobuf-maven-plugin.version}</version>
 				<configuration>
-					<protocArtifact>
-						com.google.protobuf:protoc:${protobuf.version}:exe:${os.detected.classifier}
-					</protocArtifact>
-					<pluginId>grpc-java</pluginId>
-					<pluginArtifact>
-						io.grpc:protoc-gen-grpc-java:${grpc.version}:exe:${os.detected.classifier}
-					</pluginArtifact>
+					<protoc>${protobuf.version}</protoc>
+					<plugins>
+						<plugin kind="binary-maven">
+							<groupId>io.grpc</groupId>
+							<artifactId>protoc-gen-grpc-java</artifactId>
+							<version>${grpc.version}</version>
+						</plugin>
+					</plugins>
 				</configuration>
+
 				<executions>
 					<execution>
 						<goals>
-							<goal>compile</goal>
-							<goal>compile-custom</goal>
+							<goal>generate</goal>
 						</goals>
 					</execution>
 				</executions>

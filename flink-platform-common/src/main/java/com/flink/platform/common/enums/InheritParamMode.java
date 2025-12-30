@@ -6,9 +6,5 @@ package com.flink.platform.common.enums;
 public enum InheritParamMode {
     ALLOW,
     DENY,
-    CUSTOM;
-
-    public static boolean isInheritAllowed(InheritParamMode mode) {
-        return mode != DENY;
-    }
+    CUSTOM
 }

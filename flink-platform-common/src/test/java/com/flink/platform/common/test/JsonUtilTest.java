@@ -1,6 +1,5 @@
 package com.flink.platform.common.test;
 
-import com.fasterxml.jackson.databind.type.CollectionLikeType;
 import com.flink.platform.common.enums.ExecutionMode;
 import com.flink.platform.common.enums.SqlType;
 import com.flink.platform.common.job.Sql;
@@ -39,9 +38,7 @@ class JsonUtilTest {
     void test() {
         String listString =
                 "[{\"symbol\":\"BILI\",\"costLevel\":1,\"strike\":\"\",\"currency\":\"USD\",\"expiry\":\"\",\"right\":\"\",\"status\":\"LONG\",\"timestamp\":1621990862104},{\"symbol\":\"BIDU\",\"costLevel\":1,\"strike\":\"\",\"currency\":\"USD\",\"expiry\":\"\",\"right\":\"\",\"status\":\"LONG\",\"timestamp\":1621990862101}]";
-        CollectionLikeType positionListType =
-                JsonUtil.MAPPER.getTypeFactory().constructCollectionLikeType(List.class, PositionLabel.class);
-        List<PositionLabel> objList = JsonUtil.toList(listString, positionListType);
+        List<PositionLabel> objList = JsonUtil.toList(listString, PositionLabel.class);
         System.out.println(objList);
 
         String str = JsonUtil.toJsonString(objList);

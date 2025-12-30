@@ -138,6 +138,7 @@ public class ProcessJobService {
             return;
         }
 
+        // option: use ListUtil::mergeToList if you need to merge values into list.
         params = params.entrySet().stream()
                 .map(entry -> Pair.of(setValueResolver.getSetValueKey(entry.getKey()), entry.getValue()))
                 .filter(pair -> pair.getKey() != null)
