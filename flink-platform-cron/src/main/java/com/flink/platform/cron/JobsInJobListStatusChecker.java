@@ -28,6 +28,7 @@ public class JobsInJobListStatusChecker {
     @Scheduled(initialDelay = 2 * 60 * 1000, fixedDelay = 10 * 60 * 1000)
     @SchedulerLock(name = "JobsInJobListStatusChecker_checkJobStatus", lockAtMostFor = "PT8M", lockAtLeastFor = "PT5M")
     public void checkJobStatus() {
+        log.info("Start to check job status in JOB_LIST workflow.");
         jobRunInfoService.getJobRunsWithUnexpectedStatus().forEach(jobRun -> {
             String content = ALERT_TEMPLATE.formatted(
                     jobRun.getName(), jobRun.getStatus().name());

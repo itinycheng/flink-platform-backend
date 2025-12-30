@@ -143,6 +143,7 @@ public class WorkerHeartbeat {
             EXECUTOR.scheduleWithFixedDelay(
                     () -> ExceptionUtil.runWithErrorLogging(service::heartbeat, service::takeover), 0, 30, SECONDS);
             started = true;
+            log.info("Worker heartbeat scheduler started.");
         }
 
         private static ScheduledExecutorService createExecutor() {

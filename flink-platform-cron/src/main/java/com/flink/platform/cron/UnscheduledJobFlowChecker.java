@@ -27,6 +27,7 @@ public class UnscheduledJobFlowChecker {
             lockAtMostFor = "PT30M",
             lockAtLeastFor = "PT5M")
     public void checkUnscheduledWorkflow() {
+        log.info("Start to check unscheduled workflows.");
         jobFlowService.getUnscheduledJobFlows().forEach(jobFlow -> {
             String content = ALERT_TEMPLATE.formatted(
                     jobFlow.getName(), jobFlow.getStatus().name());
