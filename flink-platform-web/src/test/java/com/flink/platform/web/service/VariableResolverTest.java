@@ -37,9 +37,9 @@ public class VariableResolverTest {
         jobRun.setId(22L);
         jobRun.setJobId(33L);
 
-        jobRun.setSubject("${jobRun:id} wow, ${jobRun:id}, ${jobRun:code}");
+        jobRun.setSubject("${jobRun:id} wow, ${jobRun:id}, ${jobRun:code}, ${jobRun:job_id}");
         var result = jobRunVariableResolver.resolve(jobRun, jobRun.getSubject());
-        result.forEach((s, o) -> jobRun.setSubject(jobRun.getSubject().replace(s, o.toString())));
-        assertEquals("22 wow, 22, job_33", jobRun.getSubject());
+        result.forEach((s, o) -> jobRun.setSubject(jobRun.getSubject().replace(s, String.valueOf(o))));
+        assertEquals("22 wow, 22, job_33, 33", jobRun.getSubject());
     }
 }

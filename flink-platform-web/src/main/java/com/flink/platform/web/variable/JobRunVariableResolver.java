@@ -30,12 +30,12 @@ public class JobRunVariableResolver implements VariableResolver {
             var field = matcher.group("field");
             Object value = null;
             try {
-                if (wrapper.isReadableProperty(field)) {
+                if ("code".equalsIgnoreCase(field)) {
+                    value = jobRun.getJobCode();
+                } else if (wrapper.isReadableProperty(field)) {
                     value = wrapper.getPropertyValue(field);
-                }
-
-                field = CaseUtils.toCamelCase(field, false, '_', '-', '.');
-                if (wrapper.isReadableProperty(field)) {
+                } else {
+                    field = CaseUtils.toCamelCase(field, false, '_', '-', '.');
                     value = wrapper.getPropertyValue(field);
                 }
             } catch (Exception e) {
