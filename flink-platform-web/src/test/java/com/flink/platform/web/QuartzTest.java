@@ -4,9 +4,10 @@ import com.flink.platform.web.util.ThreadUtil;
 import org.junit.jupiter.api.Test;
 import org.quartz.CronExpression;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.Date;
+import java.util.TimeZone;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -18,15 +19,16 @@ class QuartzTest {
     void test() throws Exception {
         var offset = ZoneOffset.of("+8");
         var cronExpression = new CronExpression("0 43 1 * * ?");
-        var day0 = LocalDateTime.of(2021, 5, 21, 3, 0);
-        var day1 = LocalDateTime.of(2021, 5, 22, 1, 43);
-        var day2 = LocalDateTime.of(2021, 5, 23, 1, 43);
+        cronExpression.setTimeZone(TimeZone.getTimeZone(offset));
+        var day0 = OffsetDateTime.of(2021, 5, 21, 3, 0, 0, 0, offset);
+        var day1 = OffsetDateTime.of(2021, 5, 22, 1, 43, 0, 0, offset);
+        var day2 = OffsetDateTime.of(2021, 5, 23, 1, 43, 0, 0, offset);
 
-        var from = Date.from(day0.toInstant(offset));
-        assertEquals(cronExpression.getNextValidTimeAfter(from), Date.from(day1.toInstant(offset)));
+        var from = Date.from(day0.toInstant());
+        assertEquals(cronExpression.getNextValidTimeAfter(from), Date.from(day1.toInstant()));
         assertEquals(
                 cronExpression.getNextValidTimeAfter(cronExpression.getNextValidTimeAfter(from)),
-                Date.from(day2.toInstant(offset)));
+                Date.from(day2.toInstant()));
     }
 
     public static void main(String[] args) {
