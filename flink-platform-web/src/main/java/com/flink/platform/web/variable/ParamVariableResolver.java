@@ -29,6 +29,8 @@ public class ParamVariableResolver implements VariableResolver {
 
     private final JobFlowRunService jobFlowRunService;
 
+    private final SubflowVariableResolver subflowResolver;
+
     @Override
     public boolean supports(JobRunInfo jobRun, String content) {
         return jobRun != null && PARAM_PATTERN.matcher(content).find();
@@ -36,11 +38,16 @@ public class ParamVariableResolver implements VariableResolver {
 
     @Override
     public Map<String, Object> resolve(JobRunInfo jobRun, String content) {
-        // priority: global < job flow run < job run
+        // priority: global < sub flow < job flow < job
         var paramMap = new HashMap<String, Object>();
         var globalParams = jobParamService.getJobParams(jobRun.getJobId());
         if (CollectionUtils.isNotEmpty(globalParams)) {
             globalParams.forEach(globalParam -> paramMap.put(globalParam.getParamName(), globalParam.getParamValue()));
+        }
+
+        var subflowParamMap = subflowResolver.collectSubflowParams(jobRun.getFlowRunId());
+        if (MapUtils.isNotEmpty(subflowParamMap)) {
+            paramMap.putAll(subflowParamMap);
         }
 
         var jobFlowRun = jobFlowRunService.getById(jobRun.getFlowRunId());
