@@ -70,6 +70,7 @@ public class JobRunExtraService {
 
     public Map<String, Object> parseVariables(JobRunInfo jobRun) {
         var variableMap = new LinkedHashMap<String, Object>();
+        // TODO: Remove comments before parsing variables.
         var content = String.join(", ", jobRun.getSubject(), JsonUtil.toJsonString(jobRun.getConfig()));
         for (var variableResolver : variableResolvers) {
             if (!variableResolver.supports(jobRun, content)) {
