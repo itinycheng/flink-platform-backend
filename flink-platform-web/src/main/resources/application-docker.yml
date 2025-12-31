@@ -42,16 +42,15 @@ spring:
             threadCount: 20
             threadPriority: 5
             threadsInheritContextClassLoaderOfInitializingThread: true
-
-grpc:
-  server:
-    port: 9898
-  client:
-    local-grpc-server:
-      address: static://127.0.0.1:9898
-      enableKeepAlive: true
-      keepAliveWithoutCalls: true
-      negotiationType: plaintext
+  grpc:
+    server:
+      port: 9898
+    client:
+      default-channel:
+        address: static://0.0.0.0:9898
+        enableKeepAlive: true
+        keepAliveWithoutCalls: true
+        negotiationType: plaintext
 
 flink:
   sql112:

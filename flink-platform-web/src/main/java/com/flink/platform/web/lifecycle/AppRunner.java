@@ -1,4 +1,4 @@
-package com.flink.platform.web.config;
+package com.flink.platform.web.lifecycle;
 
 import lombok.extern.slf4j.Slf4j;
 

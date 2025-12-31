@@ -46,13 +46,18 @@ public class OSUtil {
         try {
             List<String> noLoopbackAddrs = new ArrayList<>();
             List<String> siteLocalAddrs = new ArrayList<>();
-            for (InetAddress address : getAllHostAddress()) {
-                if (!address.isLoopbackAddress() && address instanceof Inet4Address) {
-                    if (address.isSiteLocalAddress()) {
-                        siteLocalAddrs.add(address.getHostAddress());
-                    } else {
-                        noLoopbackAddrs.add(address.getHostAddress());
-                    }
+            for (InetAddress address : getAvailableHostAddress()) {
+                if (address.isLinkLocalAddress()
+                        || address.isLoopbackAddress()
+                        || address.isAnyLocalAddress()
+                        || !(address instanceof Inet4Address)) {
+                    continue;
+                }
+
+                if (address.isSiteLocalAddress()) {
+                    siteLocalAddrs.add(address.getHostAddress());
+                } else {
+                    noLoopbackAddrs.add(address.getHostAddress());
                 }
             }
 
@@ -64,11 +69,15 @@ public class OSUtil {
         }
     }
 
-    private static List<InetAddress> getAllHostAddress() throws SocketException {
+    private static List<InetAddress> getAvailableHostAddress() throws SocketException {
         Enumeration<NetworkInterface> networks = NetworkInterface.getNetworkInterfaces();
         List<InetAddress> addresses = new ArrayList<>();
         while (networks.hasMoreElements()) {
             NetworkInterface networkInterface = networks.nextElement();
+            if (!networkInterface.isUp()) {
+                continue;
+            }
+
             Enumeration<InetAddress> inetAddresses = networkInterface.getInetAddresses();
             while (inetAddresses.hasMoreElements()) {
                 InetAddress inetAddress = inetAddresses.nextElement();

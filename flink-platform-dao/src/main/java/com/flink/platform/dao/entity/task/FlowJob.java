@@ -14,7 +14,7 @@ public class FlowJob extends BaseJob {
 
     private long flowId;
 
-    private InheritParamMode inheritParamMode;
+    private InheritParamMode inheritParamMode = InheritParamMode.ALLOW;
 
-    private Set<String> paramNames;
+    private Set<String> paramNames = Set.of();
 }
