@@ -49,7 +49,7 @@ public class ParamVariableResolver implements VariableResolver {
         var subflowParamMap = subflowResolver.collectSubflowParams(jobRun.getFlowRunId());
         var jobFlowRun = jobFlowRunService.getById(jobRun.getFlowRunId());
         var jobFlowParamMap = jobFlowRun != null ? jobFlowRun.getParams() : null;
-        var flowParamMap = ObjectUtil.merge(subflowParamMap, jobFlowParamMap);
+        var flowParamMap = ObjectUtil.merge(jobFlowParamMap, subflowParamMap);
         if (MapUtils.isNotEmpty(flowParamMap)) {
             paramMap.putAll(flowParamMap);
         }
