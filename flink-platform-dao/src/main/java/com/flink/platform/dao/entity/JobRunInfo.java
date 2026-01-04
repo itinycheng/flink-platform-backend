@@ -4,7 +4,7 @@ import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
-import com.baomidou.mybatisplus.extension.handlers.JacksonTypeHandler;
+import com.baomidou.mybatisplus.extension.handlers.Jackson3TypeHandler;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.flink.platform.common.enums.DeployMode;
 import com.flink.platform.common.enums.ExecutionMode;
@@ -54,15 +54,15 @@ public class JobRunInfo implements Serializable {
 
     private ExecutionMode execMode;
 
-    @TableField(typeHandler = JacksonTypeHandler.class)
+    @TableField(typeHandler = Jackson3TypeHandler.class)
     private BaseJob config;
 
-    @TableField(typeHandler = JacksonTypeHandler.class)
+    @TableField(typeHandler = Jackson3TypeHandler.class)
     private Map<String, Object> params;
 
     private String subject;
 
-    @TableField(typeHandler = JacksonTypeHandler.class)
+    @TableField(typeHandler = Jackson3TypeHandler.class)
     private LongArrayList routeUrl;
 
     private String host;
@@ -70,7 +70,7 @@ public class JobRunInfo implements Serializable {
     private ExecutionStatus status;
 
     /** store json data of JobStatistics. */
-    @TableField(typeHandler = JacksonTypeHandler.class)
+    @TableField(typeHandler = Jackson3TypeHandler.class)
     private JobCallback backInfo;
 
     /** submit time. */

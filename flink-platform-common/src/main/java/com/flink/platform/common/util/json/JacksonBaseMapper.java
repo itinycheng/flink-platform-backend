@@ -28,6 +28,8 @@ public interface JacksonBaseMapper<M> {
 
     String writeValueAsString(Object obj) throws Exception;
 
+    String writeValueAsPrettyString(Object obj) throws Exception;
+
     default List<String> toList(String json) {
         if (StringUtils.isBlank(json)) {
             return Collections.emptyList();
@@ -109,6 +111,19 @@ public interface JacksonBaseMapper<M> {
 
         try {
             return writeValueAsString(obj);
+        } catch (Exception e) {
+            getLogger().error("Failed to serial {}.", obj, e);
+            return null;
+        }
+    }
+
+    default String toPrettyJsonString(Object obj) {
+        if (obj == null) {
+            return null;
+        }
+
+        try {
+            return writeValueAsPrettyString(obj);
         } catch (Exception e) {
             getLogger().error("Failed to serial {}.", obj, e);
             return null;

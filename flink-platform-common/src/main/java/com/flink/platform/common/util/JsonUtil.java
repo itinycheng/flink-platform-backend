@@ -52,6 +52,10 @@ public class JsonUtil {
         return MAPPER.toJsonString(obj);
     }
 
+    public static String toPrettyJsonString(Object obj) {
+        return MAPPER.toPrettyJsonString(obj);
+    }
+
     private static JacksonBaseMapper<?> createMapper() {
         try {
             Class.forName("tools.jackson.databind.json.JsonMapper");
