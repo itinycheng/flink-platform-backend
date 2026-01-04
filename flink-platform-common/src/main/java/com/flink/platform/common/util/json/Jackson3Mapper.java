@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import tools.jackson.core.type.TypeReference;
 import tools.jackson.databind.JavaType;
+import tools.jackson.databind.SerializationFeature;
 import tools.jackson.databind.ext.javatime.deser.LocalDateTimeDeserializer;
 import tools.jackson.databind.ext.javatime.ser.LocalDateTimeSerializer;
 import tools.jackson.databind.json.JsonMapper;
@@ -45,32 +46,37 @@ public class Jackson3Mapper implements JacksonBaseMapper<JsonMapper> {
     }
 
     @Override
-    public Map<String, String> readValueStrMap(String json) throws Exception {
+    public Map<String, String> readValueStrMap(String json) {
         return mapper.readValue(json, new TypeReference<Map<String, String>>() {});
     }
 
     @Override
-    public Map<String, Object> readValueMap(String json) throws Exception {
+    public Map<String, Object> readValueMap(String json) {
         return mapper.readValue(json, new TypeReference<Map<String, Object>>() {});
     }
 
     @Override
-    public String writeValueAsString(Object obj) throws Exception {
+    public String writeValueAsString(Object obj) {
         return mapper.writeValueAsString(obj);
     }
 
     @Override
-    public <OUT> OUT readValue(InputStream inputStream, Class<OUT> clazz) throws Exception {
+    public String writeValueAsPrettyString(Object obj) {
+        return mapper.writer().with(SerializationFeature.INDENT_OUTPUT).writeValueAsString(obj);
+    }
+
+    @Override
+    public <OUT> OUT readValue(InputStream inputStream, Class<OUT> clazz) {
         return mapper.readValue(inputStream, clazz);
     }
 
     @Override
-    public <OUT> OUT readValue(String json, Class<OUT> clazz) throws Exception {
+    public <OUT> OUT readValue(String json, Class<OUT> clazz) {
         return mapper.readValue(json, clazz);
     }
 
     @Override
-    public <OUT> List<OUT> readValueList(String json, Class<OUT> clazz) throws Exception {
+    public <OUT> List<OUT> readValueList(String json, Class<OUT> clazz) {
         JavaType javaType = mapper.getTypeFactory().constructCollectionType(List.class, clazz);
         return mapper.readValue(json, javaType);
     }

@@ -1,7 +1,7 @@
 package com.flink.platform.dao.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
-import com.baomidou.mybatisplus.extension.handlers.JacksonTypeHandler;
+import com.baomidou.mybatisplus.extension.handlers.Jackson3TypeHandler;
 import com.flink.platform.dao.entity.JobInfo;
 import com.flink.platform.dao.entity.task.BaseJob;
 import org.apache.ibatis.annotations.Param;
@@ -20,7 +20,7 @@ public interface JobInfoMapper extends BaseMapper<JobInfo> {
                 @Result(
                         property = "config",
                         column = "config",
-                        typeHandler = JacksonTypeHandler.class,
+                        typeHandler = Jackson3TypeHandler.class,
                         javaType = BaseJob.class)
             })
     @Select("""
