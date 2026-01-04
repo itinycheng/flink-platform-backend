@@ -1,7 +1,7 @@
 package com.flink.platform.dao.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
-import com.baomidou.mybatisplus.extension.handlers.JacksonTypeHandler;
+import com.baomidou.mybatisplus.extension.handlers.Jackson3TypeHandler;
 import com.flink.platform.dao.entity.JobFlowRun;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Result;
@@ -19,7 +19,7 @@ public interface JobFlowRunMapper extends BaseMapper<JobFlowRun> {
                 @Result(
                         property = "params",
                         column = "params",
-                        typeHandler = JacksonTypeHandler.class,
+                        typeHandler = Jackson3TypeHandler.class,
                         javaType = Map.class)
             })
     @Select("SELECT id, params FROM t_job_flow_run WHERE id = #{id} FOR UPDATE")
