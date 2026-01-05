@@ -63,7 +63,7 @@
 		<shedlock.version>7.5.0</shedlock.version>
 		<grpc-spring-boot.version>3.1.0.RELEASE</grpc-spring-boot.version>
 		<spring-grpc.version>1.0.0</spring-grpc.version>
-		<checkstyle.version>12.3.0</checkstyle.version>
+		<checkstyle.version>13.0.0</checkstyle.version>
 		<maven-checkstyle-plugin.version>3.6.0</maven-checkstyle-plugin.version>
 		<palantir-java-format.version>2.83.0</palantir-java-format.version>
 		<spotless-maven-plugin.version>3.1.0</spotless-maven-plugin.version>
