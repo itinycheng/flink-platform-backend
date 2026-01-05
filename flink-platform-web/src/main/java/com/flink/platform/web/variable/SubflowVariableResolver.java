@@ -44,7 +44,7 @@ public class SubflowVariableResolver implements VariableResolver {
         return result;
     }
 
-    private Map<String, Object> collectSubflowParams(Long flowRunId) {
+    public Map<String, Object> collectSubflowParams(Long flowRunId) {
         var subflowJobRuns = jobRunService.findJobsOfSubflowType(flowRunId);
         var mergedParams = new HashMap<String, Object>();
         for (JobRunInfo subflowJobRun : subflowJobRuns) {

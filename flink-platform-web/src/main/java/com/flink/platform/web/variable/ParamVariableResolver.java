@@ -3,6 +3,7 @@ package com.flink.platform.web.variable;
 import com.flink.platform.dao.entity.JobRunInfo;
 import com.flink.platform.dao.service.JobFlowRunService;
 import com.flink.platform.dao.service.JobParamService;
+import com.flink.platform.web.util.ObjectUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
@@ -29,6 +30,8 @@ public class ParamVariableResolver implements VariableResolver {
 
     private final JobFlowRunService jobFlowRunService;
 
+    private final SubflowVariableResolver subflowResolver;
+
     @Override
     public boolean supports(JobRunInfo jobRun, String content) {
         return jobRun != null && PARAM_PATTERN.matcher(content).find();
@@ -36,15 +39,17 @@ public class ParamVariableResolver implements VariableResolver {
 
     @Override
     public Map<String, Object> resolve(JobRunInfo jobRun, String content) {
-        // priority: global < job flow run < job run
+        // priority: global < merge(sub_flow, job_flow) < job
         var paramMap = new HashMap<String, Object>();
         var globalParams = jobParamService.getJobParams(jobRun.getJobId());
         if (CollectionUtils.isNotEmpty(globalParams)) {
             globalParams.forEach(globalParam -> paramMap.put(globalParam.getParamName(), globalParam.getParamValue()));
         }
 
+        var subflowParamMap = subflowResolver.collectSubflowParams(jobRun.getFlowRunId());
         var jobFlowRun = jobFlowRunService.getById(jobRun.getFlowRunId());
-        var flowParamMap = jobFlowRun != null ? jobFlowRun.getParams() : null;
+        var jobFlowParamMap = jobFlowRun != null ? jobFlowRun.getParams() : null;
+        var flowParamMap = ObjectUtil.merge(jobFlowParamMap, subflowParamMap);
         if (MapUtils.isNotEmpty(flowParamMap)) {
             paramMap.putAll(flowParamMap);
         }

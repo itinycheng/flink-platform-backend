@@ -3,6 +3,7 @@ package com.flink.platform.common.util.json;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JavaType;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.fasterxml.jackson.databind.json.JsonMapper.Builder;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
@@ -58,6 +59,11 @@ public class Jackson2Mapper implements JacksonBaseMapper<JsonMapper> {
     @Override
     public String writeValueAsString(Object obj) throws Exception {
         return mapper.writeValueAsString(obj);
+    }
+
+    @Override
+    public String writeValueAsPrettyString(Object obj) throws Exception {
+        return mapper.writer().with(SerializationFeature.INDENT_OUTPUT).writeValueAsString(obj);
     }
 
     @Override
