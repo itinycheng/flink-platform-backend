@@ -15,7 +15,6 @@ updates:
     labels:
       - "dependencies"
     ignore:
-      - dependency-name: "ru.yandex.clickhouse:clickhouse-jdbc"
       - dependency-name: "org.apache.flink:*"
       - dependency-name: "org.apache.hadoop:*"
       - dependency-name: "org.apache.hive:*"

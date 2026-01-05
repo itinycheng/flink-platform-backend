@@ -53,7 +53,7 @@
 		<commons-collections4.version>4.4</commons-collections4.version>
 		<commons-text.version>1.15.0</commons-text.version>
 		<mysql.version>8.0.32</mysql.version>
-		<clickhouse-jdbc.version>0.3.1</clickhouse-jdbc.version>
+		<clickhouse-jdbc.version>0.9.5</clickhouse-jdbc.version>
 		<hadoop.version>3.3.5</hadoop.version>
 		<hive.version>2.3.9</hive.version>
 		<mybatis-plus.version>3.5.15</mybatis-plus.version>
@@ -70,7 +70,7 @@
 		<maven-shade-plugin.version>3.6.1</maven-shade-plugin.version>
 		<rewrite-maven-plugin.version>6.25.0</rewrite-maven-plugin.version>
 		<rewrite-migrate-java.version>3.20.0</rewrite-migrate-java.version>
-		<rewrite-testing-frameworks.version>3.23.0</rewrite-testing-frameworks.version>
+		<rewrite-spring.version>6.21.0</rewrite-spring.version>
 		<maven-compiler-plugin.version>3.14.1</maven-compiler-plugin.version>
 	</properties>
 
@@ -147,7 +147,7 @@
 				<version>${spring-grpc.version}</version>
 			</dependency>
 			<dependency>
-				<groupId>ru.yandex.clickhouse</groupId>
+				<groupId>com.clickhouse</groupId>
 				<artifactId>clickhouse-jdbc</artifactId>
 				<version>${clickhouse-jdbc.version}</version>
 			</dependency>
@@ -377,7 +377,7 @@
 					<configuration>
 						<activeRecipes>
 							<recipe>org.openrewrite.java.migrate.UpgradeToJava21</recipe>
-							<recipe>org.openrewrite.java.testing.junit5.JUnit5BestPractices</recipe>
+							<recipe>org.openrewrite.java.spring.boot4.UpgradeSpringBoot_4_0</recipe>
 						</activeRecipes>
 						<failOnDryRunResults>true</failOnDryRunResults>
 					</configuration>
@@ -398,8 +398,8 @@
 						</dependency>
 						<dependency>
 							<groupId>org.openrewrite.recipe</groupId>
-							<artifactId>rewrite-testing-frameworks</artifactId>
-							<version>${rewrite-testing-frameworks.version}</version>
+							<artifactId>rewrite-spring</artifactId>
+							<version>${rewrite-spring.version}</version>
 						</dependency>
 					</dependencies>
 				</plugin>
