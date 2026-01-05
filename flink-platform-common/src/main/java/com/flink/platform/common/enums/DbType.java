@@ -5,7 +5,7 @@ import lombok.Getter;
 /** database type. */
 @Getter
 public enum DbType {
-    CLICKHOUSE("ru.yandex.clickhouse.ClickHouseDriver", "SELECT 1"),
+    CLICKHOUSE("com.clickhouse.jdbc.ClickHouseDriver", "SELECT 1"),
     MYSQL("com.mysql.jdbc.Driver", "SELECT 1"),
     HIVE("org.apache.hive.jdbc.HiveDriver", "SELECT 1");
 

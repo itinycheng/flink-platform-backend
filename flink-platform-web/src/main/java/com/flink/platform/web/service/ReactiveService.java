@@ -1,7 +1,6 @@
 package com.flink.platform.web.service;
 
 import com.flink.platform.common.constants.Constant;
-import com.flink.platform.common.enums.DbType;
 import com.flink.platform.common.exception.UnrecoverableException;
 import com.flink.platform.common.util.ExceptionUtil;
 import com.flink.platform.common.util.SqlUtil;
@@ -18,7 +17,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.sql.Array;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -30,6 +28,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.function.BiConsumer;
 
 import static com.flink.platform.web.util.JdbcUtil.createConnection;
+import static com.flink.platform.web.util.JdbcUtil.toJavaObject;
 
 /** Manage datasource service. */
 @Slf4j
@@ -116,7 +115,7 @@ public class ReactiveService {
                     while (resultSet.next()) {
                         var item = new Object[num];
                         for (var i = 1; i <= num; i++) {
-                            item[i - 1] = toJavaObject(dbType, resultSet.getObject(i));
+                            item[i - 1] = toJavaObject(resultSet.getObject(i), dbType);
                         }
                         dataList.add(item);
                     }
@@ -162,26 +161,5 @@ public class ReactiveService {
                 log.error("Consumer command log failed", e);
             }
         };
-    }
-
-    private Object toJavaObject(DbType dbType, Object dbObject) throws Exception {
-        switch (dbType) {
-            case CLICKHOUSE:
-                if (dbObject instanceof Array array) {
-                    var objectArray = array.getArray();
-                    var arrayLength = java.lang.reflect.Array.getLength(objectArray);
-                    var javaObjectArray = new Object[arrayLength];
-                    for (var i = 0; i < arrayLength; i++) {
-                        javaObjectArray[i] = toJavaObject(dbType, java.lang.reflect.Array.get(objectArray, i));
-                    }
-                    return javaObjectArray;
-                } else {
-                    return dbObject;
-                }
-            case MYSQL:
-                return dbObject;
-            default:
-                throw new RuntimeException("unsupported database type:" + dbType);
-        }
     }
 }
