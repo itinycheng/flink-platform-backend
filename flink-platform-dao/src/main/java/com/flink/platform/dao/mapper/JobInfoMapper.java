@@ -1,9 +1,9 @@
 package com.flink.platform.dao.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
-import com.baomidou.mybatisplus.extension.handlers.Jackson3TypeHandler;
 import com.flink.platform.dao.entity.JobInfo;
 import com.flink.platform.dao.entity.task.BaseJob;
+import com.flink.platform.dao.handler.Jackson3TypeHandler;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Result;
 import org.apache.ibatis.annotations.Results;
