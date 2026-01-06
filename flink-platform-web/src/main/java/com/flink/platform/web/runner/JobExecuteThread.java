@@ -33,11 +33,10 @@ import static com.flink.platform.common.enums.ExecutionStatus.CREATED;
 import static com.flink.platform.common.enums.ExecutionStatus.ERROR;
 import static com.flink.platform.common.enums.ExecutionStatus.KILLABLE;
 import static com.flink.platform.common.enums.ExecutionStatus.KILLED;
-import static com.flink.platform.common.enums.ExecutionStatus.NOT_EXIST;
 import static com.flink.platform.common.enums.ExecutionStatus.SUCCESS;
 import static com.flink.platform.grpc.JobGrpcServiceGrpc.JobGrpcServiceBlockingStub;
 import static com.flink.platform.web.util.ThreadUtil.DEFAULT_SLEEP_TIME_MILLIS;
-import static com.flink.platform.web.util.ThreadUtil.MIN_SLEEP_TIME_MILLIS;
+import static com.flink.platform.web.util.ThreadUtil.THREE_SECOND_MILLIS;
 import static java.util.Objects.nonNull;
 
 /** Execute job in a separate thread. */
@@ -139,9 +138,8 @@ public class JobExecuteThread implements Supplier<JobResponse> {
                     .eq(JobInfo::getId, jobId)
                     .eq(JobInfo::getStatus, JobStatus.ONLINE));
             if (jobInfo == null) {
-                log.warn("The job:{} is no longer exists or not in ready/scheduled status.", jobId);
-                jobRunStatus = NOT_EXIST;
-                return;
+                throw new RuntimeException(
+                        "The job: %s is no longer exists or not in ready/scheduled status.".formatted(jobId));
             }
 
             // Get or create new jobRun.
@@ -224,7 +222,7 @@ public class JobExecuteThread implements Supplier<JobResponse> {
 
     public void sleepRetry(Duration interval) {
         if (interval == null || !interval.isPositive()) {
-            ThreadUtil.sleep(MIN_SLEEP_TIME_MILLIS);
+            ThreadUtil.sleep(THREE_SECOND_MILLIS);
             return;
         }
 
@@ -235,8 +233,8 @@ public class JobExecuteThread implements Supplier<JobResponse> {
             }
 
             var tmp = remaining;
-            remaining = remaining - MIN_SLEEP_TIME_MILLIS;
-            ThreadUtil.sleep(remaining > 0 ? MIN_SLEEP_TIME_MILLIS : tmp);
+            remaining = remaining - THREE_SECOND_MILLIS;
+            ThreadUtil.sleep(remaining > 0 ? THREE_SECOND_MILLIS : tmp);
         }
     }
 
@@ -265,7 +263,6 @@ public class JobExecuteThread implements Supplier<JobResponse> {
     public StatusInfo updateAndWaitForComplete(JobGrpcServiceBlockingStub stub, JobRunInfo jobRun) {
         while (AppRunner.isRunning()) {
             try {
-                // Get and correct job status.
                 var request = buildJobStatusRequest(jobRun);
                 var jobStatusReply = stub.getJobStatus(request);
                 var statusInfo = StatusInfo.fromReplay(jobStatusReply);
@@ -294,18 +291,18 @@ public class JobExecuteThread implements Supplier<JobResponse> {
                 .build();
     }
 
-    private void updateJobRunIfNeeded(JobRunInfo jobRunInfo, StatusInfo statusInfo, Exception exception) {
+    private void updateJobRunIfNeeded(JobRunInfo jobRun, StatusInfo statusInfo, Exception exception) {
         try {
-            if (jobRunInfo == null || jobRunInfo.getId() == null) {
+            if (jobRun == null || jobRun.getId() == null) {
                 return;
             }
 
-            if (jobRunInfo.getStatus() == statusInfo.getStatus()) {
+            if (jobRun.getStatus() == statusInfo.getStatus()) {
                 return;
             }
 
             var newJobRun = new JobRunInfo();
-            newJobRun.setId(jobRunInfo.getId());
+            newJobRun.setId(jobRun.getId());
             newJobRun.setStatus(statusInfo.getStatus());
             if (statusInfo.getStatus().isTerminalState()) {
                 var endTime = statusInfo.toEndTime();
@@ -320,7 +317,7 @@ public class JobExecuteThread implements Supplier<JobResponse> {
             }
 
             jobRunInfoService.updateById(newJobRun);
-            jobRunInfo.setStatus(statusInfo.getStatus());
+            jobRun.setStatus(statusInfo.getStatus());
         } catch (Exception e) {
             log.error("Update job run status failed", e);
         }

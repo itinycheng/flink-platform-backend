@@ -16,12 +16,18 @@ public enum ExecutionStatus {
     SUCCESS(2, TerminalState.TERMINAL),
     FAILURE(3, TerminalState.TERMINAL),
     KILLED(4, TerminalState.TERMINAL),
+
+    @Deprecated
     ABNORMAL(5, TerminalState.TERMINAL),
 
     /** Internal status for job run only. */
     ERROR(6, TerminalState.TERMINAL),
+
+    @Deprecated
     NOT_EXIST(7, TerminalState.TERMINAL),
     CREATED(8, TerminalState.NON_TERMINAL),
+
+    // TODO: rename to KILLING
     KILLABLE(9, TerminalState.NON_TERMINAL),
 
     /** ! Only for jobFlow final status. */
@@ -51,10 +57,6 @@ public enum ExecutionStatus {
 
     public boolean isTerminalState() {
         return terminalState == TerminalState.TERMINAL;
-    }
-
-    public static boolean isStopFlowState(ExecutionStatus status) {
-        return status == ERROR || status == NOT_EXIST;
     }
 
     public static List<ExecutionStatus> getNonTerminals() {
