@@ -31,9 +31,10 @@ public class Jackson2Mapper implements JacksonBaseMapper<JsonMapper> {
     public final JsonMapper mapper;
 
     public Jackson2Mapper() {
-        mapper = jacksonBuilderWithGlobalConfigs()
-                .defaultPropertyInclusion(JsonInclude.Value.empty().withValueInclusion(JsonInclude.Include.ALWAYS))
-                .build();
+        Builder builder = JsonMapper.builder();
+        jacksonBuilderWithGlobalConfigs(builder);
+        builder.defaultPropertyInclusion(JsonInclude.Value.empty().withValueInclusion(JsonInclude.Include.ALWAYS));
+        mapper = builder.build();
     }
 
     @Override
@@ -86,9 +87,8 @@ public class Jackson2Mapper implements JacksonBaseMapper<JsonMapper> {
     // ============== jackson global configs ==============
     // ====================================================
 
-    public static JsonMapper.Builder jacksonBuilderWithGlobalConfigs() {
-        Builder builder = JsonMapper.builder()
-                .addModule(new Jdk8Module())
+    public static void jacksonBuilderWithGlobalConfigs(JsonMapper.Builder builder) {
+        builder.addModule(new Jdk8Module())
                 .addModule(new JavaTimeModule()
                         .addSerializer(
                                 LocalDateTime.class, new LocalDateTimeSerializer(ofPattern(GLOBAL_DATE_TIME_FORMAT)))
@@ -97,6 +97,5 @@ public class Jackson2Mapper implements JacksonBaseMapper<JsonMapper> {
                 .defaultTimeZone(GLOBAL_TIME_ZONE);
         builder.configure(PROPAGATE_TRANSIENT_MARKER, true);
         builder.configure(FAIL_ON_UNKNOWN_PROPERTIES, false);
-        return builder;
     }
 }
