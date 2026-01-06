@@ -35,6 +35,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledExecutorService;
 
+import static com.flink.platform.web.util.ThreadUtil.THREE_SECOND_MILLIS;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.apache.commons.lang3.ArrayUtils.EMPTY_STRING_ARRAY;
@@ -98,7 +99,7 @@ public class HadoopService {
                 () -> ExceptionUtil.runWithErrorLogging(this::refreshReport), RandomUtils.nextInt(10, 30), 40, SECONDS);
     }
 
-    @Retryable(maxRetries = 4, delay = 1500, multiplier = 2, predicate = AppRunningRetryPredicate.class)
+    @Retryable(maxRetries = 8, delay = 1500, multiplier = 2, predicate = AppRunningRetryPredicate.class)
     public ApplicationStatusReport getStatusReportWithRetry(String applicationTag) throws Exception {
         if (StringUtils.isEmpty(applicationTag)) {
             log.warn("The application tag is empty.");
@@ -206,7 +207,7 @@ public class HadoopService {
     private List<ApplicationReport> getReportsWithRetry(@Nonnull Set<String> applicationTags) throws Exception {
         var applications = yarnClient.getApplications(null, null, applicationTags);
         if (CollectionUtils.isEmpty(applications)) {
-            ThreadUtil.sleep(1500);
+            ThreadUtil.sleep(THREE_SECOND_MILLIS);
             applications = yarnClient.getApplications(null, null, applicationTags);
         }
         return applications;

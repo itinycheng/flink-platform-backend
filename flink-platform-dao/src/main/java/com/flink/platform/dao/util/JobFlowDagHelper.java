@@ -42,13 +42,11 @@ public class JobFlowDagHelper {
                     // terminal status, keep the current `if.else` order is very important.
                     if (statusList.contains(ERROR)) {
                         return ERROR;
-                    } else if (statusList.contains(NOT_EXIST)) {
-                        return NOT_EXIST;
-                    } else if (statusList.contains(ABNORMAL)) {
-                        return ABNORMAL;
                     } else if (statusList.contains(KILLED)) {
                         return KILLED;
-                    } else if (statusList.contains(FAILURE)) {
+                    } else if (statusList.contains(FAILURE)
+                            || statusList.contains(NOT_EXIST)
+                            || statusList.contains(ABNORMAL)) {
                         return determineFailureStatus(dag);
                     } else if (statusList.contains(SUCCESS)) {
                         return SUCCESS;
@@ -61,10 +59,6 @@ public class JobFlowDagHelper {
 
     public static boolean hasUnExecutedVertices(JobFlowDag dag) {
         Set<JobVertex> vertices = dag.getVertices();
-        if (vertices.stream().map(JobVertex::getJobRunStatus).anyMatch(ExecutionStatus::isStopFlowState)) {
-            return false;
-        }
-
         if (vertices.stream()
                 .map(JobVertex::getJobRunStatus)
                 .filter(Objects::nonNull)
@@ -132,20 +126,20 @@ public class JobFlowDagHelper {
 
         // If toVertex is executed, use it as fromVertex to find the next executable vertex.
         Set<JobVertex> executedVertices = new HashSet<>();
-        Set<JobVertex> unExecutedVertices = new HashSet<>();
+        Set<JobVertex> unexecutedVertices = new HashSet<>();
         for (JobVertex executableToVertex : executableToVertices) {
             if (executableToVertex.getJobRunStatus() != null) {
                 executedVertices.add(executableToVertex);
             } else {
-                unExecutedVertices.add(executableToVertex);
+                unexecutedVertices.add(executableToVertex);
             }
         }
 
         if (CollectionUtils.isNotEmpty(executedVertices)) {
-            unExecutedVertices.addAll(getNextExecutableVertices(executedVertices, dag));
+            unexecutedVertices.addAll(getNextExecutableVertices(executedVertices, dag));
         }
 
-        return unExecutedVertices;
+        return unexecutedVertices;
     }
 
     private static ExecutionStatus determineFailureStatus(DAG<Long, JobVertex, JobEdge> dag) {

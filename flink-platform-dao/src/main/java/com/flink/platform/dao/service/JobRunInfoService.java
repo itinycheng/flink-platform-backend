@@ -11,11 +11,13 @@ import com.flink.platform.dao.mapper.JobRunInfoMapper;
 import jakarta.annotation.Nonnull;
 import org.springframework.stereotype.Service;
 
+import java.io.Serializable;
 import java.util.List;
 
 import static com.flink.platform.common.enums.ExecutionStatus.UNEXPECTED;
 import static com.flink.platform.common.enums.ExecutionStatus.getNonTerminals;
 import static com.flink.platform.common.enums.JobType.SUB_FLOW;
+import static com.flink.platform.dao.entity.JobInfo.LARGE_FIELDS;
 
 /** job run info. */
 @Service
@@ -45,5 +47,12 @@ public class JobRunInfoService extends ServiceImpl<JobRunInfoMapper, JobRunInfo>
                 .select(JobRunInfo::getId, JobRunInfo::getBackInfo, JobRunInfo::getConfig)
                 .eq(JobRunInfo::getFlowRunId, flowRunId)
                 .in(JobRunInfo::getType, SUB_FLOW));
+    }
+
+    public JobRunInfo getLiteById(Serializable id) {
+        return getOne(new QueryWrapper<JobRunInfo>()
+                .lambda()
+                .select(JobRunInfo.class, field -> !LARGE_FIELDS.contains(field.getProperty()))
+                .eq(JobRunInfo::getId, id));
     }
 }

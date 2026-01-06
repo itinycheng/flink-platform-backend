@@ -11,7 +11,8 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
-import static com.flink.platform.common.enums.ExecutionStatus.NOT_EXIST;
+import static com.flink.platform.common.constants.Constant.EMPTY;
+import static com.flink.platform.common.enums.ExecutionStatus.FAILURE;
 
 /** status monitor. */
 @Slf4j
@@ -41,10 +42,10 @@ public class YarnStatusFetcher implements StatusFetcher {
             var statusReport = hadoopService.getStatusReportWithRetry(applicationTag);
             if (statusReport != null) {
                 return newJobStatusReply(
-                        statusReport.getStatus(), statusReport.getStartTime(), statusReport.getFinishTime());
+                        statusReport.getStatus(), statusReport.getStartTime(), statusReport.getFinishTime(), EMPTY);
             } else {
                 long currentTimeMillis = System.currentTimeMillis();
-                return newJobStatusReply(NOT_EXIST, currentTimeMillis, currentTimeMillis);
+                return newJobStatusReply(FAILURE, currentTimeMillis, currentTimeMillis, "Application not found");
             }
         } catch (Exception e) {
             log.error("Use yarn client to get ApplicationReport failed, application tag: {}", applicationTag, e);
@@ -52,11 +53,12 @@ public class YarnStatusFetcher implements StatusFetcher {
         }
     }
 
-    private JobStatusReply newJobStatusReply(ExecutionStatus status, long startTime, long endTime) {
+    private JobStatusReply newJobStatusReply(ExecutionStatus status, long startTime, long endTime, String message) {
         return JobStatusReply.newBuilder()
                 .setStatus(status.getCode())
                 .setStartTime(startTime)
                 .setEndTime(endTime)
+                .setMessage(message)
                 .build();
     }
 }

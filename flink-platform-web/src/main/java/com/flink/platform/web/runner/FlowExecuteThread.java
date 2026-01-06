@@ -1,7 +1,6 @@
 package com.flink.platform.web.runner;
 
 import com.flink.platform.alert.AlertSendingService;
-import com.flink.platform.common.enums.ExecutionStatus;
 import com.flink.platform.common.enums.TimeoutStrategy;
 import com.flink.platform.common.model.JobVertex;
 import com.flink.platform.dao.entity.JobFlowDag;
@@ -45,8 +44,6 @@ public class FlowExecuteThread implements Runnable {
 
     private final KillJobService killJobService = SpringContext.getBean(KillJobService.class);
 
-    private volatile boolean isRunning = true;
-
     public FlowExecuteThread(@Nonnull JobFlowRun jobFlowRun, @Nonnull WorkerConfig workerConfig) {
         this.jobFlowRun = jobFlowRun;
         this.workerConfig = workerConfig;
@@ -77,7 +74,7 @@ public class FlowExecuteThread implements Runnable {
         var timeout = jobFlowRun.getTimeout();
         var startTime = jobFlowRun.getStartTime();
         var timeoutHandled = false;
-        while (isRunning && flow.hasUnExecutedVertices()) {
+        while (flow.hasUnExecutedVertices()) {
             if (AppRunner.isStopped()) {
                 return;
             }
@@ -122,7 +119,7 @@ public class FlowExecuteThread implements Runnable {
     // ! synchronized won't unmount the virtual thread, and thus block both its carrier and the underlying OS thread.
     // ! This doesn't make an application incorrect, but it might hinder its scalability.
     private synchronized void execVertex(JobVertex jobVertex, JobFlowDag flow) {
-        if (!isRunning || AppRunner.isStopped()) {
+        if (AppRunner.isStopped()) {
             return;
         }
 
@@ -145,25 +142,11 @@ public class FlowExecuteThread implements Runnable {
         jobVertex.setJobRunId(jobResponse.getJobRunId());
         jobVertex.setJobRunStatus(jobResponse.getStatus());
 
-        var finalStatus = jobResponse.getStatus();
-        if (ExecutionStatus.isStopFlowState(finalStatus)) {
-            killFlow();
-            return;
-        }
-
         for (var nextVertex : flow.getNextVertices(jobVertex)) {
             if (flow.isPreconditionSatisfied(nextVertex)) {
                 execVertex(nextVertex, flow);
             }
         }
-    }
-
-    private void killFlow() {
-        isRunning = false;
-        // TODO：Better to cancel the running jobs?
-        // Seems different scenarios have different results.
-        // TODO：Handle semaphore.
-        runningJobs.values().forEach(future -> future.complete(null));
     }
 
     private int getParallelism() {
