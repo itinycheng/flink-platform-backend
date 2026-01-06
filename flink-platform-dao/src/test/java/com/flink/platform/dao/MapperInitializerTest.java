@@ -56,7 +56,7 @@ class MapperInitializerTest {
         System.out.println("msg: " + jobCallback.getMessage().length());
         System.out.println("std: " + jobCallback.getStdMsg().length());
 
-        jobRunInfo.setBackInfo(jobCallback);
+        jobRunInfo.setTrimmedBackInfo(jobCallback);
         JobCallback back = jobRunInfo.getBackInfo();
         String jsonString = JsonUtil.toJsonString(back);
         System.out.println(jsonString.length());

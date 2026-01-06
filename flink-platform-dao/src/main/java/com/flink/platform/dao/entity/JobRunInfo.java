@@ -4,7 +4,6 @@ import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
-import com.baomidou.mybatisplus.extension.handlers.Jackson3TypeHandler;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.flink.platform.common.enums.DeployMode;
 import com.flink.platform.common.enums.ExecutionMode;
@@ -12,6 +11,7 @@ import com.flink.platform.common.enums.ExecutionStatus;
 import com.flink.platform.common.enums.JobType;
 import com.flink.platform.dao.entity.result.JobCallback;
 import com.flink.platform.dao.entity.task.BaseJob;
+import com.flink.platform.dao.handler.Jackson3TypeHandler;
 import lombok.AccessLevel;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -106,44 +106,41 @@ public class JobRunInfo implements Serializable {
      * The type of back_info column is TEXT and max size of TEXT is 64K.<br>
      * Storing data in HDFS is a better solution.
      */
-    public JobCallback getBackInfo() {
-        if (backInfo == null) {
-            return null;
-        }
+    public void setTrimmedBackInfo(JobCallback backInfo) {
+        if (backInfo != null) {
+            int maxLen = 50_000;
+            int count = 0;
 
-        int maxLen = 50_000;
-        int count = 0;
-
-        // error msg.
-        String errMsg = defaultString(backInfo.getErrMsg());
-        count = count + errMsg.length();
-        if (count >= maxLen) {
-            backInfo.setErrMsg(errMsg.substring(0, maxLen));
-            backInfo.setMessage(null);
-            backInfo.setStdMsg(null);
-        }
-
-        // message.
-        if (count < maxLen) {
-            String message = defaultString(backInfo.getMessage());
-            int prevCount = count;
-            count = count + message.length();
+            // error msg.
+            String errMsg = defaultString(backInfo.getErrMsg());
+            count = count + errMsg.length();
             if (count >= maxLen) {
-                backInfo.setMessage(message.substring(0, maxLen - prevCount));
+                backInfo.setErrMsg(errMsg.substring(0, maxLen));
+                backInfo.setMessage(null);
                 backInfo.setStdMsg(null);
             }
-        }
 
-        // std msg.
-        if (count < maxLen) {
-            String stdMsg = defaultString(backInfo.getStdMsg());
-            int prevCount = count;
-            count = count + stdMsg.length();
-            if (count >= maxLen) {
-                backInfo.setStdMsg(stdMsg.substring(0, maxLen - prevCount));
+            // message.
+            if (count < maxLen) {
+                String message = defaultString(backInfo.getMessage());
+                int prevCount = count;
+                count = count + message.length();
+                if (count >= maxLen) {
+                    backInfo.setMessage(message.substring(0, maxLen - prevCount));
+                    backInfo.setStdMsg(null);
+                }
+            }
+
+            // std msg.
+            if (count < maxLen) {
+                String stdMsg = defaultString(backInfo.getStdMsg());
+                int prevCount = count;
+                count = count + stdMsg.length();
+                if (count >= maxLen) {
+                    backInfo.setStdMsg(stdMsg.substring(0, maxLen - prevCount));
+                }
             }
         }
-
-        return backInfo;
+        setBackInfo(backInfo);
     }
 }
