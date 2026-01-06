@@ -99,7 +99,7 @@ public class ProcessJobService {
         newJobRun = new JobRunInfo();
         newJobRun.setId(jobRun.getId());
         newJobRun.setStatus(executionStatus);
-        newJobRun.setBackInfo(callback);
+        newJobRun.setTrimmedBackInfo(callback);
         if (executionStatus.isTerminalState()) {
             newJobRun.setEndTime(LocalDateTime.now());
         }

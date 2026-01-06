@@ -16,7 +16,7 @@ public class JacksonConfig {
     @Bean
     public JsonMapperBuilderCustomizer customizeObjectMapper() {
         if (JsonUtil.MAPPER instanceof Jackson3Mapper jackson) {
-            return builder -> jackson.jacksonBuilderWithGlobalConfigs();
+            return jackson::jacksonBuilderWithGlobalConfigs;
         } else {
             throw new RuntimeException("Jackson 3.x not found, please include Jackson 3.x dependency.");
         }

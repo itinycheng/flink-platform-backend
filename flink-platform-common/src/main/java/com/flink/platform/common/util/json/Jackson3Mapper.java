@@ -30,9 +30,10 @@ public class Jackson3Mapper implements JacksonBaseMapper<JsonMapper> {
     public final JsonMapper mapper;
 
     public Jackson3Mapper() {
-        mapper = jacksonBuilderWithGlobalConfigs()
-                .changeDefaultPropertyInclusion(incl -> incl.withValueInclusion(JsonInclude.Include.ALWAYS))
-                .build();
+        Builder builder = JsonMapper.builder();
+        jacksonBuilderWithGlobalConfigs(builder);
+        builder.changeDefaultPropertyInclusion(incl -> incl.withValueInclusion(JsonInclude.Include.ALWAYS));
+        mapper = builder.build();
     }
 
     @Override
@@ -85,9 +86,8 @@ public class Jackson3Mapper implements JacksonBaseMapper<JsonMapper> {
     // ============== jackson global configs ==============
     // ====================================================
 
-    public JsonMapper.Builder jacksonBuilderWithGlobalConfigs() {
-        Builder builder = JsonMapper.builder()
-                .addModule(new SimpleModule()
+    public void jacksonBuilderWithGlobalConfigs(JsonMapper.Builder builder) {
+        builder.addModule(new SimpleModule()
                         .addSerializer(
                                 LocalDateTime.class, new LocalDateTimeSerializer(ofPattern(GLOBAL_DATE_TIME_FORMAT)))
                         .addDeserializer(
@@ -95,6 +95,5 @@ public class Jackson3Mapper implements JacksonBaseMapper<JsonMapper> {
                 .defaultTimeZone(GLOBAL_TIME_ZONE);
         builder.configure(PROPAGATE_TRANSIENT_MARKER, true);
         builder.configure(FAIL_ON_UNKNOWN_PROPERTIES, false);
-        return builder;
     }
 }
