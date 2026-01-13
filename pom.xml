@@ -53,7 +53,7 @@
 		<commons-collections4.version>4.4</commons-collections4.version>
 		<commons-text.version>1.15.0</commons-text.version>
 		<mysql.version>8.0.32</mysql.version>
-		<clickhouse-jdbc.version>0.9.5</clickhouse-jdbc.version>
+		<clickhouse-jdbc.version>0.9.6</clickhouse-jdbc.version>
 		<hadoop.version>3.3.5</hadoop.version>
 		<hive.version>2.3.9</hive.version>
 		<mybatis-plus.version>3.5.16</mybatis-plus.version>
