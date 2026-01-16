@@ -1,9 +1,9 @@
 package com.flink.platform.common.enums;
 
 /**
- * inherit param mode.
+ * param transfer mode.
  */
-public enum InheritParamMode {
+public enum ParamTransferMode {
     ALLOW,
     DENY,
     CUSTOM

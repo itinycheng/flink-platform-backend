@@ -58,16 +58,16 @@ public class SubflowVariableResolver implements VariableResolver {
                 continue;
             }
 
-            switch (config.getInheritParamMode()) {
+            switch (config.getParamTransferMode()) {
                 case ALLOW -> subflowParams.forEach((k, v) -> mergeParamIntoMap(mergedParams, k, v));
                 case CUSTOM -> {
-                    var inheritableParamNames = config.getParamNames();
-                    if (inheritableParamNames == null || inheritableParamNames.isEmpty()) {
+                    var validParamNames = config.getParamNames();
+                    if (validParamNames == null || validParamNames.isEmpty()) {
                         break;
                     }
 
                     subflowParams.forEach((k, v) -> {
-                        if (inheritableParamNames.contains(k)) {
+                        if (validParamNames.contains(k)) {
                             mergeParamIntoMap(mergedParams, k, v);
                         }
                     });

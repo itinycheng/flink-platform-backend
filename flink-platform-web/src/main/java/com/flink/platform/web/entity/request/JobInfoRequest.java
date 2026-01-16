@@ -120,7 +120,6 @@ public class JobInfoRequest {
         return requireNotNull(getSubject(), "The job subject cannot be null");
     }
 
-
     private String verifyConfig() {
         var config = getConfig();
         if (config == null) {
@@ -201,8 +200,8 @@ public class JobInfoRequest {
             return "The expectedFailureCorrectedTo of FlowJob cannot be null";
         }
 
-        if (flowJob.getInheritParamMode() == null) {
-            return "The inheritParamMode of FlowJob cannot be null";
+        if (flowJob.getParamTransferMode() == null) {
+            return "The paramTransferMode of FlowJob cannot be null";
         }
 
         return null;
