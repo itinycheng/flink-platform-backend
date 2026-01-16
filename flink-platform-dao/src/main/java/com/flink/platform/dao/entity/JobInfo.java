@@ -21,7 +21,6 @@ import lombok.Setter;
 import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * job config info. <br>
@@ -31,8 +30,6 @@ import java.util.Set;
 @NoArgsConstructor
 @TableName(value = "t_job", autoResultMap = true)
 public class JobInfo implements Serializable {
-
-    public static final Set<String> LARGE_FIELDS = Set.of("config", "params", "subject");
 
     @TableId(value = "id", type = IdType.AUTO)
     private Long id;

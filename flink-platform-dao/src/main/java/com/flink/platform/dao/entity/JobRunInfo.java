@@ -22,7 +22,6 @@ import java.io.Serializable;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.Map;
-import java.util.Set;
 
 import static com.flink.platform.common.constants.Constant.EMPTY;
 import static org.apache.commons.lang3.StringUtils.defaultString;
@@ -32,8 +31,6 @@ import static org.apache.commons.lang3.StringUtils.defaultString;
 @NoArgsConstructor
 @TableName(value = "t_job_run", autoResultMap = true)
 public class JobRunInfo implements Serializable {
-
-    public static final Set<String> LARGE_FIELDS = Set.of("backInfo", "config", "params", "subject");
 
     @TableId(value = "id", type = IdType.AUTO)
     private Long id;

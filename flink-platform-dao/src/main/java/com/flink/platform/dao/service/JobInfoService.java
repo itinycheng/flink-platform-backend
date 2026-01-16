@@ -2,6 +2,7 @@ package com.flink.platform.dao.service;
 
 import com.baomidou.dynamic.datasource.annotation.DS;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.metadata.TableFieldInfo;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.flink.platform.dao.entity.JobFlowRun;
 import com.flink.platform.dao.entity.JobInfo;
@@ -17,8 +18,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
-import static com.flink.platform.dao.entity.JobInfo.LARGE_FIELDS;
 import static java.util.stream.Collectors.toSet;
 
 /** job config info. */
@@ -26,6 +27,8 @@ import static java.util.stream.Collectors.toSet;
 @DS("master_platform")
 @RequiredArgsConstructor(onConstructor_ = @Autowired)
 public class JobInfoService extends ServiceImpl<JobInfoMapper, JobInfo> {
+
+    public static final Set<String> LARGE_FIELDS = Set.of("params", "subject");
 
     private final JobRunInfoService jobRunService;
 
@@ -38,7 +41,7 @@ public class JobInfoService extends ServiceImpl<JobInfoMapper, JobInfo> {
 
         return super.list(new QueryWrapper<JobInfo>()
                 .lambda()
-                .select(JobInfo.class, field -> !LARGE_FIELDS.contains(field.getProperty()))
+                .select(JobInfo.class, this::isNonLargeField)
                 .in(JobInfo::getId, jobIds));
     }
 
@@ -68,5 +71,9 @@ public class JobInfoService extends ServiceImpl<JobInfoMapper, JobInfo> {
                 .filter(job -> ((FlowJob) job.getConfig()).getFlowId() == flowId)
                 .findAny()
                 .orElse(null);
+    }
+
+    public boolean isNonLargeField(TableFieldInfo field) {
+        return !LARGE_FIELDS.contains(field.getProperty());
     }
 }

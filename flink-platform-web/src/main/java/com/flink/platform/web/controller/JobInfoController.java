@@ -44,7 +44,6 @@ import static com.flink.platform.common.enums.ResponseStatus.OPERATION_NOT_ALLOW
 import static com.flink.platform.common.enums.ResponseStatus.SERVICE_ERROR;
 import static com.flink.platform.common.enums.ResponseStatus.USER_HAVE_NO_PERMISSION;
 import static com.flink.platform.common.util.DateUtil.GLOBAL_DATE_TIME_FORMAT;
-import static com.flink.platform.dao.entity.JobInfo.LARGE_FIELDS;
 import static com.flink.platform.web.entity.response.ResultInfo.failure;
 import static com.flink.platform.web.entity.response.ResultInfo.success;
 import static java.util.Objects.nonNull;
@@ -179,7 +178,7 @@ public class JobInfoController {
 
         var list = jobInfoService.list(new QueryWrapper<JobInfo>()
                 .lambda()
-                .select(JobInfo.class, field -> !LARGE_FIELDS.contains(field.getProperty()))
+                .select(JobInfo.class, jobInfoService::isNonLargeField)
                 .eq(JobInfo::getFlowId, flowId)
                 .in(isNotEmpty(jobIds), JobInfo::getId, jobIds));
         return success(list);
@@ -193,7 +192,7 @@ public class JobInfoController {
 
         var jobs = jobInfoService.list(new QueryWrapper<JobInfo>()
                 .lambda()
-                .select(JobInfo.class, field -> !LARGE_FIELDS.contains(field.getProperty()))
+                .select(JobInfo.class, jobInfoService::isNonLargeField)
                 .in(JobInfo::getId, ids));
         return success(jobs);
     }

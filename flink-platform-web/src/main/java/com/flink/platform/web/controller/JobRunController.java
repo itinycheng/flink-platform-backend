@@ -32,7 +32,6 @@ import java.util.Collections;
 import static com.flink.platform.common.enums.ExecutionStatus.getNonTerminals;
 import static com.flink.platform.common.enums.ResponseStatus.NO_RUNNING_JOB_FOUND;
 import static com.flink.platform.common.util.DateUtil.GLOBAL_DATE_TIME_FORMAT;
-import static com.flink.platform.dao.entity.JobRunInfo.LARGE_FIELDS;
 import static com.flink.platform.web.entity.response.ResultInfo.failure;
 import static com.flink.platform.web.entity.response.ResultInfo.success;
 import static java.util.Objects.nonNull;
@@ -73,7 +72,7 @@ public class JobRunController {
             @RequestParam(name = "sort", required = false) String sort) {
         var queryWrapper = new QueryWrapper<JobRunInfo>()
                 .lambda()
-                .select(JobRunInfo.class, field -> !LARGE_FIELDS.contains(field.getProperty()))
+                .select(JobRunInfo.class, jobRunInfoService::isNonLargeField)
                 .eq(JobRunInfo::getUserId, loginUser.getId())
                 .eq(nonNull(id), JobRunInfo::getId, id)
                 .eq(nonNull(flowRunId), JobRunInfo::getFlowRunId, flowRunId)
