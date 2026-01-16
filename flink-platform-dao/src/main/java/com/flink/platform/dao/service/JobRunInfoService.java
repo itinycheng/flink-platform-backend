@@ -2,6 +2,7 @@ package com.flink.platform.dao.service;
 
 import com.baomidou.dynamic.datasource.annotation.DS;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.metadata.TableFieldInfo;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.flink.platform.common.enums.JobFlowStatus;
 import com.flink.platform.common.enums.JobFlowType;
@@ -13,16 +14,18 @@ import org.springframework.stereotype.Service;
 
 import java.io.Serializable;
 import java.util.List;
+import java.util.Set;
 
 import static com.flink.platform.common.enums.ExecutionStatus.UNEXPECTED;
 import static com.flink.platform.common.enums.ExecutionStatus.getNonTerminals;
 import static com.flink.platform.common.enums.JobType.SUB_FLOW;
-import static com.flink.platform.dao.entity.JobInfo.LARGE_FIELDS;
 
 /** job run info. */
 @Service
 @DS("master_platform")
 public class JobRunInfoService extends ServiceImpl<JobRunInfoMapper, JobRunInfo> {
+
+    public static final Set<String> LARGE_FIELDS = Set.of("backInfo", "params", "subject");
 
     public List<JobRunInfo> listLastWithoutLargeFields(Long flowRunId, List<Long> jobIds) {
         return this.baseMapper.lastJobRunList(flowRunId, jobIds);
@@ -52,7 +55,11 @@ public class JobRunInfoService extends ServiceImpl<JobRunInfoMapper, JobRunInfo>
     public JobRunInfo getLiteById(Serializable id) {
         return getOne(new QueryWrapper<JobRunInfo>()
                 .lambda()
-                .select(JobRunInfo.class, field -> !LARGE_FIELDS.contains(field.getProperty()))
+                .select(JobRunInfo.class, this::isNonLargeField)
                 .eq(JobRunInfo::getId, id));
+    }
+
+    public boolean isNonLargeField(TableFieldInfo field) {
+        return !LARGE_FIELDS.contains(field.getProperty());
     }
 }
