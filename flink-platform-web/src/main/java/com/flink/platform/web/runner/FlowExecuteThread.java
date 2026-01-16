@@ -23,6 +23,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Semaphore;
 
 import static com.flink.platform.common.enums.ExecutionStatus.RUNNING;
+import static com.flink.platform.web.util.ThreadUtil.FIVE_SECOND_MILLIS;
 
 /** Process flow in a separate thread. */
 @Slf4j
@@ -74,7 +75,7 @@ public class FlowExecuteThread implements Runnable {
         var timeout = jobFlowRun.getTimeout();
         var startTime = jobFlowRun.getStartTime();
         var timeoutHandled = false;
-        while (flow.hasUnExecutedVertices()) {
+        while (flow.hasUnexecutedVertices()) {
             if (AppRunner.isStopped()) {
                 return;
             }
@@ -85,7 +86,7 @@ public class FlowExecuteThread implements Runnable {
                 timeoutHandled = true;
             }
 
-            ThreadUtil.safeSleep(5000);
+            ThreadUtil.safeSleep(FIVE_SECOND_MILLIS);
         }
 
         // Wait for all jobs complete.

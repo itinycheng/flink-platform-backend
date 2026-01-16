@@ -35,7 +35,7 @@ import static com.flink.platform.common.enums.ExecutionStatus.KILLABLE;
 import static com.flink.platform.common.enums.ExecutionStatus.KILLED;
 import static com.flink.platform.common.enums.ExecutionStatus.SUCCESS;
 import static com.flink.platform.grpc.JobGrpcServiceGrpc.JobGrpcServiceBlockingStub;
-import static com.flink.platform.web.util.ThreadUtil.DEFAULT_SLEEP_TIME_MILLIS;
+import static com.flink.platform.web.util.ThreadUtil.FIVE_SECOND_MILLIS;
 import static com.flink.platform.web.util.ThreadUtil.THREE_SECOND_MILLIS;
 import static java.util.Objects.nonNull;
 
@@ -276,7 +276,7 @@ public class JobExecuteThread implements Supplier<JobResponse> {
                 log.error("Fetch job status failed", e);
             }
 
-            ThreadUtil.sleep(DEFAULT_SLEEP_TIME_MILLIS);
+            ThreadUtil.sleep(FIVE_SECOND_MILLIS);
         }
 
         return null;

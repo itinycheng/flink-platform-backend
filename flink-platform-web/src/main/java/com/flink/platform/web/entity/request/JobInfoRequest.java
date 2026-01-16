@@ -1,10 +1,10 @@
 package com.flink.platform.web.entity.request;
 
-import com.flink.platform.common.enums.DependentStrategy;
 import com.flink.platform.dao.entity.JobInfo;
 import com.flink.platform.dao.entity.LongArrayList;
 import com.flink.platform.dao.entity.task.BaseJob;
 import com.flink.platform.dao.entity.task.DependentJob;
+import com.flink.platform.dao.entity.task.FlowJob;
 import com.flink.platform.dao.entity.task.ShellJob;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -12,7 +12,6 @@ import lombok.experimental.Delegate;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 
-import java.time.Duration;
 import java.util.regex.Pattern;
 
 import static com.flink.platform.common.enums.DependentStrategy.LAST_EXECUTION_AFTER_TIME;
@@ -121,9 +120,9 @@ public class JobInfoRequest {
         return requireNotNull(getSubject(), "The job subject cannot be null");
     }
 
-    @SuppressWarnings("D")
+
     private String verifyConfig() {
-        BaseJob config = getConfig();
+        var config = getConfig();
         if (config == null) {
             return null;
         }
@@ -133,13 +132,13 @@ public class JobInfoRequest {
         }
 
         if (config.getRetryTimes() > 0) {
-            Duration interval = config.parseRetryInterval();
+            var interval = config.parseRetryInterval();
             if (interval == null || interval.isZero() || interval.isNegative()) {
                 return "The retry interval is invalid";
             }
         }
 
-        Duration timeout = config.parseTimeout();
+        var timeout = config.parseTimeout();
         if (timeout != null && (timeout.isZero() || timeout.isNegative())) {
             return "The timeout of job cannot be zero or negative";
         }
@@ -148,24 +147,12 @@ public class JobInfoRequest {
             return "The timeout of shell job cannot be null";
         }
 
-        DependentJob dependentJob = config.unwrap(DependentJob.class);
-        if (dependentJob != null && CollectionUtils.isNotEmpty(dependentJob.getDependentItems())) {
-            for (DependentJob.DependentItem dependentItem : dependentJob.getDependentItems()) {
-                DependentStrategy strategy = dependentItem.getStrategy();
-                if (LAST_EXECUTION_AFTER_TIME.equals(strategy)) {
-                    Duration duration = dependentItem.parseDuration();
-                    if (duration == null || duration.isZero() || duration.isNegative()) {
-                        return String.format("The duration of %s is invalid", strategy);
-                    }
-                } else if (LAST_EXECUTION_AS_EXPECTED.equals(strategy)) {
-                    if (StringUtils.isNotBlank(dependentItem.getDuration())) {
-                        return String.format("The duration of %s should not be set", strategy);
-                    }
-                }
-            }
+        var errorMsg = verifyDependentJobConfig(config);
+        if (errorMsg != null) {
+            return errorMsg;
         }
 
-        return null;
+        return verifyFlowJobConfig(config);
     }
 
     private String verifyWorker() {
@@ -175,5 +162,49 @@ public class JobInfoRequest {
             errorMsg = "The worker of job cannot be null";
         }
         return errorMsg;
+    }
+
+    private String verifyDependentJobConfig(BaseJob config) {
+        var dependentJob = config.unwrap(DependentJob.class);
+        if (dependentJob == null || CollectionUtils.isEmpty(dependentJob.getDependentItems())) {
+            return null;
+        }
+
+        for (DependentJob.DependentItem dependentItem : dependentJob.getDependentItems()) {
+            var strategy = dependentItem.getStrategy();
+            if (LAST_EXECUTION_AFTER_TIME.equals(strategy)) {
+                var duration = dependentItem.parseDuration();
+                if (duration == null || duration.isZero() || duration.isNegative()) {
+                    return String.format("The duration of %s is invalid", strategy);
+                }
+            } else if (LAST_EXECUTION_AS_EXPECTED.equals(strategy)) {
+                if (StringUtils.isNotBlank(dependentItem.getDuration())) {
+                    return String.format("The duration of %s should not be set", strategy);
+                }
+            }
+        }
+
+        return null;
+    }
+
+    private String verifyFlowJobConfig(BaseJob config) {
+        var flowJob = config.unwrap(FlowJob.class);
+        if (flowJob == null) {
+            return null;
+        }
+
+        if (flowJob.getFlowId() <= 0) {
+            return "The flowId of FlowJob must be positive";
+        }
+
+        if (flowJob.getExpectedFailureCorrectedTo() == null) {
+            return "The expectedFailureCorrectedTo of FlowJob cannot be null";
+        }
+
+        if (flowJob.getInheritParamMode() == null) {
+            return "The inheritParamMode of FlowJob cannot be null";
+        }
+
+        return null;
     }
 }
