@@ -72,7 +72,7 @@ public class SubflowVariableResolver implements VariableResolver {
                         }
                     });
                 }
-                case null, default -> {}
+                default -> {}
             }
         }
         return mergedParams;

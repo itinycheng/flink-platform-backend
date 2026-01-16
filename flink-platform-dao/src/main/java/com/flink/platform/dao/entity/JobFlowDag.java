@@ -68,9 +68,9 @@ public class JobFlowDag extends DAG<Long, JobVertex, JobEdge> {
         }
     }
 
-    public boolean hasUnExecutedVertices() {
+    public boolean hasUnexecutedVertices() {
         if (config == null || config.getStrategy() == null) {
-            return JobFlowDagHelper.hasUnExecutedVertices(this);
+            return JobFlowDagHelper.hasUnexecutedVertices(this);
         }
 
         switch (config.getStrategy()) {

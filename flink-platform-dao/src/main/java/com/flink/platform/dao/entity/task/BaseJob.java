@@ -1,8 +1,10 @@
 package com.flink.platform.dao.entity.task;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonSetter;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.fasterxml.jackson.annotation.Nulls;
 import com.flink.platform.common.enums.JobType;
 import com.flink.platform.common.util.DurationUtil;
 import lombok.Data;
@@ -38,8 +40,10 @@ public class BaseJob {
 
     protected JobType type;
 
+    @JsonSetter(nulls = Nulls.SKIP)
     protected int retryTimes = 0;
 
+    @JsonSetter(nulls = Nulls.SKIP)
     protected String retryInterval = "5s";
 
     protected String timeout;

@@ -31,7 +31,7 @@ public class JobFlowDagHelper {
 
     @Nonnull
     public static ExecutionStatus getFinalStatus(DAG<Long, JobVertex, JobEdge> dag) {
-        Set<ExecutionStatus> statusList = dag.getVertices().stream()
+        var statusList = dag.getVertices().stream()
                 .map(JobVertex::getJobRunStatus)
                 .filter(Objects::nonNull)
                 .collect(toSet());
@@ -57,7 +57,7 @@ public class JobFlowDagHelper {
                 });
     }
 
-    public static boolean hasUnExecutedVertices(JobFlowDag dag) {
+    public static boolean hasUnexecutedVertices(JobFlowDag dag) {
         Set<JobVertex> vertices = dag.getVertices();
         if (vertices.stream()
                 .map(JobVertex::getJobRunStatus)
