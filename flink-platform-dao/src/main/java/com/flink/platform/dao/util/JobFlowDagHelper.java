@@ -1,11 +1,9 @@
 package com.flink.platform.dao.util;
 
-import com.flink.platform.common.enums.ExecutionCondition;
 import com.flink.platform.common.enums.ExecutionStatus;
 import com.flink.platform.common.graph.DAG;
 import com.flink.platform.common.model.JobEdge;
 import com.flink.platform.common.model.JobVertex;
-import com.flink.platform.dao.entity.JobFlowDag;
 import jakarta.annotation.Nonnull;
 import org.apache.commons.collections4.CollectionUtils;
 
@@ -20,10 +18,11 @@ import static com.flink.platform.common.enums.ExecutionStatus.ABNORMAL;
 import static com.flink.platform.common.enums.ExecutionStatus.ERROR;
 import static com.flink.platform.common.enums.ExecutionStatus.EXPECTED_FAILURE;
 import static com.flink.platform.common.enums.ExecutionStatus.FAILURE;
+import static com.flink.platform.common.enums.ExecutionStatus.FAILURE_STATUSES;
 import static com.flink.platform.common.enums.ExecutionStatus.KILLED;
 import static com.flink.platform.common.enums.ExecutionStatus.NOT_EXIST;
-import static com.flink.platform.common.enums.ExecutionStatus.SUBMITTED;
 import static com.flink.platform.common.enums.ExecutionStatus.SUCCESS;
+import static com.flink.platform.common.enums.ExecutionStatus.isFailure;
 import static java.util.stream.Collectors.toSet;
 
 /** Dag helper for job flow. */
@@ -39,7 +38,13 @@ public class JobFlowDagHelper {
                 .filter(executionStatus -> !executionStatus.isTerminalState())
                 .findFirst()
                 .orElseGet(() -> {
-                    // terminal status, keep the current `if.else` order is very important.
+                    if (FAILURE_STATUSES.stream().anyMatch(statusList::contains)) {
+                        var status = determineFailureStatus(dag);
+                        if (EXPECTED_FAILURE.equals(status)) {
+                            return status;
+                        }
+                    }
+
                     if (statusList.contains(ERROR)) {
                         return ERROR;
                     } else if (statusList.contains(KILLED)) {
@@ -47,18 +52,18 @@ public class JobFlowDagHelper {
                     } else if (statusList.contains(FAILURE)
                             || statusList.contains(NOT_EXIST)
                             || statusList.contains(ABNORMAL)) {
-                        return determineFailureStatus(dag);
+                        return FAILURE;
                     } else if (statusList.contains(SUCCESS)) {
                         return SUCCESS;
                     } else {
-                        // unreachable.
-                        return SUBMITTED;
+                        throw new IllegalStateException("Unreachable code reached.");
                     }
                 });
     }
 
-    public static boolean hasUnexecutedVertices(JobFlowDag dag) {
-        Set<JobVertex> vertices = dag.getVertices();
+    public static boolean hasUnexecutedVertices(DAG<Long, JobVertex, JobEdge> dag) {
+        // Check whether there are vertices in non-terminal status.
+        var vertices = dag.getVertices();
         if (vertices.stream()
                 .map(JobVertex::getJobRunStatus)
                 .filter(Objects::nonNull)
@@ -66,7 +71,8 @@ public class JobFlowDagHelper {
             return true;
         }
 
-        Collection<JobVertex> beginVertices = dag.getBeginVertices();
+        // Check whether there are vertices not executed.
+        var beginVertices = dag.getBeginVertices();
         if (beginVertices.stream().anyMatch(jobVertex -> jobVertex.getJobRunStatus() == null)) {
             return true;
         }
@@ -75,20 +81,20 @@ public class JobFlowDagHelper {
     }
 
     public static boolean isPreconditionSatisfied(JobVertex toVertex, DAG<Long, JobVertex, JobEdge> dag) {
-        Collection<JobVertex> preVertices = dag.getPreVertices(toVertex);
+        var preVertices = dag.getPreVertices(toVertex);
         if (CollectionUtils.isEmpty(preVertices)) {
             return true;
         }
 
-        ExecutionCondition precondition = toVertex.getPrecondition();
+        var precondition = toVertex.getPrecondition();
         if (precondition == AND) {
             return preVertices.stream()
-                    .allMatch(fromVertex -> fromVertex.getJobRunStatus()
-                            == dag.getEdge(fromVertex, toVertex).getExpectStatus());
+                    .allMatch(from ->
+                            statusEquals(dag.getEdge(from, toVertex).getExpectStatus(), from.getJobRunStatus()));
         } else if (precondition == OR) {
             return preVertices.stream()
-                    .anyMatch(fromVertex -> fromVertex.getJobRunStatus()
-                            == dag.getEdge(fromVertex, toVertex).getExpectStatus());
+                    .anyMatch(fromVertex -> statusEquals(
+                            dag.getEdge(fromVertex, toVertex).getExpectStatus(), fromVertex.getJobRunStatus()));
         } else {
             throw new IllegalStateException("Can't handle precondition status: " + precondition);
         }
@@ -96,8 +102,8 @@ public class JobFlowDagHelper {
 
     public static Set<JobVertex> getExecutableVertices(DAG<Long, JobVertex, JobEdge> dag) {
         // Return the beginning vertices, if there are any not executed.
-        Collection<JobVertex> beginVertices = dag.getBeginVertices();
-        Set<JobVertex> executableSet = beginVertices.stream()
+        var beginVertices = dag.getBeginVertices();
+        var executableSet = beginVertices.stream()
                 .filter(jobVertex -> jobVertex.getJobRunStatus() == null)
                 .collect(toSet());
 
@@ -112,14 +118,14 @@ public class JobFlowDagHelper {
             Collection<JobVertex> fromVertices, DAG<Long, JobVertex, JobEdge> dag) {
 
         // Get the edges whose status matched his formVertex's status.
-        Set<JobEdge> statusMatchedEdgeSet = fromVertices.stream()
-                .flatMap(fromVertex -> dag.getEdgesFromVertex(fromVertex).stream()
+        var statusMatchedEdgeSet = fromVertices.stream()
+                .flatMap(from -> dag.getEdgesFromVertex(from).stream()
                         .map(edge -> edge.unwrap(JobEdge.class))
-                        .filter(edge -> edge.getExpectStatus() == fromVertex.getJobRunStatus()))
+                        .filter(edge -> statusEquals(edge.getExpectStatus(), from.getJobRunStatus())))
                 .collect(toSet());
 
         // Get the executable vertices.
-        Set<JobVertex> executableToVertices = statusMatchedEdgeSet.stream()
+        var executableVertices = statusMatchedEdgeSet.stream()
                 .map(edge -> dag.getVertex(edge.getToVId()))
                 .filter(toVertex -> isPreconditionSatisfied(toVertex, dag))
                 .collect(toSet());
@@ -127,11 +133,11 @@ public class JobFlowDagHelper {
         // If toVertex is executed, use it as fromVertex to find the next executable vertex.
         Set<JobVertex> executedVertices = new HashSet<>();
         Set<JobVertex> unexecutedVertices = new HashSet<>();
-        for (JobVertex executableToVertex : executableToVertices) {
-            if (executableToVertex.getJobRunStatus() != null) {
-                executedVertices.add(executableToVertex);
+        for (var executableVertex : executableVertices) {
+            if (executableVertex.getJobRunStatus() != null) {
+                executedVertices.add(executableVertex);
             } else {
-                unexecutedVertices.add(executableToVertex);
+                unexecutedVertices.add(executableVertex);
             }
         }
 
@@ -145,10 +151,18 @@ public class JobFlowDagHelper {
     private static ExecutionStatus determineFailureStatus(DAG<Long, JobVertex, JobEdge> dag) {
         // Whether each failure job has failure status handling vertex.
         return dag.getVertices().stream()
-                        .filter(fromVertex -> fromVertex.getJobRunStatus() == FAILURE)
-                        .anyMatch(fromVertex -> dag.getEdgesFromVertex(fromVertex).stream()
-                                .noneMatch(jobEdge -> jobEdge.getExpectStatus() == fromVertex.getJobRunStatus()))
+                        .filter(from -> isFailure(from.getJobRunStatus()))
+                        .anyMatch(from -> dag.getEdgesFromVertex(from).stream()
+                                .noneMatch(jobEdge -> FAILURE.equals(jobEdge.getExpectStatus())))
                 ? FAILURE
                 : EXPECTED_FAILURE;
+    }
+
+    private static boolean statusEquals(ExecutionStatus expectedStatus, ExecutionStatus jobStatus) {
+        return switch (expectedStatus) {
+            case SUCCESS -> jobStatus == SUCCESS;
+            case FAILURE -> isFailure(jobStatus);
+            default -> false;
+        };
     }
 }

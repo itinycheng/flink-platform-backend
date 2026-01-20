@@ -4,6 +4,7 @@ import com.baomidou.dynamic.datasource.annotation.DS;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.TableFieldInfo;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.flink.platform.common.enums.ExecutionStatus;
 import com.flink.platform.common.enums.JobFlowStatus;
 import com.flink.platform.common.enums.JobFlowType;
 import com.flink.platform.common.enums.JobStatus;
@@ -13,10 +14,11 @@ import jakarta.annotation.Nonnull;
 import org.springframework.stereotype.Service;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
-import static com.flink.platform.common.enums.ExecutionStatus.UNEXPECTED;
+import static com.flink.platform.common.enums.ExecutionStatus.FAILURE_STATUSES;
 import static com.flink.platform.common.enums.ExecutionStatus.getNonTerminals;
 import static com.flink.platform.common.enums.JobType.SUB_FLOW;
 
@@ -25,7 +27,14 @@ import static com.flink.platform.common.enums.JobType.SUB_FLOW;
 @DS("master_platform")
 public class JobRunInfoService extends ServiceImpl<JobRunInfoMapper, JobRunInfo> {
 
-    public static final Set<String> LARGE_FIELDS = Set.of("backInfo", "params", "subject");
+    private static final Set<String> LARGE_FIELDS = Set.of("backInfo", "params", "subject");
+
+    public static final List<ExecutionStatus> UNEXPECTED = new ArrayList<>() {
+        {
+            addAll(FAILURE_STATUSES);
+            add(ExecutionStatus.KILLABLE);
+        }
+    };
 
     public List<JobRunInfo> listLastWithoutLargeFields(Long flowRunId, List<Long> jobIds) {
         return this.baseMapper.lastJobRunList(flowRunId, jobIds);

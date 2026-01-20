@@ -9,6 +9,7 @@ import com.flink.platform.dao.entity.JobRunInfo;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 
+import java.util.Collection;
 import java.util.List;
 
 /** job run info Mapper. */
@@ -83,5 +84,5 @@ public interface JobRunInfoMapper extends BaseMapper<JobRunInfo> {
             @Param("jobFlowType") JobFlowType jobFlowType,
             @Param("jobFlowStatus") JobFlowStatus jobFlowStatus,
             @Param("jobStatus") JobStatus jobStatus,
-            @Param("jobRunStatusList") List<ExecutionStatus> jobRunStatusList);
+            @Param("jobRunStatusList") Collection<ExecutionStatus> jobRunStatusList);
 }

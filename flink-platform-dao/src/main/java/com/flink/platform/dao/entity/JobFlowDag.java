@@ -40,7 +40,7 @@ public class JobFlowDag extends DAG<Long, JobVertex, JobEdge> {
 
         switch (config.getStrategy()) {
             case ONLY_CUR_JOB:
-                JobVertex vertex = super.getVertex(config.getStartJobId());
+                var vertex = super.getVertex(config.getStartJobId());
                 if (vertex == null) {
                     throw new IllegalArgumentException("Start vertex not found: " + config.getStartJobId());
                 }
@@ -58,14 +58,10 @@ public class JobFlowDag extends DAG<Long, JobVertex, JobEdge> {
             return super.getNextVertices(vertex);
         }
 
-        switch (config.getStrategy()) {
-            case ONLY_CUR_JOB:
-                return Collections.emptyList();
-            case ALL_POST_JOBS:
-            case ALL_PRE_JOBS:
-            default:
-                throw new IllegalArgumentException("Unsupported execution strategy: " + config.getStrategy());
-        }
+        return switch (config.getStrategy()) {
+            case ONLY_CUR_JOB -> Collections.emptyList();
+            default -> throw new IllegalArgumentException("Unsupported execution strategy: " + config.getStrategy());
+        };
     }
 
     public boolean hasUnexecutedVertices() {
@@ -75,7 +71,7 @@ public class JobFlowDag extends DAG<Long, JobVertex, JobEdge> {
 
         switch (config.getStrategy()) {
             case ONLY_CUR_JOB:
-                JobVertex vertex = super.getVertex(config.getStartJobId());
+                var vertex = super.getVertex(config.getStartJobId());
                 if (vertex == null) {
                     return false;
                 }
@@ -93,14 +89,10 @@ public class JobFlowDag extends DAG<Long, JobVertex, JobEdge> {
             return JobFlowDagHelper.isPreconditionSatisfied(toVertex, this);
         }
 
-        switch (config.getStrategy()) {
-            case ONLY_CUR_JOB:
-                return false;
-            case ALL_POST_JOBS:
-            case ALL_PRE_JOBS:
-            default:
-                throw new IllegalArgumentException("Unsupported execution strategy: " + config.getStrategy());
-        }
+        return switch (config.getStrategy()) {
+            case ONLY_CUR_JOB -> false;
+            default -> throw new IllegalArgumentException("Unsupported execution strategy: " + config.getStrategy());
+        };
     }
 
     @JsonIgnore

@@ -4,7 +4,11 @@ import lombok.Getter;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Collectors;
+import java.util.Set;
+import java.util.stream.Stream;
+
+import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toSet;
 
 /**
  * Execution status enums, used for Job and JobFlow. <br>
@@ -33,17 +37,12 @@ public enum ExecutionStatus {
     /** ! Only for jobFlow final status. */
     EXPECTED_FAILURE(10, TerminalState.TERMINAL);
 
-    public static final List<ExecutionStatus> UNEXPECTED = Arrays.asList(
-            ExecutionStatus.FAILURE,
-            ExecutionStatus.KILLED,
-            ExecutionStatus.ABNORMAL,
-            ExecutionStatus.ERROR,
-            ExecutionStatus.NOT_EXIST,
-            ExecutionStatus.KILLABLE);
+    public static final Set<ExecutionStatus> FAILURE_STATUSES =
+            Stream.of(FAILURE, KILLED, ABNORMAL, ERROR, NOT_EXIST).collect(toSet());
 
-    private static final List<ExecutionStatus> NON_TERMINALS = Arrays.stream(values())
+    public static final List<ExecutionStatus> NON_TERMINALS = Arrays.stream(values())
             .filter(executionStatus -> executionStatus.terminalState == TerminalState.NON_TERMINAL)
-            .collect(Collectors.toList());
+            .collect(toList());
 
     @Getter
     private final int code;
@@ -71,6 +70,10 @@ public enum ExecutionStatus {
         }
 
         throw new IllegalArgumentException("Unknown execution status code: " + code);
+    }
+
+    public static boolean isFailure(ExecutionStatus status) {
+        return FAILURE_STATUSES.contains(status);
     }
 
     private enum TerminalState {
