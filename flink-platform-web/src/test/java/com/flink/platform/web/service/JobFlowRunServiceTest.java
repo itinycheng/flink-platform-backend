@@ -4,7 +4,7 @@ import com.flink.platform.dao.entity.JobFlowRun;
 import com.flink.platform.dao.entity.JobRunInfo;
 import com.flink.platform.dao.mapper.JobFlowRunMapper;
 import com.flink.platform.dao.service.JobFlowRunService;
-import com.flink.platform.web.variable.SetValueVariableResolver;
+import com.flink.platform.web.variable.SetParamVariableResolver;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -33,7 +33,7 @@ class JobFlowRunServiceTest {
     private JobFlowRunMapper jobFlowRunMapper;
 
     @InjectMocks
-    private SetValueVariableResolver setValueResolver;
+    private SetParamVariableResolver setParamResolver;
 
     @InjectMocks
     private JobFlowRunService jobFlowRunService;
@@ -45,11 +45,11 @@ class JobFlowRunServiceTest {
     void setUp() {
         ReflectionTestUtils.setField(jobFlowRunService, "baseMapper", jobFlowRunMapper);
         ReflectionTestUtils.setField(processJobService, "jobFlowRunService", jobFlowRunService);
-        ReflectionTestUtils.setField(processJobService, "setValueResolver", setValueResolver);
+        ReflectionTestUtils.setField(processJobService, "setParamResolver", setParamResolver);
     }
 
     @Test
-    void testUpdateParamsInJobFlowRun_WithSetValueVariables() {
+    void testUpdateParamsInJobFlowRun_WithSetParamVariables() {
         var mockJobFlowRun = new JobFlowRun();
         mockJobFlowRun.setParams(Map.of("result", "failure", "count", List.of("1", "2")));
         when(jobFlowRunMapper.queryParamsForUpdate(anyLong())).thenReturn(mockJobFlowRun);
@@ -57,10 +57,10 @@ class JobFlowRunServiceTest {
 
         var jobRun = new JobRunInfo();
         var variables = new HashMap<String, Object>();
-        variables.put("${setValue:result=success}", "success");
-        variables.put("${setValue:count=10}", "10");
-        variables.put("${setValue:favor=apple}", "apple");
-        variables.put("setValue", "should be ignored");
+        variables.put("${setParam:result=success}", "success");
+        variables.put("${setParam:count=10}", "10");
+        variables.put("${setParam:favor=apple}", "apple");
+        variables.put("setParam", "should be ignored");
         jobRun.setParams(variables);
         jobRun.setFlowRunId(1L);
         processJobService.updateParamsInJobFlowRun(jobRun);

@@ -74,8 +74,8 @@ public class JobConstant {
     public static final Pattern APOLLO_CONF_PATTERN =
             Pattern.compile("\\$\\{\\s*apollo:(?<namespace>[^}]+)\\s*:\\s*(?<key>[^}]+)\\s*}", VARIABLE_PATTERN_FLAGS);
 
-    public static final Pattern SET_VALUE_PATTERN = Pattern.compile(
-            "\\$\\{\\s*setValue:(?<key>[^=]+)=(?<value>(?:[^{}]|\\{[^{}]*})+?)\\s*}", VARIABLE_PATTERN_FLAGS);
+    public static final Pattern SET_PARAM_PATTERN = Pattern.compile(
+            "\\$\\{\\s*setParam:(?<key>[^=]+)=(?<value>(?:[^{}]|\\{[^{}]*})+?)\\s*}", VARIABLE_PATTERN_FLAGS);
 
     public static final Pattern SUBFLOW_PATTERN =
             Pattern.compile("\\$\\{\\s*subflow:(?<name>[^}]+)\\s*}", VARIABLE_PATTERN_FLAGS);

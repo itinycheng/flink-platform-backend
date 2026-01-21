@@ -99,7 +99,7 @@ public class HadoopService {
                 () -> ExceptionUtil.runWithErrorLogging(this::refreshReport), RandomUtils.nextInt(10, 30), 40, SECONDS);
     }
 
-    @Retryable(maxRetries = 8, delay = 1500, multiplier = 2, predicate = AppRunningRetryPredicate.class)
+    @Retryable(maxRetries = 6, delay = 1500, multiplier = 2, predicate = AppRunningRetryPredicate.class)
     public ApplicationStatusReport getStatusReportWithRetry(String applicationTag) throws Exception {
         if (StringUtils.isEmpty(applicationTag)) {
             log.warn("The application tag is empty.");
