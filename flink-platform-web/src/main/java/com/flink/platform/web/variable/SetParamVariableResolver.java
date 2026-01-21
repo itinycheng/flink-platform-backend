@@ -8,21 +8,21 @@ import org.springframework.stereotype.Component;
 import java.util.HashMap;
 import java.util.Map;
 
-import static com.flink.platform.common.constants.JobConstant.SET_VALUE_PATTERN;
+import static com.flink.platform.common.constants.JobConstant.SET_PARAM_PATTERN;
 
 /**
  * Set value variable resolver.
- * Resolves ${setValue:key=value} placeholders.
+ * Resolves ${setParam:key=value} placeholders.
  */
 @Slf4j
 @Order(99)
 @Component
-public class SetValueVariableResolver implements VariableResolver {
+public class SetParamVariableResolver implements VariableResolver {
 
     @Override
     public Map<String, Object> resolve(JobRunInfo jobRun, String content) {
         var result = new HashMap<String, Object>();
-        var matcher = SET_VALUE_PATTERN.matcher(content);
+        var matcher = SET_PARAM_PATTERN.matcher(content);
         while (matcher.find()) {
             var variable = matcher.group();
             var value = matcher.group("value");
@@ -31,8 +31,8 @@ public class SetValueVariableResolver implements VariableResolver {
         return result;
     }
 
-    public String getSetValueKey(String value) {
-        var matcher = SET_VALUE_PATTERN.matcher(value);
+    public String getSetParamKey(String value) {
+        var matcher = SET_PARAM_PATTERN.matcher(value);
         if (matcher.find()) {
             return matcher.group("key");
         }

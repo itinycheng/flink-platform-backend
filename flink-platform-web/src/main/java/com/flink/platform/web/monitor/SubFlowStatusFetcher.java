@@ -32,7 +32,7 @@ public class SubFlowStatusFetcher implements StatusFetcher {
 
     @Override
     public JobStatusReply getStatus(@Nonnull StatusRequest request) {
-        var jobRun = jobRunService.getLiteById(request.getJobRunId());
+        var jobRun = jobRunService.getById(request.getJobRunId());
         var backInfo = jobRun.getBackInfo();
         var jobFlowRun = jobFlowRunService.getById(backInfo.getFlowRunId());
         var status = jobFlowRun.getStatus();
