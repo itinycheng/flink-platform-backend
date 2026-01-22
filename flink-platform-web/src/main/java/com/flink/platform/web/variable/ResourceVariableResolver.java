@@ -36,22 +36,27 @@ public class ResourceVariableResolver implements VariableResolver {
             var matcher = RESOURCE_PATTERN.matcher(content);
             while (matcher.find()) {
                 var variable = matcher.group();
-                var filePath = matcher.group("file");
-                if (StringUtils.isBlank(filePath)) {
+                var fileOrId = matcher.group("file");
+                if (StringUtils.isBlank(fileOrId)) {
                     throw new RuntimeException("Resource path not found, variable:" + variable);
                 }
 
-                var absoluteStoragePath = getAbsoluteStoragePath(filePath);
-                var localPath = copyFromStorageToLocal(absoluteStoragePath);
-                result.put(variable, localPath);
+                var storage = matcher.group("storage");
+                var absoluteStoragePath = getAbsoluteStoragePath(fileOrId);
+                if ("local".equalsIgnoreCase(storage)) {
+                    var localPath = copyFromStorageToLocal(absoluteStoragePath);
+                    result.put(variable, localPath);
 
-                // Make the local file readable and executable.
-                if (SHELL.equals(jobRun.getType())) {
-                    try {
-                        FileUtil.setPermissions(Path.of(localPath), "rwxr--r--");
-                    } catch (Exception e) {
-                        log.error("Failed to set file permissions", e);
+                    // Make the local file readable and executable.
+                    if (SHELL.equals(jobRun.getType())) {
+                        try {
+                            FileUtil.setPermissions(Path.of(localPath), "rwxr--r--");
+                        } catch (Exception e) {
+                            log.error("Failed to set file permissions", e);
+                        }
                     }
+                } else {
+                    result.put(variable, absoluteStoragePath);
                 }
             }
             return result;
