@@ -1,11 +1,14 @@
 package com.flink.platform.web.service;
 
 import com.flink.platform.dao.entity.JobRunInfo;
+import com.flink.platform.web.util.ResourceUtil;
 import com.flink.platform.web.variable.JobRunVariableResolver;
+import com.flink.platform.web.variable.ResourceVariableResolver;
 import com.flink.platform.web.variable.TimeVariableResolver;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
+import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -18,6 +21,9 @@ public class VariableResolverTest {
 
     @InjectMocks
     private JobRunVariableResolver jobRunVariableResolver;
+
+    @InjectMocks
+    private ResourceVariableResolver resourceVariableResolver;
 
     @Test
     public void testTimeResolver() {
@@ -33,7 +39,7 @@ public class VariableResolverTest {
 
     @Test
     public void jobRunPlaceholder() {
-        JobRunInfo jobRun = new JobRunInfo();
+        var jobRun = new JobRunInfo();
         jobRun.setId(22L);
         jobRun.setJobId(33L);
 
@@ -41,5 +47,28 @@ public class VariableResolverTest {
         var result = jobRunVariableResolver.resolve(jobRun, jobRun.getSubject());
         result.forEach((s, o) -> jobRun.setSubject(jobRun.getSubject().replace(s, String.valueOf(o))));
         assertEquals("22 wow, 22, job_33, 33", jobRun.getSubject());
+    }
+
+    @Test
+    public void resourcePlaceholder() {
+        var jobRun = new JobRunInfo();
+        jobRun.setId(22L);
+        jobRun.setJobId(33L);
+
+        try (var mockStatic = Mockito.mockStatic(ResourceUtil.class)) {
+            var storagePath = "/storage/path";
+            var localPath = "/local/path";
+            mockStatic
+                    .when(() -> ResourceUtil.getAbsoluteStoragePath(Mockito.any()))
+                    .then(mock -> storagePath);
+            mockStatic
+                    .when(() -> ResourceUtil.copyFromStorageToLocal(Mockito.any()))
+                    .then(mock -> localPath);
+
+            jobRun.setSubject("${resource:path}, ${resource:original:path}, ${resource:local:path}");
+            var result = resourceVariableResolver.resolve(jobRun, jobRun.getSubject());
+            result.forEach((s, o) -> jobRun.setSubject(jobRun.getSubject().replace(s, String.valueOf(o))));
+            assertEquals("/storage/path, /storage/path, /local/path", jobRun.getSubject());
+        }
     }
 }

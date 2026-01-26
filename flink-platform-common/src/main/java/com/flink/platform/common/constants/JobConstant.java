@@ -61,9 +61,9 @@ public class JobConstant {
     public static final Pattern JOB_RUN_PATTERN =
             Pattern.compile("\\$\\{\\s*jobRun:(?<field>[^}]+)\\s*}", VARIABLE_PATTERN_FLAGS);
 
-    // ${resource:hdfs:/path/file}
-    public static final Pattern RESOURCE_PATTERN =
-            Pattern.compile("\\$\\{\\s*resource:(?<file>[^}]+)\\s*}", VARIABLE_PATTERN_FLAGS);
+    // ${resource:original:path} or ${resource:local:path} or ${resource:path}
+    public static final Pattern RESOURCE_PATTERN = Pattern.compile(
+            "\\$\\{\\s*resource:(?:(?<storage>original|local):)?(?<file>[^}]+)\\s*}", VARIABLE_PATTERN_FLAGS);
 
     public static final String PARAM_FORMAT = "${param:%s}";
     // ${param:paramName}
@@ -74,8 +74,8 @@ public class JobConstant {
     public static final Pattern APOLLO_CONF_PATTERN =
             Pattern.compile("\\$\\{\\s*apollo:(?<namespace>[^}]+)\\s*:\\s*(?<key>[^}]+)\\s*}", VARIABLE_PATTERN_FLAGS);
 
-    public static final Pattern SET_VALUE_PATTERN = Pattern.compile(
-            "\\$\\{\\s*setValue:(?<key>[^=]+)=(?<value>(?:[^{}]|\\{[^{}]*})+?)\\s*}", VARIABLE_PATTERN_FLAGS);
+    public static final Pattern SET_PARAM_PATTERN = Pattern.compile(
+            "\\$\\{\\s*setParam:(?<key>[^=]+)=(?<value>(?:[^{}]|\\{[^{}]*})+?)\\s*}", VARIABLE_PATTERN_FLAGS);
 
     public static final Pattern SUBFLOW_PATTERN =
             Pattern.compile("\\$\\{\\s*subflow:(?<name>[^}]+)\\s*}", VARIABLE_PATTERN_FLAGS);

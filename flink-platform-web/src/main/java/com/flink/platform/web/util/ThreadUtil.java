@@ -16,9 +16,9 @@ public class ThreadUtil {
 
     public static final int ONE_SECOND_MILLIS = 1000;
 
-    public static final int MIN_SLEEP_TIME_MILLIS = 3000;
+    public static final int THREE_SECOND_MILLIS = 3000;
 
-    public static final int DEFAULT_SLEEP_TIME_MILLIS = 5000;
+    public static final int FIVE_SECOND_MILLIS = 5000;
 
     public static ThreadPoolExecutor newFixedThreadExecutor(String namePrefix, int threadsNum) {
         var threadFactory = namedThreadFactory(namePrefix, false);

@@ -17,10 +17,9 @@ public class YarnHelper {
         var finalStatus = applicationReport.getFinalApplicationStatus();
         return switch (finalStatus) {
             case UNDEFINED -> getNonFinalStatus(applicationReport);
-            case FAILED -> ExecutionStatus.FAILURE;
+            case FAILED, ENDED -> ExecutionStatus.FAILURE;
             case KILLED -> ExecutionStatus.KILLED;
             case SUCCEEDED -> ExecutionStatus.SUCCESS;
-            case ENDED -> ExecutionStatus.ABNORMAL;
         };
     }
 

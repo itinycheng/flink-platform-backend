@@ -96,7 +96,7 @@ public class AttrsController {
     }
 
     @GetMapping(value = "/edgeStates")
-    public ResultInfo<List<ExecutionStatus>> edgeStates(Long jobId) {
+    public ResultInfo<List<ExecutionStatus>> edgeStates() {
         // Add RUNNING status for STREAMING job ?
         return success(Arrays.asList(SUCCESS, FAILURE));
     }

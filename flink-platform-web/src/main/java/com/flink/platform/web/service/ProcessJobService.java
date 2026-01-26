@@ -9,7 +9,7 @@ import com.flink.platform.dao.service.JobFlowRunService;
 import com.flink.platform.dao.service.JobRunInfoService;
 import com.flink.platform.web.command.CommandBuilder;
 import com.flink.platform.web.command.CommandExecutor;
-import com.flink.platform.web.variable.SetValueVariableResolver;
+import com.flink.platform.web.variable.SetParamVariableResolver;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.MapUtils;
@@ -38,7 +38,7 @@ public class ProcessJobService {
 
     private final JobFlowRunService jobFlowRunService;
 
-    private final SetValueVariableResolver setValueResolver;
+    private final SetParamVariableResolver setParamResolver;
 
     private final List<CommandBuilder> jobCommandBuilders;
 
@@ -140,7 +140,7 @@ public class ProcessJobService {
 
         // option: use ListUtil::mergeToList if you need to merge values into list.
         params = params.entrySet().stream()
-                .map(entry -> Pair.of(setValueResolver.getSetValueKey(entry.getKey()), entry.getValue()))
+                .map(entry -> Pair.of(setParamResolver.getSetParamKey(entry.getKey()), entry.getValue()))
                 .filter(pair -> pair.getKey() != null)
                 .collect(toMap(Pair::getKey, Entry::getValue));
         if (MapUtils.isEmpty(params)) {

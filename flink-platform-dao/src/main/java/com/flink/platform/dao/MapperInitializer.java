@@ -1,8 +1,8 @@
 package com.flink.platform.dao;
 
+import com.baomidou.mybatisplus.extension.handlers.Jackson3TypeHandler;
 import com.flink.platform.common.util.JsonUtil;
 import com.flink.platform.common.util.json.Jackson3Mapper;
-import com.flink.platform.dao.handler.Jackson3TypeHandler;
 import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.context.annotation.Configuration;
 
