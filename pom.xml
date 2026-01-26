@@ -53,17 +53,17 @@
 		<commons-collections4.version>4.4</commons-collections4.version>
 		<commons-text.version>1.15.0</commons-text.version>
 		<mysql.version>8.0.32</mysql.version>
-		<clickhouse-jdbc.version>0.9.5</clickhouse-jdbc.version>
+		<clickhouse-jdbc.version>0.9.6</clickhouse-jdbc.version>
 		<hadoop.version>3.3.5</hadoop.version>
 		<hive.version>2.3.9</hive.version>
-		<mybatis-plus.version>3.5.15</mybatis-plus.version>
+		<mybatis-plus.version>3.5.16</mybatis-plus.version>
 		<dynamic-datasource.version>4.5.0</dynamic-datasource.version>
 		<grpc.version>1.77.0</grpc.version>
 		<auto-service.version>1.1.1</auto-service.version>
 		<shedlock.version>7.5.0</shedlock.version>
 		<grpc-spring-boot.version>3.1.0.RELEASE</grpc-spring-boot.version>
-		<spring-grpc.version>1.0.0</spring-grpc.version>
-		<checkstyle.version>12.3.0</checkstyle.version>
+		<spring-grpc.version>1.0.1</spring-grpc.version>
+		<checkstyle.version>13.0.0</checkstyle.version>
 		<maven-checkstyle-plugin.version>3.6.0</maven-checkstyle-plugin.version>
 		<palantir-java-format.version>2.83.0</palantir-java-format.version>
 		<spotless-maven-plugin.version>3.1.0</spotless-maven-plugin.version>

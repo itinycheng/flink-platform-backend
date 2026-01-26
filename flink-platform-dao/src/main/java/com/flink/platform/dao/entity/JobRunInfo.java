@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
+import com.baomidou.mybatisplus.extension.handlers.Jackson3TypeHandler;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.flink.platform.common.enums.DeployMode;
 import com.flink.platform.common.enums.ExecutionMode;
@@ -11,7 +12,6 @@ import com.flink.platform.common.enums.ExecutionStatus;
 import com.flink.platform.common.enums.JobType;
 import com.flink.platform.dao.entity.result.JobCallback;
 import com.flink.platform.dao.entity.task.BaseJob;
-import com.flink.platform.dao.handler.Jackson3TypeHandler;
 import lombok.AccessLevel;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -22,7 +22,6 @@ import java.io.Serializable;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.Map;
-import java.util.Set;
 
 import static com.flink.platform.common.constants.Constant.EMPTY;
 import static org.apache.commons.lang3.StringUtils.defaultString;
@@ -32,8 +31,6 @@ import static org.apache.commons.lang3.StringUtils.defaultString;
 @NoArgsConstructor
 @TableName(value = "t_job_run", autoResultMap = true)
 public class JobRunInfo implements Serializable {
-
-    public static final Set<String> LARGE_FIELDS = Set.of("backInfo", "config", "variables", "subject");
 
     @TableId(value = "id", type = IdType.AUTO)
     private Long id;

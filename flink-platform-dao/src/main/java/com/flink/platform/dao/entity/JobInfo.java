@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
+import com.baomidou.mybatisplus.extension.handlers.Jackson3TypeHandler;
 import com.flink.platform.common.enums.DeployMode;
 import com.flink.platform.common.enums.ExecutionMode;
 import com.flink.platform.common.enums.ExecutionStatus;
@@ -12,7 +13,6 @@ import com.flink.platform.common.enums.JobFlowStatus;
 import com.flink.platform.common.enums.JobStatus;
 import com.flink.platform.common.enums.JobType;
 import com.flink.platform.dao.entity.task.BaseJob;
-import com.flink.platform.dao.handler.Jackson3TypeHandler;
 import lombok.AccessLevel;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -21,7 +21,6 @@ import lombok.Setter;
 import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * job config info. <br>
@@ -31,8 +30,6 @@ import java.util.Set;
 @NoArgsConstructor
 @TableName(value = "t_job", autoResultMap = true)
 public class JobInfo implements Serializable {
-
-    public static final Set<String> LARGE_FIELDS = Set.of("config", "variables", "subject");
 
     @TableId(value = "id", type = IdType.AUTO)
     private Long id;
