@@ -42,15 +42,15 @@ CREATE TABLE `shedlock` (
 -- 2026-01-30
 UPDATE t_job 
 SET `subject` = REPLACE(`subject`, '${resource', '${resource:local')
-WHERE column_name LIKE '%${resource%';
+WHERE `subject` LIKE '%${resource%';
 
 UPDATE t_job 
 SET `subject` = REPLACE(`subject`, '${setValue', '${setParam')
-WHERE column_name LIKE '%${setValue%';
+WHERE `subject` LIKE '%${setValue%';
 
 UPDATE t_job 
 SET `config` = REPLACE(`config`, 'inheritParamMode', 'paramTransferMode')
-WHERE column_name LIKE '%inheritParamMode%';
+WHERE `config` LIKE '%inheritParamMode%';
 
 UPDATE t_job_run SET status = 'FAILURE' WHERE status in ('NOT_EXIST', 'ABNORMAL');
 UPDATE t_job_flow_run SET status = 'FAILURE' WHERE status in ('NOT_EXIST', 'ABNORMAL');
