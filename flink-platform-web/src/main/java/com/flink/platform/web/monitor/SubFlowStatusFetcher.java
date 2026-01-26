@@ -36,9 +36,8 @@ public class SubFlowStatusFetcher implements StatusFetcher {
         var backInfo = jobRun.getBackInfo();
         var jobFlowRun = jobFlowRunService.getById(backInfo.getFlowRunId());
         var status = jobFlowRun.getStatus();
-        if (EXPECTED_FAILURE.equals(status)) {
-            var config = jobRun.getConfig().unwrap(FlowJob.class);
-            if (config != null && config.getExpectedFailureCorrectedTo() != null) {
+        if (EXPECTED_FAILURE.equals(status) && jobRun.getConfig() instanceof FlowJob config) {
+            if (config.getExpectedFailureCorrectedTo() != null) {
                 status = config.getExpectedFailureCorrectedTo();
             }
         }
