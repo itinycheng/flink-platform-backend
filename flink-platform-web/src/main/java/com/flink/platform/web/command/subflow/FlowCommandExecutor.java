@@ -28,7 +28,7 @@ import org.springframework.transaction.annotation.Transactional;
 import static com.flink.platform.common.constants.JobConstant.FLOW_RUN_ID;
 import static com.flink.platform.common.enums.ExecutionStatus.CREATED;
 import static com.flink.platform.common.enums.ExecutionStatus.FAILURE;
-import static com.flink.platform.common.enums.JobFlowType.SUB_FLOW;
+import static com.flink.platform.common.enums.JobFlowType.JOB_FLOW;
 import static com.flink.platform.web.util.ThreadUtil.ONE_SECOND_MILLIS;
 
 @Slf4j
@@ -117,7 +117,7 @@ public class FlowCommandExecutor implements CommandExecutor {
         jobflowRun.setName(DEFAULT_NAME);
         jobflowRun.setUserId(jobFlow.getUserId());
         jobflowRun.setFlowId(jobFlow.getId());
-        jobflowRun.setType(SUB_FLOW);
+        jobflowRun.setType(JOB_FLOW);
         jobflowRun.setHost("");
         jobflowRun.setFlow(new JobFlowDag());
         jobflowRun.setStatus(CREATED);
