@@ -18,9 +18,6 @@ import lombok.Setter;
 import java.time.LocalDateTime;
 import java.util.Map;
 
-import static com.flink.platform.common.enums.JobFlowType.JOB_FLOW;
-import static com.flink.platform.common.enums.JobFlowType.SUB_FLOW;
-
 /** job flow. */
 @Data
 @NoArgsConstructor
@@ -80,8 +77,4 @@ public class JobFlow {
     /** update time. */
     @TableField(update = "now()", updateStrategy = FieldStrategy.ALWAYS)
     private LocalDateTime updateTime;
-
-    public boolean isWorkflow() {
-        return this.type == JOB_FLOW || this.type == SUB_FLOW;
-    }
 }
