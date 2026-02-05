@@ -63,7 +63,7 @@
 		<shedlock.version>7.6.0</shedlock.version>
 		<grpc-spring-boot.version>3.1.0.RELEASE</grpc-spring-boot.version>
 		<spring-grpc.version>1.0.2</spring-grpc.version>
-		<checkstyle.version>13.0.0</checkstyle.version>
+		<checkstyle.version>13.1.0</checkstyle.version>
 		<error-prone.version>2.46.0</error-prone.version>
 		<nullaway.version>0.13.1</nullaway.version>
 		<maven-checkstyle-plugin.version>3.6.0</maven-checkstyle-plugin.version>
