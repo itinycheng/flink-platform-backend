@@ -72,7 +72,7 @@
 		<maven-shade-plugin.version>3.6.1</maven-shade-plugin.version>
 		<rewrite-maven-plugin.version>6.25.0</rewrite-maven-plugin.version>
 		<rewrite-migrate-java.version>3.26.0</rewrite-migrate-java.version>
-		<rewrite-spring.version>6.21.0</rewrite-spring.version>
+		<rewrite-spring.version>6.23.1</rewrite-spring.version>
 		<maven-compiler-plugin.version>3.15.0</maven-compiler-plugin.version>
 	</properties>
 
