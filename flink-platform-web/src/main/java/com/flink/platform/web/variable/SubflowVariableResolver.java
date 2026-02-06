@@ -7,6 +7,7 @@ import com.flink.platform.dao.service.JobRunInfoService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.MapUtils;
+import org.jspecify.annotations.Nullable;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
@@ -32,9 +33,13 @@ public class SubflowVariableResolver implements VariableResolver {
     private final JobFlowRunService jobFlowRunService;
 
     @Override
-    public Map<String, Object> resolve(JobRunInfo jobRun, String content) {
-        var subflowParams = collectSubflowParams(jobRun.getFlowRunId());
+    public Map<String, Object> resolve(@Nullable JobRunInfo jobRun, String content) {
         var result = new HashMap<String, Object>();
+        if (jobRun == null || jobRun.getFlowRunId() == null) {
+            return result;
+        }
+
+        var subflowParams = collectSubflowParams(jobRun.getFlowRunId());
         var matcher = SUBFLOW_PATTERN.matcher(content);
         while (matcher.find()) {
             var variable = matcher.group();
@@ -48,8 +53,8 @@ public class SubflowVariableResolver implements VariableResolver {
         var subflowJobRuns = jobRunService.findJobsOfSubflowType(flowRunId);
         var mergedParams = new HashMap<String, Object>();
         for (JobRunInfo subflowJobRun : subflowJobRuns) {
-            var config = subflowJobRun.getConfig().unwrap(FlowJob.class);
-            if (config == null) {
+            var baseConfig = subflowJobRun.getConfig();
+            if (!(baseConfig instanceof FlowJob config)) {
                 continue;
             }
 
@@ -79,7 +84,7 @@ public class SubflowVariableResolver implements VariableResolver {
     }
 
     @SuppressWarnings("unchecked")
-    private void mergeParamIntoMap(Map<String, Object> targetMap, String key, Object value) {
+    private void mergeParamIntoMap(Map<String, Object> targetMap, @Nullable String key, @Nullable Object value) {
         if (key == null || value == null) {
             return;
         }
@@ -101,10 +106,6 @@ public class SubflowVariableResolver implements VariableResolver {
     }
 
     private Map<String, Object> getParamsOfFlowRun(JobRunInfo subflowJobRun) {
-        if (subflowJobRun == null) {
-            return Map.of();
-        }
-
         var callback = subflowJobRun.getBackInfo();
         if (callback == null || callback.getFlowRunId() == null) {
             return Map.of();

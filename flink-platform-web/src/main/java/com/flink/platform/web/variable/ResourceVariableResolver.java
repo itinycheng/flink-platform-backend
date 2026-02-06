@@ -5,6 +5,7 @@ import com.flink.platform.dao.entity.JobRunInfo;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.jspecify.annotations.Nullable;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
@@ -30,7 +31,7 @@ import static com.flink.platform.web.util.ResourceUtil.getAbsoluteStoragePath;
 public class ResourceVariableResolver implements VariableResolver {
 
     @Override
-    public Map<String, Object> resolve(JobRunInfo jobRun, String content) {
+    public Map<String, Object> resolve(@Nullable JobRunInfo jobRun, String content) {
         try {
             var result = new HashMap<String, Object>();
             var matcher = RESOURCE_PATTERN.matcher(content);
@@ -48,13 +49,7 @@ public class ResourceVariableResolver implements VariableResolver {
                     result.put(variable, localPath);
 
                     // Make the local file readable and executable.
-                    if (SHELL.equals(jobRun.getType())) {
-                        try {
-                            FileUtil.setPermissions(Path.of(localPath), "rwxr--r--");
-                        } catch (Exception e) {
-                            log.error("Failed to set file permissions", e);
-                        }
-                    }
+                    setPermissionsIfNeeded(jobRun, localPath);
                 } else {
                     result.put(variable, absoluteStoragePath);
                 }
@@ -63,6 +58,16 @@ public class ResourceVariableResolver implements VariableResolver {
         } catch (Exception e) {
             log.error("Failed to resolve resource variables", e);
             throw new RuntimeException("Failed to resolve resource variables", e);
+        }
+    }
+
+    private void setPermissionsIfNeeded(@Nullable JobRunInfo jobRun, String localPath) {
+        if (jobRun != null && SHELL.equals(jobRun.getType())) {
+            try {
+                FileUtil.setPermissions(Path.of(localPath), "rwxr--r--");
+            } catch (Exception e) {
+                log.error("Failed to set file permissions", e);
+            }
         }
     }
 }

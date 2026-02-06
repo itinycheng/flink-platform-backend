@@ -1,6 +1,7 @@
 package com.flink.platform.web.variable;
 
 import com.flink.platform.dao.entity.JobRunInfo;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Map;
 
@@ -9,9 +10,9 @@ import java.util.Map;
  */
 public interface VariableResolver {
 
-    default boolean supports(JobRunInfo jobRun, String content) {
+    default boolean supports(@Nullable JobRunInfo jobRun, String content) {
         return true;
     }
 
-    Map<String, Object> resolve(JobRunInfo jobRun, String content);
+    Map<String, Object> resolve(@Nullable JobRunInfo jobRun, String content);
 }

@@ -25,6 +25,7 @@ import java.util.Map.Entry;
 
 import static com.flink.platform.common.constants.Constant.HOST_IP;
 import static java.util.stream.Collectors.toMap;
+import static org.apache.commons.lang3.ObjectUtils.isNotEmpty;
 
 /** Process job service. */
 @Slf4j
@@ -141,7 +142,7 @@ public class ProcessJobService {
         // option: use ListUtil::mergeToList if you need to merge values into list.
         params = params.entrySet().stream()
                 .map(entry -> Pair.of(setParamResolver.getSetParamKey(entry.getKey()), entry.getValue()))
-                .filter(pair -> pair.getKey() != null)
+                .filter(pair -> isNotEmpty(pair.getKey()))
                 .collect(toMap(Pair::getKey, Entry::getValue));
         if (MapUtils.isEmpty(params)) {
             return;
