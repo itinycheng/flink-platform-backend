@@ -4,10 +4,10 @@ import com.flink.platform.common.constants.JobConstant;
 import com.flink.platform.common.util.DateUtil;
 import com.flink.platform.common.util.DurationUtil;
 import com.flink.platform.dao.entity.JobRunInfo;
-import jakarta.annotation.Nonnull;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.jspecify.annotations.Nullable;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
@@ -34,7 +34,7 @@ import static com.flink.platform.common.util.Preconditions.checkNotNull;
 public class TimeVariableResolver implements VariableResolver {
 
     @Override
-    public Map<String, Object> resolve(JobRunInfo jobRun, String content) {
+    public Map<String, Object> resolve(@Nullable JobRunInfo jobRun, String content) {
         var result = new HashMap<String, Object>();
         var matcher = TIME_PATTERN.matcher(content);
         while (matcher.find()) {
@@ -84,7 +84,7 @@ public class TimeVariableResolver implements VariableResolver {
             this.provider = provider;
         }
 
-        public static BaseTimeUnit of(@Nonnull String name) {
+        public static BaseTimeUnit of(String name) {
             return Arrays.stream(values())
                     .filter(baseTimeUnit -> baseTimeUnit.name.equalsIgnoreCase(name))
                     .findFirst()
