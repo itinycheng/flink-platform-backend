@@ -24,6 +24,9 @@ public class JobParamService extends ServiceImpl<JobParamMapper, JobParam> {
 
     private final JobInfoService jobInfoService;
 
+    /**
+     * TODO: only support global params.
+     */
     public List<JobParam> getJobParams(Long jobId) {
         JobInfo jobInfo = jobInfoService.getById(jobId);
         if (jobInfo == null) {
