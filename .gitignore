@@ -84,3 +84,6 @@ config-cache/
 flink-platform-plugin/flink-platform-plugin-apollo/src/main/resources/META-INF/
 **/*-prod.properties
 
+#ai directory
+.kiro/*
+
