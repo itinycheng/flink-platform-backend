@@ -12,10 +12,8 @@ import com.flink.platform.common.enums.ExecutionStatus;
 import com.flink.platform.common.enums.JobType;
 import com.flink.platform.dao.entity.result.JobCallback;
 import com.flink.platform.dao.entity.task.BaseJob;
-import lombok.AccessLevel;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 import org.apache.commons.lang3.time.DurationFormatUtils;
 
 import java.io.Serializable;
@@ -77,7 +75,6 @@ public class JobRunInfo implements Serializable {
     @TableField("stop_time")
     private LocalDateTime endTime;
 
-    @Setter(AccessLevel.NONE)
     private LocalDateTime createTime;
 
     @JsonIgnore

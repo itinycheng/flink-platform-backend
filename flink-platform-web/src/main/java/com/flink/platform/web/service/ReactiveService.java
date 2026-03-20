@@ -17,6 +17,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -58,6 +59,7 @@ public class ReactiveService {
     public ReactiveExecVo execFlink(String execId, JobInfo jobInfo, String[] envProps) throws Exception {
         var jobRun = jobRunExtraService.createFrom(jobInfo, null, Constant.HOST_IP);
         jobRun.setId(0L);
+        jobRun.setCreateTime(LocalDateTime.now());
         var command = commandBuilders.stream()
                 .filter(builder -> builder.isSupported(jobInfo.getType(), jobInfo.getVersion()))
                 .findFirst()
