@@ -1,9 +1,8 @@
 package com.flink.platform.web.service;
 
 import com.flink.platform.common.enums.DeployMode;
-import com.flink.platform.common.exception.DefinitionException;
+import com.flink.platform.dao.service.ConfigService;
 import com.flink.platform.dao.service.JobRunInfoService;
-import com.flink.platform.web.config.FlinkConfig;
 import com.flink.platform.web.util.CommandUtil;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.text.StringSubstitutor;
@@ -11,10 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-
-import static com.flink.platform.common.enums.ResponseStatus.OPERATION_NOT_ALLOWED;
 
 /**
  * flink job service.
@@ -25,7 +21,7 @@ public class FlinkJobService {
 
     private static final Map<DeployMode, String> SAVEPOINT_FORMATS;
 
-    private final List<FlinkConfig> flinkConfigs;
+    private final ConfigService configService;
 
     private final JobRunInfoService jobRunService;
 
@@ -40,14 +36,10 @@ public class FlinkJobService {
 
     public void savepoint(Long jobRunId) {
         var jobRun = jobRunService.getById(jobRunId);
-        var flinkConfig = flinkConfigs.stream()
-                .filter(config -> config.getVersion().equals(jobRun.getVersion()))
-                .findAny()
-                .orElseThrow(() -> new DefinitionException(OPERATION_NOT_ALLOWED));
-
+        var config = configService.findFlinkByVersion(jobRun.getVersion());
         var backInfo = jobRun.getBackInfo();
         var argsMap = new HashMap<String, String>();
-        argsMap.put("cmdPath", flinkConfig.getCommandPath());
+        argsMap.put("cmdPath", config.getCommandPath());
         argsMap.put("appId", backInfo.getAppId());
         argsMap.put("jobId", backInfo.getJobId());
 

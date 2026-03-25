@@ -4,6 +4,7 @@ import com.flink.platform.web.util.ThreadUtil;
 import jakarta.annotation.Nonnull;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
+import org.jspecify.annotations.NullUnmarked;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.context.ApplicationContext;
@@ -14,6 +15,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /** Spring context. */
+@NullUnmarked
 @Slf4j
 @Component
 public class SpringContext implements ApplicationContextAware, DisposableBean {

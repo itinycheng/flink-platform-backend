@@ -5,6 +5,10 @@ import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
+import com.baomidou.mybatisplus.extension.handlers.Jackson3TypeHandler;
+import com.flink.platform.common.enums.JobFlowType;
+import com.flink.platform.common.enums.Status;
+import com.flink.platform.dao.entity.config.BaseConfig;
 import lombok.AccessLevel;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -13,7 +17,7 @@ import lombok.Setter;
 
 import java.time.LocalDateTime;
 
-/** System env configuration. */
+/** configurations. */
 @Data
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = false)
@@ -28,9 +32,14 @@ public class Config {
     private String description;
 
     /** flink, spark. */
-    private Long type;
+    private JobFlowType type;
 
-    private Integer status;
+    private String version;
+
+    @TableField(typeHandler = Jackson3TypeHandler.class)
+    private BaseConfig config;
+
+    private Status status;
 
     @Setter(AccessLevel.NONE)
     @TableField(update = "now()", updateStrategy = FieldStrategy.ALWAYS)
