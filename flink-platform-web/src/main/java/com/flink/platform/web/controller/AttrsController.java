@@ -5,8 +5,9 @@ import com.flink.platform.common.enums.ExecutionCondition;
 import com.flink.platform.common.enums.ExecutionStatus;
 import com.flink.platform.common.enums.JobType;
 import com.flink.platform.common.util.EnumUtil;
+import com.flink.platform.dao.entity.Config;
 import com.flink.platform.dao.entity.task.DependentJob;
-import com.flink.platform.web.config.FlinkConfig;
+import com.flink.platform.dao.service.ConfigService;
 import com.flink.platform.web.entity.response.ResultInfo;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -47,7 +48,7 @@ public class AttrsController {
 
     private static final String CLASS_PATH_PREFIX = "com.flink.platform.common.enums";
 
-    private final List<FlinkConfig> flinkConfigs;
+    private final ConfigService configService;
 
     @GetMapping(value = "/preconditions")
     public ResultInfo<List<ExecutionCondition>> precondition() {
@@ -66,8 +67,8 @@ public class AttrsController {
     public ResultInfo<List<String>> versions(String type) {
         var versions = new ArrayList<String>();
         if (FLINK.equals(type)) {
-            versions.addAll(flinkConfigs.stream()
-                    .map(FlinkConfig::getVersion)
+            versions.addAll(configService.getEnabledFlinkConfigs().stream()
+                    .map(Config::getVersion)
                     .filter(Objects::nonNull)
                     .toList());
         } else {

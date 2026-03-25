@@ -1,13 +1,17 @@
 package com.flink.platform.web.command.flink;
 
+import com.flink.platform.common.annotation.VersionRange;
 import com.flink.platform.common.enums.JobType;
 import com.flink.platform.common.exception.CommandUnableGenException;
+import com.flink.platform.common.util.ComparableVersion;
+import com.flink.platform.common.util.Preconditions;
 import com.flink.platform.dao.entity.JobRunInfo;
+import com.flink.platform.dao.entity.config.FlinkConfig;
 import com.flink.platform.dao.entity.task.FlinkJob;
+import com.flink.platform.dao.service.ConfigService;
 import com.flink.platform.dao.service.ResourceService;
 import com.flink.platform.web.command.CommandBuilder;
 import com.flink.platform.web.command.JobCommand;
-import com.flink.platform.web.config.FlinkConfig;
 import com.flink.platform.web.environment.HadoopService;
 import com.flink.platform.web.service.ResourceManageService;
 import com.flink.platform.web.service.StorageService;
@@ -60,21 +64,31 @@ public abstract class FlinkCommandBuilder implements CommandBuilder {
     @Resource
     protected HadoopService hadoopService;
 
-    protected final FlinkConfig flinkConfig;
+    @Resource
+    protected ConfigService configService;
 
-    public FlinkCommandBuilder(FlinkConfig flinkConfig) {
-        this.flinkConfig = flinkConfig;
+    protected final ComparableVersion minVersion;
+
+    protected final ComparableVersion maxVersion;
+
+    public FlinkCommandBuilder() {
+        VersionRange annotation = this.getClass().getAnnotation(VersionRange.class);
+        Preconditions.checkNotNull(
+                annotation, "@VersionRange is required on " + this.getClass().getName());
+        this.minVersion = new ComparableVersion(annotation.minVersion());
+        this.maxVersion = annotation.maxVersion().isEmpty() ? null : new ComparableVersion(annotation.maxVersion());
     }
 
     @Override
     public boolean isSupported(JobType jobType, String version) {
-        return SUPPORTED_JOB_TYPES.contains(jobType) && flinkConfig.getVersion().equals(version);
+        return SUPPORTED_JOB_TYPES.contains(jobType) && this.isVersionInRange(version);
     }
 
     @Override
     public JobCommand buildCommand(Long flowRunId, @Nonnull JobRunInfo jobRun) throws Exception {
         var flinkJob = jobRun.getConfig().unwrap(FlinkJob.class);
-        List<String> extJarStoragePaths = getExtJarPaths(flinkJob);
+        var flinkConfig = configService.findFlinkByVersion(jobRun.getVersion());
+        var extJarStoragePaths = getExtJarPaths(flinkJob);
 
         var deployMode = jobRun.getDeployMode();
         var command = new FlinkCommand(jobRun.getId(), deployMode);
@@ -89,7 +103,7 @@ public abstract class FlinkCommandBuilder implements CommandBuilder {
         // TODO: support more resource providers.
         configs.put(YARN_APPLICATION_NAME, createAppName(jobRun));
         configs.put(YARN_APPLICATION_TAG, createAppTag(jobRun));
-        configs.put(YARN_PROVIDED_LIB_DIRS, getMergedLibDirs(extJarStoragePaths));
+        configs.put(YARN_PROVIDED_LIB_DIRS, getMergedLibDirs(flinkConfig, extJarStoragePaths));
 
         command.setClasspaths(downloadAndGetLocalUrls(extJarStoragePaths));
         switch (jobRun.getType()) {
@@ -101,7 +115,7 @@ public abstract class FlinkCommandBuilder implements CommandBuilder {
                 command.setOptionArgs(flinkJob.getOptionArgs());
                 break;
             case FLINK_SQL:
-                var localJarPath = getLocalPathOfSqlJarFile();
+                var localJarPath = getLocalPathOfSqlJarFile(flinkConfig);
                 var filePath = sqlContextHelper.convertFromAndSaveToFile(jobRun);
                 command.setMainArgs(filePath);
                 command.setMainJar(localJarPath);
@@ -138,7 +152,7 @@ public abstract class FlinkCommandBuilder implements CommandBuilder {
         return resourceManageService.copyFromStorageToLocal(jarPath);
     }
 
-    private Object getMergedLibDirs(List<String> extJarList) {
+    private Object getMergedLibDirs(FlinkConfig flinkConfig, List<String> extJarList) {
         var userLibDirs = extJarList.stream()
                 .map(extJar -> storageService.getParentPath(extJar))
                 .distinct()
@@ -158,7 +172,7 @@ public abstract class FlinkCommandBuilder implements CommandBuilder {
         return jarUrls;
     }
 
-    private String getLocalPathOfSqlJarFile() {
+    private String getLocalPathOfSqlJarFile(FlinkConfig flinkConfig) {
         var sqlJarName = new Path(flinkConfig.getJarFile()).getName();
         var jobRootPath = PathUtil.getExecJobRootPath();
         var localFile = String.join(SLASH, jobRootPath, sqlJarName);
@@ -188,5 +202,10 @@ public abstract class FlinkCommandBuilder implements CommandBuilder {
                 .map(resourceId -> resourceService.getById(resourceId))
                 .map(com.flink.platform.dao.entity.Resource::getFullName)
                 .collect(toList());
+    }
+
+    private boolean isVersionInRange(String version) {
+        var v = new ComparableVersion(version);
+        return v.compareTo(minVersion) >= 0 && (maxVersion == null || v.compareTo(maxVersion) < 0);
     }
 }
