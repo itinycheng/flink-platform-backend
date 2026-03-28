@@ -69,7 +69,7 @@
 		<maven-checkstyle-plugin.version>3.6.0</maven-checkstyle-plugin.version>
 		<palantir-java-format.version>2.83.0</palantir-java-format.version>
 		<spotless-maven-plugin.version>3.2.1</spotless-maven-plugin.version>
-		<maven-shade-plugin.version>3.6.1</maven-shade-plugin.version>
+		<maven-shade-plugin.version>3.6.2</maven-shade-plugin.version>
 		<rewrite-maven-plugin.version>6.28.1</rewrite-maven-plugin.version>
 		<rewrite-migrate-java.version>3.26.0</rewrite-migrate-java.version>
 		<rewrite-spring.version>6.23.1</rewrite-spring.version>
