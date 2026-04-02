@@ -55,3 +55,18 @@ WHERE `config` LIKE '%inheritParamMode%';
 UPDATE t_job_run SET status = 'FAILURE' WHERE status in ('NOT_EXIST', 'ABNORMAL');
 UPDATE t_job_flow_run SET status = 'FAILURE' WHERE status in ('NOT_EXIST', 'ABNORMAL');
 
+-- 2026-04-08
+CREATE TABLE `t_audit_log` (
+  `id` bigint(11) unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
+  `entity_id` bigint(11) NOT NULL COMMENT 'entity primary key',
+  `entity_type` varchar(64) NOT NULL COMMENT 'entity type: JOB, USER, RESOURCE, etc.',
+  `operation` varchar(16) NOT NULL COMMENT 'INSERT | UPDATE | DELETE',
+  `snapshot` text NOT NULL COMMENT 'full JSON snapshot of entity state',
+  `operator_id` bigint(11) DEFAULT NULL COMMENT 'user id who made the change',
+  `operate_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'change time',
+  PRIMARY KEY (`id`),
+  KEY `t_audit_log_entity_id_idx` (`entity_id`) USING BTREE,
+  KEY `t_audit_log_entity_type_idx` (`entity_type`) USING BTREE,
+  KEY `t_audit_log_operator_id_idx` (`operator_id`) USING BTREE,
+  KEY `t_audit_log_operate_time_idx` (`operate_time`) USING BTREE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='audit log';
