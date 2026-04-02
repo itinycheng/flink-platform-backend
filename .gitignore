@@ -87,3 +87,5 @@ flink-platform-plugin/flink-platform-plugin-apollo/src/main/resources/META-INF/
 #ai directory
 .kiro/*
 
+.claude/*
+!.claude/settings.json
