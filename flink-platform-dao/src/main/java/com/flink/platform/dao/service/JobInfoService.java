@@ -64,9 +64,11 @@ public class JobInfoService extends ServiceImpl<JobInfoMapper, JobInfo> {
                 .stream()
                 .map(JobRunInfo::getFlowRunId)
                 .collect(toSet());
+        if (!flowRunIds.isEmpty()) {
+            jobFlowRunService.remove(new QueryWrapper<JobFlowRun>().lambda().in(JobFlowRun::getId, flowRunIds));
+        }
 
         jobRunService.remove(new QueryWrapper<JobRunInfo>().lambda().in(JobRunInfo::getJobId, jobId));
-        jobFlowRunService.remove(new QueryWrapper<JobFlowRun>().lambda().in(JobFlowRun::getId, flowRunIds));
         remove(new QueryWrapper<JobInfo>().lambda().in(JobInfo::getId, jobId));
     }
 

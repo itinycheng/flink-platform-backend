@@ -1,5 +1,6 @@
 package com.flink.platform.web.aspect;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.flink.platform.common.annotation.Auditable;
 import com.flink.platform.common.context.UserContext;
 import com.flink.platform.common.util.JsonUtil;
@@ -76,6 +77,7 @@ public class AuditAspect {
         private Object[] args;
         private String callee;
 
+        @JsonIgnore
         @Override
         public Long getId() {
             if (args == null || args.length != 1) {
