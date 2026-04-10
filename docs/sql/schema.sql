@@ -407,10 +407,10 @@ CREATE TABLE `t_user` (
   `id` bigint(11) unsigned NOT NULL AUTO_INCREMENT,
   `username` varchar(64) NOT NULL,
   `password` varchar(255) DEFAULT NULL,
-  `type` varchar(32) DEFAULT NULL,
   `email` varchar(255) DEFAULT NULL,
   `workers` varchar(255) DEFAULT NULL,
-  `status` tinyint(2) DEFAULT NULL,
+  `roles` varchar(1024) DEFAULT NULL,
+  `status` varchar(32) DEFAULT NULL,
   `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   `create_time` datetime DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`)
@@ -528,7 +528,7 @@ CREATE TABLE `t_audit_log` (
 -- Records of t_user
 -- ----------------------------
 BEGIN;
-INSERT INTO `t_user` VALUES (1, 'admin', '111111', 'ADMIN', 'admin@email.com', '[]', NULL, now(), now());
+INSERT INTO `t_user` VALUES (1, 'admin', '111111', 'super_admin@email.com', '[]', '{"global":"SUPER_ADMIN","workspaces":{}}', 'NORMAL', now(), now());
 COMMIT;
 
 -- ----------------------------

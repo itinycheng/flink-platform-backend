@@ -8,6 +8,7 @@ import com.flink.platform.dao.entity.User;
 import com.flink.platform.dao.entity.Worker;
 import com.flink.platform.dao.service.UserService;
 import com.flink.platform.dao.service.WorkerService;
+import com.flink.platform.web.annotation.RequirePermission;
 import com.flink.platform.web.entity.request.UserRequest;
 import com.flink.platform.web.entity.response.ResultInfo;
 import lombok.RequiredArgsConstructor;
@@ -30,9 +31,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+import static com.flink.platform.common.enums.Permission.SYSTEM_MANAGE;
 import static com.flink.platform.common.enums.ResponseStatus.ERROR_PARAMETER;
-import static com.flink.platform.common.enums.ResponseStatus.USER_HAVE_NO_PERMISSION;
-import static com.flink.platform.common.enums.UserType.ADMIN;
 import static com.flink.platform.common.enums.WorkerStatus.INACTIVE;
 import static com.flink.platform.web.entity.response.ResultInfo.failure;
 import static com.flink.platform.web.entity.response.ResultInfo.success;
@@ -47,22 +47,19 @@ public class UserController {
 
     private final WorkerService workerService;
 
+    @RequirePermission(SYSTEM_MANAGE)
     @GetMapping(value = "/get/{userId}")
     public ResultInfo<User> get(@PathVariable Long userId) {
         User user = userService.getById(userId);
         return success(user);
     }
 
+    @RequirePermission(SYSTEM_MANAGE)
     @PostMapping(value = "/create")
-    public ResultInfo<Long> create(
-            @RequestAttribute(value = Constant.SESSION_USER) User loginUser, @RequestBody UserRequest userRequest) {
+    public ResultInfo<Long> create(@RequestBody UserRequest userRequest) {
         var errorMsg = userRequest.validateOnCreate();
         if (StringUtils.isNotBlank(errorMsg)) {
             return failure(ERROR_PARAMETER, errorMsg);
-        }
-
-        if (loginUser.getType() != ADMIN) {
-            return failure(USER_HAVE_NO_PERMISSION);
         }
 
         var user = userRequest.getUser();
@@ -71,16 +68,12 @@ public class UserController {
         return success(user.getId());
     }
 
+    @RequirePermission(SYSTEM_MANAGE)
     @PostMapping(value = "/update")
-    public ResultInfo<Long> update(
-            @RequestAttribute(value = Constant.SESSION_USER) User loginUser, @RequestBody UserRequest userRequest) {
+    public ResultInfo<Long> update(@RequestBody UserRequest userRequest) {
         var errorMsg = userRequest.validateOnUpdate();
         if (StringUtils.isNotBlank(errorMsg)) {
             return failure(ERROR_PARAMETER, errorMsg);
-        }
-
-        if (loginUser.getType() != ADMIN) {
-            return failure(USER_HAVE_NO_PERMISSION);
         }
 
         var user = userRequest.getUser();
@@ -88,18 +81,13 @@ public class UserController {
         return success(user.getId());
     }
 
+    @RequirePermission(SYSTEM_MANAGE)
     @GetMapping(value = "/page")
     public ResultInfo<IPage<User>> page(
-            @RequestAttribute(value = Constant.SESSION_USER) User loginUser,
             @RequestParam(name = "page", required = false, defaultValue = "1") Integer page,
             @RequestParam(name = "size", required = false, defaultValue = "20") Integer size,
             @RequestParam(name = "name", required = false) String name) {
         var queryWrapper = new QueryWrapper<User>().lambda().like(Objects.nonNull(name), User::getUsername, name);
-
-        if (loginUser.getType() != ADMIN) {
-            queryWrapper.eq(User::getId, loginUser.getId());
-        }
-
         var pager = new Page<User>(page, size);
         var iPage = userService.page(pager, queryWrapper);
         return success(iPage);

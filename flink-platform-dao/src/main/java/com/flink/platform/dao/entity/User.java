@@ -6,7 +6,8 @@ import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.baomidou.mybatisplus.extension.handlers.Jackson3TypeHandler;
-import com.flink.platform.common.enums.UserType;
+import com.flink.platform.common.enums.UserStatus;
+import com.flink.platform.common.model.UserRoles;
 import lombok.AccessLevel;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -27,14 +28,15 @@ public class User {
 
     private String password;
 
-    private UserType type;
-
     private String email;
 
     @TableField(typeHandler = Jackson3TypeHandler.class)
     private LongArrayList workers;
 
-    private String status;
+    @TableField(typeHandler = Jackson3TypeHandler.class)
+    private UserRoles roles;
+
+    private UserStatus status;
 
     @Setter(AccessLevel.NONE)
     @TableField(update = "now()", updateStrategy = FieldStrategy.ALWAYS)

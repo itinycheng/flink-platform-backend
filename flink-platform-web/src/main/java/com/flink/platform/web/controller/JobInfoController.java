@@ -13,6 +13,7 @@ import com.flink.platform.dao.entity.User;
 import com.flink.platform.dao.service.JobFlowService;
 import com.flink.platform.dao.service.JobInfoService;
 import com.flink.platform.dao.service.JobRunInfoService;
+import com.flink.platform.web.annotation.RequirePermission;
 import com.flink.platform.web.entity.JobQuartzInfo;
 import com.flink.platform.web.entity.request.JobInfoRequest;
 import com.flink.platform.web.entity.response.ResultInfo;
@@ -37,6 +38,10 @@ import java.util.List;
 
 import static com.flink.platform.common.enums.ExecutionStatus.getNonTerminals;
 import static com.flink.platform.common.enums.JobStatus.ONLINE;
+import static com.flink.platform.common.enums.Permission.TASK_EDIT;
+import static com.flink.platform.common.enums.Permission.TASK_EXEC;
+import static com.flink.platform.common.enums.Permission.TASK_PURGE;
+import static com.flink.platform.common.enums.Permission.TASK_VIEW;
 import static com.flink.platform.common.enums.ResponseStatus.ERROR_PARAMETER;
 import static com.flink.platform.common.enums.ResponseStatus.EXIST_UNFINISHED_PROCESS;
 import static com.flink.platform.common.enums.ResponseStatus.NOT_RUNNABLE_STATUS;
@@ -66,6 +71,7 @@ public class JobInfoController {
 
     private final QuartzService quartzService;
 
+    @RequirePermission(TASK_EDIT)
     @PostMapping(value = "/create")
     public ResultInfo<JobInfo> create(
             @RequestAttribute(value = Constant.SESSION_USER) User loginUser,
@@ -82,6 +88,7 @@ public class JobInfoController {
         return success(jobInfoService.saveJob(job));
     }
 
+    @RequirePermission(TASK_EDIT)
     @PostMapping(value = "/update")
     public ResultInfo<JobInfo> update(@RequestBody JobInfoRequest jobInfoRequest) {
         var errorMsg = jobInfoRequest.validateOnUpdate();
@@ -93,18 +100,21 @@ public class JobInfoController {
         return success(jobInfoService.updateJob(jobInfo));
     }
 
+    @RequirePermission(TASK_VIEW)
     @GetMapping(value = "/get/{jobId}")
     public ResultInfo<JobInfo> get(@PathVariable Long jobId) {
         var jobInfo = jobInfoService.getById(jobId);
         return success(jobInfo);
     }
 
+    @RequirePermission(TASK_EDIT)
     @GetMapping(value = "/delete/{jobId}")
     public ResultInfo<Boolean> delete(@PathVariable Long jobId) {
         var bool = jobInfoService.removeById(jobId);
         return success(bool);
     }
 
+    @RequirePermission(TASK_VIEW)
     @GetMapping(value = "/page")
     public ResultInfo<IPage<JobInfo>> page(
             @RequestParam(name = "page", required = false, defaultValue = "1") Integer page,
@@ -165,6 +175,7 @@ public class JobInfoController {
         return success(result);
     }
 
+    @RequirePermission(TASK_VIEW)
     @GetMapping(value = "/list")
     public ResultInfo<List<JobInfo>> list(
             @RequestParam(name = "flowId") Long flowId,
@@ -182,6 +193,7 @@ public class JobInfoController {
         return success(list);
     }
 
+    @RequirePermission(TASK_VIEW)
     @PostMapping(value = "/getByIds")
     public ResultInfo<List<JobInfo>> getByIds(@RequestBody List<Long> ids) {
         if (isEmpty(ids)) {
@@ -196,6 +208,7 @@ public class JobInfoController {
     }
 
     @Deprecated
+    @RequirePermission(TASK_EXEC)
     @GetMapping(value = "/schedule/runOnce/{jobId}")
     public ResultInfo<Long> runOnce(@PathVariable long jobId) {
         var jobInfo = jobInfoService.getById(jobId);
@@ -220,21 +233,7 @@ public class JobInfoController {
         }
     }
 
-    private List<Long> getJobIdsInFlow(Long flowId) {
-        if (flowId == null) {
-            return Collections.emptyList();
-        }
-
-        var jobFlow = jobFlowService.getById(flowId);
-        if (jobFlow != null && jobFlow.getFlow() != null) {
-            return jobFlow.getFlow().getVertices().stream()
-                    .map(JobVertex::getJobId)
-                    .collect(toList());
-        } else {
-            return Collections.emptyList();
-        }
-    }
-
+    @RequirePermission(TASK_PURGE)
     @GetMapping(value = "/purge/{jobId}")
     public ResultInfo<Long> purge(
             @RequestAttribute(value = Constant.SESSION_USER) User loginUser, @PathVariable long jobId) {
@@ -257,5 +256,22 @@ public class JobInfoController {
 
         jobInfoService.removeAllById(jobId);
         return success(jobId);
+    }
+
+    // ====================================================
+    // ====================== private =====================
+    // ====================================================
+
+    private List<Long> getJobIdsInFlow(Long flowId) {
+        if (flowId == null) {
+            return Collections.emptyList();
+        }
+
+        var jobFlow = jobFlowService.getById(flowId);
+        if (jobFlow == null || jobFlow.getFlow() == null) {
+            return Collections.emptyList();
+        }
+
+        return jobFlow.getFlow().getVertices().stream().map(JobVertex::getJobId).collect(toList());
     }
 }
