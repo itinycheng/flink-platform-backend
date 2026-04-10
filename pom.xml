@@ -8,7 +8,7 @@
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-dependencies</artifactId>
-		<version>4.0.1</version>
+		<version>4.0.5</version>
 	</parent>
 
 	<groupId>com.flink.platform</groupId>
@@ -60,18 +60,20 @@
 		<dynamic-datasource.version>4.5.0</dynamic-datasource.version>
 		<grpc.version>1.77.0</grpc.version>
 		<auto-service.version>1.1.1</auto-service.version>
-		<shedlock.version>7.5.0</shedlock.version>
+		<shedlock.version>7.7.0</shedlock.version>
 		<grpc-spring-boot.version>3.1.0.RELEASE</grpc-spring-boot.version>
-		<spring-grpc.version>1.0.1</spring-grpc.version>
-		<checkstyle.version>13.0.0</checkstyle.version>
+		<spring-grpc.version>1.0.2</spring-grpc.version>
+		<checkstyle.version>13.3.0</checkstyle.version>
+		<error-prone.version>2.46.0</error-prone.version>
+		<nullaway.version>0.13.1</nullaway.version>
 		<maven-checkstyle-plugin.version>3.6.0</maven-checkstyle-plugin.version>
 		<palantir-java-format.version>2.83.0</palantir-java-format.version>
-		<spotless-maven-plugin.version>3.1.0</spotless-maven-plugin.version>
+		<spotless-maven-plugin.version>3.2.1</spotless-maven-plugin.version>
 		<maven-shade-plugin.version>3.6.1</maven-shade-plugin.version>
-		<rewrite-maven-plugin.version>6.25.0</rewrite-maven-plugin.version>
-		<rewrite-migrate-java.version>3.20.0</rewrite-migrate-java.version>
-		<rewrite-spring.version>6.21.0</rewrite-spring.version>
-		<maven-compiler-plugin.version>3.14.1</maven-compiler-plugin.version>
+		<rewrite-maven-plugin.version>6.28.1</rewrite-maven-plugin.version>
+		<rewrite-migrate-java.version>3.26.0</rewrite-migrate-java.version>
+		<rewrite-spring.version>6.23.1</rewrite-spring.version>
+		<maven-compiler-plugin.version>3.15.0</maven-compiler-plugin.version>
 	</properties>
 
 	<dependencies>
@@ -93,6 +95,17 @@
 		<dependency>
 			<groupId>org.projectlombok</groupId>
 			<artifactId>lombok</artifactId>
+			<scope>${scope.provided}</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.jspecify</groupId>
+			<artifactId>jspecify</artifactId>
+			<scope>${scope.provided}</scope>
+		</dependency>
+		<dependency>
+			<groupId>com.google.auto.service</groupId>
+			<artifactId>auto-service</artifactId>
+			<version>${auto-service.version}</version>
 			<scope>${scope.provided}</scope>
 		</dependency>
 	</dependencies>
@@ -309,7 +322,64 @@
 				<version>${maven-compiler-plugin.version}</version>
 				<configuration>
 					<release>${maven.compiler.release}</release>
+					<compilerArgs>
+						<arg>-parameters</arg>
+					</compilerArgs>
+					<annotationProcessorPaths>
+						<path>
+							<groupId>com.google.auto.service</groupId>
+							<artifactId>auto-service</artifactId>
+							<version>${auto-service.version}</version>
+						</path>
+						<path>
+							<groupId>org.projectlombok</groupId>
+							<artifactId>lombok</artifactId>
+							<version>${lombok.version}</version>
+						</path>
+						<path>
+							<groupId>com.google.errorprone</groupId>
+							<artifactId>error_prone_core</artifactId>
+							<version>${error-prone.version}</version>
+						</path>
+						<path>
+							<groupId>com.uber.nullaway</groupId>
+							<artifactId>nullaway</artifactId>
+							<version>${nullaway.version}</version>
+						</path>
+					</annotationProcessorPaths>
 				</configuration>
+				<executions>
+					<execution>
+						<id>default-compile</id>
+						<phase>none</phase>
+					</execution>
+					<execution>
+						<id>default-testCompile</id>
+						<phase>none</phase>
+					</execution>
+					<execution>
+						<id>java-compile</id>
+						<phase>compile</phase>
+						<goals>
+							<goal>compile</goal>
+						</goals>
+						<configuration>
+							<compilerArgs>
+								<arg>-XDcompilePolicy=simple</arg>
+								<arg>-XDaddTypeAnnotationsToSymbol=true</arg>
+								<arg>--should-stop=ifError=FLOW</arg>
+								<arg>-Xplugin:ErrorProne -XepDisableAllChecks -Xep:NullAway:ERROR -XepOpt:NullAway:OnlyNullMarked -XepOpt:NullAway:JSpecifyMode=true</arg>
+							</compilerArgs>
+						</configuration>
+					</execution>
+					<execution>
+						<id>java-test-compile</id>
+						<phase>test-compile</phase>
+						<goals>
+							<goal>testCompile</goal>
+						</goals>
+					</execution>
+				</executions>
 			</plugin>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>

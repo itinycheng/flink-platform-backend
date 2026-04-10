@@ -5,7 +5,6 @@ import com.flink.platform.web.common.AppRunningRetryPredicate;
 import com.flink.platform.web.model.ApplicationStatusReport;
 import com.flink.platform.web.util.ThreadUtil;
 import com.google.common.collect.Lists;
-import jakarta.annotation.Nonnull;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import lombok.Getter;
@@ -19,6 +18,7 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.yarn.api.records.ApplicationReport;
 import org.apache.hadoop.yarn.client.api.YarnClient;
 import org.apache.hadoop.yarn.conf.YarnConfiguration;
+import org.jspecify.annotations.Nullable;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Lazy;
@@ -51,13 +51,14 @@ public class HadoopService {
 
     private static final int REQUEST_APP_REPORT_BATCH_SIZE = 100;
 
-    private final String primaryClusterIdFilePath;
-
     // tag -> ApplicationStatusReport.
     @Getter
-    private final Map<String, ApplicationStatusReport> runningApplications;
+    private final Map<String, ApplicationStatusReport> runningApplications = new ConcurrentHashMap<>();
 
-    private final ScheduledExecutorService reportRefreshExecutor;
+    private final ScheduledExecutorService reportRefreshExecutor =
+            ThreadUtil.newDaemonSingleScheduledExecutor("yarn-application-report-refresh");
+
+    private final String primaryClusterIdFilePath;
 
     private YarnClient yarnClient;
 
@@ -68,39 +69,18 @@ public class HadoopService {
     @Autowired
     public HadoopService(@Qualifier("primaryClusterIdFilePath") String primaryClusterIdFilePath) {
         this.primaryClusterIdFilePath = primaryClusterIdFilePath;
-        this.runningApplications = new ConcurrentHashMap<>();
-        this.reportRefreshExecutor = ThreadUtil.newDaemonSingleScheduledExecutor("yarn-application-report-refresh");
+        this.initHadoopClient();
     }
 
-    @SuppressWarnings("unused")
     @PostConstruct
-    public void initHadoopClient() {
-        log.info("Init Yarn and FileSystem clients of hadoop corresponding to the current running instance.");
-        var conf = HadoopHelper.getHadoopConfiguration();
-        yarnClient = YarnClient.createYarnClient();
-        yarnClient.init(new YarnConfiguration(conf));
-        yarnClient.start();
-
-        try {
-            hdfsClient = FileSystem.newInstance(conf);
-        } catch (Exception e) {
-            throw new RuntimeException("create HDFS FileSystem failed", e);
-        }
-
-        try {
-            isPrimaryCluster =
-                    primaryClusterIdFilePath.contains("hdfs") && hdfsClient.exists(new Path(primaryClusterIdFilePath));
-        } catch (Exception e) {
-            throw new RuntimeException("check cluster id failed");
-        }
-
+    public void startScheduler() {
         // start the application report refresh thread.
         reportRefreshExecutor.scheduleWithFixedDelay(
                 () -> ExceptionUtil.runWithErrorLogging(this::refreshReport), RandomUtils.nextInt(10, 30), 40, SECONDS);
     }
 
     @Retryable(maxRetries = 6, delay = 1500, multiplier = 2, predicate = AppRunningRetryPredicate.class)
-    public ApplicationStatusReport getStatusReportWithRetry(String applicationTag) throws Exception {
+    public @Nullable ApplicationStatusReport getStatusReportWithRetry(String applicationTag) throws Exception {
         if (StringUtils.isEmpty(applicationTag)) {
             log.warn("The application tag is empty.");
             return null;
@@ -204,13 +184,34 @@ public class HadoopService {
         log.info("Refresh {} application reports, cost {} ms", allTags.length, stopWatch.getTime());
     }
 
-    private List<ApplicationReport> getReportsWithRetry(@Nonnull Set<String> applicationTags) throws Exception {
+    private List<ApplicationReport> getReportsWithRetry(Set<String> applicationTags) throws Exception {
         var applications = yarnClient.getApplications(null, null, applicationTags);
         if (CollectionUtils.isEmpty(applications)) {
             ThreadUtil.sleep(THREE_SECOND_MILLIS);
             applications = yarnClient.getApplications(null, null, applicationTags);
         }
         return applications;
+    }
+
+    private void initHadoopClient() {
+        log.info("Init Yarn and FileSystem clients of hadoop corresponding to the current running instance.");
+        var conf = HadoopHelper.getHadoopConfiguration();
+        yarnClient = YarnClient.createYarnClient();
+        yarnClient.init(new YarnConfiguration(conf));
+        yarnClient.start();
+
+        try {
+            hdfsClient = FileSystem.newInstance(conf);
+        } catch (Exception e) {
+            throw new RuntimeException("create HDFS FileSystem failed", e);
+        }
+
+        try {
+            isPrimaryCluster =
+                    primaryClusterIdFilePath.contains("hdfs") && hdfsClient.exists(new Path(primaryClusterIdFilePath));
+        } catch (Exception e) {
+            throw new RuntimeException("check cluster id failed");
+        }
     }
 
     @PreDestroy

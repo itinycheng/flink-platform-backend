@@ -5,33 +5,32 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 
 import java.io.File;
+import java.util.ArrayList;
 
 /** Hadoop util. */
 @Slf4j
 public class HadoopHelper {
 
     public static Configuration getHadoopConfiguration() {
-        Configuration result = new Configuration();
-        boolean foundHadoopConfiguration = false;
+        var result = new Configuration();
+        var foundHadoopConfiguration = false;
 
         // Approach 1: HADOOP_HOME environment variables
-        String[] possibleHadoopConfPaths = new String[2];
+        var possibleHadoopConfPaths = new ArrayList<String>(2);
 
-        final String hadoopHome = System.getenv("HADOOP_HOME");
+        final var hadoopHome = System.getenv("HADOOP_HOME");
         if (hadoopHome != null) {
             log.info("Searching Hadoop configuration files in HADOOP_HOME: {}", hadoopHome);
-            possibleHadoopConfPaths[0] = hadoopHome + "/conf";
-            possibleHadoopConfPaths[1] = hadoopHome + "/etc/hadoop"; // hadoop 2.2
+            possibleHadoopConfPaths.add(hadoopHome + "/conf");
+            possibleHadoopConfPaths.add(hadoopHome + "/etc/hadoop"); // hadoop 2.2
         }
 
-        for (String possibleHadoopConfPath : possibleHadoopConfPaths) {
-            if (possibleHadoopConfPath != null) {
-                foundHadoopConfiguration = addHadoopConfIfFound(result, possibleHadoopConfPath);
-            }
+        for (var possibleHadoopConfPath : possibleHadoopConfPaths) {
+            foundHadoopConfiguration = addHadoopConfIfFound(result, possibleHadoopConfPath);
         }
 
         // Approach 2: HADOOP_CONF_DIR environment variable
-        String hadoopConfDir = System.getenv("HADOOP_CONF_DIR");
+        var hadoopConfDir = System.getenv("HADOOP_CONF_DIR");
         if (hadoopConfDir != null) {
             log.info("Searching Hadoop configuration files in HADOOP_CONF_DIR: {}", hadoopConfDir);
             foundHadoopConfiguration = addHadoopConfIfFound(result, hadoopConfDir) || foundHadoopConfiguration;
@@ -46,23 +45,23 @@ public class HadoopHelper {
     }
 
     private static boolean addHadoopConfIfFound(Configuration configuration, String possibleHadoopConfPath) {
-        boolean foundHadoopConfiguration = false;
+        var foundHadoopConfiguration = false;
         if (new File(possibleHadoopConfPath).exists()) {
-            String coreSitePath = possibleHadoopConfPath + "/core-site.xml";
+            var coreSitePath = possibleHadoopConfPath + "/core-site.xml";
             if (new File(coreSitePath).exists()) {
                 configuration.addResource(new Path(coreSitePath));
                 log.info("Adding {}/core-site.xml to hadoop configuration", possibleHadoopConfPath);
                 foundHadoopConfiguration = true;
             }
 
-            String hdfsSitePath = possibleHadoopConfPath + "/hdfs-site.xml";
+            var hdfsSitePath = possibleHadoopConfPath + "/hdfs-site.xml";
             if (new File(hdfsSitePath).exists()) {
                 configuration.addResource(new Path(hdfsSitePath));
                 log.info("Adding {}/hdfs-site.xml to hadoop configuration", possibleHadoopConfPath);
                 foundHadoopConfiguration = true;
             }
 
-            String yarnSitePath = possibleHadoopConfPath + "/yarn-site.xml";
+            var yarnSitePath = possibleHadoopConfPath + "/yarn-site.xml";
             if (new File(yarnSitePath).exists()) {
                 configuration.addResource(new Path(yarnSitePath));
                 log.info("Adding {}/yarn-site.xml to hadoop configuration", possibleHadoopConfPath);

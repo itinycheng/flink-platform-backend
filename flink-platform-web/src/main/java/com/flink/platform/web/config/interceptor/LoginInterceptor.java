@@ -2,6 +2,8 @@ package com.flink.platform.web.config.interceptor;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.flink.platform.common.constants.Constant;
+import com.flink.platform.common.context.UserContext;
+import com.flink.platform.dao.entity.Session;
 import com.flink.platform.dao.entity.User;
 import com.flink.platform.dao.service.SessionService;
 import com.flink.platform.dao.service.UserService;
@@ -51,6 +53,16 @@ public class LoginInterceptor implements HandlerInterceptor {
         }
 
         request.setAttribute(Constant.SESSION_USER, user);
+        UserContext.set(user.getId());
         return true;
+    }
+
+    @Override
+    public void afterCompletion(
+            @Nonnull HttpServletRequest request,
+            @Nonnull HttpServletResponse response,
+            @Nonnull Object handler,
+            Exception ex) {
+        UserContext.clear();
     }
 }

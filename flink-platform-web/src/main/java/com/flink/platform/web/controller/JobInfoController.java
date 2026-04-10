@@ -75,12 +75,11 @@ public class JobInfoController {
             return failure(ERROR_PARAMETER, errorMsg);
         }
 
-        var jobInfo = jobInfoRequest.getJobInfo();
-        jobInfo.setId(null);
-        jobInfo.setStatus(ONLINE);
-        jobInfo.setUserId(loginUser.getId());
-        jobInfoService.save(jobInfo);
-        return success(jobInfo);
+        var job = jobInfoRequest.getJobInfo();
+        job.setId(null);
+        job.setStatus(ONLINE);
+        job.setUserId(loginUser.getId());
+        return success(jobInfoService.saveJob(job));
     }
 
     @PostMapping(value = "/update")
@@ -91,8 +90,7 @@ public class JobInfoController {
         }
 
         var jobInfo = jobInfoRequest.getJobInfo();
-        jobInfoService.updateById(jobInfo);
-        return success(jobInfo);
+        return success(jobInfoService.updateJob(jobInfo));
     }
 
     @GetMapping(value = "/get/{jobId}")
@@ -257,7 +255,7 @@ public class JobInfoController {
             }
         }
 
-        jobInfoService.deleteAllById(jobId);
+        jobInfoService.removeAllById(jobId);
         return success(jobId);
     }
 }

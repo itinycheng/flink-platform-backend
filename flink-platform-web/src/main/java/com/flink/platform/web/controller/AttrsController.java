@@ -4,11 +4,14 @@ import com.flink.platform.common.enums.DeployMode;
 import com.flink.platform.common.enums.ExecutionCondition;
 import com.flink.platform.common.enums.ExecutionStatus;
 import com.flink.platform.common.enums.JobType;
+import com.flink.platform.common.util.EnumUtil;
+import com.flink.platform.dao.entity.Config;
 import com.flink.platform.dao.entity.task.DependentJob;
-import com.flink.platform.web.config.FlinkConfig;
+import com.flink.platform.dao.service.ConfigService;
 import com.flink.platform.web.entity.response.ResultInfo;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -18,7 +21,6 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -33,6 +35,8 @@ import static com.flink.platform.common.enums.ExecutionCondition.AND;
 import static com.flink.platform.common.enums.ExecutionCondition.OR;
 import static com.flink.platform.common.enums.ExecutionStatus.FAILURE;
 import static com.flink.platform.common.enums.ExecutionStatus.SUCCESS;
+import static com.flink.platform.common.enums.ResponseStatus.ERROR_PARAMETER;
+import static com.flink.platform.web.entity.response.ResultInfo.failure;
 import static com.flink.platform.web.entity.response.ResultInfo.success;
 
 /** Attrs controller. */
@@ -44,7 +48,7 @@ public class AttrsController {
 
     private static final String CLASS_PATH_PREFIX = "com.flink.platform.common.enums";
 
-    private final List<FlinkConfig> flinkConfigs;
+    private final ConfigService configService;
 
     @GetMapping(value = "/preconditions")
     public ResultInfo<List<ExecutionCondition>> precondition() {
@@ -63,8 +67,8 @@ public class AttrsController {
     public ResultInfo<List<String>> versions(String type) {
         var versions = new ArrayList<String>();
         if (FLINK.equals(type)) {
-            versions.addAll(flinkConfigs.stream()
-                    .map(FlinkConfig::getVersion)
+            versions.addAll(configService.getEnabledFlinkConfigs().stream()
+                    .map(Config::getVersion)
                     .filter(Objects::nonNull)
                     .toList());
         } else {
@@ -102,24 +106,28 @@ public class AttrsController {
     }
 
     @GetMapping(value = "/enums")
-    public ResultInfo<List<Map<String, Object>>> list(
-            @RequestParam(name = "className", required = false) String className) {
-        var enums = new ArrayList<Map<String, Object>>();
-        var clazz = CLASS_PATH_PREFIX + "." + className;
+    public ResultInfo<List<Map<String, String>>> list(@RequestParam(name = "className") String className) {
+        if (StringUtils.isEmpty(className)) {
+            return failure(ERROR_PARAMETER);
+        }
+
         try {
-            var clz = Class.forName(clazz);
-            var values = clz.getMethod("values");
-            var invoke = values.invoke(null);
-            for (var obj : (Object[]) invoke) {
-                var getName = obj.getClass().getMethod("name");
-                var code = getName.invoke(obj);
-                var map = new HashMap<String, Object>();
-                map.put("name", code);
-                enums.add(map);
+            var aClass = Class.forName(CLASS_PATH_PREFIX + "." + className);
+            if (!Enum.class.isAssignableFrom(aClass)) {
+                return failure(ERROR_PARAMETER);
             }
+
+            @SuppressWarnings("unchecked")
+            var clazz = (Class<? extends Enum<?>>) aClass;
+            var deprecatedEnums = EnumUtil.getDeprecatedEnums(clazz);
+            var enums = Arrays.stream(clazz.getEnumConstants())
+                    .filter(anEnum -> !deprecatedEnums.contains(anEnum))
+                    .map(enumConstant -> Map.of("name", enumConstant.name()))
+                    .toList();
+            return success(enums);
         } catch (Exception e) {
             log.error("Get enum list error", e);
+            return failure(ERROR_PARAMETER);
         }
-        return success(enums);
     }
 }

@@ -3,6 +3,7 @@ package com.flink.platform.web.variable;
 import com.flink.platform.dao.entity.JobRunInfo;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.text.CaseUtils;
+import org.jspecify.annotations.Nullable;
 import org.springframework.beans.BeanWrapperImpl;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
@@ -13,8 +14,7 @@ import java.util.Map;
 import static com.flink.platform.common.constants.JobConstant.JOB_RUN_PATTERN;
 
 /**
- * Job run variable resolver.
- * Resolves ${jobRun:field} placeholders.
+ * Job run variable resolver. Resolves ${jobRun:field} placeholders.
  */
 @Slf4j
 @Order(1)
@@ -22,8 +22,12 @@ import static com.flink.platform.common.constants.JobConstant.JOB_RUN_PATTERN;
 public class JobRunVariableResolver implements VariableResolver {
 
     @Override
-    public Map<String, Object> resolve(JobRunInfo jobRun, String content) {
+    public Map<String, Object> resolve(@Nullable JobRunInfo jobRun, String content) {
         var result = new HashMap<String, Object>();
+        if (jobRun == null) {
+            return result;
+        }
+
         var matcher = JOB_RUN_PATTERN.matcher(content);
         var wrapper = new BeanWrapperImpl(jobRun);
         while (matcher.find()) {
@@ -41,7 +45,10 @@ public class JobRunVariableResolver implements VariableResolver {
             } catch (Exception e) {
                 log.info("Failed to get jobRun field: {}", field, e);
             }
-            result.put(matcher.group(), value);
+
+            if (value != null) {
+                result.put(matcher.group(), value);
+            }
         }
         return result;
     }

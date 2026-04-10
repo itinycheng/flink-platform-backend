@@ -2,6 +2,7 @@ package com.flink.platform.web.common;
 
 import lombok.AccessLevel;
 import lombok.Getter;
+import org.jspecify.annotations.Nullable;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -42,7 +43,7 @@ public class ValueSortedMap<K, V extends Comparable<V>> {
         }
     }
 
-    public V get(K key) {
+    public @Nullable V get(K key) {
         lock.readLock().lock();
         try {
             return kvMap.get(key);
@@ -51,7 +52,7 @@ public class ValueSortedMap<K, V extends Comparable<V>> {
         }
     }
 
-    public V remove(K key) {
+    public @Nullable V remove(K key) {
         lock.writeLock().lock();
         try {
             V value = kvMap.remove(key);
@@ -64,7 +65,7 @@ public class ValueSortedMap<K, V extends Comparable<V>> {
         }
     }
 
-    public V getFirst() {
+    public @Nullable V getFirst() {
         lock.readLock().lock();
         try {
             if (valSet.isEmpty()) {
@@ -87,7 +88,7 @@ public class ValueSortedMap<K, V extends Comparable<V>> {
     }
 
     // Low performance, better use remove() instead.
-    public V removeFirst() {
+    public @Nullable V removeFirst() {
         lock.writeLock().lock();
         try {
             V first = valSet.pollFirst();
