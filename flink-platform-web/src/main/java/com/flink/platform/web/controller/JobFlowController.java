@@ -16,7 +16,7 @@ import com.flink.platform.dao.service.JobFlowRunService;
 import com.flink.platform.dao.service.JobFlowService;
 import com.flink.platform.dao.service.JobInfoService;
 import com.flink.platform.dao.service.JobRunInfoService;
-import com.flink.platform.web.config.annotation.ApiException;
+import com.flink.platform.web.annotation.RequirePermission;
 import com.flink.platform.web.entity.JobFlowQuartzInfo;
 import com.flink.platform.web.entity.request.JobFlowRequest;
 import com.flink.platform.web.entity.response.ResultInfo;
@@ -45,6 +45,10 @@ import static com.flink.platform.common.enums.JobFlowStatus.ONLINE;
 import static com.flink.platform.common.enums.JobFlowStatus.SCHEDULING;
 import static com.flink.platform.common.enums.JobFlowType.JOB_FLOW;
 import static com.flink.platform.common.enums.JobFlowType.JOB_LIST;
+import static com.flink.platform.common.enums.Permission.TASK_EDIT;
+import static com.flink.platform.common.enums.Permission.TASK_EXEC;
+import static com.flink.platform.common.enums.Permission.TASK_PURGE;
+import static com.flink.platform.common.enums.Permission.TASK_VIEW;
 import static com.flink.platform.common.enums.ResponseStatus.ERROR_PARAMETER;
 import static com.flink.platform.common.enums.ResponseStatus.EXIST_UNFINISHED_PROCESS;
 import static com.flink.platform.common.enums.ResponseStatus.FLOW_ALREADY_IN_USE;
@@ -80,7 +84,7 @@ public class JobFlowController {
 
     private final JobRunInfoService jobRunService;
 
-    @ApiException
+    @RequirePermission(TASK_EDIT)
     @PostMapping(value = "/create")
     public ResultInfo<Long> create(
             @RequestAttribute(value = Constant.SESSION_USER) User loginUser,
@@ -103,7 +107,7 @@ public class JobFlowController {
         return success(jobFlowRequest.getId());
     }
 
-    @ApiException
+    @RequirePermission(TASK_EDIT)
     @PostMapping(value = "/update")
     public ResultInfo<Long> update(@RequestBody JobFlowRequest jobFlowRequest) {
         var errorMsg = jobFlowRequest.validateOnUpdate();
@@ -129,6 +133,7 @@ public class JobFlowController {
         return success(jobFlowRequest.getId());
     }
 
+    @RequirePermission(TASK_EDIT)
     @PostMapping(value = "/updateFlow")
     public ResultInfo<Long> updateFlow(@RequestBody JobFlowRequest jobFlowRequest) {
         var errorMsg = jobFlowRequest.validateOnUpdate();
@@ -140,18 +145,21 @@ public class JobFlowController {
         return success(jobFlowRequest.getId());
     }
 
+    @RequirePermission(TASK_VIEW)
     @GetMapping(value = "/get/{flowId}")
     public ResultInfo<JobFlow> get(@PathVariable long flowId) {
         var jobFlow = jobFlowService.getById(flowId);
         return success(jobFlow);
     }
 
+    @RequirePermission(TASK_EDIT)
     @GetMapping(value = "/copy/{flowId}")
     public ResultInfo<Long> copy(@PathVariable Long flowId) {
         var jobFlow = jobFlowService.cloneJobFlow(flowId);
         return success(jobFlow.getId());
     }
 
+    @RequirePermission(TASK_PURGE)
     @GetMapping(value = "/purge/{flowId}")
     public ResultInfo<Long> purge(
             @RequestAttribute(value = Constant.SESSION_USER) User loginUser, @PathVariable long flowId) {
@@ -168,6 +176,7 @@ public class JobFlowController {
         return success(flowId);
     }
 
+    @RequirePermission(TASK_VIEW)
     @GetMapping(value = "/page")
     public ResultInfo<IPage<JobFlow>> page(
             @RequestAttribute(value = Constant.SESSION_USER) User loginUser,
@@ -203,6 +212,7 @@ public class JobFlowController {
         return success(iPage);
     }
 
+    @RequirePermission(TASK_VIEW)
     @GetMapping(value = "/idNameMapList")
     public ResultInfo<List<Map<String, Object>>> idNameMapList(
             @RequestAttribute(value = Constant.SESSION_USER) User loginUser,
@@ -228,6 +238,7 @@ public class JobFlowController {
         return success(listMap);
     }
 
+    @RequirePermission(TASK_EXEC)
     @GetMapping(value = "/schedule/start/{flowId}")
     public ResultInfo<Long> start(@PathVariable Long flowId) {
         var jobFlowRequest = new JobFlowRequest();
@@ -274,6 +285,7 @@ public class JobFlowController {
         return success(flowId);
     }
 
+    @RequirePermission(TASK_EXEC)
     @GetMapping(value = "/schedule/stop/{flowId}")
     public ResultInfo<Long> stop(@PathVariable Long flowId) {
         var jobFlowRequest = new JobFlowRequest();
@@ -292,6 +304,7 @@ public class JobFlowController {
         return success(flowId);
     }
 
+    @RequirePermission(TASK_EXEC)
     @PostMapping(value = "/schedule/runOnce/{flowId}")
     public ResultInfo<Long> runOnce(@PathVariable Long flowId, @RequestBody(required = false) ExecutionConfig config) {
         var jobFlow = jobFlowService.getById(flowId);

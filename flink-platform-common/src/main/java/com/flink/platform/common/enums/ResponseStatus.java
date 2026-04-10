@@ -33,6 +33,8 @@ public enum ResponseStatus {
     INVALID_WORKFLOW_TYPE(10028, "invalid workflow type, only job_flow supported"),
     INVALID_STATUS(10029, "invalid status"),
     FLOW_ALREADY_IN_USE(10030, "Sub workflow already in use"),
+    USER_LOCKED(10031, "user is locked"),
+    INVALID_WORKSPACE_ID(10032, "invalid or missing workspace id"),
     ;
 
     private final int code;

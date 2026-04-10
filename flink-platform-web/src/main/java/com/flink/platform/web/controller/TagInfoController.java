@@ -11,7 +11,6 @@ import com.flink.platform.dao.entity.TagInfo;
 import com.flink.platform.dao.entity.User;
 import com.flink.platform.dao.service.JobFlowService;
 import com.flink.platform.dao.service.TagInfoService;
-import com.flink.platform.web.config.annotation.ApiException;
 import com.flink.platform.web.entity.request.TagInfoRequest;
 import com.flink.platform.web.entity.response.ResultInfo;
 import lombok.RequiredArgsConstructor;
@@ -44,7 +43,6 @@ public class TagInfoController {
 
     private final JobFlowService jobFlowService;
 
-    @ApiException
     @PostMapping(value = "/create")
     public ResultInfo<Long> create(
             @RequestAttribute(value = Constant.SESSION_USER) User loginUser, @RequestBody TagInfoRequest tagRequest) {
@@ -62,7 +60,6 @@ public class TagInfoController {
         return success(tagInfo.getId());
     }
 
-    @ApiException
     @PostMapping(value = "/update")
     public ResultInfo<Long> update(@RequestBody TagInfoRequest tagRequest) {
         var errorMsg = tagRequest.validateOnUpdate();

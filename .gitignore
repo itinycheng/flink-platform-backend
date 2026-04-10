@@ -89,3 +89,4 @@ flink-platform-plugin/flink-platform-plugin-apollo/src/main/resources/META-INF/
 
 .claude/*
 !.claude/settings.json
+docs/superpowers/*

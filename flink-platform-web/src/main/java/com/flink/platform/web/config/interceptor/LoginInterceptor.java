@@ -1,58 +1,31 @@
 package com.flink.platform.web.config.interceptor;
 
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.flink.platform.common.constants.Constant;
 import com.flink.platform.common.context.UserContext;
-import com.flink.platform.dao.entity.Session;
-import com.flink.platform.dao.entity.User;
-import com.flink.platform.dao.service.SessionService;
-import com.flink.platform.dao.service.UserService;
+import com.flink.platform.web.config.auth.AuthHandler;
 import jakarta.annotation.Nonnull;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerInterceptor;
 
-/** Login interceptor. */
-@Slf4j
+/** Login interceptor: authenticates the request by delegating to {@link AuthHandler}. */
 @Component
 @RequiredArgsConstructor(onConstructor_ = @Autowired)
 public class LoginInterceptor implements HandlerInterceptor {
 
-    private final UserService userService;
-
-    private final SessionService sessionService;
+    private final AuthHandler authHandler;
 
     @Override
     public boolean preHandle(
             @Nonnull HttpServletRequest request, @Nonnull HttpServletResponse response, @Nonnull Object handler) {
-
-        // get token
-        String token = request.getHeader("X-Token");
-        if (StringUtils.isEmpty(token)) {
-            return false;
+        if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
+            return true;
         }
 
-        Session session =
-                sessionService.getOne(new QueryWrapper<Session>().lambda().eq(Session::getToken, token));
-        if (session == null) {
-            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-            log.info("session: {} does not exist.", token);
-            return false;
-        }
-
-        long userId = session.getUserId();
-        User user = userService.getById(userId);
-        if ("LOCK".equals(user.getStatus())) {
-            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-            log.info("User: {} locked.", user);
-            return false;
-        }
-
+        var user = authHandler.authenticate(request);
         request.setAttribute(Constant.SESSION_USER, user);
         UserContext.set(user.getId());
         return true;

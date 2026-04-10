@@ -1,6 +1,7 @@
 package com.flink.platform.web.config;
 
 import com.flink.platform.web.config.interceptor.LoginInterceptor;
+import com.flink.platform.web.config.interceptor.PermissionInterceptor;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
@@ -15,6 +16,8 @@ public class AppConfiguration implements WebMvcConfigurer {
 
     private final LoginInterceptor loginInterceptor;
 
+    private final PermissionInterceptor permissionInterceptor;
+
     @Override
     public void addCorsMappings(CorsRegistry registry) {
         registry.addMapping("/**")
@@ -26,21 +29,16 @@ public class AppConfiguration implements WebMvcConfigurer {
 
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
-        registry.addInterceptor(loginInterceptor)
-                .addPathPatterns(
-                        "/jobInfo/**",
-                        "/jobRun/**",
-                        "/jobParam/**",
-                        "/jobFlow/**",
-                        "/jobFlowRun/**",
-                        "/tag/**",
-                        "/alert/**",
-                        "/resource/**",
-                        "/user/**",
-                        "/worker/**",
-                        "/datasource/**",
-                        "/catalog/**",
-                        "/dashboard/**",
-                        "/config/**");
+        String[] protectedPaths = {
+            "/jobInfo/**", "/jobRun/**", "/jobParam/**",
+            "/jobFlow/**", "/jobFlowRun/**", "/tag/**",
+            "/alert/**", "/resource/**", "/user/**",
+            "/worker/**", "/datasource/**", "/catalog/**",
+            "/dashboard/**", "/config/**"
+        };
+
+        // must add loginInterceptor before permissionInterceptor.
+        registry.addInterceptor(loginInterceptor).addPathPatterns(protectedPaths);
+        registry.addInterceptor(permissionInterceptor).addPathPatterns(protectedPaths);
     }
 }
