@@ -33,7 +33,7 @@ import static java.util.stream.Collectors.toSet;
 @RequiredArgsConstructor(onConstructor_ = @Autowired)
 public class JobInfoService extends ServiceImpl<JobInfoMapper, JobInfo> {
 
-    public static final Set<String> LARGE_FIELDS = Set.of("params", "subject");
+    public static final Set<String> LARGE_FIELDS = Set.of("variables", "subject");
 
     private final JobRunInfoService jobRunService;
 
