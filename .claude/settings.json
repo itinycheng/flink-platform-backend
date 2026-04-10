@@ -1,11 +1,16 @@
 {
   "permissions": {
     "allow": [
-      "Bash(./mvnw *)"
+      "Bash(./mvnw *)",
+      "Bash(git *)",
+      "Read",
+      "Edit",
+      "Write"
     ],
     "deny": [
       "Bash(./mvnw deploy*)",
-      "Bash(./mvnw *:deploy*)"
+      "Bash(./mvnw *:deploy*)",
+      "Bash(git push*)"
     ]
   }
 }

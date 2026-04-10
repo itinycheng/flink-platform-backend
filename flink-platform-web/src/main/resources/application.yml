@@ -27,3 +27,6 @@ management:
       base-path: /actuator
       exposure:
         include: '*'
+
+auth:
+  type: token   # Options: token | ldap | cas | oauth2 | oidc

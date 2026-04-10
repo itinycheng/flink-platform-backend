@@ -3,11 +3,10 @@ package com.flink.platform.web.controller;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.flink.platform.common.constants.Constant;
 import com.flink.platform.common.enums.WorkerStatus;
-import com.flink.platform.dao.entity.User;
 import com.flink.platform.dao.entity.Worker;
 import com.flink.platform.dao.service.WorkerService;
+import com.flink.platform.web.annotation.RequirePermission;
 import com.flink.platform.web.entity.request.WorkerRequest;
 import com.flink.platform.web.entity.response.ResultInfo;
 import lombok.RequiredArgsConstructor;
@@ -16,7 +15,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestAttribute;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -25,10 +23,9 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 import java.util.Objects;
 
+import static com.flink.platform.common.enums.Permission.SYSTEM_MANAGE;
 import static com.flink.platform.common.enums.ResponseStatus.ERROR_PARAMETER;
 import static com.flink.platform.common.enums.ResponseStatus.INVALID_STATUS;
-import static com.flink.platform.common.enums.ResponseStatus.USER_HAVE_NO_PERMISSION;
-import static com.flink.platform.common.enums.UserType.ADMIN;
 import static com.flink.platform.common.enums.WorkerStatus.DELETED;
 import static com.flink.platform.web.entity.response.ResultInfo.failure;
 import static com.flink.platform.web.entity.response.ResultInfo.success;
@@ -47,16 +44,12 @@ public class WorkerController {
         return success(worker);
     }
 
+    @RequirePermission(SYSTEM_MANAGE)
     @PostMapping(value = "/create")
-    public ResultInfo<Long> create(
-            @RequestAttribute(value = Constant.SESSION_USER) User loginUser, @RequestBody WorkerRequest workerRequest) {
+    public ResultInfo<Long> create(@RequestBody WorkerRequest workerRequest) {
         var errorMsg = workerRequest.validateOnCreate();
         if (StringUtils.isNotBlank(errorMsg)) {
             return failure(ERROR_PARAMETER, errorMsg);
-        }
-
-        if (loginUser.getType() != ADMIN) {
-            return failure(USER_HAVE_NO_PERMISSION);
         }
 
         var worker = workerRequest.getWorker();
@@ -65,16 +58,12 @@ public class WorkerController {
         return success(worker.getId());
     }
 
+    @RequirePermission(SYSTEM_MANAGE)
     @PostMapping(value = "/update")
-    public ResultInfo<Long> update(
-            @RequestAttribute(value = Constant.SESSION_USER) User loginUser, @RequestBody WorkerRequest workerRequest) {
+    public ResultInfo<Long> update(@RequestBody WorkerRequest workerRequest) {
         var errorMsg = workerRequest.validateOnUpdate();
         if (StringUtils.isNotBlank(errorMsg)) {
             return failure(ERROR_PARAMETER, errorMsg);
-        }
-
-        if (loginUser.getType() != ADMIN) {
-            return failure(USER_HAVE_NO_PERMISSION);
         }
 
         var worker = workerRequest.getWorker();
@@ -110,13 +99,9 @@ public class WorkerController {
         return success(workerService.list());
     }
 
+    @RequirePermission(SYSTEM_MANAGE)
     @GetMapping(value = "/delete/{workerId}")
-    public ResultInfo<Long> delete(
-            @RequestAttribute(value = Constant.SESSION_USER) User loginUser, @PathVariable long workerId) {
-        if (loginUser.getType() != ADMIN) {
-            return failure(USER_HAVE_NO_PERMISSION);
-        }
-
+    public ResultInfo<Long> delete(@PathVariable long workerId) {
         var worker = workerService.getById(workerId);
         if (worker == null) {
             return failure(ERROR_PARAMETER);
@@ -129,13 +114,9 @@ public class WorkerController {
         return success(workerId);
     }
 
+    @RequirePermission(SYSTEM_MANAGE)
     @GetMapping(value = "/purge/{workerId}")
-    public ResultInfo<Long> purge(
-            @RequestAttribute(value = Constant.SESSION_USER) User loginUser, @PathVariable long workerId) {
-        if (loginUser.getType() != ADMIN) {
-            return failure(USER_HAVE_NO_PERMISSION);
-        }
-
+    public ResultInfo<Long> purge(@PathVariable long workerId) {
         var worker = workerService.getById(workerId);
         if (worker == null) {
             return failure(ERROR_PARAMETER);

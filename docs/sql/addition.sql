@@ -84,3 +84,10 @@ CREATE TABLE `t_audit_log` (
   KEY `t_audit_log_operator_id_idx` (`operator_id`) USING BTREE,
   KEY `t_audit_log_operate_time_idx` (`operate_time`) USING BTREE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='audit log';
+
+-- 2026-04-12
+ALTER TABLE t_user ADD COLUMN roles varchar(1024) COMMENT 'roles json' after workers;
+ALTER TABLE t_user MODIFY COLUMN status varchar(32) COMMENT 'user status';
+UPDATE t_user SET roles = '{"global":"SUPER_ADMIN","workspaces":{}}' WHERE type = 'ADMIN';
+UPDATE t_user SET roles = '{"global":null,"workspaces":{}}' WHERE type != 'ADMIN' OR type IS NULL;
+UPDATE t_user SET status = 'NORMAL';
