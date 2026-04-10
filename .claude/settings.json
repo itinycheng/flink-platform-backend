@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(./mvnw *)"
+    ],
+    "deny": [
+      "Bash(./mvnw deploy*)",
+      "Bash(./mvnw *:deploy*)"
+    ]
+  }
+}

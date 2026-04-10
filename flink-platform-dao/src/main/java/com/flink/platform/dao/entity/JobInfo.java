@@ -18,7 +18,6 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.Map;
 
@@ -29,7 +28,7 @@ import java.util.Map;
 @Data
 @NoArgsConstructor
 @TableName(value = "t_job", autoResultMap = true)
-public class JobInfo implements Serializable {
+public class JobInfo implements Identifiable {
 
     @TableId(value = "id", type = IdType.AUTO)
     private Long id;

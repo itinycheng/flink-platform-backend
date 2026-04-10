@@ -1,14 +1,18 @@
 package com.flink.platform.web.common;
 
+import lombok.extern.slf4j.Slf4j;
+import org.jspecify.annotations.Nullable;
+
 import java.io.File;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.stream.Stream;
 
 /** External classloader. */
+@Slf4j
 public class ExternalClassLoader extends URLClassLoader {
 
-    private static final ClassLoader PLATFORM_LOADER;
+    private static final @Nullable ClassLoader PLATFORM_LOADER;
 
     private final ClassLoader packagesClassLoader;
 
@@ -28,7 +32,7 @@ public class ExternalClassLoader extends URLClassLoader {
         try {
             super.addURL(new File(jarPath).toURI().toURL());
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("Failed to add resource: {}", jarPath, e);
         }
     }
 
@@ -37,9 +41,7 @@ public class ExternalClassLoader extends URLClassLoader {
         synchronized (getClassLoadingLock(name)) {
             Class<?> c = findLoadedClass(name);
             if (c == null && isAllowedPackages(name)) {
-                if (packagesClassLoader != null) {
-                    c = packagesClassLoader.loadClass(name);
-                }
+                c = packagesClassLoader.loadClass(name);
             }
 
             if (c != null) {
@@ -54,11 +56,11 @@ public class ExternalClassLoader extends URLClassLoader {
     }
 
     private boolean isAllowedPackages(final String name) {
-        if (allowedPaths != null) {
-            return Stream.of(allowedPaths).allMatch(s -> s.startsWith(name));
-        } else {
+        if (allowedPaths.length == 0) {
             return false;
         }
+
+        return Stream.of(allowedPaths).allMatch(s -> s.startsWith(name));
     }
 
     static {

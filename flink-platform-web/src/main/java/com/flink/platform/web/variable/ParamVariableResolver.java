@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
+import org.jspecify.annotations.Nullable;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
@@ -33,14 +34,18 @@ public class ParamVariableResolver implements VariableResolver {
     private final SubflowVariableResolver subflowResolver;
 
     @Override
-    public boolean supports(JobRunInfo jobRun, String content) {
+    public boolean supports(@Nullable JobRunInfo jobRun, String content) {
         return jobRun != null && PARAM_PATTERN.matcher(content).find();
     }
 
     @Override
-    public Map<String, Object> resolve(JobRunInfo jobRun, String content) {
+    public Map<String, Object> resolve(@Nullable JobRunInfo jobRun, String content) {
         // priority: global < merge(sub_flow, job_flow) < job
         var paramMap = new HashMap<String, Object>();
+        if (jobRun == null) {
+            return paramMap;
+        }
+
         var globalParams = jobParamService.getJobParams(jobRun.getJobId());
         if (CollectionUtils.isNotEmpty(globalParams)) {
             globalParams.forEach(globalParam -> paramMap.put(globalParam.getParamName(), globalParam.getParamValue()));

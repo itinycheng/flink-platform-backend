@@ -4,6 +4,7 @@ import com.baomidou.dynamic.datasource.annotation.DS;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.TableFieldInfo;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.flink.platform.common.annotation.Auditable;
 import com.flink.platform.dao.entity.JobFlowRun;
 import com.flink.platform.dao.entity.JobInfo;
 import com.flink.platform.dao.entity.JobRunInfo;
@@ -20,6 +21,10 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
+import static com.flink.platform.common.enums.EntityType.JOB;
+import static com.flink.platform.common.enums.OperationType.DELETE;
+import static com.flink.platform.common.enums.OperationType.INSERT;
+import static com.flink.platform.common.enums.OperationType.UPDATE;
 import static java.util.stream.Collectors.toSet;
 
 /** job config info. */
@@ -34,19 +39,21 @@ public class JobInfoService extends ServiceImpl<JobInfoMapper, JobInfo> {
 
     private final JobFlowRunService jobFlowRunService;
 
-    public List<JobInfo> listWithoutLargeFields(Collection<Long> jobIds) {
-        if (CollectionUtils.isEmpty(jobIds)) {
-            return Collections.emptyList();
-        }
-
-        return super.list(new QueryWrapper<JobInfo>()
-                .lambda()
-                .select(JobInfo.class, this::isNonLargeField)
-                .in(JobInfo::getId, jobIds));
+    @Auditable(type = JOB, operation = INSERT)
+    public JobInfo saveJob(JobInfo job) {
+        save(job);
+        return getById(job.getId());
     }
 
+    @Auditable(type = JOB, operation = UPDATE)
+    public JobInfo updateJob(JobInfo job) {
+        updateById(job);
+        return getById(job.getId());
+    }
+
+    @Auditable(type = JOB, operation = DELETE)
     @Transactional(rollbackFor = Exception.class)
-    public void deleteAllById(long jobId) {
+    public void removeAllById(long jobId) {
         var flowRunIds = jobRunService
                 .list(new QueryWrapper<JobRunInfo>()
                         .select("distinct flow_run_id")
@@ -57,10 +64,23 @@ public class JobInfoService extends ServiceImpl<JobInfoMapper, JobInfo> {
                 .stream()
                 .map(JobRunInfo::getFlowRunId)
                 .collect(toSet());
+        if (!flowRunIds.isEmpty()) {
+            jobFlowRunService.remove(new QueryWrapper<JobFlowRun>().lambda().in(JobFlowRun::getId, flowRunIds));
+        }
 
         jobRunService.remove(new QueryWrapper<JobRunInfo>().lambda().in(JobRunInfo::getJobId, jobId));
-        jobFlowRunService.remove(new QueryWrapper<JobFlowRun>().lambda().in(JobFlowRun::getId, flowRunIds));
         remove(new QueryWrapper<JobInfo>().lambda().in(JobInfo::getId, jobId));
+    }
+
+    public List<JobInfo> listWithoutLargeFields(Collection<Long> jobIds) {
+        if (CollectionUtils.isEmpty(jobIds)) {
+            return Collections.emptyList();
+        }
+
+        return super.list(new QueryWrapper<JobInfo>()
+                .lambda()
+                .select(JobInfo.class, this::isNonLargeField)
+                .in(JobInfo::getId, jobIds));
     }
 
     public JobInfo findRunnableJobUsingJobFlow(Long flowId) {

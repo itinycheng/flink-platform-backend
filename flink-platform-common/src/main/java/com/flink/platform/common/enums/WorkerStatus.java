@@ -5,10 +5,6 @@ package com.flink.platform.common.enums;
  * Check INACTIVE workers during heartbeat.
  */
 public enum WorkerStatus {
-    @Deprecated
-    LEADER,
-    @Deprecated
-    FOLLOWER,
     ACTIVE,
     INACTIVE,
     DELETED
