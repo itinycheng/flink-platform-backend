@@ -491,6 +491,22 @@ CREATE TABLE `shedlock` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='shedlock';
 
 -- ----------------------------
+-- Table structure for t_config
+-- ----------------------------
+CREATE TABLE `t_config` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `name` varchar(64) NOT NULL,
+  `description` varchar(255) DEFAULT NULL,
+  `type` varchar(32) NOT NULL,
+  `version` varchar(32) NOT NULL,
+  `config` varchar(4096) DEFAULT NULL,
+  `status` varchar(32)  NOT NULL,
+  `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `create_time` datetime DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='config';
+
+-- ----------------------------
 -- Table structure for audit
 -- ----------------------------
 CREATE TABLE `t_audit_log` (
