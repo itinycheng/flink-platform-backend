@@ -57,7 +57,7 @@ UPDATE t_job_flow_run SET status = 'FAILURE' WHERE status in ('NOT_EXIST', 'ABNO
 
 -- 2026-03-24
 CREATE TABLE `t_config` (
-  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `id` bigint(11) NOT NULL AUTO_INCREMENT,
   `name` varchar(64) NOT NULL,
   `description` varchar(255) DEFAULT NULL,
   `type` varchar(32) NOT NULL,
@@ -71,7 +71,7 @@ CREATE TABLE `t_config` (
 
 -- 2026-04-08
 CREATE TABLE `t_audit_log` (
-  `id` bigint(11) unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
+  `id` bigint(11) NOT NULL AUTO_INCREMENT COMMENT 'id',
   `entity_id` bigint(11) NOT NULL COMMENT 'entity primary key',
   `entity_type` varchar(64) NOT NULL COMMENT 'entity type: JOB, USER, RESOURCE, etc.',
   `operation` varchar(16) NOT NULL COMMENT 'INSERT | UPDATE | DELETE',
@@ -91,3 +91,17 @@ ALTER TABLE t_user MODIFY COLUMN status varchar(32) COMMENT 'user status';
 UPDATE t_user SET roles = '{"global":"SUPER_ADMIN","workspaces":{}}' WHERE type = 'ADMIN';
 UPDATE t_user SET roles = '{"global":null,"workspaces":{}}' WHERE type != 'ADMIN' OR type IS NULL;
 UPDATE t_user SET status = 'NORMAL';
+
+-- 2026-04-14
+CREATE TABLE `t_workspace` (
+  `id`          bigint(11) NOT NULL AUTO_INCREMENT,
+  `name`        varchar(64)  NOT NULL COMMENT 'workspace name',
+  `description` varchar(255) DEFAULT NULL COMMENT 'description',
+  `status`      varchar(32)  NOT NULL COMMENT 'workspace status',
+  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'update time',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'create time',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `t_workspace_name_unique` (`name`) USING BTREE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='workspace';
+
+ALTER TABLE t_job_flow ADD COLUMN workspace_id bigint(11) COMMENT 'workspace id' AFTER user_id;

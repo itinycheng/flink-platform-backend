@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 
 /** User roles stored as JSON in t_user.roles. */
@@ -17,8 +18,8 @@ public class UserRoles {
     private Role global;
 
     /**
-     * Workspace-level roles. Key is workspace ID, value is the role within that workspace.
-     * Only ADMIN/DEVELOPER/OPERATOR/VIEWER are valid values.
+     * Workspace-level roles. Key is workspace ID, value is the role within that workspace. Only
+     * ADMIN/DEVELOPER/OPERATOR/VIEWER are valid values.
      */
     private Map<Long, Role> workspaces = Collections.emptyMap();
 
@@ -32,5 +33,28 @@ public class UserRoles {
         }
         Role role = workspaces.get(workspaceId);
         return role != null && role.hasPermission(permission);
+    }
+
+    public void merge(UserRoles other) {
+        if (other == null) {
+            return;
+        }
+
+        if (other.global != null) {
+            this.global = other.global;
+        }
+
+        final Map<Long, Role> otherMap = other.workspaces;
+        if (otherMap != null && !otherMap.isEmpty()) {
+            Map<Long, Role> map = new HashMap<>(this.workspaces);
+            otherMap.forEach((aLong, role) -> {
+                if (role != null) {
+                    map.put(aLong, role);
+                } else {
+                    map.remove(aLong);
+                }
+            });
+            this.workspaces = map;
+        }
     }
 }
