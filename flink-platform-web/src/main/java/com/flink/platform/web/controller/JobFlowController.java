@@ -17,6 +17,7 @@ import com.flink.platform.dao.service.JobFlowService;
 import com.flink.platform.dao.service.JobInfoService;
 import com.flink.platform.dao.service.JobRunInfoService;
 import com.flink.platform.web.annotation.RequirePermission;
+import com.flink.platform.web.common.RequestContext;
 import com.flink.platform.web.entity.JobFlowQuartzInfo;
 import com.flink.platform.web.entity.request.JobFlowRequest;
 import com.flink.platform.web.entity.response.ResultInfo;
@@ -59,7 +60,6 @@ import static com.flink.platform.common.enums.ResponseStatus.NOT_SUPPORT_SCHEDUL
 import static com.flink.platform.common.enums.ResponseStatus.NO_CRONTAB_SET;
 import static com.flink.platform.common.enums.ResponseStatus.SERVICE_ERROR;
 import static com.flink.platform.common.enums.ResponseStatus.UNABLE_SCHEDULING_JOB_FLOW;
-import static com.flink.platform.common.enums.ResponseStatus.USER_HAVE_NO_PERMISSION;
 import static com.flink.platform.web.entity.response.ResultInfo.failure;
 import static com.flink.platform.web.entity.response.ResultInfo.success;
 import static java.util.stream.Collectors.toList;
@@ -98,6 +98,7 @@ public class JobFlowController {
         jobFlow.setId(null);
         jobFlow.setCode(UuidGenerator.generateShortUuid());
         jobFlow.setUserId(loginUser.getId());
+        jobFlow.setWorkspaceId(RequestContext.getWorkspaceId());
         jobFlow.setStatus(OFFLINE);
         if (JOB_LIST.equals(jobFlow.getType())) {
             jobFlow.setStatus(ONLINE);
@@ -161,25 +162,19 @@ public class JobFlowController {
 
     @RequirePermission(TASK_PURGE)
     @GetMapping(value = "/purge/{flowId}")
-    public ResultInfo<Long> purge(
-            @RequestAttribute(value = Constant.SESSION_USER) User loginUser, @PathVariable long flowId) {
+    public ResultInfo<Long> purge(@PathVariable long flowId) {
         var jobFlow = jobFlowService.getById(flowId);
         if (jobFlow == null) {
             return failure(ERROR_PARAMETER);
         }
 
-        if (!loginUser.getId().equals(jobFlow.getUserId())) {
-            return failure(USER_HAVE_NO_PERMISSION);
-        }
-
-        jobFlowService.deleteAllById(flowId, loginUser.getId());
+        jobFlowService.deleteAllById(flowId, jobFlow.getUserId());
         return success(flowId);
     }
 
     @RequirePermission(TASK_VIEW)
     @GetMapping(value = "/page")
     public ResultInfo<IPage<JobFlow>> page(
-            @RequestAttribute(value = Constant.SESSION_USER) User loginUser,
             @RequestParam(name = "page", required = false, defaultValue = "1") Integer page,
             @RequestParam(name = "size", required = false, defaultValue = "20") Integer size,
             @RequestParam(name = "id", required = false) Long id,
@@ -191,7 +186,7 @@ public class JobFlowController {
         var queryWrapper = new QueryWrapper<JobFlow>()
                 .lambda()
                 .select(JobFlow.class, field -> !"flow".equals(field.getProperty()))
-                .eq(JobFlow::getUserId, loginUser.getId())
+                .eq(JobFlow::getWorkspaceId, RequestContext.getWorkspaceId())
                 .eq(id != null, JobFlow::getId, id)
                 .eq(type != null, JobFlow::getType, type)
                 .like(isNotEmpty(name), JobFlow::getName, name)
@@ -215,7 +210,6 @@ public class JobFlowController {
     @RequirePermission(TASK_VIEW)
     @GetMapping(value = "/idNameMapList")
     public ResultInfo<List<Map<String, Object>>> idNameMapList(
-            @RequestAttribute(value = Constant.SESSION_USER) User loginUser,
             @RequestParam(name = "name", required = false) String name,
             @RequestParam(name = "status", required = false) List<JobFlowStatus> status,
             @RequestParam(name = "type", required = false) List<JobFlowType> type) {
@@ -223,7 +217,7 @@ public class JobFlowController {
                 .list(new QueryWrapper<JobFlow>()
                         .lambda()
                         .select(JobFlow::getId, JobFlow::getName)
-                        .eq(JobFlow::getUserId, loginUser.getId())
+                        .eq(JobFlow::getWorkspaceId, RequestContext.getWorkspaceId())
                         .like(isNotBlank(name), JobFlow::getName, name)
                         .in(CollectionUtils.isNotEmpty(type), JobFlow::getType, type)
                         .in(CollectionUtils.isNotEmpty(status), JobFlow::getStatus, status))
