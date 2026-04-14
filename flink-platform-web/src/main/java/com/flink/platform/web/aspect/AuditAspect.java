@@ -2,11 +2,11 @@ package com.flink.platform.web.aspect;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.flink.platform.common.annotation.Auditable;
-import com.flink.platform.common.context.UserContext;
 import com.flink.platform.common.util.JsonUtil;
 import com.flink.platform.dao.entity.AuditLog;
 import com.flink.platform.dao.entity.Identifiable;
 import com.flink.platform.dao.service.AuditLogService;
+import com.flink.platform.web.common.RequestContext;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -51,7 +51,7 @@ public class AuditAspect {
         auditLog.setOperation(auditable.operation());
         auditLog.setEntityId(extractEntityId(entity));
         auditLog.setSnapshot(JsonUtil.toJsonString(entity));
-        auditLog.setOperatorId(UserContext.get());
+        auditLog.setOperatorId(RequestContext.getUserId());
         auditLogService.save(auditLog);
     }
 

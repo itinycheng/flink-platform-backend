@@ -37,6 +37,9 @@ public class JobFlow {
     /** user id. */
     private Long userId;
 
+    /** workspace id. */
+    private Long workspaceId;
+
     /** job flow description. */
     private String description;
 

@@ -34,7 +34,7 @@ public class AppConfiguration implements WebMvcConfigurer {
             "/jobFlow/**", "/jobFlowRun/**", "/tag/**",
             "/alert/**", "/resource/**", "/user/**",
             "/worker/**", "/datasource/**", "/catalog/**",
-            "/dashboard/**", "/config/**"
+            "/dashboard/**", "/config/**", "/workspace/**"
         };
 
         // must add loginInterceptor before permissionInterceptor.
