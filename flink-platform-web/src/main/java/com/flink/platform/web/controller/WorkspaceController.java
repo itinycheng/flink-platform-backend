@@ -3,15 +3,12 @@ package com.flink.platform.web.controller;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.flink.platform.common.enums.Role;
+import com.flink.platform.common.constants.Constant;
 import com.flink.platform.common.enums.Status;
-import com.flink.platform.common.model.UserRoles;
 import com.flink.platform.dao.entity.User;
 import com.flink.platform.dao.entity.Workspace;
-import com.flink.platform.dao.service.UserService;
 import com.flink.platform.dao.service.WorkspaceService;
 import com.flink.platform.web.annotation.RequirePermission;
-import com.flink.platform.web.common.RequestContext;
 import com.flink.platform.web.entity.request.WorkspaceRequest;
 import com.flink.platform.web.entity.response.ResultInfo;
 import lombok.RequiredArgsConstructor;
@@ -20,20 +17,20 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestAttribute;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
-import java.util.Map;
 
 import static com.flink.platform.common.enums.Permission.SYSTEM_MANAGE;
 import static com.flink.platform.common.enums.Permission.WORKSPACE_MANAGE;
 import static com.flink.platform.common.enums.Permission.WORKSPACE_VIEW;
 import static com.flink.platform.common.enums.ResponseStatus.ERROR_PARAMETER;
+import static com.flink.platform.common.enums.Role.SUPER_ADMIN;
 import static com.flink.platform.common.enums.Status.DELETED;
-import static com.flink.platform.common.enums.Status.ENABLE;
 import static com.flink.platform.web.entity.response.ResultInfo.failure;
 import static com.flink.platform.web.entity.response.ResultInfo.success;
 
@@ -45,8 +42,6 @@ public class WorkspaceController {
 
     private final WorkspaceService workspaceService;
 
-    private final UserService userService;
-
     @RequirePermission(SYSTEM_MANAGE)
     @PostMapping(value = "/create")
     public ResultInfo<Workspace> create(@RequestBody WorkspaceRequest request) {
@@ -57,7 +52,7 @@ public class WorkspaceController {
 
         var workspace = request.getWorkspace();
         workspace.setId(null);
-        workspace.setStatus(ENABLE);
+        workspace.setStatus(request.getStatus());
         workspaceService.save(workspace);
         return success(workspace);
     }
@@ -90,61 +85,47 @@ public class WorkspaceController {
         return success(workspaceService.getById(id));
     }
 
+    @GetMapping(value = "/list")
+    public ResultInfo<List<Workspace>> list(@RequestAttribute(value = Constant.SESSION_USER) User loginUser) {
+        var roles = loginUser.getRoles();
+        List<Workspace> list = List.of();
+        if (SUPER_ADMIN.equals(roles.getGlobal())) {
+            list = workspaceService.list(new QueryWrapper<Workspace>().lambda().ne(Workspace::getStatus, DELETED));
+        } else {
+            var workspaces = roles.getWorkspaces();
+            if (workspaces != null && !workspaces.isEmpty()) {
+                list = workspaceService.list(new QueryWrapper<Workspace>()
+                        .lambda()
+                        .in(Workspace::getId, workspaces.keySet())
+                        .ne(Workspace::getStatus, DELETED));
+            }
+        }
+        return success(list);
+    }
+
     @RequirePermission(WORKSPACE_VIEW)
     @GetMapping(value = "/page")
     public ResultInfo<IPage<Workspace>> page(
+            @RequestAttribute(value = Constant.SESSION_USER) User loginUser,
             @RequestParam(name = "page", required = false, defaultValue = "1") Integer page,
             @RequestParam(name = "size", required = false, defaultValue = "20") Integer size,
             @RequestParam(name = "name", required = false) String name,
-            @RequestParam(name = "role", required = false) Status status) {
-        var queryWrapper =
-                new QueryWrapper<Workspace>().lambda().like(StringUtils.isNotEmpty(name), Workspace::getName, name);
-        if (status != null) {
-            queryWrapper.eq(Workspace::getStatus, status);
-        } else {
-            queryWrapper.ne(Workspace::getStatus, DELETED);
+            @RequestParam(name = "status", required = false) Status status) {
+        // no workspace belongs to log in user.
+        var userRoles = loginUser.getRoles();
+        var workspaces = userRoles.getWorkspaces();
+        var isSysManager = userRoles.hasGlobalPermission(SYSTEM_MANAGE);
+        if (!isSysManager && workspaces.isEmpty()) {
+            return success(new Page<>(page, size));
         }
+
+        var queryWrapper = new QueryWrapper<Workspace>()
+                .lambda()
+                .like(StringUtils.isNotEmpty(name), Workspace::getName, name)
+                .eq(status != null, Workspace::getStatus, status)
+                .ne(status == null, Workspace::getStatus, DELETED)
+                .in(!isSysManager, Workspace::getId, workspaces.keySet());
         var iPage = workspaceService.page(new Page<>(page, size), queryWrapper);
         return success(iPage);
-    }
-
-    @RequirePermission(WORKSPACE_MANAGE)
-    @PostMapping(value = "/member/update")
-    public ResultInfo<Boolean> updateMember(@RequestParam Long userId, @RequestParam(required = false) Role role) {
-        var user = userService.getById(userId);
-        if (user == null) {
-            return failure(ERROR_PARAMETER, "User not found");
-        }
-
-        var workspaceId = RequestContext.getWorkspaceId();
-        if (workspaceId == null) {
-            return failure(ERROR_PARAMETER, "Workspace id not found in request context");
-        }
-
-        var newRoles = new UserRoles();
-        newRoles.setWorkspaces(Map.of(workspaceId, role));
-
-        var merged = user.getRoles();
-        if (merged != null) {
-            merged.merge(newRoles);
-        } else {
-            merged = newRoles;
-        }
-
-        var newUser = new User();
-        newUser.setId(user.getId());
-        newUser.setRoles(merged);
-        userService.updateById(newUser);
-        return success(true);
-    }
-
-    @RequirePermission(WORKSPACE_VIEW)
-    @GetMapping(value = "/member/list/{workspaceId}")
-    public ResultInfo<List<User>> listMembers(@PathVariable Long workspaceId) {
-        var members = userService.list().stream()
-                .filter(u ->
-                        u.getRoles() != null && u.getRoles().getWorkspaces().containsKey(workspaceId))
-                .toList();
-        return success(members);
     }
 }
