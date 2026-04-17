@@ -19,6 +19,12 @@ public class UserRequest {
     @Setter
     private String token;
 
+    /**
+     * login workspace id.
+     */
+    @Setter
+    private Long workspaceId;
+
     public String validateOnCreate() {
         String msg = usernameNotNull();
         if (msg != null) {

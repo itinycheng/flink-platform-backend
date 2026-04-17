@@ -4,8 +4,10 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.flink.platform.common.enums.ResponseStatus;
 import com.flink.platform.dao.entity.Session;
 import com.flink.platform.dao.entity.User;
+import com.flink.platform.dao.entity.Workspace;
 import com.flink.platform.dao.service.SessionService;
 import com.flink.platform.dao.service.UserService;
+import com.flink.platform.dao.service.WorkspaceService;
 import com.flink.platform.web.entity.request.UserRequest;
 import com.flink.platform.web.entity.response.ResultInfo;
 import com.flink.platform.web.util.HttpUtil;
@@ -24,6 +26,8 @@ import java.util.Map;
 import java.util.UUID;
 
 import static com.flink.platform.common.enums.ResponseStatus.USER_NOT_FOUNT;
+import static com.flink.platform.common.enums.Role.SUPER_ADMIN;
+import static com.flink.platform.common.enums.Status.ENABLE;
 import static com.flink.platform.web.entity.response.ResultInfo.failure;
 import static com.flink.platform.web.entity.response.ResultInfo.success;
 
@@ -37,22 +41,24 @@ public class LoginController {
 
     private final SessionService sessionService;
 
+    private final WorkspaceService workspaceService;
+
     @PostMapping(value = "/login")
-    public ResultInfo<Map<String, String>> login(@RequestBody User user, HttpServletRequest request) {
+    public ResultInfo<Map<String, Object>> login(@RequestBody UserRequest userRequest, HttpServletRequest request) {
         var loginUser = userService.getOne(new QueryWrapper<User>()
                 .lambda()
-                .eq(User::getUsername, user.getUsername())
-                .eq(User::getPassword, user.getPassword()));
+                .eq(User::getUsername, userRequest.getUsername())
+                .eq(User::getPassword, userRequest.getPassword()));
         if (loginUser == null) {
             return failure(ResponseStatus.USER_NAME_PASSWD_ERROR);
         }
 
+        // get or create session.
         var clientIp = HttpUtil.getClientIpAddress(request);
         var session = sessionService.getOne(new QueryWrapper<Session>()
                 .lambda()
                 .eq(Session::getUserId, loginUser.getId())
                 .eq(Session::getIp, clientIp));
-
         if (session == null) {
             session = new Session();
             session.setToken(UUID.randomUUID().toString().replace("-", ""));
@@ -62,8 +68,26 @@ public class LoginController {
             sessionService.save(session);
         }
 
-        var result = new HashMap<String, String>(1);
+        // choose one workspace id from user roles.
+        var userRoles = loginUser.getRoles();
+        Long workspaceId = userRequest.getWorkspaceId();
+        if (workspaceId == null || !userRoles.hasWorkspaceRole(workspaceId)) {
+            workspaceId = userRoles.getAnyWorkspaceId();
+        }
+
+        // choose any workspace id for super admin.
+        if (workspaceId == null && SUPER_ADMIN.equals(userRoles.getGlobal())) {
+            workspaceId = workspaceService
+                    .getOne(new QueryWrapper<Workspace>()
+                            .lambda()
+                            .eq(Workspace::getStatus, ENABLE)
+                            .last("limit 1"))
+                    .getId();
+        }
+
+        var result = new HashMap<String, Object>(1);
         result.put("token", session.getToken());
+        result.put("workspaceId", workspaceId);
         return success(result);
     }
 

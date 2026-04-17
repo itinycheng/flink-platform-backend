@@ -408,7 +408,7 @@ CREATE TABLE `t_workspace` (
   `id`          bigint unsigned NOT NULL AUTO_INCREMENT,
   `name`        varchar(64)  NOT NULL COMMENT 'workspace name',
   `description` varchar(255) DEFAULT NULL COMMENT 'description',
-  `status`      varchar(32)  NOT NULL DEFAULT 'ACTIVE' COMMENT 'workspace status',
+  `status`      varchar(32)  NOT NULL COMMENT 'workspace status',
   `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'create time',
   `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'update time',
   PRIMARY KEY (`id`),
@@ -425,7 +425,7 @@ CREATE TABLE `t_user` (
   `password` varchar(255) DEFAULT NULL,
   `email` varchar(255) DEFAULT NULL,
   `workers` varchar(255) DEFAULT NULL,
-  `roles` varchar(1024) DEFAULT NULL,
+  `roles` varchar(1024) NOT NULL DEFAULT '{}',
   `status` varchar(32) DEFAULT NULL,
   `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   `create_time` datetime DEFAULT CURRENT_TIMESTAMP,
@@ -515,10 +515,10 @@ CREATE TABLE `t_config` (
   `description` varchar(255) DEFAULT NULL,
   `type` varchar(32) NOT NULL,
   `version` varchar(32) NOT NULL,
-  `config` varchar(4096) DEFAULT NULL,
+  `config` varchar(4096) NOT NULL,
   `status` varchar(32)  NOT NULL,
-  `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  `create_time` datetime DEFAULT CURRENT_TIMESTAMP,
+  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='config';
 
