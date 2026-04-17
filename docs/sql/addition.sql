@@ -86,13 +86,18 @@ CREATE TABLE `t_audit_log` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='audit log';
 
 -- 2026-04-12
-ALTER TABLE t_user ADD COLUMN roles varchar(1024) COMMENT 'roles json' after workers;
-ALTER TABLE t_user MODIFY COLUMN status varchar(32) COMMENT 'user status';
-UPDATE t_user SET roles = '{"global":"SUPER_ADMIN","workspaces":{}}' WHERE type = 'ADMIN';
+ALTER TABLE platform.t_user ADD COLUMN roles varchar(1024) DEFAULT '{}' NOT NULL COMMENT 'roles json' after workers;
+ALTER TABLE platform.t_user MODIFY COLUMN status varchar(32) COMMENT 'user status';
+ALTER TABLE platform.t_job_flow ADD COLUMN workspace_id bigint(11) NOT NULL COMMENT 'workspace id' AFTER user_id;
+ALTER TABLE platform.t_job_flow_run ADD COLUMN workspace_id bigint(11) NOT NULL COMMENT 'workspace id' AFTER user_id;
+ALTER TABLE platform.t_user DROP COLUMN `type`;
+
+UPDATE platform.t_job_flow SET workspace_id = user_id;
+UPDATE platform.t_job_flow_run SET workspace_id = user_id;
+UPDATE platform.t_user SET roles = '{"global":"SUPER_ADMIN","workspaces":{}}' WHERE type = 'ADMIN';
 UPDATE t_user SET roles = '{"global":null,"workspaces":{}}' WHERE type != 'ADMIN' OR type IS NULL;
 UPDATE t_user SET status = 'NORMAL';
 
--- 2026-04-14
 CREATE TABLE `t_workspace` (
   `id`          bigint(11) NOT NULL AUTO_INCREMENT,
   `name`        varchar(64)  NOT NULL COMMENT 'workspace name',
@@ -104,4 +109,4 @@ CREATE TABLE `t_workspace` (
   UNIQUE KEY `t_workspace_name_unique` (`name`) USING BTREE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='workspace';
 
-ALTER TABLE t_job_flow ADD COLUMN workspace_id bigint(11) COMMENT 'workspace id' AFTER user_id;
+

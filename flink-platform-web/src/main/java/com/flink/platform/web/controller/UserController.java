@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.flink.platform.common.constants.Constant;
+import com.flink.platform.common.model.UserRoles;
 import com.flink.platform.dao.entity.User;
 import com.flink.platform.dao.entity.Worker;
 import com.flink.platform.dao.service.UserService;
@@ -32,7 +33,11 @@ import java.util.Map;
 import java.util.Objects;
 
 import static com.flink.platform.common.enums.Permission.SYSTEM_MANAGE;
+import static com.flink.platform.common.enums.Permission.WORKSPACE_MANAGE;
+import static com.flink.platform.common.enums.Permission.WORKSPACE_VIEW;
 import static com.flink.platform.common.enums.ResponseStatus.ERROR_PARAMETER;
+import static com.flink.platform.common.enums.Role.ADMIN;
+import static com.flink.platform.common.enums.Role.SUPER_ADMIN;
 import static com.flink.platform.common.enums.WorkerStatus.INACTIVE;
 import static com.flink.platform.web.entity.response.ResultInfo.failure;
 import static com.flink.platform.web.entity.response.ResultInfo.success;
@@ -68,17 +73,50 @@ public class UserController {
         return success(user.getId());
     }
 
-    @RequirePermission(SYSTEM_MANAGE)
+    @RequirePermission(WORKSPACE_VIEW)
     @PostMapping(value = "/update")
-    public ResultInfo<Long> update(@RequestBody UserRequest userRequest) {
+    public ResultInfo<Long> update(
+            @RequestAttribute(value = Constant.SESSION_USER) User loginUser, @RequestBody UserRequest userRequest) {
         var errorMsg = userRequest.validateOnUpdate();
         if (StringUtils.isNotBlank(errorMsg)) {
             return failure(ERROR_PARAMETER, errorMsg);
         }
 
+        boolean isSelf = loginUser.getId().equals(userRequest.getId());
+        boolean isSuperAdmin = SUPER_ADMIN.equals(loginUser.getRoles().getGlobal());
+        if (!isSelf && !isSuperAdmin) {
+            return failure(ERROR_PARAMETER, "No permission to update other user's profile");
+        }
+
+        // update user profiles except roles.
         var user = userRequest.getUser();
+        user.setRoles(null);
         userService.updateById(user);
         return success(user.getId());
+    }
+
+    @RequirePermission(WORKSPACE_MANAGE)
+    @PostMapping(value = "/update/roles")
+    public ResultInfo<Long> updateRoles(
+            @RequestAttribute(value = Constant.SESSION_USER) User loginUser, @RequestBody UserRequest userRequest) {
+        var errorMsg = userRequest.validateOnUpdate();
+        if (StringUtils.isNotBlank(errorMsg)) {
+            return failure(ERROR_PARAMETER, errorMsg);
+        }
+
+        var user = userService.getById(userRequest.getId());
+        errorMsg = checkUserRoles(loginUser, user, userRequest.getRoles());
+        if (StringUtils.isNotBlank(errorMsg)) {
+            return failure(ERROR_PARAMETER, errorMsg);
+        }
+
+        var merged = user.getRoles();
+        merged.merge(userRequest.getRoles());
+        var newUser = new User();
+        newUser.setId(userRequest.getId());
+        newUser.setRoles(merged);
+        userService.updateById(newUser);
+        return success(newUser.getId());
     }
 
     @RequirePermission(SYSTEM_MANAGE)
@@ -103,6 +141,15 @@ public class UserController {
         return success(result);
     }
 
+    @RequirePermission(WORKSPACE_VIEW)
+    @GetMapping(value = "/workspace/{workspaceId}")
+    public ResultInfo<List<User>> listMembers(@PathVariable Long workspaceId) {
+        var members = userService.list().stream()
+                .filter(u -> u.getRoles().getWorkspaces().containsKey(workspaceId))
+                .toList();
+        return success(members);
+    }
+
     @GetMapping(value = "/workers")
     public ResultInfo<List<Worker>> workers(@RequestAttribute(value = Constant.SESSION_USER) User loginUser) {
         var user = userService.getById(loginUser.getId());
@@ -116,5 +163,40 @@ public class UserController {
                 .in(Worker::getId, workerIdList)
                 .ne(Worker::getRole, INACTIVE));
         return success(list);
+    }
+
+    private String checkUserRoles(User loginUser, User user, UserRoles requestRoles) {
+        if (requestRoles == null) {
+            return "Roles cannot be null";
+        }
+
+        // login user is super admin.
+        var loginRoles = loginUser.getRoles();
+        if (SUPER_ADMIN.equals(loginRoles.getGlobal())) {
+            return null;
+        }
+
+        // login user isn't super admin, only check workspace roles.
+        if (requestRoles.getGlobal() != null) {
+            return "Only super admin can assign super admin role";
+        }
+
+        var existedWorkspaceRoles = user.getRoles().getWorkspaces();
+        var loginWorkspaceRoles = loginRoles.getWorkspaces();
+        for (var requestWorkspaceRole : requestRoles.getWorkspaces().entrySet()) {
+            var requestWorkspaceId = requestWorkspaceRole.getKey();
+            var requestRole = requestWorkspaceRole.getValue();
+            var existedRole = existedWorkspaceRoles.get(requestWorkspaceId);
+            if (existedRole == requestRole) {
+                continue;
+            }
+
+            var loginWorkspaceRole = loginWorkspaceRoles.get(requestWorkspaceId);
+            if (!ADMIN.equals(loginWorkspaceRole)) {
+                return "Only super admin or workspace admin can assign workspace roles";
+            }
+        }
+
+        return null;
     }
 }

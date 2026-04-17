@@ -16,7 +16,12 @@ public class WorkspaceRequest {
     private final Workspace workspace = new Workspace();
 
     public String validateOnCreate() {
-        return nameNotNull();
+        var msg = nameNotNull();
+        if (msg != null) {
+            return msg;
+        }
+
+        return statusNotNull();
     }
 
     public String validateOnUpdate() {
@@ -29,5 +34,9 @@ public class WorkspaceRequest {
 
     public String nameNotNull() {
         return requireNotNull(getName(), "The workspace name cannot be null");
+    }
+
+    public String statusNotNull() {
+        return requireNotNull(getStatus(), "The workspace status cannot be null");
     }
 }
