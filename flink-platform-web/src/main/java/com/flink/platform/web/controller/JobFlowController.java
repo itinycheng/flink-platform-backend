@@ -168,7 +168,7 @@ public class JobFlowController {
             return failure(ERROR_PARAMETER);
         }
 
-        jobFlowService.deleteAllById(flowId, jobFlow.getUserId());
+        jobFlowService.deleteAllById(flowId);
         return success(flowId);
     }
 

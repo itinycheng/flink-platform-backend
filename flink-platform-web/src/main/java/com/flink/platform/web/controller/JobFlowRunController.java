@@ -8,6 +8,8 @@ import com.flink.platform.common.enums.ExecutionStatus;
 import com.flink.platform.dao.entity.JobFlowRun;
 import com.flink.platform.dao.entity.User;
 import com.flink.platform.dao.service.JobFlowRunService;
+import com.flink.platform.web.annotation.RequirePermission;
+import com.flink.platform.web.common.RequestContext;
 import com.flink.platform.web.entity.request.JobFlowRunRequest;
 import com.flink.platform.web.entity.response.ResultInfo;
 import com.flink.platform.web.service.KillJobService;
@@ -27,10 +29,11 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.time.LocalDateTime;
 
+import static com.flink.platform.common.enums.Permission.TASK_EXEC;
+import static com.flink.platform.common.enums.Permission.TASK_PURGE;
 import static com.flink.platform.common.enums.ResponseStatus.ERROR_PARAMETER;
 import static com.flink.platform.common.enums.ResponseStatus.FLOW_ALREADY_TERMINATED;
 import static com.flink.platform.common.enums.ResponseStatus.KILL_FLOW_EXCEPTION_FOUND;
-import static com.flink.platform.common.enums.ResponseStatus.USER_HAVE_NO_PERMISSION;
 import static com.flink.platform.common.util.DateUtil.GLOBAL_DATE_TIME_FORMAT;
 import static com.flink.platform.web.entity.response.ResultInfo.failure;
 import static com.flink.platform.web.entity.response.ResultInfo.success;
@@ -86,7 +89,7 @@ public class JobFlowRunController {
         var queryWrapper = new QueryWrapper<JobFlowRun>()
                 .lambda()
                 .select(JobFlowRun.class, field -> !"flow".equals(field.getProperty()))
-                .eq(JobFlowRun::getUserId, loginUser.getId())
+                .eq(JobFlowRun::getWorkspaceId, RequestContext.requireWorkspaceId())
                 .eq(nonNull(id), JobFlowRun::getId, id)
                 .eq(nonNull(status), JobFlowRun::getStatus, status)
                 .likeRight(isNotEmpty(name), JobFlowRun::getName, name)
@@ -103,6 +106,7 @@ public class JobFlowRunController {
         return success(iPage);
     }
 
+    @RequirePermission(TASK_EXEC)
     @GetMapping(value = "/kill/{flowRunId}")
     public ResultInfo<Long> kill(
             @RequestAttribute(value = Constant.SESSION_USER) User loginUser, @PathVariable Long flowRunId) {
@@ -112,24 +116,17 @@ public class JobFlowRunController {
             return failure(FLOW_ALREADY_TERMINATED);
         }
 
-        if (!jobFlowRun.getUserId().equals(loginUser.getId())) {
-            return failure(USER_HAVE_NO_PERMISSION);
-        }
-
         var isSuccess = killJobService.killRemoteFlow(flowRunId);
         return isSuccess ? success(flowRunId) : failure(KILL_FLOW_EXCEPTION_FOUND);
     }
 
+    @RequirePermission(TASK_PURGE)
     @GetMapping(value = "/purge/{flowRunId}")
     public ResultInfo<Long> purge(
             @RequestAttribute(value = Constant.SESSION_USER) User loginUser, @PathVariable long flowRunId) {
         var jobFlowRun = jobFlowRunService.getById(flowRunId);
         if (jobFlowRun == null) {
             return failure(ERROR_PARAMETER);
-        }
-
-        if (!loginUser.getId().equals(jobFlowRun.getUserId())) {
-            return failure(USER_HAVE_NO_PERMISSION);
         }
 
         jobFlowRunService.deleteAllById(flowRunId, loginUser.getId());

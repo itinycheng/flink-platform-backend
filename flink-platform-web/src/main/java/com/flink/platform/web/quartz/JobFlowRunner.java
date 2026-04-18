@@ -111,6 +111,7 @@ public class JobFlowRunner implements Job {
                 jobFlowRun.setFlow(jobFlow.getFlow());
             }
             jobFlowRun.setUserId(jobFlow.getUserId());
+            jobFlowRun.setWorkspaceId(jobFlow.getWorkspaceId());
             jobFlowRun.setHost(Constant.HOST_IP);
             jobFlowRun.setType(jobFlow.getType());
             jobFlowRun.setCronExpr(jobFlow.getCronExpr());
