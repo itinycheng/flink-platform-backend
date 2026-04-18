@@ -16,6 +16,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -115,5 +116,10 @@ public class JobFlowRunService extends ServiceImpl<JobFlowRunMapper, JobFlowRun>
         newFlowRun.setId(jobFlowRun.getId());
         newFlowRun.setParams(sharedParams);
         updateById(newFlowRun);
+    }
+
+    public List<Map<String, Object>> countJobFlowRunGroupByStatus(
+            Long workspaceId, LocalDateTime startTime, LocalDateTime endTime) {
+        return baseMapper.countJobFlowRunGroupByStatus(workspaceId, startTime, endTime);
     }
 }

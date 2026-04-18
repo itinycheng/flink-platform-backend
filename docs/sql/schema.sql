@@ -358,7 +358,7 @@ CREATE TABLE `t_job_run` (
   `id` bigint(11) unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
   `name` varchar(128) DEFAULT NULL COMMENT 'instance name',
   `job_id` bigint(11) NOT NULL COMMENT 'job id',
-  `flow_run_id` bigint(11) DEFAULT NULL COMMENT 'flow run id',
+  `flow_run_id` bigint(11) NOT NULL COMMENT 'flow run id',
   `user_id` bigint(11) NOT NULL COMMENT 'user id',
   `type` varchar(32) DEFAULT NULL COMMENT 'type',
   `version` varchar(32) DEFAULT NULL COMMENT 'version',

@@ -9,8 +9,10 @@ import com.flink.platform.dao.entity.JobRunInfo;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 
+import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 
 /** job run info Mapper. */
 public interface JobRunInfoMapper extends BaseMapper<JobRunInfo> {
@@ -85,4 +87,21 @@ public interface JobRunInfoMapper extends BaseMapper<JobRunInfo> {
             @Param("jobFlowStatus") JobFlowStatus jobFlowStatus,
             @Param("jobStatus") JobStatus jobStatus,
             @Param("jobRunStatusList") Collection<ExecutionStatus> jobRunStatusList);
+
+    @Select("""
+            <script>
+                SELECT jr.status, count(jr.id) as count
+                FROM t_job_run jr, t_job_flow_run fr
+                WHERE jr.flow_run_id = fr.id
+                AND fr.workspace_id = #{workspaceId}
+                <if test="startTime != null and endTime != null">
+                    AND (jr.stop_time IS NULL OR jr.stop_time BETWEEN #{startTime} AND #{endTime})
+                </if>
+                GROUP BY jr.status
+            </script>
+            """)
+    List<Map<String, Object>> countJobRunGroupByStatus(
+            @Param("workspaceId") Long workspaceId,
+            @Param("startTime") LocalDateTime startTime,
+            @Param("endTime") LocalDateTime endTime);
 }
