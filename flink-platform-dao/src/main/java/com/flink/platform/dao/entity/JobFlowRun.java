@@ -35,6 +35,8 @@ public class JobFlowRun {
 
     private Long userId;
 
+    private Long workspaceId;
+
     private JobFlowType type;
 
     private String cronExpr;

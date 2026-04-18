@@ -53,7 +53,7 @@ public class FlowCommandExecutor implements CommandExecutor {
 
     @Nonnull
     @Override
-    public JobCallback execCommand(@Nonnull JobCommand command) throws Exception {
+    public JobCallback execCommand(@Nonnull JobCommand command) {
         var flowId = ((FlowCommand) command).getFlowId();
         var jobFlow = jobFlowService.getById(flowId);
         var self = SpringContext.getBean(FlowCommandExecutor.class);
@@ -116,6 +116,7 @@ public class FlowCommandExecutor implements CommandExecutor {
         var jobflowRun = new JobFlowRun();
         jobflowRun.setName(DEFAULT_NAME);
         jobflowRun.setUserId(jobFlow.getUserId());
+        jobflowRun.setWorkspaceId(jobFlow.getWorkspaceId());
         jobflowRun.setFlowId(jobFlow.getId());
         jobflowRun.setType(JOB_FLOW);
         jobflowRun.setHost("");
