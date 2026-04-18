@@ -14,8 +14,10 @@ import jakarta.annotation.Nonnull;
 import org.springframework.stereotype.Service;
 
 import java.io.Serializable;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import static com.flink.platform.common.enums.ExecutionStatus.FAILURE_STATUSES;
@@ -70,5 +72,10 @@ public class JobRunInfoService extends ServiceImpl<JobRunInfoMapper, JobRunInfo>
 
     public boolean isNonLargeField(TableFieldInfo field) {
         return !LARGE_FIELDS.contains(field.getProperty());
+    }
+
+    public List<Map<String, Object>> countJobRunGroupByStatus(
+            Long workspaceId, LocalDateTime startTime, LocalDateTime endTime) {
+        return baseMapper.countJobRunGroupByStatus(workspaceId, startTime, endTime);
     }
 }
