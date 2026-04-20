@@ -9,6 +9,7 @@ import com.flink.platform.dao.entity.User;
 import com.flink.platform.dao.entity.Workspace;
 import com.flink.platform.dao.service.WorkspaceService;
 import com.flink.platform.web.annotation.RequirePermission;
+import com.flink.platform.web.annotation.WorkspaceOptional;
 import com.flink.platform.web.entity.request.WorkspaceRequest;
 import com.flink.platform.web.entity.response.ResultInfo;
 import lombok.RequiredArgsConstructor;
@@ -85,6 +86,7 @@ public class WorkspaceController {
         return success(workspaceService.getById(id));
     }
 
+    @WorkspaceOptional
     @GetMapping(value = "/list")
     public ResultInfo<List<Workspace>> list(@RequestAttribute(value = Constant.SESSION_USER) User loginUser) {
         var roles = loginUser.getRoles();

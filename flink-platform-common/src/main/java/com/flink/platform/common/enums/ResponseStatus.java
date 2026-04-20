@@ -35,6 +35,7 @@ public enum ResponseStatus {
     FLOW_ALREADY_IN_USE(10030, "Sub workflow already in use"),
     USER_LOCKED(10031, "user is locked"),
     INVALID_WORKSPACE_ID(10032, "invalid or missing workspace id"),
+    SSO_AUTH_FAILED(10033, "SSO authentication failed"),
     ;
 
     private final int code;

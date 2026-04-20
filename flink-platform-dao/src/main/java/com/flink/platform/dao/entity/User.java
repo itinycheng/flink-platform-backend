@@ -30,6 +30,8 @@ public class User {
 
     private String email;
 
+    private String externalId;
+
     @TableField(typeHandler = Jackson3TypeHandler.class)
     private LongArrayList workers;
 
