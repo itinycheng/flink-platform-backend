@@ -8,7 +8,7 @@ import static com.flink.platform.common.enums.ResponseStatus.INVALID_WORKSPACE_I
 /** ThreadLocal holder for per-request context (user id and workspace id). */
 public final class RequestContext {
 
-    public record Context(Long userId, Long workspaceId) {}
+    public record Context(Long userId, @Nullable Long workspaceId) {}
 
     private static final ThreadLocal<@Nullable Context> HOLDER = new ThreadLocal<>();
 
@@ -30,7 +30,7 @@ public final class RequestContext {
 
     public static Long requireWorkspaceId() {
         var context = HOLDER.get();
-        if (context == null) {
+        if (context == null || context.workspaceId() == null) {
             throw new DefinitionException(INVALID_WORKSPACE_ID);
         }
         return context.workspaceId();

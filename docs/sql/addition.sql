@@ -87,10 +87,14 @@ CREATE TABLE `t_audit_log` (
 
 -- 2026-04-12
 ALTER TABLE platform.t_user ADD COLUMN roles varchar(1024) DEFAULT '{}' NOT NULL COMMENT 'roles json' after workers;
+ALTER TABLE platform.t_user ADD COLUMN external_id varchar(255) DEFAULT NULL COMMENT 'external id, NULL for local users' after email;
 ALTER TABLE platform.t_user MODIFY COLUMN status varchar(32) COMMENT 'user status';
+ALTER TABLE platform.t_user DROP COLUMN `type`;
+ALTER TABLE platform.t_user ADD UNIQUE KEY `t_user_username_uk` (`username`);
+ALTER TABLE platform.t_user ADD UNIQUE KEY `t_user_external_id_uk` (`external_id`);
+
 ALTER TABLE platform.t_job_flow ADD COLUMN workspace_id bigint(11) NOT NULL COMMENT 'workspace id' AFTER user_id;
 ALTER TABLE platform.t_job_flow_run ADD COLUMN workspace_id bigint(11) NOT NULL COMMENT 'workspace id' AFTER user_id;
-ALTER TABLE platform.t_user DROP COLUMN `type`;
 
 UPDATE platform.t_job_flow SET workspace_id = user_id;
 UPDATE platform.t_job_flow_run SET workspace_id = user_id;
@@ -98,7 +102,7 @@ UPDATE platform.t_user SET roles = '{"global":"SUPER_ADMIN","workspaces":{}}' WH
 UPDATE t_user SET roles = '{"global":null,"workspaces":{}}' WHERE type != 'ADMIN' OR type IS NULL;
 UPDATE t_user SET status = 'NORMAL';
 
-CREATE TABLE `t_workspace` (
+CREATE TABLE platform.`t_workspace` (
   `id`          bigint(11) NOT NULL AUTO_INCREMENT,
   `name`        varchar(64)  NOT NULL COMMENT 'workspace name',
   `description` varchar(255) DEFAULT NULL COMMENT 'description',

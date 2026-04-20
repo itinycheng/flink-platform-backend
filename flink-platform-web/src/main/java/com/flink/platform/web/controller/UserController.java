@@ -10,6 +10,7 @@ import com.flink.platform.dao.entity.Worker;
 import com.flink.platform.dao.service.UserService;
 import com.flink.platform.dao.service.WorkerService;
 import com.flink.platform.web.annotation.RequirePermission;
+import com.flink.platform.web.annotation.WorkspaceOptional;
 import com.flink.platform.web.entity.request.UserRequest;
 import com.flink.platform.web.entity.response.ResultInfo;
 import lombok.RequiredArgsConstructor;
@@ -131,6 +132,7 @@ public class UserController {
         return success(iPage);
     }
 
+    @WorkspaceOptional
     @GetMapping(value = "/info")
     public ResultInfo<Map<String, Object>> info(@RequestAttribute(value = Constant.SESSION_USER) User loginUser) {
         var result = new HashMap<String, Object>();

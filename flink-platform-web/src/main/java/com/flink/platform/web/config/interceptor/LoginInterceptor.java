@@ -3,6 +3,7 @@ package com.flink.platform.web.config.interceptor;
 import com.flink.platform.common.constants.Constant;
 import com.flink.platform.common.exception.DefinitionException;
 import com.flink.platform.common.util.NumberUtil;
+import com.flink.platform.web.annotation.WorkspaceOptional;
 import com.flink.platform.web.common.RequestContext;
 import com.flink.platform.web.config.auth.AuthProvider;
 import jakarta.annotation.Nonnull;
@@ -12,6 +13,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.HandlerInterceptor;
 
 import static com.flink.platform.common.enums.ResponseStatus.INVALID_WORKSPACE_ID;
@@ -44,15 +46,21 @@ public class LoginInterceptor implements HandlerInterceptor {
             throw new DefinitionException(USER_LOCKED);
         }
 
-        var workspaceIdStr = request.getHeader("X-Workspace-Id");
-        var workspaceId = NumberUtil.toLong(workspaceIdStr);
-        if (workspaceId == null) {
+        var workspaceId = NumberUtil.toLong(request.getHeader("X-Workspace-Id"));
+        if (workspaceId == null && !isWorkspaceOptional(handler)) {
             throw new DefinitionException(INVALID_WORKSPACE_ID);
         }
 
         request.setAttribute(Constant.SESSION_USER, user);
         RequestContext.set(new RequestContext.Context(user.getId(), workspaceId));
         return true;
+    }
+
+    private boolean isWorkspaceOptional(Object handler) {
+        if (handler instanceof HandlerMethod m) {
+            return m.hasMethodAnnotation(WorkspaceOptional.class);
+        }
+        return false;
     }
 
     @Override

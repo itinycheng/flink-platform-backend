@@ -29,4 +29,15 @@ management:
         include: '*'
 
 auth:
-  type: token   # Options: token | ldap | cas | oauth2 | oidc
+  type: token         # Options: token | cas | oidc
+  frontend-url: http://localhost:9528/
+  session:
+    ttl-days: 0       # 0 = never expire; >0 = sliding window in days
+  cas:
+    server-url:       # e.g. https://cas-host/cas/tiger/app-name
+  oidc:
+    authority:        # e.g. https://login.microsoftonline.com/{tenant-id}/v2.0
+    client-id:        # OAuth2 client ID
+    client-secret:    # OAuth2 client secret — use ${OIDC_CLIENT_SECRET} in prod
+    scope: openid email profile
+    username-claim: preferred_username  # Claim used as local username: "oid" (Entra ID), "sub" (Google/Casdoor/Okta), "preferred_username" (default)
