@@ -10,9 +10,17 @@
 		</encoder>
 	</appender>
 
-	<appender name="log" class="ch.qos.logback.core.FileAppender">
+	<appender name="log" class="ch.qos.logback.core.rolling.RollingFileAppender">
 		<file>${log.home}/console.log</file>
-		<append>false</append>
+		<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+			<fileNamePattern>${log.home}/%d{yyyy-MM}/console-%d{yyyy-MM-dd}-%i.log.zip
+			</fileNamePattern>
+			<maxHistory>30</maxHistory>
+			<TimeBasedFileNamingAndTriggeringPolicy
+				class="ch.qos.logback.core.rolling.SizeAndTimeBasedFileNamingAndTriggeringPolicy">
+				<MaxFileSize>100MB</MaxFileSize>
+			</TimeBasedFileNamingAndTriggeringPolicy>
+		</rollingPolicy>
 		<encoder>
 			<pattern>${log.pattern}</pattern>
 		</encoder>

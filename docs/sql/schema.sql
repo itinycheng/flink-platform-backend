@@ -424,12 +424,15 @@ CREATE TABLE `t_user` (
   `username` varchar(64) NOT NULL,
   `password` varchar(255) DEFAULT NULL,
   `email` varchar(255) DEFAULT NULL,
+  `external_id` varchar(255) DEFAULT NULL COMMENT 'external id, NULL for local users',
   `workers` varchar(255) DEFAULT NULL,
   `roles` varchar(1024) NOT NULL DEFAULT '{}',
   `status` varchar(32) DEFAULT NULL,
   `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   `create_time` datetime DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `t_user_username_uk` (`username`),
+  UNIQUE KEY `t_user_external_id_uk` (`external_id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COMMENT='login user info';
 
 -- ----------------------------
