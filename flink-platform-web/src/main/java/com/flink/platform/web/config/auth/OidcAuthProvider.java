@@ -49,6 +49,9 @@ public class OidcAuthProvider extends SessionAuthProvider {
 
     private String tokenEndpoint;
 
+    @Nullable
+    private String endSessionEndpoint;
+
     /** Short-lived state store for CSRF protection: state → expiry. */
     private final ConcurrentHashMap<String, Instant> stateCache = new ConcurrentHashMap<>();
 
@@ -75,12 +78,29 @@ public class OidcAuthProvider extends SessionAuthProvider {
             JsonNode node = objectMapper.readTree(json);
             authorizationEndpoint = node.path("authorization_endpoint").asText();
             tokenEndpoint = node.path("token_endpoint").asText();
-            log.info("OIDC discovery complete. auth={} token={}", authorizationEndpoint, tokenEndpoint);
+            endSessionEndpoint = node.path("end_session_endpoint").asText(null);
+            log.info(
+                    "OIDC discovery complete. auth={} token={} endSession={}",
+                    authorizationEndpoint,
+                    tokenEndpoint,
+                    endSessionEndpoint);
         } catch (IllegalStateException e) {
             throw e;
         } catch (Exception e) {
             throw new IllegalStateException("OIDC discovery failed for " + discoveryUrl, e);
         }
+    }
+
+    @Override
+    @Nullable
+    public String getLogoutRedirectUrl() {
+        if (endSessionEndpoint == null) {
+            return null;
+        }
+        return UriComponentsBuilder.fromUriString(endSessionEndpoint)
+                .queryParam("post_logout_redirect_uri", props.getFrontendUrl())
+                .build(false)
+                .toUriString();
     }
 
     @Override

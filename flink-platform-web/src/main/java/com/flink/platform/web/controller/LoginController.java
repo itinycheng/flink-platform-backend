@@ -27,12 +27,12 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
-import static com.flink.platform.common.enums.ResponseStatus.USER_NOT_FOUNT;
 import static com.flink.platform.common.enums.Role.SUPER_ADMIN;
 import static com.flink.platform.common.enums.Status.ENABLE;
 import static com.flink.platform.web.entity.response.ResultInfo.failure;
@@ -69,19 +69,20 @@ public class LoginController {
     public ResultInfo<Map<String, Object>> login(@RequestBody LoginRequest req, HttpServletRequest request) {
         var clientIp = HttpUtil.getClientIpAddress(request);
         return switch (props.getType()) {
-            case TOKEN -> passwordLogin(req, clientIp);
+            case LOCAL -> passwordLogin(req, clientIp);
             case CAS, OIDC -> ssoLogin(req, clientIp);
         };
     }
 
-    @PostMapping("/logout")
-    public ResultInfo<String> logout(@RequestBody UserRequest userRequest) {
-        if (StringUtils.isEmpty(userRequest.getToken())) {
-            return failure(USER_NOT_FOUNT);
+    @PostMapping(value = "/logout")
+    public ResultInfo<Map<String, Object>> logout(@RequestBody UserRequest userRequest) throws IOException {
+        if (StringUtils.isNotEmpty(userRequest.getToken())) {
+            sessionService.remove(new QueryWrapper<Session>().lambda().eq(Session::getToken, userRequest.getToken()));
         }
 
-        sessionService.remove(new QueryWrapper<Session>().lambda().eq(Session::getToken, userRequest.getToken()));
-        return success(userRequest.getToken());
+        var result = new HashMap<String, Object>();
+        result.put("redirectUrl", authProvider.getLogoutRedirectUrl());
+        return success(result);
     }
 
     // ============================================================

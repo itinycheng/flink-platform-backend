@@ -9,14 +9,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
-/** Token-based authenticator. Active when {@code auth.type=token} (default). */
+/** Token-based authenticator. Active when {@code auth.type=local} (default). */
 @Slf4j
 @Component
-@ConditionalOnProperty(name = "auth.type", havingValue = "token", matchIfMissing = true)
-public class TokenAuthProvider extends SessionAuthProvider {
+@ConditionalOnProperty(name = "auth.type", havingValue = "local", matchIfMissing = true)
+public class LocalAuthProvider extends SessionAuthProvider {
 
     @Autowired
-    public TokenAuthProvider(UserService userService, SessionService sessionService, AuthProperties props) {
+    public LocalAuthProvider(UserService userService, SessionService sessionService, AuthProperties props) {
         super(userService, sessionService, props);
     }
 
