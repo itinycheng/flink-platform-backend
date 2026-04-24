@@ -15,6 +15,11 @@ public interface AuthProvider {
         return null;
     }
 
+    /** SSO logout URL to destroy the SSO session; {@code null} in token mode. */
+    default String getLogoutRedirectUrl() {
+        return null;
+    }
+
     /**
      * Validates an SSO callback and returns the authenticated SSO user.
      */

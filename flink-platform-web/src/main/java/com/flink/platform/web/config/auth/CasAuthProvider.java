@@ -51,6 +51,15 @@ public class CasAuthProvider extends SessionAuthProvider {
     }
 
     @Override
+    @NonNull
+    public String getLogoutRedirectUrl() {
+        return UriComponentsBuilder.fromUriString(props.getCas().getServerUrl() + "/logout")
+                .queryParam("service", props.getFrontendUrl())
+                .build(false)
+                .toUriString();
+    }
+
+    @Override
     public SsoUser handleCallback(String ticket, @Nullable String state) {
         if (StringUtils.isEmpty(ticket)) {
             throw new DefinitionException(SSO_AUTH_FAILED);
