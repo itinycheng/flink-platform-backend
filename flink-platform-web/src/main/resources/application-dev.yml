@@ -6,6 +6,23 @@ server:
       min-spare: 30
   port: 9104
 
+auth:
+  type: local                       # Options: local | cas | oidc
+  frontend-url: http://localhost:9528/
+  session-ttl: 7d
+  cas:
+    server-url:                     # CAS server base URL, e.g. https://cas.example.com/cas
+    username-path:                  # JSONPath to username in serviceValidate response
+    external-id-path:               # JSONPath to external user ID
+    email-path:                     # JSONPath to email attribute
+  oidc:
+    authority:                      # OIDC issuer URL, e.g. https://login.microsoftonline.com/{tenant-id}/v2.0
+    client-id:                      # OAuth2 client ID
+    client-secret:                  # OAuth2 client secret — use ${OIDC_CLIENT_SECRET} in prod
+    scope: openid email profile
+    username-claim: preferred_username  # Claim used as local username: "sub" (Google/Casdoor/Okta), "oid" (Entra ID), "preferred_username" (Keycloak)
+
+
 spring:
   application:
     name: flink-platform-backend
@@ -51,32 +68,6 @@ spring:
         enableKeepAlive: true
         keepAliveWithoutCalls: true
         negotiationType: plaintext
-
-flink:
-  sql112:
-    version: 1.12.0
-    command-path: /data0/app/flink-1.12.0/bin/flink
-    jar-file: hdfs:///flink/jars/job_jar/flink-platform-core.jar
-    class-name: com.flink.platform.core.Sql112Application
-    lib-dirs: hdfs:///flink/jars/flink_1.12.0/lib/
-  sql113:
-    version: 1.13.2
-    command-path: /data0/app/flink-1.13.2/bin/flink
-    jar-file: hdfs:///flink/jars/job_jar/flink-platform-core.jar
-    class-name: com.flink.platform.core.Sql113Application
-    lib-dirs: hdfs:///flink/jars/flink_1.13.2/lib/
-  sql115:
-    version: 1.15.1
-    command-path: /data0/app/flink-1.15.1/bin/flink
-    jar-file: hdfs:///flink/jars/job_jar/flink-sql-submit-1.15.jar
-    class-name: com.flink.platform.sql.submit.Sql115Application
-    lib-dirs: hdfs:///flink/jars/flink_1.15.1/lib/
-  sql117:
-    version: 1.17.1
-    command-path: /data0/app/flink-1.17.1/bin/flink
-    jar-file: hdfs:///flink/jars/job_jar/flink-sql-submit-1.17.jar
-    class-name: com.flink.platform.sql.submit.Sql117Application
-    lib-dirs: hdfs:///flink/jars/flink_1.17.1/lib/
 
 worker:
   flowExecThreads: 100
