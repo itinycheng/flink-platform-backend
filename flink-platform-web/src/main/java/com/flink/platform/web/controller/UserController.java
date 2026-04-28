@@ -120,7 +120,7 @@ public class UserController {
         return success(newUser.getId());
     }
 
-    @RequirePermission(SYSTEM_MANAGE)
+    @RequirePermission(WORKSPACE_MANAGE)
     @GetMapping(value = "/page")
     public ResultInfo<IPage<User>> page(
             @RequestParam(name = "page", required = false, defaultValue = "1") Integer page,

@@ -27,19 +27,3 @@ management:
       base-path: /actuator
       exposure:
         include: '*'
-
-auth:
-  type: local                       # Options: local | cas | oidc
-  frontend-url: http://localhost:9528/
-  session-ttl: 1d
-  cas:
-    server-url:                     # CAS server base URL, e.g. https://cas.example.com/cas
-    username-path:                  # JSONPath to username in serviceValidate response
-    external-id-path:               # JSONPath to external user ID
-    email-path:                     # JSONPath to email attribute
-  oidc:
-    authority:                      # OIDC issuer URL, e.g. https://login.microsoftonline.com/{tenant-id}/v2.0
-    client-id:                      # OAuth2 client ID
-    client-secret:                  # OAuth2 client secret — use ${OIDC_CLIENT_SECRET} in prod
-    scope: openid email profile
-    username-claim: preferred_username  # Claim used as local username: "sub" (Google/Casdoor/Okta), "oid" (Entra ID), "preferred_username" (Keycloak)
