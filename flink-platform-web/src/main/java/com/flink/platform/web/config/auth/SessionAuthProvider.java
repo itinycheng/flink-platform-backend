@@ -36,6 +36,7 @@ public abstract class SessionAuthProvider implements AuthProvider {
     public @Nullable User authenticate(HttpServletRequest request) {
         var token = request.getHeader("X-Token");
         if (StringUtils.isEmpty(token)) {
+            log.info("token not found in request header.");
             return null;
         }
 

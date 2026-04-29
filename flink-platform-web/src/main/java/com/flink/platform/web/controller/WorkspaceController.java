@@ -6,13 +6,18 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.flink.platform.common.constants.Constant;
 import com.flink.platform.common.enums.Status;
 import com.flink.platform.dao.entity.User;
+import com.flink.platform.dao.entity.Worker;
 import com.flink.platform.dao.entity.Workspace;
+import com.flink.platform.dao.entity.config.WorkspaceConfig;
+import com.flink.platform.dao.service.WorkerService;
 import com.flink.platform.dao.service.WorkspaceService;
 import com.flink.platform.web.annotation.RequirePermission;
 import com.flink.platform.web.annotation.WorkspaceOptional;
+import com.flink.platform.web.common.RequestContext;
 import com.flink.platform.web.entity.request.WorkspaceRequest;
 import com.flink.platform.web.entity.response.ResultInfo;
 import lombok.RequiredArgsConstructor;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -24,6 +29,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.Collections;
 import java.util.List;
 
 import static com.flink.platform.common.enums.Permission.SYSTEM_MANAGE;
@@ -43,6 +49,8 @@ public class WorkspaceController {
 
     private final WorkspaceService workspaceService;
 
+    private final WorkerService workerService;
+
     @RequirePermission(SYSTEM_MANAGE)
     @PostMapping(value = "/create")
     public ResultInfo<Workspace> create(@RequestBody WorkspaceRequest request) {
@@ -54,6 +62,9 @@ public class WorkspaceController {
         var workspace = request.getWorkspace();
         workspace.setId(null);
         workspace.setStatus(request.getStatus());
+        if (workspace.getConfig() == null) {
+            workspace.setConfig(new WorkspaceConfig());
+        }
         workspaceService.save(workspace);
         return success(workspace);
     }
@@ -129,5 +140,19 @@ public class WorkspaceController {
                 .in(!isSysManager, Workspace::getId, workspaces.keySet());
         var iPage = workspaceService.page(new Page<>(page, size), queryWrapper);
         return success(iPage);
+    }
+
+    @GetMapping(value = "/workers")
+    public ResultInfo<List<Worker>> workers() {
+        var workspaceId = RequestContext.requireWorkspaceId();
+        var workspace = workspaceService.getById(workspaceId);
+        var workerIds = workspace.getConfig().getWorkers();
+        if (CollectionUtils.isEmpty(workerIds)) {
+            return success(Collections.emptyList());
+        }
+
+        var list = workerService.list(
+                new QueryWrapper<Worker>().lambda().in(Worker::getId, workerIds).ne(Worker::getRole, DELETED));
+        return success(list);
     }
 }

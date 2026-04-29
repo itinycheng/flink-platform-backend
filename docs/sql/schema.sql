@@ -401,19 +401,20 @@ CREATE TABLE `t_resource` (
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COMMENT='resource info';
 
 -- ----------------------------
--- Table structure for t_workspace
+-- Table structure for workspace
 -- ----------------------------
 DROP TABLE IF EXISTS `t_workspace`;
 CREATE TABLE `t_workspace` (
-  `id`          bigint unsigned NOT NULL AUTO_INCREMENT,
-  `name`        varchar(64)  NOT NULL COMMENT 'workspace name',
+  `id` bigint(11) NOT NULL AUTO_INCREMENT,
+  `name` varchar(64) NOT NULL COMMENT 'workspace name',
   `description` varchar(255) DEFAULT NULL COMMENT 'description',
-  `status`      varchar(32)  NOT NULL COMMENT 'workspace status',
-  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'create time',
+  `config` varchar(1024) NOT NULL COMMENT 'workspace config',
+  `status` varchar(32) NOT NULL COMMENT 'workspace status',
   `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'update time',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'create time',
   PRIMARY KEY (`id`),
-  UNIQUE KEY `uk_workspace_name` (`name`) USING BTREE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='workspace';
+  UNIQUE KEY `t_workspace_name_unique` (`name`)
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COMMENT='workspace';
 
 -- ----------------------------
 -- Table structure for t_user
@@ -542,20 +543,6 @@ CREATE TABLE `t_audit_log` (
   KEY `t_audit_log_operator_id_idx` (`operator_id`) USING BTREE,
   KEY `t_audit_log_operate_time_idx` (`operate_time`) USING BTREE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='audit log';
-
--- ----------------------------
--- Table structure for workspace
--- ----------------------------
-CREATE TABLE `t_workspace` (
-  `id`          bigint(11) NOT NULL AUTO_INCREMENT,
-  `name`        varchar(64)  NOT NULL COMMENT 'workspace name',
-  `description` varchar(255) DEFAULT NULL COMMENT 'description',
-  `status`      varchar(32)  NOT NULL COMMENT 'workspace status',
-  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'update time',
-  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'create time',
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `t_workspace_name_unique` (`name`) USING BTREE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='workspace';
 
 -- ----------------------------
 -- Records of t_user

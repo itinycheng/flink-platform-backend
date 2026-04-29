@@ -103,14 +103,15 @@ UPDATE t_user SET roles = '{"global":null,"workspaces":{}}' WHERE type != 'ADMIN
 UPDATE t_user SET status = 'NORMAL';
 
 CREATE TABLE platform.`t_workspace` (
-  `id`          bigint(11) NOT NULL AUTO_INCREMENT,
-  `name`        varchar(64)  NOT NULL COMMENT 'workspace name',
+  `id` bigint(11) NOT NULL AUTO_INCREMENT,
+  `name` varchar(64) NOT NULL COMMENT 'workspace name',
   `description` varchar(255) DEFAULT NULL COMMENT 'description',
-  `status`      varchar(32)  NOT NULL COMMENT 'workspace status',
+  `config` varchar(1024) NOT NULL COMMENT 'workspace config',
+  `status` varchar(32) NOT NULL COMMENT 'workspace status',
   `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'update time',
   `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'create time',
   PRIMARY KEY (`id`),
-  UNIQUE KEY `t_workspace_name_unique` (`name`) USING BTREE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='workspace';
+  UNIQUE KEY `t_workspace_name_unique` (`name`)
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COMMENT='workspace';
 
 

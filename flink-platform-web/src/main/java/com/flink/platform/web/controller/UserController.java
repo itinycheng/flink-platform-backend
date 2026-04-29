@@ -39,7 +39,7 @@ import static com.flink.platform.common.enums.Permission.WORKSPACE_VIEW;
 import static com.flink.platform.common.enums.ResponseStatus.ERROR_PARAMETER;
 import static com.flink.platform.common.enums.Role.ADMIN;
 import static com.flink.platform.common.enums.Role.SUPER_ADMIN;
-import static com.flink.platform.common.enums.WorkerStatus.INACTIVE;
+import static com.flink.platform.common.enums.WorkerStatus.DELETED;
 import static com.flink.platform.web.entity.response.ResultInfo.failure;
 import static com.flink.platform.web.entity.response.ResultInfo.success;
 
@@ -163,7 +163,7 @@ public class UserController {
         var list = workerService.list(new QueryWrapper<Worker>()
                 .lambda()
                 .in(Worker::getId, workerIdList)
-                .ne(Worker::getRole, INACTIVE));
+                .ne(Worker::getRole, DELETED));
         return success(list);
     }
 

@@ -95,8 +95,11 @@ public class WorkerController {
     }
 
     @GetMapping(value = "/list")
-    public ResultInfo<List<Worker>> list() {
-        return success(workerService.list());
+    public ResultInfo<List<Worker>> list(@RequestParam(name = "status", required = false) WorkerStatus status) {
+        return success(workerService.list(new QueryWrapper<Worker>()
+                .lambda()
+                .eq(status != null, Worker::getRole, status)
+                .ne(status == null, Worker::getRole, DELETED)));
     }
 
     @RequirePermission(SYSTEM_MANAGE)
