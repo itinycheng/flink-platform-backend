@@ -34,6 +34,11 @@ public class AlertInfo implements Serializable {
     /** user id. */
     private Long userId;
 
+    /**
+     * workspace id.
+     */
+    private Long workspaceId;
+
     /** alert type. */
     private AlertType type;
 

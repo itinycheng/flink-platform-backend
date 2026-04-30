@@ -5,7 +5,6 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.flink.platform.common.enums.JobParamType;
 import com.flink.platform.common.enums.Status;
-import com.flink.platform.dao.entity.JobInfo;
 import com.flink.platform.dao.entity.JobParam;
 import com.flink.platform.dao.mapper.JobParamMapper;
 import lombok.RequiredArgsConstructor;
@@ -22,23 +21,22 @@ import java.util.List;
 @RequiredArgsConstructor(onConstructor_ = @Autowired)
 public class JobParamService extends ServiceImpl<JobParamMapper, JobParam> {
 
-    private final JobInfoService jobInfoService;
+    private final JobFlowService jobFlowService;
 
     /**
      * TODO: only support global params.
      */
     public List<JobParam> getJobParams(Long jobId) {
-        JobInfo jobInfo = jobInfoService.getById(jobId);
-        if (jobInfo == null) {
+        var flow = jobFlowService.getJobFlowByJobId(jobId);
+        if (flow == null) {
             return Collections.emptyList();
         }
 
         return this.list(new QueryWrapper<JobParam>()
                 .lambda()
-                .nested(qw ->
-                        qw.eq(JobParam::getFlowId, jobInfo.getFlowId()).or().eq(JobParam::getType, JobParamType.GLOBAL))
+                .nested(qw -> qw.eq(JobParam::getFlowId, flow.getId()).or().eq(JobParam::getType, JobParamType.GLOBAL))
                 .eq(JobParam::getStatus, Status.ENABLE)
-                .eq(JobParam::getUserId, jobInfo.getUserId())
+                .eq(JobParam::getWorkspaceId, flow.getWorkspaceId())
                 .orderByAsc(Arrays.asList(JobParam::getType, JobParam::getId)));
     }
 }

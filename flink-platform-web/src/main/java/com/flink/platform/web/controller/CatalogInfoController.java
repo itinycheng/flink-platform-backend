@@ -8,6 +8,7 @@ import com.flink.platform.common.enums.CatalogType;
 import com.flink.platform.dao.entity.CatalogInfo;
 import com.flink.platform.dao.entity.User;
 import com.flink.platform.dao.service.CatalogInfoService;
+import com.flink.platform.web.common.RequestContext;
 import com.flink.platform.web.entity.request.CatalogInfoRequest;
 import com.flink.platform.web.entity.response.ResultInfo;
 import lombok.RequiredArgsConstructor;
@@ -41,18 +42,19 @@ public class CatalogInfoController {
     @PostMapping(value = "/create")
     public ResultInfo<Long> create(
             @RequestAttribute(value = Constant.SESSION_USER) User loginUser,
-            @RequestBody CatalogInfoRequest catalogInfoRequest) {
-        var errorMsg = catalogInfoRequest.validateOnCreate();
+            @RequestBody CatalogInfoRequest catalogRequest) {
+        var errorMsg = catalogRequest.validateOnCreate();
         if (StringUtils.isNotBlank(errorMsg)) {
             return failure(ERROR_PARAMETER, errorMsg);
         }
 
-        var catalogInfo = catalogInfoRequest.getCatalogInfo();
-        catalogInfo.setId(null);
-        catalogInfo.setDefaultDatabase(EMPTY);
-        catalogInfo.setUserId(loginUser.getId());
-        catalogService.save(catalogInfo);
-        return success(catalogInfo.getId());
+        var catalog = catalogRequest.getCatalogInfo();
+        catalog.setId(null);
+        catalog.setDefaultDatabase(EMPTY);
+        catalog.setUserId(loginUser.getId());
+        catalog.setWorkspaceId(RequestContext.requireWorkspaceId());
+        catalogService.save(catalog);
+        return success(catalog.getId());
     }
 
     @PostMapping(value = "/update")
@@ -75,18 +77,16 @@ public class CatalogInfoController {
     }
 
     @GetMapping(value = "/delete/{catalogId}")
-    public ResultInfo<Boolean> delete(
-            @RequestAttribute(value = Constant.SESSION_USER) User loginUser, @PathVariable Long catalogId) {
+    public ResultInfo<Boolean> delete(@PathVariable Long catalogId) {
         var bool = catalogService.remove(new QueryWrapper<CatalogInfo>()
                 .lambda()
                 .eq(CatalogInfo::getId, catalogId)
-                .eq(CatalogInfo::getUserId, loginUser.getId()));
+                .eq(CatalogInfo::getWorkspaceId, RequestContext.requireWorkspaceId()));
         return success(bool);
     }
 
     @GetMapping(value = "/page")
     public ResultInfo<IPage<CatalogInfo>> page(
-            @RequestAttribute(value = Constant.SESSION_USER) User loginUser,
             @RequestParam(name = "page", required = false, defaultValue = "1") Integer page,
             @RequestParam(name = "size", required = false, defaultValue = "20") Integer size,
             @RequestParam(name = "name", required = false) String name,
@@ -96,16 +96,17 @@ public class CatalogInfoController {
                 pager,
                 new QueryWrapper<CatalogInfo>()
                         .lambda()
-                        .eq(CatalogInfo::getUserId, loginUser.getId())
+                        .eq(CatalogInfo::getWorkspaceId, RequestContext.requireWorkspaceId())
                         .eq(Objects.nonNull(type), CatalogInfo::getType, type)
                         .like(Objects.nonNull(name), CatalogInfo::getName, name));
         return success(iPage);
     }
 
     @GetMapping(value = "/list")
-    public ResultInfo<List<CatalogInfo>> list(@RequestAttribute(value = Constant.SESSION_USER) User loginUser) {
-        var list = catalogService.list(
-                new QueryWrapper<CatalogInfo>().lambda().eq(CatalogInfo::getUserId, loginUser.getId()));
+    public ResultInfo<List<CatalogInfo>> list() {
+        var list = catalogService.list(new QueryWrapper<CatalogInfo>()
+                .lambda()
+                .eq(CatalogInfo::getWorkspaceId, RequestContext.requireWorkspaceId()));
         return success(list);
     }
 }

@@ -9,6 +9,7 @@ import com.flink.platform.common.enums.ResourceType;
 import com.flink.platform.dao.entity.Resource;
 import com.flink.platform.dao.entity.User;
 import com.flink.platform.dao.service.ResourceService;
+import com.flink.platform.web.common.RequestContext;
 import com.flink.platform.web.entity.request.ResourceRequest;
 import com.flink.platform.web.entity.response.ResultInfo;
 import com.flink.platform.web.service.ResourceManageService;
@@ -68,6 +69,7 @@ public class ResourceController {
         var resource = resourceRequest.getResource();
         resource.setId(null);
         resource.setUserId(loginUser.getId());
+        resource.setWorkspaceId(RequestContext.requireWorkspaceId());
         resourceManageService.save(resource);
         return ResultInfo.success(resource.getId());
     }
@@ -107,7 +109,6 @@ public class ResourceController {
 
     @GetMapping(value = "/page")
     public ResultInfo<IPage<Resource>> page(
-            @RequestAttribute(value = Constant.SESSION_USER) User loginUser,
             @RequestParam(name = "page", required = false, defaultValue = "1") Integer page,
             @RequestParam(name = "size", required = false, defaultValue = "20") Integer size,
             @RequestParam(name = "name", required = false) String name,
@@ -115,7 +116,7 @@ public class ResourceController {
         Page<Resource> pager = new Page<>(page, size);
         LambdaQueryWrapper<Resource> queryWrapper = new QueryWrapper<Resource>()
                 .lambda()
-                .eq(Resource::getUserId, loginUser.getId())
+                .eq(Resource::getWorkspaceId, RequestContext.requireWorkspaceId())
                 .like(Objects.nonNull(name), Resource::getName, name);
         if (pid != null) {
             queryWrapper.eq(Resource::getPid, pid);
@@ -128,19 +129,16 @@ public class ResourceController {
     }
 
     @GetMapping(value = "/list")
-    public ResultInfo<List<Resource>> list(
-            @RequestAttribute(value = Constant.SESSION_USER) User loginUser,
-            @RequestParam(name = "type", required = false) ResourceType type) {
+    public ResultInfo<List<Resource>> list(@RequestParam(name = "type", required = false) ResourceType type) {
         List<Resource> list = resourceService.list(new QueryWrapper<Resource>()
                 .lambda()
-                .eq(Resource::getUserId, loginUser.getId())
+                .eq(Resource::getWorkspaceId, RequestContext.requireWorkspaceId())
                 .eq(Objects.nonNull(type), Resource::getType, type));
         return ResultInfo.success(list);
     }
 
     @PostMapping("/upload")
     public ResponseEntity<Object> upload(
-            @RequestAttribute(value = Constant.SESSION_USER) User loginUser,
             @RequestParam(name = "id", required = false) Long id,
             @RequestParam(name = "pid") Long pid,
             @RequestParam(name = "file") MultipartFile file)
@@ -153,7 +151,7 @@ public class ResourceController {
                 parentDir = resource.getFullName();
             }
             var absStorageFilePath = resourceManageService.getAbsStorageFilePath(
-                    loginUser.getId(), parentDir, file.getOriginalFilename());
+                    RequestContext.requireWorkspaceId(), parentDir, file.getOriginalFilename());
             if (id == null && storageService.exists(absStorageFilePath)) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(FILE_EXISTS.getDesc());
             }

@@ -37,6 +37,11 @@ public class CatalogInfo implements Serializable {
     /** user id. */
     private Long userId;
 
+    /**
+     * workspace id.
+     */
+    private Long workspaceId;
+
     /** default database. */
     @Deprecated
     private String defaultDatabase;

@@ -6,15 +6,12 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.flink.platform.common.constants.Constant;
 import com.flink.platform.common.model.UserRoles;
 import com.flink.platform.dao.entity.User;
-import com.flink.platform.dao.entity.Worker;
 import com.flink.platform.dao.service.UserService;
-import com.flink.platform.dao.service.WorkerService;
 import com.flink.platform.web.annotation.RequirePermission;
 import com.flink.platform.web.annotation.WorkspaceOptional;
 import com.flink.platform.web.entity.request.UserRequest;
 import com.flink.platform.web.entity.response.ResultInfo;
 import lombok.RequiredArgsConstructor;
-import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -27,7 +24,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -39,7 +35,6 @@ import static com.flink.platform.common.enums.Permission.WORKSPACE_VIEW;
 import static com.flink.platform.common.enums.ResponseStatus.ERROR_PARAMETER;
 import static com.flink.platform.common.enums.Role.ADMIN;
 import static com.flink.platform.common.enums.Role.SUPER_ADMIN;
-import static com.flink.platform.common.enums.WorkerStatus.DELETED;
 import static com.flink.platform.web.entity.response.ResultInfo.failure;
 import static com.flink.platform.web.entity.response.ResultInfo.success;
 
@@ -50,8 +45,6 @@ import static com.flink.platform.web.entity.response.ResultInfo.success;
 public class UserController {
 
     private final UserService userService;
-
-    private final WorkerService workerService;
 
     @RequirePermission(SYSTEM_MANAGE)
     @GetMapping(value = "/get/{userId}")
@@ -70,6 +63,9 @@ public class UserController {
 
         var user = userRequest.getUser();
         user.setId(null);
+        if (user.getRoles() == null) {
+            user.setRoles(new UserRoles());
+        }
         userService.save(user);
         return success(user.getId());
     }
@@ -150,21 +146,6 @@ public class UserController {
                 .filter(u -> u.getRoles().getWorkspaces().containsKey(workspaceId))
                 .toList();
         return success(members);
-    }
-
-    @GetMapping(value = "/workers")
-    public ResultInfo<List<Worker>> workers(@RequestAttribute(value = Constant.SESSION_USER) User loginUser) {
-        var user = userService.getById(loginUser.getId());
-        var workerIdList = user.getWorkers();
-        if (CollectionUtils.isEmpty(workerIdList)) {
-            return success(Collections.emptyList());
-        }
-
-        var list = workerService.list(new QueryWrapper<Worker>()
-                .lambda()
-                .in(Worker::getId, workerIdList)
-                .ne(Worker::getRole, DELETED));
-        return success(list);
     }
 
     private String checkUserRoles(User loginUser, User user, UserRoles requestRoles) {

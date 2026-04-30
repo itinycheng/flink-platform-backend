@@ -33,6 +33,11 @@ public class JobParam implements Serializable {
     /** param desc. */
     private String description;
 
+    /**
+     * workspace id.
+     */
+    private Long workspaceId;
+
     /** param type. */
     private JobParamType type;
 

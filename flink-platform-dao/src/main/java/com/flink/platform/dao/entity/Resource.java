@@ -42,6 +42,11 @@ public class Resource implements Serializable {
     /** user id. */
     private Long userId;
 
+    /**
+     * workspace id.
+     */
+    private Long workspaceId;
+
     /** resource type. */
     private ResourceType type;
 

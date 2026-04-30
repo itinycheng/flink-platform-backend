@@ -171,4 +171,8 @@ public class JobFlowService extends ServiceImpl<JobFlowMapper, JobFlow> {
                 .isNotNull(JobFlow::getCronExpr)
                 .ne(JobFlow::getCronExpr, ""));
     }
+
+    public JobFlow getJobFlowByJobId(Long jobId) {
+        return baseMapper.queryJobFlowByJobId(jobId);
+    }
 }

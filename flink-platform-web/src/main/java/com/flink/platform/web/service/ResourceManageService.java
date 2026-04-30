@@ -35,7 +35,7 @@ public class ResourceManageService {
                     }
                     parentPath = parentResource.getFullName();
                 }
-                var absolutePath = getAbsStorageFilePath(entity.getUserId(), parentPath, entity.getName());
+                var absolutePath = getAbsStorageFilePath(entity.getWorkspaceId(), parentPath, entity.getName());
                 if (!storageService.exists(absolutePath)) {
                     storageService.mkDir(absolutePath);
                     entity.setFullName(absolutePath);
@@ -68,12 +68,12 @@ public class ResourceManageService {
         return resourceService.removeById(resource.getId());
     }
 
-    public String getAbsStorageFilePath(Long userId, String parentPath, String fileName) {
+    public String getAbsStorageFilePath(Long workspaceId, String parentPath, String fileName) {
         var fileSeparator = storageService.getFileSeparator();
         if (StringUtils.isBlank(parentPath)) {
-            var userDir = USER_DIR_PREFIX + userId;
+            var workspaceDir = USER_DIR_PREFIX + workspaceId;
             var storageRootPath = storageService.getRootPath();
-            parentPath = String.join(fileSeparator, storageRootPath, RESOURCE_DIR, userDir);
+            parentPath = String.join(fileSeparator, storageRootPath, RESOURCE_DIR, workspaceDir);
         }
         return String.join(fileSeparator, parentPath, fileName);
     }

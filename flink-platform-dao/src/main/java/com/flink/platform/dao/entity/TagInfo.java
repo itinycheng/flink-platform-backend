@@ -34,6 +34,8 @@ public class TagInfo {
     /** user id. */
     private Long userId;
 
+    private Long workspaceId;
+
     /** type. */
     private TagType type;
 

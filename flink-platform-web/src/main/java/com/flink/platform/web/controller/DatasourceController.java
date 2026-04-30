@@ -9,6 +9,7 @@ import com.flink.platform.common.enums.JobType;
 import com.flink.platform.dao.entity.Datasource;
 import com.flink.platform.dao.entity.User;
 import com.flink.platform.dao.service.DatasourceService;
+import com.flink.platform.web.common.RequestContext;
 import com.flink.platform.web.entity.request.DatasourceRequest;
 import com.flink.platform.web.entity.response.ResultInfo;
 import lombok.RequiredArgsConstructor;
@@ -55,6 +56,7 @@ public class DatasourceController {
         var datasource = datasourceRequest.getDatasource();
         datasource.setId(null);
         datasource.setUserId(loginUser.getId());
+        datasource.setWorkspaceId(RequestContext.requireWorkspaceId());
         datasourceService.save(datasource);
         return success(datasource.getId());
     }
@@ -99,7 +101,6 @@ public class DatasourceController {
 
     @GetMapping(value = "/page")
     public ResultInfo<IPage<Datasource>> page(
-            @RequestAttribute(value = Constant.SESSION_USER) User loginUser,
             @RequestParam(name = "page", required = false, defaultValue = "1") Integer page,
             @RequestParam(name = "size", required = false, defaultValue = "20") Integer size,
             @RequestParam(name = "name", required = false) String name,
@@ -109,7 +110,7 @@ public class DatasourceController {
                 pager,
                 new QueryWrapper<Datasource>()
                         .lambda()
-                        .eq(Datasource::getUserId, loginUser.getId())
+                        .eq(Datasource::getWorkspaceId, RequestContext.requireWorkspaceId())
                         .eq(Objects.nonNull(type), Datasource::getType, type)
                         .like(Objects.nonNull(name), Datasource::getName, name));
         return success(iPage);
@@ -117,7 +118,6 @@ public class DatasourceController {
 
     @GetMapping(value = "/list")
     public ResultInfo<List<Datasource>> list(
-            @RequestAttribute(value = Constant.SESSION_USER) User loginUser,
             @RequestParam(name = "dbType", required = false) DbType dbType,
             @RequestParam(name = "jobType", required = false) JobType jobtype) {
         if (jobtype != null) {
@@ -127,7 +127,7 @@ public class DatasourceController {
         var list = datasourceService.list(new QueryWrapper<Datasource>()
                 .lambda()
                 .eq(Objects.nonNull(dbType), Datasource::getType, dbType)
-                .eq(Datasource::getUserId, loginUser.getId()));
+                .eq(Datasource::getWorkspaceId, RequestContext.requireWorkspaceId()));
         return success(list);
     }
 }

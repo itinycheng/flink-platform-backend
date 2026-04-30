@@ -10,6 +10,7 @@ import com.flink.platform.dao.entity.JobParam;
 import com.flink.platform.dao.entity.User;
 import com.flink.platform.dao.service.JobInfoService;
 import com.flink.platform.dao.service.JobParamService;
+import com.flink.platform.web.common.RequestContext;
 import com.flink.platform.web.entity.request.JobParamRequest;
 import com.flink.platform.web.entity.response.ResultInfo;
 import lombok.RequiredArgsConstructor;
@@ -31,6 +32,7 @@ import static com.flink.platform.common.enums.JobParamType.GLOBAL;
 import static com.flink.platform.common.enums.JobParamType.JOB_FLOW;
 import static com.flink.platform.common.enums.ResponseStatus.ERROR_PARAMETER;
 import static com.flink.platform.common.enums.ResponseStatus.OPERATION_NOT_ALLOWED;
+import static com.flink.platform.common.enums.Status.ENABLE;
 import static com.flink.platform.web.entity.response.ResultInfo.failure;
 import static com.flink.platform.web.entity.response.ResultInfo.success;
 import static java.util.Objects.nonNull;
@@ -59,7 +61,7 @@ public class JobParamController {
                 .eq(JobParam::getParamName, jobParamRequest.getParamName())
                 .eq(JobParam::getType, jobParamRequest.getType())
                 .eq(JOB_FLOW.equals(jobParamRequest.getType()), JobParam::getFlowId, jobParamRequest.getFlowId())
-                .eq(JobParam::getUserId, loginUser.getId())
+                .eq(JobParam::getWorkspaceId, RequestContext.requireWorkspaceId())
                 .last("limit 1"));
         if (existed != null) {
             return failure(ERROR_PARAMETER, "param name already exists");
@@ -68,7 +70,8 @@ public class JobParamController {
         var jobParam = jobParamRequest.getJobParam();
         jobParam.setId(null);
         jobParam.setUserId(loginUser.getId());
-        jobParam.setStatus(Status.ENABLE);
+        jobParam.setWorkspaceId(RequestContext.requireWorkspaceId());
+        jobParam.setStatus(ENABLE);
         jobParamService.save(jobParam);
         return success(jobParam.getId());
     }
@@ -97,10 +100,10 @@ public class JobParamController {
         var jobParam = jobParamService.getById(paramId);
 
         // JobParamType.JOB_FLOW unhandled.
+        // TODO: check if params are duplicated within the same workspace.
         if (GLOBAL == jobParam.getType()) {
             var jobInfo = jobService.getOne(new QueryWrapper<JobInfo>()
                     .lambda()
-                    .eq(JobInfo::getUserId, jobParam.getUserId())
                     .like(JobInfo::getSubject, PARAM_FORMAT.formatted(jobParam.getParamName()))
                     .last("LIMIT 1"));
             if (jobInfo != null) {
@@ -116,7 +119,6 @@ public class JobParamController {
 
     @GetMapping(value = "/page")
     public ResultInfo<IPage<JobParam>> page(
-            @RequestAttribute(value = Constant.SESSION_USER) User loginUser,
             @RequestParam(name = "page", required = false, defaultValue = "1") Integer page,
             @RequestParam(name = "size", required = false, defaultValue = "20") Integer size,
             @RequestParam(name = "name", required = false) String name) {
@@ -125,20 +127,20 @@ public class JobParamController {
                 pager,
                 new QueryWrapper<JobParam>()
                         .lambda()
-                        .eq(JobParam::getUserId, loginUser.getId())
+                        .eq(JobParam::getWorkspaceId, RequestContext.requireWorkspaceId())
                         .like(nonNull(name), JobParam::getParamName, name));
 
         return success(iPage);
     }
 
+    @Deprecated
     @GetMapping(value = "/list")
     public ResultInfo<List<JobParam>> list(
-            @RequestAttribute(value = Constant.SESSION_USER) User loginUser,
             @RequestParam(name = "flowId", required = false) Long flowId,
             @RequestParam(name = "status", required = false) Status status) {
         var list = jobParamService.list(new QueryWrapper<JobParam>()
                 .lambda()
-                .eq(JobParam::getUserId, loginUser.getId())
+                .eq(JobParam::getWorkspaceId, RequestContext.requireWorkspaceId())
                 .eq(nonNull(flowId), JobParam::getFlowId, flowId)
                 .eq(nonNull(status), JobParam::getStatus, status));
         return success(list);

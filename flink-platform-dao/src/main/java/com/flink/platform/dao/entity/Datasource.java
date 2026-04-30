@@ -35,6 +35,11 @@ public class Datasource {
     /** user id. */
     private Long userId;
 
+    /**
+     * workspace id.
+     */
+    private Long workspaceId;
+
     /** database type. */
     private DbType type;
 

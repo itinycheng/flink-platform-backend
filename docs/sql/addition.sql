@@ -89,15 +89,9 @@ CREATE TABLE `t_audit_log` (
 ALTER TABLE platform.t_user ADD COLUMN roles varchar(1024) DEFAULT '{}' NOT NULL COMMENT 'roles json' after workers;
 ALTER TABLE platform.t_user ADD COLUMN external_id varchar(255) DEFAULT NULL COMMENT 'external id, NULL for local users' after email;
 ALTER TABLE platform.t_user MODIFY COLUMN status varchar(32) COMMENT 'user status';
-ALTER TABLE platform.t_user DROP COLUMN `type`;
 ALTER TABLE platform.t_user ADD UNIQUE KEY `t_user_username_uk` (`username`);
 ALTER TABLE platform.t_user ADD UNIQUE KEY `t_user_external_id_uk` (`external_id`);
 
-ALTER TABLE platform.t_job_flow ADD COLUMN workspace_id bigint(11) NOT NULL COMMENT 'workspace id' AFTER user_id;
-ALTER TABLE platform.t_job_flow_run ADD COLUMN workspace_id bigint(11) NOT NULL COMMENT 'workspace id' AFTER user_id;
-
-UPDATE platform.t_job_flow SET workspace_id = user_id;
-UPDATE platform.t_job_flow_run SET workspace_id = user_id;
 UPDATE platform.t_user SET roles = '{"global":"SUPER_ADMIN","workspaces":{}}' WHERE type = 'ADMIN';
 UPDATE t_user SET roles = '{"global":null,"workspaces":{}}' WHERE type != 'ADMIN' OR type IS NULL;
 UPDATE t_user SET status = 'NORMAL';
@@ -114,4 +108,28 @@ CREATE TABLE platform.`t_workspace` (
   UNIQUE KEY `t_workspace_name_unique` (`name`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COMMENT='workspace';
 
+INSERT INTO platform.t_workspace (name,description,config,status,update_time,create_time) VALUES
+    ('user_profile',NULL,'{"workers":[1,2]}','ENABLE','2026-04-30 10:10:18','2026-04-16 19:15:36'),
+    ('warehouse',NULL,'{"workers":[1]}','ENABLE','2026-04-29 19:46:54','2026-04-17 10:17:45');
+
+ALTER TABLE platform.t_job_flow ADD COLUMN workspace_id bigint(11) NOT NULL COMMENT 'workspace id' AFTER user_id;
+ALTER TABLE platform.t_job_flow_run ADD COLUMN workspace_id bigint(11) NOT NULL COMMENT 'workspace id' AFTER user_id;
+ALTER TABLE platform.t_alert ADD COLUMN workspace_id bigint(11) NOT NULL COMMENT 'workspace id' AFTER user_id;
+ALTER TABLE platform.t_catalog_info ADD COLUMN workspace_id bigint(11) NOT NULL COMMENT 'workspace id' AFTER user_id;
+ALTER TABLE platform.t_job_param ADD COLUMN workspace_id bigint(11) NOT NULL COMMENT 'workspace id' AFTER user_id;
+ALTER TABLE platform.t_resource ADD COLUMN workspace_id bigint(11) NOT NULL COMMENT 'workspace id' AFTER user_id;
+ALTER TABLE platform.t_datasource ADD COLUMN workspace_id bigint(11) NOT NULL COMMENT 'workspace id' AFTER user_id;
+ALTER TABLE platform.t_tag ADD COLUMN workspace_id bigint(11) NOT NULL COMMENT 'workspace id' AFTER user_id;
+
+UPDATE platform.t_job_flow SET workspace_id = user_id;
+UPDATE platform.t_job_flow_run SET workspace_id = user_id;
+UPDATE platform.t_alert SET workspace_id = user_id;
+UPDATE platform.t_catalog_info SET workspace_id = user_id;
+UPDATE platform.t_job_param SET workspace_id = user_id;
+UPDATE platform.t_resource SET workspace_id = user_id;
+UPDATE platform.t_datasource SET workspace_id = user_id;
+UPDATE platform.t_tag SET workspace_id = user_id;
+
+-- warning: breaking changes, need to be done at last.
+ALTER TABLE platform.t_user DROP COLUMN `type`;
 

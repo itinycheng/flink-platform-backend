@@ -11,6 +11,7 @@ import com.flink.platform.dao.entity.TagInfo;
 import com.flink.platform.dao.entity.User;
 import com.flink.platform.dao.service.JobFlowService;
 import com.flink.platform.dao.service.TagInfoService;
+import com.flink.platform.web.common.RequestContext;
 import com.flink.platform.web.entity.request.TagInfoRequest;
 import com.flink.platform.web.entity.response.ResultInfo;
 import lombok.RequiredArgsConstructor;
@@ -55,6 +56,7 @@ public class TagInfoController {
         tagInfo.setId(null);
         tagInfo.setCode(UuidGenerator.generateShortUuid());
         tagInfo.setUserId(loginUser.getId());
+        tagInfo.setWorkspaceId(RequestContext.requireWorkspaceId());
         tagInfo.setStatus(Status.ENABLE);
         tagInfoService.save(tagInfo);
         return success(tagInfo.getId());
@@ -98,7 +100,6 @@ public class TagInfoController {
 
     @GetMapping(value = "/page")
     public ResultInfo<IPage<TagInfo>> page(
-            @RequestAttribute(value = Constant.SESSION_USER) User loginUser,
             @RequestParam(name = "page", required = false, defaultValue = "1") Integer page,
             @RequestParam(name = "size", required = false, defaultValue = "20") Integer size,
             @RequestParam(name = "name", required = false) String name) {
@@ -107,7 +108,7 @@ public class TagInfoController {
                 pager,
                 new QueryWrapper<TagInfo>()
                         .lambda()
-                        .eq(TagInfo::getUserId, loginUser.getId())
+                        .eq(TagInfo::getWorkspaceId, RequestContext.requireWorkspaceId())
                         .like(nonNull(name), TagInfo::getName, name));
 
         return success(iPage);
@@ -115,12 +116,11 @@ public class TagInfoController {
 
     @GetMapping(value = "/list")
     public ResultInfo<List<TagInfo>> list(
-            @RequestAttribute(value = Constant.SESSION_USER) User loginUser,
             @RequestParam(name = "name", required = false) String name,
             @RequestParam(name = "status", required = false) Status status) {
         var list = tagInfoService.list(new QueryWrapper<TagInfo>()
                 .lambda()
-                .eq(TagInfo::getUserId, loginUser.getId())
+                .eq(TagInfo::getWorkspaceId, RequestContext.requireWorkspaceId())
                 .eq(nonNull(status), TagInfo::getStatus, status)
                 .like(nonNull(name), TagInfo::getName, name));
         return success(list);

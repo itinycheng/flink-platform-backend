@@ -7,6 +7,7 @@ import com.flink.platform.common.constants.Constant;
 import com.flink.platform.dao.entity.AlertInfo;
 import com.flink.platform.dao.entity.User;
 import com.flink.platform.dao.service.AlertService;
+import com.flink.platform.web.common.RequestContext;
 import com.flink.platform.web.entity.request.AlertInfoRequest;
 import com.flink.platform.web.entity.response.ResultInfo;
 import lombok.RequiredArgsConstructor;
@@ -39,30 +40,31 @@ public class AlertController {
     @PostMapping(value = "/create")
     public ResultInfo<Long> create(
             @RequestAttribute(value = Constant.SESSION_USER) User loginUser,
-            @RequestBody AlertInfoRequest alertInfoRequest) {
-        var errorMsg = alertInfoRequest.validateOnCreate();
+            @RequestBody AlertInfoRequest alertRequest) {
+        var errorMsg = alertRequest.validateOnCreate();
         if (StringUtils.isNotBlank(errorMsg)) {
             return failure(ERROR_PARAMETER, errorMsg);
         }
 
-        var alertInfo = alertInfoRequest.getAlertInfo();
-        alertInfo.setId(null);
-        alertInfo.setUserId(loginUser.getId());
-        alertService.save(alertInfo);
-        return success(alertInfo.getId());
+        var alert = alertRequest.getAlertInfo();
+        alert.setId(null);
+        alert.setUserId(loginUser.getId());
+        alert.setWorkspaceId(RequestContext.requireWorkspaceId());
+        alertService.save(alert);
+        return success(alert.getId());
     }
 
     @PostMapping(value = "/update")
-    public ResultInfo<Long> update(@RequestBody AlertInfoRequest alertInfoRequest) {
-        var errorMsg = alertInfoRequest.validateOnUpdate();
+    public ResultInfo<Long> update(@RequestBody AlertInfoRequest alertRequest) {
+        var errorMsg = alertRequest.validateOnUpdate();
         if (StringUtils.isNotBlank(errorMsg)) {
             return failure(ERROR_PARAMETER, errorMsg);
         }
 
-        var alertInfo = alertInfoRequest.getAlertInfo();
-        alertInfo.setUserId(null);
-        alertService.updateById(alertInfo);
-        return success(alertInfo.getId());
+        var alert = alertRequest.getAlertInfo();
+        alert.setUserId(null);
+        alertService.updateById(alert);
+        return success(alert.getId());
     }
 
     @GetMapping(value = "/get/{alertId}")
@@ -79,7 +81,6 @@ public class AlertController {
 
     @GetMapping(value = "/page")
     public ResultInfo<IPage<AlertInfo>> page(
-            @RequestAttribute(value = Constant.SESSION_USER) User loginUser,
             @RequestParam(name = "page", required = false, defaultValue = "1") Integer page,
             @RequestParam(name = "size", required = false, defaultValue = "20") Integer size,
             @RequestParam(name = "name", required = false) String name) {
@@ -88,16 +89,17 @@ public class AlertController {
                 pager,
                 new QueryWrapper<AlertInfo>()
                         .lambda()
-                        .eq(AlertInfo::getUserId, loginUser.getId())
+                        .eq(AlertInfo::getWorkspaceId, RequestContext.requireWorkspaceId())
                         .like(Objects.nonNull(name), AlertInfo::getName, name));
 
         return success(iPage);
     }
 
     @GetMapping(value = "/list")
-    public ResultInfo<List<AlertInfo>> list(@RequestAttribute(value = Constant.SESSION_USER) User loginUser) {
-        var list =
-                alertService.list(new QueryWrapper<AlertInfo>().lambda().eq(AlertInfo::getUserId, loginUser.getId()));
+    public ResultInfo<List<AlertInfo>> list() {
+        var list = alertService.list(new QueryWrapper<AlertInfo>()
+                .lambda()
+                .eq(AlertInfo::getWorkspaceId, RequestContext.requireWorkspaceId()));
         return success(list);
     }
 }

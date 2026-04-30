@@ -21,6 +21,19 @@ public class ResourceUtil {
 
     public static final String RESOURCE_DIR = "resource";
 
+    /**
+     * TODO: Two options to replace this user_id_ prefix with workspace semantics:
+     *
+     * <p>Option A — Simple prefix swap: Replace user_id_ with workspace_id_. Requires renaming all
+     * existing files on storage and updating full_name in t_resource accordingly. One-time migration
+     * cost; do NOT rename in-place.
+     *
+     * <p>Option B — Decouple prefix from full_name: Strip the root prefix out of full_name so it
+     * only stores the user-defined directory structure (e.g. "/folder/sub/file.jar"). The actual
+     * storage path is assembled at runtime: "{workspace_id_<id>}/resource/{full_name}". This way
+     * full_name never needs to be migrated again if the ownership model changes in the future;
+     * only a single workspace-level directory rename on storage is needed.
+     */
     public static final String USER_DIR_PREFIX = "user_id_";
 
     private static final String localRootPath = PathUtil.getLocalWorkRootPath();
