@@ -43,6 +43,11 @@ public class OSUtil {
 
     /** Get host ip. */
     public static String getFirstNoLoopbackIP4Address() {
+        String override = getHostIpOverride();
+        if (!override.isEmpty()) {
+            return override;
+        }
+
         try {
             List<String> noLoopbackAddrs = new ArrayList<>();
             List<String> siteLocalAddrs = new ArrayList<>();
@@ -74,7 +79,7 @@ public class OSUtil {
         List<InetAddress> addresses = new ArrayList<>();
         while (networks.hasMoreElements()) {
             NetworkInterface networkInterface = networks.nextElement();
-            if (!networkInterface.isUp()) {
+            if (!networkInterface.isUp() || isVirtualInterface(networkInterface)) {
                 continue;
             }
 
@@ -86,5 +91,36 @@ public class OSUtil {
         }
 
         return addresses;
+    }
+
+    private static String getHostIpOverride() {
+        String ip = System.getProperty("host.ip");
+        if (ip == null || ip.trim().isEmpty()) {
+            ip = System.getenv("HOST_IP");
+        }
+
+        if (ip != null && !ip.trim().isEmpty()) {
+            return ip.trim();
+        }
+
+        return EMPTY;
+    }
+
+    private static boolean isVirtualInterface(NetworkInterface ni) {
+        if (ni.isVirtual()) {
+            return true;
+        }
+
+        String name = ni.getName();
+        return name.startsWith("docker")
+                || name.startsWith("br-")
+                || name.startsWith("veth")
+                || name.startsWith("virbr")
+                || name.startsWith("tun")
+                || name.startsWith("tap")
+                || name.startsWith("utun")
+                || name.startsWith("awdl")
+                || name.startsWith("vmnet")
+                || name.startsWith("vbox");
     }
 }

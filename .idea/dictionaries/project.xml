@@ -11,6 +11,9 @@
       <w>rwxr</w>
       <w>sqls</w>
       <w>tmpdir</w>
+      <w>utun</w>
+      <w>virbr</w>
+      <w>vmnet</w>
     </words>
   </dictionary>
 </component>
