@@ -98,7 +98,7 @@ public class JobFlowController {
         jobFlow.setId(null);
         jobFlow.setCode(UuidGenerator.generateShortUuid());
         jobFlow.setUserId(loginUser.getId());
-        jobFlow.setWorkspaceId(RequestContext.getWorkspaceId());
+        jobFlow.setWorkspaceId(RequestContext.requireWorkspaceId());
         jobFlow.setStatus(OFFLINE);
         if (JOB_LIST.equals(jobFlow.getType())) {
             jobFlow.setStatus(ONLINE);
@@ -186,7 +186,7 @@ public class JobFlowController {
         var queryWrapper = new QueryWrapper<JobFlow>()
                 .lambda()
                 .select(JobFlow.class, field -> !"flow".equals(field.getProperty()))
-                .eq(JobFlow::getWorkspaceId, RequestContext.getWorkspaceId())
+                .eq(JobFlow::getWorkspaceId, RequestContext.requireWorkspaceId())
                 .eq(id != null, JobFlow::getId, id)
                 .eq(type != null, JobFlow::getType, type)
                 .like(isNotEmpty(name), JobFlow::getName, name)
@@ -217,7 +217,7 @@ public class JobFlowController {
                 .list(new QueryWrapper<JobFlow>()
                         .lambda()
                         .select(JobFlow::getId, JobFlow::getName)
-                        .eq(JobFlow::getWorkspaceId, RequestContext.getWorkspaceId())
+                        .eq(JobFlow::getWorkspaceId, RequestContext.requireWorkspaceId())
                         .like(isNotBlank(name), JobFlow::getName, name)
                         .in(CollectionUtils.isNotEmpty(type), JobFlow::getType, type)
                         .in(CollectionUtils.isNotEmpty(status), JobFlow::getStatus, status))

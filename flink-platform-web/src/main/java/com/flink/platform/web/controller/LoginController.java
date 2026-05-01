@@ -122,26 +122,20 @@ public class LoginController {
 
         // choose any workspace id for super admin.
         if (workspaceId == null && SUPER_ADMIN.equals(userRoles.getGlobal())) {
-            workspaceId = workspaceService
-                    .getOne(new QueryWrapper<Workspace>()
-                            .lambda()
-                            .eq(Workspace::getStatus, ENABLE)
-                            .last("limit 1"))
-                    .getId();
+            var workspace = workspaceService.getOne(new QueryWrapper<Workspace>()
+                    .lambda()
+                    .eq(Workspace::getStatus, ENABLE)
+                    .last("limit 1"));
+            workspaceId = workspace != null ? workspace.getId() : null;
         }
         return workspaceId;
     }
 
     private Session getOrCreateSession(long userId, String ip) {
-        var existing = sessionService.getOne(new QueryWrapper<Session>()
+        sessionService.remove(new QueryWrapper<Session>()
                 .lambda()
                 .eq(Session::getUserId, userId)
                 .eq(Session::getIp, ip));
-        if (existing != null) {
-            existing.setLastLoginTime(LocalDateTime.now());
-            sessionService.updateById(existing);
-            return existing;
-        }
 
         var session = new Session();
         session.setToken(UUID.randomUUID().toString().replace("-", ""));

@@ -88,5 +88,6 @@ public class JobConstant {
 
     public static final String JOB_DIR_FORMAT = "job_%d";
 
+    // TODO: use workspace id ?
     public static final String USER_DIR_FORMAT = "user_%d";
 }

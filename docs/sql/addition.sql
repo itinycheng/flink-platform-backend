@@ -88,7 +88,6 @@ CREATE TABLE `t_audit_log` (
 -- 2026-04-12
 ALTER TABLE platform.t_user ADD COLUMN roles varchar(1024) DEFAULT '{}' NOT NULL COMMENT 'roles json' after workers;
 ALTER TABLE platform.t_user ADD COLUMN external_id varchar(255) DEFAULT NULL COMMENT 'external id, NULL for local users' after email;
-ALTER TABLE platform.t_user MODIFY COLUMN status varchar(32) COMMENT 'user status';
 ALTER TABLE platform.t_user ADD UNIQUE KEY `t_user_username_uk` (`username`);
 ALTER TABLE platform.t_user ADD UNIQUE KEY `t_user_external_id_uk` (`external_id`);
 
@@ -114,6 +113,8 @@ INSERT INTO platform.t_workspace (name,description,config,status,update_time,cre
 
 ALTER TABLE platform.t_job_flow ADD COLUMN workspace_id bigint(11) NOT NULL COMMENT 'workspace id' AFTER user_id;
 ALTER TABLE platform.t_job_flow_run ADD COLUMN workspace_id bigint(11) NOT NULL COMMENT 'workspace id' AFTER user_id;
+ALTER TABLE platform.t_job ADD COLUMN workspace_id bigint(11) NOT NULL COMMENT 'workspace id' AFTER user_id;
+ALTER TABLE platform.t_job_run ADD COLUMN workspace_id bigint(11) NOT NULL COMMENT 'workspace id' AFTER user_id;
 ALTER TABLE platform.t_alert ADD COLUMN workspace_id bigint(11) NOT NULL COMMENT 'workspace id' AFTER user_id;
 ALTER TABLE platform.t_catalog_info ADD COLUMN workspace_id bigint(11) NOT NULL COMMENT 'workspace id' AFTER user_id;
 ALTER TABLE platform.t_job_param ADD COLUMN workspace_id bigint(11) NOT NULL COMMENT 'workspace id' AFTER user_id;
@@ -123,6 +124,8 @@ ALTER TABLE platform.t_tag ADD COLUMN workspace_id bigint(11) NOT NULL COMMENT '
 
 UPDATE platform.t_job_flow SET workspace_id = user_id;
 UPDATE platform.t_job_flow_run SET workspace_id = user_id;
+UPDATE platform.t_job SET workspace_id = user_id;
+UPDATE platform.t_job_run SET workspace_id = user_id;
 UPDATE platform.t_alert SET workspace_id = user_id;
 UPDATE platform.t_catalog_info SET workspace_id = user_id;
 UPDATE platform.t_job_param SET workspace_id = user_id;
@@ -132,4 +135,5 @@ UPDATE platform.t_tag SET workspace_id = user_id;
 
 -- warning: breaking changes, need to be done at last.
 ALTER TABLE platform.t_user DROP COLUMN `type`;
+ALTER TABLE platform.t_user MODIFY COLUMN status varchar(32) COMMENT 'user status';
 

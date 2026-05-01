@@ -14,6 +14,7 @@ import com.flink.platform.dao.service.JobFlowService;
 import com.flink.platform.dao.service.JobInfoService;
 import com.flink.platform.dao.service.JobRunInfoService;
 import com.flink.platform.web.annotation.RequirePermission;
+import com.flink.platform.web.common.RequestContext;
 import com.flink.platform.web.entity.JobQuartzInfo;
 import com.flink.platform.web.entity.request.JobInfoRequest;
 import com.flink.platform.web.entity.response.ResultInfo;
@@ -47,7 +48,6 @@ import static com.flink.platform.common.enums.ResponseStatus.EXIST_UNFINISHED_PR
 import static com.flink.platform.common.enums.ResponseStatus.NOT_RUNNABLE_STATUS;
 import static com.flink.platform.common.enums.ResponseStatus.OPERATION_NOT_ALLOWED;
 import static com.flink.platform.common.enums.ResponseStatus.SERVICE_ERROR;
-import static com.flink.platform.common.enums.ResponseStatus.USER_HAVE_NO_PERMISSION;
 import static com.flink.platform.common.util.DateUtil.GLOBAL_DATE_TIME_FORMAT;
 import static com.flink.platform.web.entity.response.ResultInfo.failure;
 import static com.flink.platform.web.entity.response.ResultInfo.success;
@@ -85,6 +85,7 @@ public class JobInfoController {
         job.setId(null);
         job.setStatus(ONLINE);
         job.setUserId(loginUser.getId());
+        job.setWorkspaceId(RequestContext.requireWorkspaceId());
         return success(jobInfoService.saveJob(job));
     }
 
@@ -240,10 +241,6 @@ public class JobInfoController {
         var jobInfo = jobInfoService.getById(jobId);
         if (jobInfo == null) {
             return failure(ERROR_PARAMETER);
-        }
-
-        if (!loginUser.getId().equals(jobInfo.getUserId())) {
-            return failure(USER_HAVE_NO_PERMISSION);
         }
 
         var flowId = jobInfo.getFlowId();

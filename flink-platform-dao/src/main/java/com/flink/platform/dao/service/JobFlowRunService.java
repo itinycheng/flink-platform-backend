@@ -34,11 +34,8 @@ public class JobFlowRunService extends ServiceImpl<JobFlowRunMapper, JobFlowRun>
     private final JobRunInfoService jobRunService;
 
     @Transactional
-    public void deleteAllById(long flowRunId, long userId) {
-        jobRunService.remove(new QueryWrapper<JobRunInfo>()
-                .lambda()
-                .eq(JobRunInfo::getFlowRunId, flowRunId)
-                .eq(JobRunInfo::getUserId, userId));
+    public void deleteAllById(long flowRunId) {
+        jobRunService.remove(new QueryWrapper<JobRunInfo>().lambda().eq(JobRunInfo::getFlowRunId, flowRunId));
         removeById(flowRunId);
     }
 

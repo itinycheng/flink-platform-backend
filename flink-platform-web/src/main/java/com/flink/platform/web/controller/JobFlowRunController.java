@@ -122,14 +122,13 @@ public class JobFlowRunController {
 
     @RequirePermission(TASK_PURGE)
     @GetMapping(value = "/purge/{flowRunId}")
-    public ResultInfo<Long> purge(
-            @RequestAttribute(value = Constant.SESSION_USER) User loginUser, @PathVariable long flowRunId) {
+    public ResultInfo<Long> purge(@PathVariable long flowRunId) {
         var jobFlowRun = jobFlowRunService.getById(flowRunId);
         if (jobFlowRun == null) {
             return failure(ERROR_PARAMETER);
         }
 
-        jobFlowRunService.deleteAllById(flowRunId, loginUser.getId());
+        jobFlowRunService.deleteAllById(flowRunId);
         return success(flowRunId);
     }
 }

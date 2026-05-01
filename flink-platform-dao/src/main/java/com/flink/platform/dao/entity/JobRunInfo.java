@@ -41,6 +41,8 @@ public class JobRunInfo implements Serializable {
 
     private Long userId;
 
+    private Long workspaceId;
+
     private JobType type;
 
     private String version;

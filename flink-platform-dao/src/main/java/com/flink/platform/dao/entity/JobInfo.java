@@ -42,6 +42,9 @@ public class JobInfo implements Identifiable {
     /** user id. */
     private Long userId;
 
+    /** workspace id. */
+    private Long workspaceId;
+
     /** job desc. */
     private String description;
 

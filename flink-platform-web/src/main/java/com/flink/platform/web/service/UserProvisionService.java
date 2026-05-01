@@ -1,6 +1,7 @@
 package com.flink.platform.web.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.flink.platform.common.enums.UserStatus;
 import com.flink.platform.common.model.UserRoles;
 import com.flink.platform.dao.entity.User;
 import com.flink.platform.dao.service.UserService;
@@ -48,7 +49,7 @@ public class UserProvisionService {
         user.setExternalId(ssoUser.externalId());
         user.setUsername(ssoUser.username());
         user.setEmail(ssoUser.email());
-        // user.setStatus(NORMAL);
+        user.setStatus(UserStatus.NORMAL);
         user.setRoles(new UserRoles());
         userService.save(user);
         log.info("Auto-provisioned user: {}", ssoUser);

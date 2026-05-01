@@ -55,6 +55,7 @@ public class JobRunExtraService {
         jobRun.setJobId(jobInfo.getId());
         jobRun.setFlowRunId(flowRunId);
         jobRun.setUserId(jobInfo.getUserId());
+        jobRun.setWorkspaceId(jobInfo.getWorkspaceId());
         jobRun.setType(jobInfo.getType());
         jobRun.setVersion(jobInfo.getVersion());
         jobRun.setDeployMode(jobInfo.getDeployMode());

@@ -9,6 +9,7 @@ import com.flink.platform.dao.entity.JobRunInfo;
 import com.flink.platform.dao.entity.User;
 import com.flink.platform.dao.service.JobInfoService;
 import com.flink.platform.dao.service.JobRunInfoService;
+import com.flink.platform.web.common.RequestContext;
 import com.flink.platform.web.entity.request.JobRunRequest;
 import com.flink.platform.web.entity.response.ResultInfo;
 import com.flink.platform.web.service.KillJobService;
@@ -73,7 +74,7 @@ public class JobRunController {
         var queryWrapper = new QueryWrapper<JobRunInfo>()
                 .lambda()
                 .select(JobRunInfo.class, jobRunInfoService::isNonLargeField)
-                .eq(JobRunInfo::getUserId, loginUser.getId())
+                .eq(JobRunInfo::getWorkspaceId, RequestContext.requireWorkspaceId())
                 .eq(nonNull(id), JobRunInfo::getId, id)
                 .eq(nonNull(flowRunId), JobRunInfo::getFlowRunId, flowRunId)
                 .eq(nonNull(jobId), JobRunInfo::getJobId, jobId)
@@ -106,12 +107,11 @@ public class JobRunController {
     }
 
     @GetMapping(value = "/kill/{runId}")
-    public ResultInfo<Boolean> kill(
-            @RequestAttribute(value = Constant.SESSION_USER) User loginUser, @PathVariable Long runId) {
+    public ResultInfo<Boolean> kill(@PathVariable Long runId) {
         var jobRun = jobRunInfoService.getOne(new QueryWrapper<JobRunInfo>()
                 .lambda()
                 .eq(JobRunInfo::getId, runId)
-                .eq(JobRunInfo::getUserId, loginUser.getId())
+                .eq(JobRunInfo::getWorkspaceId, RequestContext.requireWorkspaceId())
                 .in(JobRunInfo::getStatus, getNonTerminals()));
 
         if (jobRun == null) {
