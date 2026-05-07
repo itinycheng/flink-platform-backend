@@ -36,6 +36,8 @@ public enum ResponseStatus {
     USER_LOCKED(10031, "user is locked"),
     INVALID_WORKSPACE_ID(10032, "invalid or missing workspace id"),
     SSO_AUTH_FAILED(10033, "SSO authentication failed"),
+    FLOW_NOT_IN_DELETED_STATUS(10034, "Workflow is not in deleted status"),
+    FLOW_RUN_NOT_IN_TERMINAL_STATUS(10035, "Workflow run is not in terminal status"),
     ;
 
     private final int code;

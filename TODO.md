@@ -88,3 +88,24 @@ all overridden methods delegate directly to the super implementation — no side
 - `JobInfo` — has no `workspaceId` field
 - `list`/`page` queries with manual `eq(workspaceId)` conditions — remain unchanged
 
+---
+
+## Execution Log Archival (`t_job_run` / `t_job_flow_run`)
+
+Keep the hot tables small by moving aged rows into monthly-partitioned archive tables, so
+operational queries stay fast as execution history grows over years. MySQL-only, no new
+storage dependency.
+
+See design: [docs/execution-log-archival.md](docs/execution-log-archival.md)
+
+- [ ] DDL: `t_job_run_archive` / `t_job_flow_run_archive` with monthly RANGE partitions
+- [ ] Archive job: batched move from hot to archive, transactional, idempotent on restart
+- [ ] Partition maintenance job: provision next month's partition, evict partitions past
+      `archive-retention-months`
+- [ ] Config binding under `flink-platform.archive.*` (hot/archive retention, cron, batch size,
+      per-table overrides, `mode: archive | delete`)
+- [ ] Redirect dashboard/analytics queries (`countJobRunGroupByStatus`,
+      `countJobFlowRunGroupByStatus`, date-range endpoints) to the archive table
+- [ ] Backfill procedure documented for existing deployments
+- [ ] (Later) `JobRunArchiver` SPI for pluggable external targets (ClickHouse, S3, ...)
+

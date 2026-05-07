@@ -41,6 +41,7 @@ import java.util.List;
 import java.util.Map;
 
 import static com.flink.platform.common.constants.JobConstant.CONFIG;
+import static com.flink.platform.common.enums.JobFlowStatus.DELETE;
 import static com.flink.platform.common.enums.JobFlowStatus.OFFLINE;
 import static com.flink.platform.common.enums.JobFlowStatus.ONLINE;
 import static com.flink.platform.common.enums.JobFlowStatus.SCHEDULING;
@@ -54,12 +55,14 @@ import static com.flink.platform.common.enums.ResponseStatus.ERROR_PARAMETER;
 import static com.flink.platform.common.enums.ResponseStatus.EXIST_UNFINISHED_PROCESS;
 import static com.flink.platform.common.enums.ResponseStatus.FLOW_ALREADY_IN_USE;
 import static com.flink.platform.common.enums.ResponseStatus.FLOW_ALREADY_SCHEDULED;
+import static com.flink.platform.common.enums.ResponseStatus.FLOW_NOT_IN_DELETED_STATUS;
 import static com.flink.platform.common.enums.ResponseStatus.INVALID_WORKFLOW_TYPE;
 import static com.flink.platform.common.enums.ResponseStatus.NOT_RUNNABLE_STATUS;
 import static com.flink.platform.common.enums.ResponseStatus.NOT_SUPPORT_SCHEDULING;
 import static com.flink.platform.common.enums.ResponseStatus.NO_CRONTAB_SET;
 import static com.flink.platform.common.enums.ResponseStatus.SERVICE_ERROR;
 import static com.flink.platform.common.enums.ResponseStatus.UNABLE_SCHEDULING_JOB_FLOW;
+import static com.flink.platform.common.enums.ResponseStatus.USER_HAVE_NO_PERMISSION;
 import static com.flink.platform.web.entity.response.ResultInfo.failure;
 import static com.flink.platform.web.entity.response.ResultInfo.success;
 import static java.util.stream.Collectors.toList;
@@ -166,6 +169,14 @@ public class JobFlowController {
         var jobFlow = jobFlowService.getById(flowId);
         if (jobFlow == null) {
             return failure(ERROR_PARAMETER);
+        }
+
+        if (!RequestContext.requireWorkspaceId().equals(jobFlow.getWorkspaceId())) {
+            return failure(USER_HAVE_NO_PERMISSION);
+        }
+
+        if (!DELETE.equals(jobFlow.getStatus())) {
+            return failure(FLOW_NOT_IN_DELETED_STATUS);
         }
 
         jobFlowService.deleteAllById(flowId);

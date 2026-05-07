@@ -3,10 +3,8 @@ package com.flink.platform.web.controller;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.flink.platform.common.constants.Constant;
 import com.flink.platform.common.enums.ExecutionStatus;
 import com.flink.platform.dao.entity.JobFlowRun;
-import com.flink.platform.dao.entity.User;
 import com.flink.platform.dao.service.JobFlowRunService;
 import com.flink.platform.web.annotation.RequirePermission;
 import com.flink.platform.web.common.RequestContext;
@@ -21,7 +19,6 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestAttribute;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -33,7 +30,9 @@ import static com.flink.platform.common.enums.Permission.TASK_EXEC;
 import static com.flink.platform.common.enums.Permission.TASK_PURGE;
 import static com.flink.platform.common.enums.ResponseStatus.ERROR_PARAMETER;
 import static com.flink.platform.common.enums.ResponseStatus.FLOW_ALREADY_TERMINATED;
+import static com.flink.platform.common.enums.ResponseStatus.FLOW_RUN_NOT_IN_TERMINAL_STATUS;
 import static com.flink.platform.common.enums.ResponseStatus.KILL_FLOW_EXCEPTION_FOUND;
+import static com.flink.platform.common.enums.ResponseStatus.USER_HAVE_NO_PERMISSION;
 import static com.flink.platform.common.util.DateUtil.GLOBAL_DATE_TIME_FORMAT;
 import static com.flink.platform.web.entity.response.ResultInfo.failure;
 import static com.flink.platform.web.entity.response.ResultInfo.success;
@@ -74,7 +73,6 @@ public class JobFlowRunController {
 
     @GetMapping(value = "/page")
     public ResultInfo<IPage<JobFlowRun>> page(
-            @RequestAttribute(value = Constant.SESSION_USER) User loginUser,
             @RequestParam(name = "page", required = false, defaultValue = "1") Integer page,
             @RequestParam(name = "size", required = false, defaultValue = "20") Integer size,
             @RequestParam(name = "id", required = false) Long id,
@@ -108,8 +106,7 @@ public class JobFlowRunController {
 
     @RequirePermission(TASK_EXEC)
     @GetMapping(value = "/kill/{flowRunId}")
-    public ResultInfo<Long> kill(
-            @RequestAttribute(value = Constant.SESSION_USER) User loginUser, @PathVariable Long flowRunId) {
+    public ResultInfo<Long> kill(@PathVariable Long flowRunId) {
         var jobFlowRun = jobFlowRunService.getById(flowRunId);
         var status = jobFlowRun.getStatus();
         if (status != null && status.isTerminalState()) {
@@ -126,6 +123,14 @@ public class JobFlowRunController {
         var jobFlowRun = jobFlowRunService.getById(flowRunId);
         if (jobFlowRun == null) {
             return failure(ERROR_PARAMETER);
+        }
+
+        if (!RequestContext.requireWorkspaceId().equals(jobFlowRun.getWorkspaceId())) {
+            return failure(USER_HAVE_NO_PERMISSION);
+        }
+
+        if (!jobFlowRun.getStatus().isTerminalState()) {
+            return failure(FLOW_RUN_NOT_IN_TERMINAL_STATUS);
         }
 
         jobFlowRunService.deleteAllById(flowRunId);
