@@ -24,11 +24,11 @@ public class ApiExceptionHandler {
             throw exception;
         }
 
+        log.warn("API request failed", e);
         if (e instanceof DefinitionException exception) {
             return failure(exception.getStatus());
         }
 
-        log.error("Exception: ", e);
         return failure(SERVICE_ERROR);
     }
 }
