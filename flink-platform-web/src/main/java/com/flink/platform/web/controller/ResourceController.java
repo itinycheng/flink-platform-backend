@@ -10,8 +10,8 @@ import com.flink.platform.dao.entity.Resource;
 import com.flink.platform.dao.entity.User;
 import com.flink.platform.dao.service.ResourceService;
 import com.flink.platform.web.common.RequestContext;
-import com.flink.platform.web.entity.request.ResourceRequest;
-import com.flink.platform.web.entity.response.ResultInfo;
+import com.flink.platform.web.dto.ResultInfo;
+import com.flink.platform.web.dto.request.ResourceRequest;
 import com.flink.platform.web.service.ResourceManageService;
 import com.flink.platform.web.service.StorageService;
 import com.flink.platform.web.util.ResourceUtil;
@@ -40,8 +40,8 @@ import java.util.Objects;
 
 import static com.flink.platform.common.enums.ResponseStatus.ERROR_PARAMETER;
 import static com.flink.platform.common.enums.ResponseStatus.FILE_EXISTS;
-import static com.flink.platform.web.entity.response.ResultInfo.failure;
-import static com.flink.platform.web.entity.response.ResultInfo.success;
+import static com.flink.platform.web.dto.ResultInfo.failure;
+import static com.flink.platform.web.dto.ResultInfo.success;
 
 /** Resource controller. */
 @Slf4j

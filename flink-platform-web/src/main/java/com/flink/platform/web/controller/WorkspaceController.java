@@ -14,8 +14,8 @@ import com.flink.platform.dao.service.WorkspaceService;
 import com.flink.platform.web.annotation.RequirePermission;
 import com.flink.platform.web.annotation.WorkspaceOptional;
 import com.flink.platform.web.common.RequestContext;
-import com.flink.platform.web.entity.request.WorkspaceRequest;
-import com.flink.platform.web.entity.response.ResultInfo;
+import com.flink.platform.web.dto.ResultInfo;
+import com.flink.platform.web.dto.request.WorkspaceRequest;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -38,8 +38,8 @@ import static com.flink.platform.common.enums.Permission.WORKSPACE_VIEW;
 import static com.flink.platform.common.enums.ResponseStatus.ERROR_PARAMETER;
 import static com.flink.platform.common.enums.Role.SUPER_ADMIN;
 import static com.flink.platform.common.enums.Status.DELETED;
-import static com.flink.platform.web.entity.response.ResultInfo.failure;
-import static com.flink.platform.web.entity.response.ResultInfo.success;
+import static com.flink.platform.web.dto.ResultInfo.failure;
+import static com.flink.platform.web.dto.ResultInfo.success;
 
 /** Workspace controller. */
 @RestController

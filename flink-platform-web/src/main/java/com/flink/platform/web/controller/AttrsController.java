@@ -8,7 +8,7 @@ import com.flink.platform.common.util.EnumUtil;
 import com.flink.platform.dao.entity.Config;
 import com.flink.platform.dao.entity.task.DependentJob;
 import com.flink.platform.dao.service.ConfigService;
-import com.flink.platform.web.entity.response.ResultInfo;
+import com.flink.platform.web.dto.ResultInfo;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -36,8 +36,8 @@ import static com.flink.platform.common.enums.ExecutionCondition.OR;
 import static com.flink.platform.common.enums.ExecutionStatus.FAILURE;
 import static com.flink.platform.common.enums.ExecutionStatus.SUCCESS;
 import static com.flink.platform.common.enums.ResponseStatus.ERROR_PARAMETER;
-import static com.flink.platform.web.entity.response.ResultInfo.failure;
-import static com.flink.platform.web.entity.response.ResultInfo.success;
+import static com.flink.platform.web.dto.ResultInfo.failure;
+import static com.flink.platform.web.dto.ResultInfo.success;
 
 /** Attrs controller. */
 @Slf4j

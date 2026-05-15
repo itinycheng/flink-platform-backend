@@ -1,4 +1,4 @@
-package com.flink.platform.web.entity;
+package com.flink.platform.web.quartz;
 
 import org.quartz.Job;
 import org.quartz.JobKey;

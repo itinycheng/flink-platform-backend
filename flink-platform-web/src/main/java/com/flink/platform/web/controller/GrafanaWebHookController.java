@@ -3,7 +3,7 @@ package com.flink.platform.web.controller;
 import com.flink.platform.alert.AlertSender;
 import com.flink.platform.common.util.JsonUtil;
 import com.flink.platform.dao.entity.alert.FeiShuAlert;
-import com.flink.platform.web.entity.response.ResultInfo;
+import com.flink.platform.web.dto.ResultInfo;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Map;
 
-import static com.flink.platform.web.entity.response.ResultInfo.success;
+import static com.flink.platform.web.dto.ResultInfo.success;
 
 /** Do something about alarm forwarding. */
 @Slf4j

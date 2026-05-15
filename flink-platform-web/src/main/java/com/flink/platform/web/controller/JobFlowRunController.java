@@ -8,8 +8,8 @@ import com.flink.platform.dao.entity.JobFlowRun;
 import com.flink.platform.dao.service.JobFlowRunService;
 import com.flink.platform.web.annotation.RequirePermission;
 import com.flink.platform.web.common.RequestContext;
-import com.flink.platform.web.entity.request.JobFlowRunRequest;
-import com.flink.platform.web.entity.response.ResultInfo;
+import com.flink.platform.web.dto.ResultInfo;
+import com.flink.platform.web.dto.request.JobFlowRunRequest;
 import com.flink.platform.web.service.KillJobService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -34,8 +34,8 @@ import static com.flink.platform.common.enums.ResponseStatus.FLOW_RUN_NOT_IN_TER
 import static com.flink.platform.common.enums.ResponseStatus.KILL_FLOW_EXCEPTION_FOUND;
 import static com.flink.platform.common.enums.ResponseStatus.USER_HAVE_NO_PERMISSION;
 import static com.flink.platform.common.util.DateUtil.GLOBAL_DATE_TIME_FORMAT;
-import static com.flink.platform.web.entity.response.ResultInfo.failure;
-import static com.flink.platform.web.entity.response.ResultInfo.success;
+import static com.flink.platform.web.dto.ResultInfo.failure;
+import static com.flink.platform.web.dto.ResultInfo.success;
 import static java.util.Objects.nonNull;
 import static org.apache.commons.lang3.ObjectUtils.isNotEmpty;
 

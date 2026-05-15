@@ -3,7 +3,7 @@ package com.flink.platform.web.service;
 import com.baomidou.dynamic.datasource.annotation.DS;
 import com.flink.platform.dao.entity.JobFlow;
 import com.flink.platform.dao.service.JobFlowService;
-import com.flink.platform.web.entity.JobFlowQuartzInfo;
+import com.flink.platform.web.quartz.JobFlowQuartzInfo;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;

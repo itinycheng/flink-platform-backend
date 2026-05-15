@@ -1,4 +1,4 @@
-package com.flink.platform.web.entity.vo;
+package com.flink.platform.web.dto.response;
 
 import lombok.Getter;
 

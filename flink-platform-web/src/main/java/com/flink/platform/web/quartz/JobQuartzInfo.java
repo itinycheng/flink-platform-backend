@@ -1,8 +1,6 @@
-package com.flink.platform.web.entity;
+package com.flink.platform.web.quartz;
 
-import com.flink.platform.dao.entity.JobFlow;
-import com.flink.platform.web.quartz.JobFlowRunner;
-import jakarta.annotation.Nonnull;
+import com.flink.platform.dao.entity.JobInfo;
 import lombok.Data;
 import org.quartz.Job;
 import org.quartz.JobKey;
@@ -11,11 +9,14 @@ import org.quartz.TriggerKey;
 import java.util.HashMap;
 import java.util.Map;
 
-/** job flow quartz info. */
+/** job quartz info. */
+@Deprecated
 @Data
-public class JobFlowQuartzInfo implements IQuartzInfo {
+public class JobQuartzInfo implements IQuartzInfo {
 
-    private final JobFlow jobFlow;
+    public static final String JOB_RUN_ID = "job_run_id";
+
+    private final JobInfo jobInfo;
 
     private final Map<String, Object> data = new HashMap<>();
 
@@ -34,26 +35,25 @@ public class JobFlowQuartzInfo implements IQuartzInfo {
         return data;
     }
 
-    public JobFlowQuartzInfo addData(@Nonnull String key, @Nonnull Object value) {
-        this.data.put(key, value);
-        return this;
+    public void addData(String key, Object value) {
+        data.put(key, value);
     }
 
     private String getName() {
-        return jobFlow.getCode();
+        return jobInfo.getId().toString();
     }
 
     private String getGroup() {
-        return "JOB_FLOW";
+        return "JOB_INFO";
     }
 
     @Override
     public String getCron() {
-        return jobFlow.getCronExpr();
+        throw new RuntimeException("Unsupported crontab");
     }
 
     @Override
     public Class<? extends Job> getJobClass() {
-        return JobFlowRunner.class;
+        return JobRunner.class;
     }
 }

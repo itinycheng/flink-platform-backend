@@ -6,9 +6,9 @@ import com.flink.platform.common.util.ExceptionUtil;
 import com.flink.platform.dao.entity.task.FlinkJob;
 import com.flink.platform.dao.entity.task.SqlJob;
 import com.flink.platform.dao.service.DatasourceService;
-import com.flink.platform.web.entity.request.ReactiveRequest;
-import com.flink.platform.web.entity.response.ResultInfo;
-import com.flink.platform.web.entity.vo.ReactiveDataVo;
+import com.flink.platform.web.dto.ResultInfo;
+import com.flink.platform.web.dto.request.ReactiveRequest;
+import com.flink.platform.web.dto.response.ReactiveDataVo;
 import com.flink.platform.web.service.ReactiveService;
 import com.flink.platform.web.service.WorkerApplyService;
 import com.flink.platform.web.util.HttpUtil;
@@ -36,8 +36,8 @@ import static com.flink.platform.common.constants.Constant.LINE_SEPARATOR;
 import static com.flink.platform.common.constants.Constant.SQL;
 import static com.flink.platform.common.enums.ResponseStatus.DATASOURCE_NOT_FOUND;
 import static com.flink.platform.common.enums.ResponseStatus.ERROR_PARAMETER;
-import static com.flink.platform.web.entity.response.ResultInfo.failure;
-import static com.flink.platform.web.entity.response.ResultInfo.success;
+import static com.flink.platform.web.dto.ResultInfo.failure;
+import static com.flink.platform.web.dto.ResultInfo.success;
 
 /**
  * Reactive programing.<br>

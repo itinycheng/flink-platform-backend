@@ -11,8 +11,8 @@ import com.flink.platform.dao.entity.User;
 import com.flink.platform.dao.service.JobInfoService;
 import com.flink.platform.dao.service.JobParamService;
 import com.flink.platform.web.common.RequestContext;
-import com.flink.platform.web.entity.request.JobParamRequest;
-import com.flink.platform.web.entity.response.ResultInfo;
+import com.flink.platform.web.dto.ResultInfo;
+import com.flink.platform.web.dto.request.JobParamRequest;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,8 +33,8 @@ import static com.flink.platform.common.enums.JobParamType.JOB_FLOW;
 import static com.flink.platform.common.enums.ResponseStatus.ERROR_PARAMETER;
 import static com.flink.platform.common.enums.ResponseStatus.OPERATION_NOT_ALLOWED;
 import static com.flink.platform.common.enums.Status.ENABLE;
-import static com.flink.platform.web.entity.response.ResultInfo.failure;
-import static com.flink.platform.web.entity.response.ResultInfo.success;
+import static com.flink.platform.web.dto.ResultInfo.failure;
+import static com.flink.platform.web.dto.ResultInfo.success;
 import static java.util.Objects.nonNull;
 
 /** Alert controller. */

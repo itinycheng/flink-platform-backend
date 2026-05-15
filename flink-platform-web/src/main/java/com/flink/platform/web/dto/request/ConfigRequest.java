@@ -1,6 +1,6 @@
-package com.flink.platform.web.entity.request;
+package com.flink.platform.web.dto.request;
 
-import com.flink.platform.dao.entity.AlertInfo;
+import com.flink.platform.dao.entity.Config;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.experimental.Delegate;
@@ -10,10 +10,10 @@ import static com.flink.platform.common.util.Preconditions.requireNotNull;
 /** Alert request info. */
 @Getter
 @NoArgsConstructor
-public class AlertInfoRequest {
+public class ConfigRequest {
 
     @Delegate
-    private final AlertInfo alertInfo = new AlertInfo();
+    private final Config tConfig = new Config();
 
     public String validateOnCreate() {
         String msg = verifyName();
@@ -34,18 +34,18 @@ public class AlertInfoRequest {
     }
 
     public String verifyId() {
-        return requireNotNull(getId(), "The alert id cannot be null");
+        return requireNotNull(getId(), "The config id cannot be null");
     }
 
     public String verifyName() {
-        return requireNotNull(getName(), "The alert name cannot be null");
+        return requireNotNull(getName(), "The config name cannot be null");
     }
 
     public String verifyType() {
-        return requireNotNull(getType(), "The alert type cannot be null");
+        return requireNotNull(getType(), "The config type cannot be null");
     }
 
     public String verifyConfig() {
-        return requireNotNull(getConfig(), "The alert config cannot be null");
+        return requireNotNull(getConfig(), "The config cannot be null");
     }
 }

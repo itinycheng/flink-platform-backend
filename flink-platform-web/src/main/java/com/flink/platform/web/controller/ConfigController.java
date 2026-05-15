@@ -7,8 +7,8 @@ import com.flink.platform.common.enums.Status;
 import com.flink.platform.dao.entity.Config;
 import com.flink.platform.dao.service.ConfigService;
 import com.flink.platform.web.annotation.RequirePermission;
-import com.flink.platform.web.entity.request.ConfigRequest;
-import com.flink.platform.web.entity.response.ResultInfo;
+import com.flink.platform.web.dto.ResultInfo;
+import com.flink.platform.web.dto.request.ConfigRequest;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,8 +26,8 @@ import java.util.Objects;
 import static com.flink.platform.common.enums.Permission.SYSTEM_MANAGE;
 import static com.flink.platform.common.enums.ResponseStatus.ERROR_PARAMETER;
 import static com.flink.platform.common.enums.Status.DELETED;
-import static com.flink.platform.web.entity.response.ResultInfo.failure;
-import static com.flink.platform.web.entity.response.ResultInfo.success;
+import static com.flink.platform.web.dto.ResultInfo.failure;
+import static com.flink.platform.web.dto.ResultInfo.success;
 
 /** Config controller. */
 @RestController

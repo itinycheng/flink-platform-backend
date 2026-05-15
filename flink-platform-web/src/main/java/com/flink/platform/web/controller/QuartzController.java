@@ -1,7 +1,7 @@
 package com.flink.platform.web.controller;
 
 import com.flink.platform.common.constants.Constant;
-import com.flink.platform.web.entity.response.ResultInfo;
+import com.flink.platform.web.dto.ResultInfo;
 import com.flink.platform.web.service.QuartzService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -21,8 +21,8 @@ import java.util.Map;
 import static com.flink.platform.common.enums.ResponseStatus.INVALID_CRONTAB_EXPR;
 import static com.flink.platform.common.util.DateUtil.GLOBAL_DATE_TIME_FORMAT;
 import static com.flink.platform.common.util.DateUtil.format;
-import static com.flink.platform.web.entity.response.ResultInfo.failure;
-import static com.flink.platform.web.entity.response.ResultInfo.success;
+import static com.flink.platform.web.dto.ResultInfo.failure;
+import static com.flink.platform.web.dto.ResultInfo.success;
 
 /** Quartz controller. */
 @Slf4j

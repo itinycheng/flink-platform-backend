@@ -3,7 +3,7 @@ package com.flink.platform.web.controller;
 import com.flink.platform.dao.service.JobFlowRunService;
 import com.flink.platform.dao.service.JobRunInfoService;
 import com.flink.platform.web.common.RequestContext;
-import com.flink.platform.web.entity.response.ResultInfo;
+import com.flink.platform.web.dto.ResultInfo;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -17,7 +17,7 @@ import java.util.List;
 import java.util.Map;
 
 import static com.flink.platform.common.util.DateUtil.GLOBAL_DATE_TIME_FORMAT;
-import static com.flink.platform.web.entity.response.ResultInfo.success;
+import static com.flink.platform.web.dto.ResultInfo.success;
 
 /** Dashboard statistics. */
 @RestController

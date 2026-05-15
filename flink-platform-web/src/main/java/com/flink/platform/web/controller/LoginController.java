@@ -10,9 +10,9 @@ import com.flink.platform.dao.service.UserService;
 import com.flink.platform.dao.service.WorkspaceService;
 import com.flink.platform.web.config.AuthProperties;
 import com.flink.platform.web.config.auth.AuthProvider;
-import com.flink.platform.web.entity.request.LoginRequest;
-import com.flink.platform.web.entity.request.UserRequest;
-import com.flink.platform.web.entity.response.ResultInfo;
+import com.flink.platform.web.dto.ResultInfo;
+import com.flink.platform.web.dto.request.LoginRequest;
+import com.flink.platform.web.dto.request.UserRequest;
 import com.flink.platform.web.service.UserProvisionService;
 import com.flink.platform.web.util.HttpUtil;
 import jakarta.servlet.http.HttpServletRequest;
@@ -35,8 +35,8 @@ import java.util.UUID;
 
 import static com.flink.platform.common.enums.Role.SUPER_ADMIN;
 import static com.flink.platform.common.enums.Status.ENABLE;
-import static com.flink.platform.web.entity.response.ResultInfo.failure;
-import static com.flink.platform.web.entity.response.ResultInfo.success;
+import static com.flink.platform.web.dto.ResultInfo.failure;
+import static com.flink.platform.web.dto.ResultInfo.success;
 
 /** Login / logout endpoints. Supports token (password), CAS and OIDC auth modes. */
 @Slf4j

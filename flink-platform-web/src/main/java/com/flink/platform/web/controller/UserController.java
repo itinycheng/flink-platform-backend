@@ -9,8 +9,8 @@ import com.flink.platform.dao.entity.User;
 import com.flink.platform.dao.service.UserService;
 import com.flink.platform.web.annotation.RequirePermission;
 import com.flink.platform.web.annotation.WorkspaceOptional;
-import com.flink.platform.web.entity.request.UserRequest;
-import com.flink.platform.web.entity.response.ResultInfo;
+import com.flink.platform.web.dto.ResultInfo;
+import com.flink.platform.web.dto.request.UserRequest;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -35,8 +35,8 @@ import static com.flink.platform.common.enums.Permission.WORKSPACE_VIEW;
 import static com.flink.platform.common.enums.ResponseStatus.ERROR_PARAMETER;
 import static com.flink.platform.common.enums.Role.ADMIN;
 import static com.flink.platform.common.enums.Role.SUPER_ADMIN;
-import static com.flink.platform.web.entity.response.ResultInfo.failure;
-import static com.flink.platform.web.entity.response.ResultInfo.success;
+import static com.flink.platform.web.dto.ResultInfo.failure;
+import static com.flink.platform.web.dto.ResultInfo.success;
 
 /** user controller. */
 @RestController

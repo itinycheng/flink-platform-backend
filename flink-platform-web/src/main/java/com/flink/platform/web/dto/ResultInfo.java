@@ -1,4 +1,4 @@
-package com.flink.platform.web.entity.response;
+package com.flink.platform.web.dto;
 
 import com.flink.platform.common.enums.ResponseStatus;
 import com.flink.platform.common.exception.DefinitionException;

@@ -1,4 +1,4 @@
-package com.flink.platform.web.entity.request;
+package com.flink.platform.web.dto.request;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.flink.platform.common.util.DateUtil;

@@ -7,8 +7,8 @@ import com.flink.platform.common.enums.WorkerStatus;
 import com.flink.platform.dao.entity.Worker;
 import com.flink.platform.dao.service.WorkerService;
 import com.flink.platform.web.annotation.RequirePermission;
-import com.flink.platform.web.entity.request.WorkerRequest;
-import com.flink.platform.web.entity.response.ResultInfo;
+import com.flink.platform.web.dto.ResultInfo;
+import com.flink.platform.web.dto.request.WorkerRequest;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,8 +27,8 @@ import static com.flink.platform.common.enums.Permission.SYSTEM_MANAGE;
 import static com.flink.platform.common.enums.ResponseStatus.ERROR_PARAMETER;
 import static com.flink.platform.common.enums.ResponseStatus.INVALID_STATUS;
 import static com.flink.platform.common.enums.WorkerStatus.DELETED;
-import static com.flink.platform.web.entity.response.ResultInfo.failure;
-import static com.flink.platform.web.entity.response.ResultInfo.success;
+import static com.flink.platform.web.dto.ResultInfo.failure;
+import static com.flink.platform.web.dto.ResultInfo.success;
 
 /** Worker controller. */
 @RestController

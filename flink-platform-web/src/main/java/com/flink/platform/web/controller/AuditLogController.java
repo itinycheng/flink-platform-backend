@@ -6,7 +6,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.flink.platform.common.enums.OperationType;
 import com.flink.platform.dao.entity.AuditLog;
 import com.flink.platform.dao.service.AuditLogService;
-import com.flink.platform.web.entity.response.ResultInfo;
+import com.flink.platform.web.dto.ResultInfo;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -19,7 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.time.LocalDateTime;
 
 import static com.flink.platform.common.util.DateUtil.GLOBAL_DATE_TIME_FORMAT;
-import static com.flink.platform.web.entity.response.ResultInfo.success;
+import static com.flink.platform.web.dto.ResultInfo.success;
 import static java.util.Objects.nonNull;
 
 /** Audit log query API. */

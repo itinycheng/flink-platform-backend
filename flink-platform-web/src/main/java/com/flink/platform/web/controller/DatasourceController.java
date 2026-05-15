@@ -10,8 +10,8 @@ import com.flink.platform.dao.entity.Datasource;
 import com.flink.platform.dao.entity.User;
 import com.flink.platform.dao.service.DatasourceService;
 import com.flink.platform.web.common.RequestContext;
-import com.flink.platform.web.entity.request.DatasourceRequest;
-import com.flink.platform.web.entity.response.ResultInfo;
+import com.flink.platform.web.dto.ResultInfo;
+import com.flink.platform.web.dto.request.DatasourceRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -31,8 +31,8 @@ import java.util.List;
 import java.util.Objects;
 
 import static com.flink.platform.common.enums.ResponseStatus.ERROR_PARAMETER;
-import static com.flink.platform.web.entity.response.ResultInfo.failure;
-import static com.flink.platform.web.entity.response.ResultInfo.success;
+import static com.flink.platform.web.dto.ResultInfo.failure;
+import static com.flink.platform.web.dto.ResultInfo.success;
 import static com.flink.platform.web.util.JdbcUtil.createConnection;
 
 /** datasource controller. */

@@ -6,7 +6,7 @@ import com.flink.platform.common.util.JsonUtil;
 import com.flink.platform.common.util.UuidGenerator;
 import com.flink.platform.dao.entity.JobFlowDag;
 import com.flink.platform.dao.entity.alert.AlertConfigList;
-import com.flink.platform.web.entity.request.JobFlowRequest;
+import com.flink.platform.web.dto.request.JobFlowRequest;
 import org.apache.commons.lang3.ObjectUtils;
 import org.junit.jupiter.api.Test;
 

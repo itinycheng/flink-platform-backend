@@ -9,8 +9,8 @@ import com.flink.platform.dao.entity.CatalogInfo;
 import com.flink.platform.dao.entity.User;
 import com.flink.platform.dao.service.CatalogInfoService;
 import com.flink.platform.web.common.RequestContext;
-import com.flink.platform.web.entity.request.CatalogInfoRequest;
-import com.flink.platform.web.entity.response.ResultInfo;
+import com.flink.platform.web.dto.ResultInfo;
+import com.flink.platform.web.dto.request.CatalogInfoRequest;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,8 +28,8 @@ import java.util.Objects;
 
 import static com.flink.platform.common.constants.Constant.EMPTY;
 import static com.flink.platform.common.enums.ResponseStatus.ERROR_PARAMETER;
-import static com.flink.platform.web.entity.response.ResultInfo.failure;
-import static com.flink.platform.web.entity.response.ResultInfo.success;
+import static com.flink.platform.web.dto.ResultInfo.failure;
+import static com.flink.platform.web.dto.ResultInfo.success;
 
 /** Catalog info controller. */
 @RestController

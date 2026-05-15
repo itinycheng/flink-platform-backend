@@ -8,8 +8,8 @@ import com.flink.platform.dao.entity.AlertInfo;
 import com.flink.platform.dao.entity.User;
 import com.flink.platform.dao.service.AlertService;
 import com.flink.platform.web.common.RequestContext;
-import com.flink.platform.web.entity.request.AlertInfoRequest;
-import com.flink.platform.web.entity.response.ResultInfo;
+import com.flink.platform.web.dto.ResultInfo;
+import com.flink.platform.web.dto.request.AlertInfoRequest;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,8 +26,8 @@ import java.util.List;
 import java.util.Objects;
 
 import static com.flink.platform.common.enums.ResponseStatus.ERROR_PARAMETER;
-import static com.flink.platform.web.entity.response.ResultInfo.failure;
-import static com.flink.platform.web.entity.response.ResultInfo.success;
+import static com.flink.platform.web.dto.ResultInfo.failure;
+import static com.flink.platform.web.dto.ResultInfo.success;
 
 /** Alert controller. */
 @RestController

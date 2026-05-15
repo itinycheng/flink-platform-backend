@@ -1,6 +1,6 @@
 package com.flink.platform.web.controller;
 
-import com.flink.platform.web.entity.response.ResultInfo;
+import com.flink.platform.web.dto.ResultInfo;
 import com.flink.platform.web.environment.HadoopService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import static com.flink.platform.web.entity.response.ResultInfo.success;
+import static com.flink.platform.web.dto.ResultInfo.success;
 import static java.util.stream.Collectors.toMap;
 
 @Slf4j
