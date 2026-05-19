@@ -2,7 +2,6 @@ package com.flink.platform.web.controller;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.flink.platform.common.constants.Constant;
 import com.flink.platform.common.enums.JobFlowStatus;
 import com.flink.platform.common.enums.JobFlowType;
@@ -12,10 +11,12 @@ import com.flink.platform.dao.entity.ExecutionConfig;
 import com.flink.platform.dao.entity.JobFlow;
 import com.flink.platform.dao.entity.JobFlowDag;
 import com.flink.platform.dao.entity.User;
+import com.flink.platform.dao.query.JobFlowPageQuery;
 import com.flink.platform.dao.service.JobFlowRunService;
 import com.flink.platform.dao.service.JobFlowService;
 import com.flink.platform.dao.service.JobInfoService;
 import com.flink.platform.dao.service.JobRunInfoService;
+import com.flink.platform.dao.view.JobFlowDetails;
 import com.flink.platform.web.annotation.RequirePermission;
 import com.flink.platform.web.common.RequestContext;
 import com.flink.platform.web.dto.ResultInfo;
@@ -67,7 +68,6 @@ import static com.flink.platform.web.dto.ResultInfo.failure;
 import static com.flink.platform.web.dto.ResultInfo.success;
 import static java.util.stream.Collectors.toList;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
-import static org.apache.commons.lang3.StringUtils.isNotEmpty;
 
 /** crud job flow. */
 @RestController
@@ -185,37 +185,9 @@ public class JobFlowController {
 
     @RequirePermission(TASK_VIEW)
     @GetMapping(value = "/page")
-    public ResultInfo<IPage<JobFlow>> page(
-            @RequestParam(name = "page", required = false, defaultValue = "1") Integer page,
-            @RequestParam(name = "size", required = false, defaultValue = "20") Integer size,
-            @RequestParam(name = "id", required = false) Long id,
-            @RequestParam(name = "name", required = false) String name,
-            @RequestParam(name = "type", required = false) JobFlowType type,
-            @RequestParam(name = "status", required = false) JobFlowStatus status,
-            @RequestParam(name = "tag", required = false) String tagCode,
-            @RequestParam(name = "sort", required = false) String sort) {
-        var queryWrapper = new QueryWrapper<JobFlow>()
-                .lambda()
-                .select(JobFlow.class, field -> !"flow".equals(field.getProperty()))
-                .eq(JobFlow::getWorkspaceId, RequestContext.requireWorkspaceId())
-                .eq(id != null, JobFlow::getId, id)
-                .eq(type != null, JobFlow::getType, type)
-                .like(isNotEmpty(name), JobFlow::getName, name)
-                .like(isNotEmpty(tagCode), JobFlow::getTags, tagCode);
-
-        if (status != null) {
-            queryWrapper.eq(JobFlow::getStatus, status);
-        } else {
-            queryWrapper.ne(JobFlow::getStatus, JobFlowStatus.DELETE);
-        }
-
-        if ("-id".equals(sort)) {
-            queryWrapper.orderByDesc(JobFlow::getId);
-        }
-
-        var pager = new Page<JobFlow>(page, size);
-        var iPage = jobFlowService.page(pager, queryWrapper);
-        return success(iPage);
+    public ResultInfo<IPage<JobFlowDetails>> page(JobFlowPageQuery query) {
+        query.setWorkspaceId(RequestContext.requireWorkspaceId());
+        return success(jobFlowService.pageDetails(query));
     }
 
     @RequirePermission(TASK_VIEW)

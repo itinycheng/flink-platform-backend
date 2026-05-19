@@ -2,6 +2,8 @@ package com.flink.platform.dao.service;
 
 import com.baomidou.dynamic.datasource.annotation.DS;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.flink.platform.common.model.JobVertex;
 import com.flink.platform.common.util.StringUtil;
@@ -14,6 +16,8 @@ import com.flink.platform.dao.entity.JobFlowRun;
 import com.flink.platform.dao.entity.JobInfo;
 import com.flink.platform.dao.entity.JobRunInfo;
 import com.flink.platform.dao.mapper.JobFlowMapper;
+import com.flink.platform.dao.query.JobFlowPageQuery;
+import com.flink.platform.dao.view.JobFlowDetails;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -174,5 +178,9 @@ public class JobFlowService extends ServiceImpl<JobFlowMapper, JobFlow> {
 
     public JobFlow getJobFlowByJobId(Long jobId) {
         return baseMapper.queryJobFlowByJobId(jobId);
+    }
+
+    public IPage<JobFlowDetails> pageDetails(JobFlowPageQuery query) {
+        return baseMapper.selectDetailsPage(new Page<>(query.getPage(), query.getSize()), query);
     }
 }
