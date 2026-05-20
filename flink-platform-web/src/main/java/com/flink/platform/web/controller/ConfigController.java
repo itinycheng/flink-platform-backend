@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Objects;
 
 import static com.flink.platform.common.enums.Permission.SYSTEM_MANAGE;
+import static com.flink.platform.common.enums.Permission.WORKSPACE_MANAGE;
 import static com.flink.platform.common.enums.ResponseStatus.ERROR_PARAMETER;
 import static com.flink.platform.common.enums.Status.DELETED;
 import static com.flink.platform.web.dto.ResultInfo.failure;
@@ -64,6 +65,7 @@ public class ConfigController {
         return success(config.getId());
     }
 
+    @RequirePermission(WORKSPACE_MANAGE)
     @GetMapping(value = "/get/{id}")
     public ResultInfo<Config> get(@PathVariable Long id) {
         var config = configService.getById(id);
@@ -87,6 +89,7 @@ public class ConfigController {
         return success(bool);
     }
 
+    @RequirePermission(WORKSPACE_MANAGE)
     @GetMapping(value = "/page")
     public ResultInfo<IPage<Config>> page(
             @RequestParam(name = "page", required = false, defaultValue = "1") Integer page,
@@ -104,6 +107,7 @@ public class ConfigController {
         return success(iPage);
     }
 
+    @RequirePermission(WORKSPACE_MANAGE)
     @GetMapping(value = "/list")
     public ResultInfo<List<Config>> list() {
         var list = configService.list();

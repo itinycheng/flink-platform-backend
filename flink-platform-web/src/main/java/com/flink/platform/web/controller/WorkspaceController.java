@@ -142,6 +142,7 @@ public class WorkspaceController {
         return success(iPage);
     }
 
+    @RequirePermission(WORKSPACE_VIEW)
     @GetMapping(value = "/workers")
     public ResultInfo<List<Worker>> workers() {
         var workspaceId = RequestContext.requireWorkspaceId();

@@ -9,6 +9,7 @@ import com.flink.platform.common.enums.JobType;
 import com.flink.platform.dao.entity.Datasource;
 import com.flink.platform.dao.entity.User;
 import com.flink.platform.dao.service.DatasourceService;
+import com.flink.platform.web.annotation.RequirePermission;
 import com.flink.platform.web.common.RequestContext;
 import com.flink.platform.web.dto.ResultInfo;
 import com.flink.platform.web.dto.request.DatasourceRequest;
@@ -30,6 +31,8 @@ import java.sql.Statement;
 import java.util.List;
 import java.util.Objects;
 
+import static com.flink.platform.common.enums.Permission.TASK_EDIT;
+import static com.flink.platform.common.enums.Permission.TASK_VIEW;
 import static com.flink.platform.common.enums.ResponseStatus.ERROR_PARAMETER;
 import static com.flink.platform.web.dto.ResultInfo.failure;
 import static com.flink.platform.web.dto.ResultInfo.success;
@@ -44,6 +47,7 @@ public class DatasourceController {
 
     private final DatasourceService datasourceService;
 
+    @RequirePermission(TASK_EDIT)
     @PostMapping(value = "/create")
     public ResultInfo<Long> create(
             @RequestAttribute(value = Constant.SESSION_USER) User loginUser,
@@ -61,6 +65,7 @@ public class DatasourceController {
         return success(datasource.getId());
     }
 
+    @RequirePermission(TASK_EDIT)
     @PostMapping(value = "/update")
     public ResultInfo<Long> update(@RequestBody DatasourceRequest datasourceRequest) {
         var errorMsg = datasourceRequest.validateOnUpdate();
@@ -74,18 +79,21 @@ public class DatasourceController {
         return success(datasource.getId());
     }
 
+    @RequirePermission(TASK_VIEW)
     @GetMapping(value = "/get/{dsId}")
     public ResultInfo<Datasource> get(@PathVariable Long dsId) {
         var datasource = datasourceService.getById(dsId);
         return success(datasource);
     }
 
+    @RequirePermission(TASK_EDIT)
     @GetMapping(value = "/delete/{dsId}")
     public ResultInfo<Boolean> delete(@PathVariable Long dsId) {
         var bool = datasourceService.removeById(dsId);
         return success(bool);
     }
 
+    @RequirePermission(TASK_VIEW)
     @GetMapping(value = "/test/{dsId}")
     public ResultInfo<Boolean> testConnection(@PathVariable Long dsId) {
         var datasource = datasourceService.getById(dsId);
@@ -99,6 +107,7 @@ public class DatasourceController {
         }
     }
 
+    @RequirePermission(TASK_VIEW)
     @GetMapping(value = "/page")
     public ResultInfo<IPage<Datasource>> page(
             @RequestParam(name = "page", required = false, defaultValue = "1") Integer page,
@@ -116,6 +125,7 @@ public class DatasourceController {
         return success(iPage);
     }
 
+    @RequirePermission(TASK_VIEW)
     @GetMapping(value = "/list")
     public ResultInfo<List<Datasource>> list(
             @RequestParam(name = "dbType", required = false) DbType dbType,

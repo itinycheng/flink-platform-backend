@@ -9,6 +9,7 @@ import com.flink.platform.dao.entity.JobRunInfo;
 import com.flink.platform.dao.entity.User;
 import com.flink.platform.dao.service.JobInfoService;
 import com.flink.platform.dao.service.JobRunInfoService;
+import com.flink.platform.web.annotation.RequirePermission;
 import com.flink.platform.web.common.RequestContext;
 import com.flink.platform.web.dto.ResultInfo;
 import com.flink.platform.web.dto.request.JobRunRequest;
@@ -31,6 +32,8 @@ import java.util.Collection;
 import java.util.Collections;
 
 import static com.flink.platform.common.enums.ExecutionStatus.getNonTerminals;
+import static com.flink.platform.common.enums.Permission.TASK_EXEC;
+import static com.flink.platform.common.enums.Permission.TASK_VIEW;
 import static com.flink.platform.common.enums.ResponseStatus.NO_RUNNING_JOB_FOUND;
 import static com.flink.platform.common.util.DateUtil.GLOBAL_DATE_TIME_FORMAT;
 import static com.flink.platform.web.dto.ResultInfo.failure;
@@ -50,12 +53,14 @@ public class JobRunController {
 
     private final KillJobService killJobService;
 
+    @RequirePermission(TASK_VIEW)
     @GetMapping(value = "/get/{runId}")
     public ResultInfo<JobRunInfo> get(@PathVariable Long runId) {
         var jobRunInfo = jobRunInfoService.getById(runId);
         return success(jobRunInfo);
     }
 
+    @RequirePermission(TASK_VIEW)
     @GetMapping(value = "/page")
     public ResultInfo<IPage<JobRunInfo>> page(
             @RequestAttribute(value = Constant.SESSION_USER) User loginUser,
@@ -93,6 +98,7 @@ public class JobRunController {
         return success(iPage);
     }
 
+    @RequirePermission(TASK_VIEW)
     @PostMapping(value = "/getJobOrRunByJobIds")
     public ResultInfo<Collection<Object>> list(@RequestBody JobRunRequest request) {
         if (request.getFlowRunId() == null) {
@@ -106,6 +112,7 @@ public class JobRunController {
         return success(CollectionUtils.union(jobRunList, jobList));
     }
 
+    @RequirePermission(TASK_EXEC)
     @GetMapping(value = "/kill/{runId}")
     public ResultInfo<Boolean> kill(@PathVariable Long runId) {
         var jobRun = jobRunInfoService.getOne(new QueryWrapper<JobRunInfo>()

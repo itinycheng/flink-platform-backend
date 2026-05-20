@@ -6,6 +6,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.flink.platform.common.enums.OperationType;
 import com.flink.platform.dao.entity.AuditLog;
 import com.flink.platform.dao.service.AuditLogService;
+import com.flink.platform.web.annotation.RequirePermission;
 import com.flink.platform.web.dto.ResultInfo;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,6 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.time.LocalDateTime;
 
+import static com.flink.platform.common.enums.Permission.WORKSPACE_VIEW;
 import static com.flink.platform.common.util.DateUtil.GLOBAL_DATE_TIME_FORMAT;
 import static com.flink.platform.web.dto.ResultInfo.success;
 import static java.util.Objects.nonNull;
@@ -30,11 +32,13 @@ public class AuditLogController {
 
     private final AuditLogService auditLogService;
 
+    @RequirePermission(WORKSPACE_VIEW)
     @GetMapping(value = "/get/{id}")
     public ResultInfo<AuditLog> get(@PathVariable Long id) {
         return success(auditLogService.getById(id));
     }
 
+    @RequirePermission(WORKSPACE_VIEW)
     @GetMapping(value = "/page")
     public ResultInfo<IPage<AuditLog>> page(
             @RequestParam(name = "page", required = false, defaultValue = "1") Integer page,

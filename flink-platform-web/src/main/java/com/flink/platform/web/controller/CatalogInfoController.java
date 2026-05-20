@@ -8,6 +8,7 @@ import com.flink.platform.common.enums.CatalogType;
 import com.flink.platform.dao.entity.CatalogInfo;
 import com.flink.platform.dao.entity.User;
 import com.flink.platform.dao.service.CatalogInfoService;
+import com.flink.platform.web.annotation.RequirePermission;
 import com.flink.platform.web.common.RequestContext;
 import com.flink.platform.web.dto.ResultInfo;
 import com.flink.platform.web.dto.request.CatalogInfoRequest;
@@ -27,6 +28,8 @@ import java.util.List;
 import java.util.Objects;
 
 import static com.flink.platform.common.constants.Constant.EMPTY;
+import static com.flink.platform.common.enums.Permission.TASK_EDIT;
+import static com.flink.platform.common.enums.Permission.TASK_VIEW;
 import static com.flink.platform.common.enums.ResponseStatus.ERROR_PARAMETER;
 import static com.flink.platform.web.dto.ResultInfo.failure;
 import static com.flink.platform.web.dto.ResultInfo.success;
@@ -39,6 +42,7 @@ public class CatalogInfoController {
 
     private final CatalogInfoService catalogService;
 
+    @RequirePermission(TASK_EDIT)
     @PostMapping(value = "/create")
     public ResultInfo<Long> create(
             @RequestAttribute(value = Constant.SESSION_USER) User loginUser,
@@ -57,6 +61,7 @@ public class CatalogInfoController {
         return success(catalog.getId());
     }
 
+    @RequirePermission(TASK_EDIT)
     @PostMapping(value = "/update")
     public ResultInfo<Long> update(@RequestBody CatalogInfoRequest catalogInfoRequest) {
         var errorMsg = catalogInfoRequest.validateOnUpdate();
@@ -70,12 +75,14 @@ public class CatalogInfoController {
         return success(catalogInfo.getId());
     }
 
+    @RequirePermission(TASK_VIEW)
     @GetMapping(value = "/get/{catalogId}")
     public ResultInfo<CatalogInfo> get(@PathVariable Long catalogId) {
         var catalogInfo = catalogService.getById(catalogId);
         return success(catalogInfo);
     }
 
+    @RequirePermission(TASK_EDIT)
     @GetMapping(value = "/delete/{catalogId}")
     public ResultInfo<Boolean> delete(@PathVariable Long catalogId) {
         var bool = catalogService.remove(new QueryWrapper<CatalogInfo>()
@@ -85,6 +92,7 @@ public class CatalogInfoController {
         return success(bool);
     }
 
+    @RequirePermission(TASK_VIEW)
     @GetMapping(value = "/page")
     public ResultInfo<IPage<CatalogInfo>> page(
             @RequestParam(name = "page", required = false, defaultValue = "1") Integer page,
@@ -102,6 +110,7 @@ public class CatalogInfoController {
         return success(iPage);
     }
 
+    @RequirePermission(TASK_VIEW)
     @GetMapping(value = "/list")
     public ResultInfo<List<CatalogInfo>> list() {
         var list = catalogService.list(new QueryWrapper<CatalogInfo>()

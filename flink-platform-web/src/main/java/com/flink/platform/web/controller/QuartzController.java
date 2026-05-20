@@ -1,6 +1,7 @@
 package com.flink.platform.web.controller;
 
 import com.flink.platform.common.constants.Constant;
+import com.flink.platform.web.annotation.RequirePermission;
 import com.flink.platform.web.dto.ResultInfo;
 import com.flink.platform.web.service.QuartzService;
 import lombok.RequiredArgsConstructor;
@@ -18,6 +19,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static com.flink.platform.common.enums.Permission.WORKSPACE_MANAGE;
+import static com.flink.platform.common.enums.Permission.WORKSPACE_VIEW;
 import static com.flink.platform.common.enums.ResponseStatus.INVALID_CRONTAB_EXPR;
 import static com.flink.platform.common.util.DateUtil.GLOBAL_DATE_TIME_FORMAT;
 import static com.flink.platform.common.util.DateUtil.format;
@@ -33,6 +36,7 @@ public class QuartzController {
 
     private final QuartzService quartzService;
 
+    @RequirePermission(WORKSPACE_MANAGE)
     @GetMapping(value = "/metadata")
     public ResultInfo<Map<String, String>> metadata() {
         var result = new HashMap<String, String>();
@@ -42,6 +46,7 @@ public class QuartzController {
         return success(result);
     }
 
+    @RequirePermission(WORKSPACE_VIEW)
     @GetMapping(value = "/parseExpr")
     public ResultInfo<List<String>> parseExpr(@RequestParam(name = "cron") String cron) {
         try {

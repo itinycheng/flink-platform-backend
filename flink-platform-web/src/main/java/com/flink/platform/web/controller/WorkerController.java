@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Objects;
 
 import static com.flink.platform.common.enums.Permission.SYSTEM_MANAGE;
+import static com.flink.platform.common.enums.Permission.WORKSPACE_VIEW;
 import static com.flink.platform.common.enums.ResponseStatus.ERROR_PARAMETER;
 import static com.flink.platform.common.enums.ResponseStatus.INVALID_STATUS;
 import static com.flink.platform.common.enums.WorkerStatus.DELETED;
@@ -38,6 +39,7 @@ public class WorkerController {
 
     private final WorkerService workerService;
 
+    @RequirePermission(WORKSPACE_VIEW)
     @GetMapping(value = "/get/{workerId}")
     public ResultInfo<Worker> get(@PathVariable Long workerId) {
         var worker = workerService.getById(workerId);
@@ -71,6 +73,7 @@ public class WorkerController {
         return success(worker.getId());
     }
 
+    @RequirePermission(WORKSPACE_VIEW)
     @GetMapping(value = "/page")
     public ResultInfo<IPage<Worker>> page(
             @RequestParam(name = "page", required = false, defaultValue = "1") Integer page,
@@ -94,6 +97,7 @@ public class WorkerController {
         return success(iPage);
     }
 
+    @RequirePermission(WORKSPACE_VIEW)
     @GetMapping(value = "/list")
     public ResultInfo<List<Worker>> list(@RequestParam(name = "status", required = false) WorkerStatus status) {
         return success(workerService.list(new QueryWrapper<Worker>()

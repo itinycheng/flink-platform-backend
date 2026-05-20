@@ -1,5 +1,6 @@
 package com.flink.platform.web.controller;
 
+import com.flink.platform.web.annotation.RequirePermission;
 import com.flink.platform.web.dto.ResultInfo;
 import com.flink.platform.web.environment.HadoopService;
 import lombok.extern.slf4j.Slf4j;
@@ -12,6 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import static com.flink.platform.common.enums.Permission.WORKSPACE_VIEW;
 import static com.flink.platform.web.dto.ResultInfo.success;
 import static java.util.stream.Collectors.toMap;
 
@@ -27,6 +29,7 @@ public class StatsController {
         this.hadoopService = hadoopService;
     }
 
+    @RequirePermission(WORKSPACE_VIEW)
     @GetMapping(value = "/runningYarnJobStatusList")
     public ResultInfo<Map<?, ?>> runningYarnJobStatusList() {
         var runningApplications = hadoopService.getRunningApplications().entrySet().stream()

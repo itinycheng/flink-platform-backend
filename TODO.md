@@ -1,19 +1,5 @@
 # TODO
 
-## Add `@RequirePermission` to Controllers
-
-Workspace integration is complete. The remaining task is to add `@RequirePermission`
-annotations to the endpoints below, following the same pattern as `JobFlowController`.
-
-- [ ] **AlertController** - create, update, delete
-- [ ] **CatalogInfoController** - create, update, delete
-- [ ] **DatasourceController** - create, update, delete
-- [ ] **ResourceController** - create, update, delete
-- [ ] **JobParamController** - create, update, delete
-- [ ] **TagInfoController** - create, update, delete
-
----
-
 ## WorkspaceScopedService — Automatic Workspace Isolation for Save/Update/Delete
 
 ### Problem

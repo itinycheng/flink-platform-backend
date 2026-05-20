@@ -10,6 +10,7 @@ import com.flink.platform.dao.entity.JobParam;
 import com.flink.platform.dao.entity.User;
 import com.flink.platform.dao.service.JobInfoService;
 import com.flink.platform.dao.service.JobParamService;
+import com.flink.platform.web.annotation.RequirePermission;
 import com.flink.platform.web.common.RequestContext;
 import com.flink.platform.web.dto.ResultInfo;
 import com.flink.platform.web.dto.request.JobParamRequest;
@@ -30,6 +31,8 @@ import java.util.List;
 import static com.flink.platform.common.constants.JobConstant.PARAM_FORMAT;
 import static com.flink.platform.common.enums.JobParamType.GLOBAL;
 import static com.flink.platform.common.enums.JobParamType.JOB_FLOW;
+import static com.flink.platform.common.enums.Permission.TASK_EDIT;
+import static com.flink.platform.common.enums.Permission.TASK_VIEW;
 import static com.flink.platform.common.enums.ResponseStatus.ERROR_PARAMETER;
 import static com.flink.platform.common.enums.ResponseStatus.OPERATION_NOT_ALLOWED;
 import static com.flink.platform.common.enums.Status.ENABLE;
@@ -47,6 +50,7 @@ public class JobParamController {
 
     private final JobInfoService jobService;
 
+    @RequirePermission(TASK_EDIT)
     @PostMapping(value = "/create")
     public ResultInfo<Long> create(
             @RequestAttribute(value = Constant.SESSION_USER) User loginUser,
@@ -76,6 +80,7 @@ public class JobParamController {
         return success(jobParam.getId());
     }
 
+    @RequirePermission(TASK_EDIT)
     @PostMapping(value = "/update")
     public ResultInfo<Long> update(@RequestBody JobParamRequest jobParamRequest) {
         var errorMsg = jobParamRequest.validateOnUpdate();
@@ -89,12 +94,14 @@ public class JobParamController {
         return success(jobParam.getId());
     }
 
+    @RequirePermission(TASK_VIEW)
     @GetMapping(value = "/get/{paramId}")
     public ResultInfo<JobParam> get(@PathVariable Long paramId) {
         var jobParam = jobParamService.getById(paramId);
         return success(jobParam);
     }
 
+    @RequirePermission(TASK_EDIT)
     @GetMapping(value = "/delete/{paramId}")
     public ResultInfo<Boolean> delete(@PathVariable Long paramId) {
         var jobParam = jobParamService.getById(paramId);
@@ -117,6 +124,7 @@ public class JobParamController {
         return success(bool);
     }
 
+    @RequirePermission(TASK_VIEW)
     @GetMapping(value = "/page")
     public ResultInfo<IPage<JobParam>> page(
             @RequestParam(name = "page", required = false, defaultValue = "1") Integer page,
@@ -134,6 +142,7 @@ public class JobParamController {
     }
 
     @Deprecated
+    @RequirePermission(TASK_VIEW)
     @GetMapping(value = "/list")
     public ResultInfo<List<JobParam>> list(
             @RequestParam(name = "flowId", required = false) Long flowId,

@@ -6,6 +6,7 @@ import com.flink.platform.common.util.ExceptionUtil;
 import com.flink.platform.dao.entity.task.FlinkJob;
 import com.flink.platform.dao.entity.task.SqlJob;
 import com.flink.platform.dao.service.DatasourceService;
+import com.flink.platform.web.annotation.RequirePermission;
 import com.flink.platform.web.dto.ResultInfo;
 import com.flink.platform.web.dto.request.ReactiveRequest;
 import com.flink.platform.web.dto.response.ReactiveDataVo;
@@ -34,6 +35,8 @@ import java.util.UUID;
 
 import static com.flink.platform.common.constants.Constant.LINE_SEPARATOR;
 import static com.flink.platform.common.constants.Constant.SQL;
+import static com.flink.platform.common.enums.Permission.TASK_EXEC;
+import static com.flink.platform.common.enums.Permission.TASK_VIEW;
 import static com.flink.platform.common.enums.ResponseStatus.DATASOURCE_NOT_FOUND;
 import static com.flink.platform.common.enums.ResponseStatus.ERROR_PARAMETER;
 import static com.flink.platform.web.dto.ResultInfo.failure;
@@ -57,6 +60,7 @@ public class ReactiveController {
 
     private final RestTemplate restTemplate;
 
+    @RequirePermission(TASK_VIEW)
     @GetMapping(value = "/jobToDbTypes")
     public ResultInfo<Map<JobType, DbType>> jobToDbTypes() {
         var typeList = new ArrayList<JobType>();
@@ -69,6 +73,7 @@ public class ReactiveController {
         return success(result);
     }
 
+    @RequirePermission(TASK_VIEW)
     @GetMapping(value = "/execLog/{execId}")
     public ResultInfo<?> execLog(
             @PathVariable String execId, @RequestParam(name = "worker", required = false) Long worker) {
@@ -89,6 +94,7 @@ public class ReactiveController {
         return success(resultMap);
     }
 
+    @RequirePermission(TASK_EXEC)
     @PostMapping(value = "/execJob")
     public ResultInfo<?> execJob(@RequestBody ReactiveRequest reactiveRequest) {
         var execId = generateExecId();

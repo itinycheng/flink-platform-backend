@@ -26,8 +26,10 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.time.LocalDateTime;
 
+import static com.flink.platform.common.enums.Permission.TASK_EDIT;
 import static com.flink.platform.common.enums.Permission.TASK_EXEC;
 import static com.flink.platform.common.enums.Permission.TASK_PURGE;
+import static com.flink.platform.common.enums.Permission.TASK_VIEW;
 import static com.flink.platform.common.enums.ResponseStatus.ERROR_PARAMETER;
 import static com.flink.platform.common.enums.ResponseStatus.FLOW_ALREADY_TERMINATED;
 import static com.flink.platform.common.enums.ResponseStatus.FLOW_RUN_NOT_IN_TERMINAL_STATUS;
@@ -50,12 +52,14 @@ public class JobFlowRunController {
 
     private final KillJobService killJobService;
 
+    @RequirePermission(TASK_VIEW)
     @GetMapping(value = "/get/{flowRunId}")
     public ResultInfo<JobFlowRun> get(@PathVariable long flowRunId) {
         var jobFlowRun = jobFlowRunService.getById(flowRunId);
         return success(jobFlowRun);
     }
 
+    @RequirePermission(TASK_EDIT)
     @PostMapping(value = "/update")
     public ResultInfo<Long> update(@RequestBody JobFlowRunRequest flowRunRequest) {
         var errorMsg = flowRunRequest.validateOnUpdate();
@@ -71,6 +75,7 @@ public class JobFlowRunController {
         return success(flowRunRequest.getId());
     }
 
+    @RequirePermission(TASK_VIEW)
     @GetMapping(value = "/page")
     public ResultInfo<IPage<JobFlowRun>> page(
             @RequestParam(name = "page", required = false, defaultValue = "1") Integer page,

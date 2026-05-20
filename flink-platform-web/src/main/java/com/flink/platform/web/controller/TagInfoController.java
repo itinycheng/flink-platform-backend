@@ -11,6 +11,7 @@ import com.flink.platform.dao.entity.TagInfo;
 import com.flink.platform.dao.entity.User;
 import com.flink.platform.dao.service.JobFlowService;
 import com.flink.platform.dao.service.TagInfoService;
+import com.flink.platform.web.annotation.RequirePermission;
 import com.flink.platform.web.common.RequestContext;
 import com.flink.platform.web.dto.ResultInfo;
 import com.flink.platform.web.dto.request.TagInfoRequest;
@@ -28,6 +29,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
+import static com.flink.platform.common.enums.Permission.TASK_EDIT;
+import static com.flink.platform.common.enums.Permission.TASK_VIEW;
 import static com.flink.platform.common.enums.ResponseStatus.ERROR_PARAMETER;
 import static com.flink.platform.common.enums.ResponseStatus.OPERATION_NOT_ALLOWED;
 import static com.flink.platform.web.dto.ResultInfo.failure;
@@ -44,6 +47,7 @@ public class TagInfoController {
 
     private final JobFlowService jobFlowService;
 
+    @RequirePermission(TASK_EDIT)
     @PostMapping(value = "/create")
     public ResultInfo<Long> create(
             @RequestAttribute(value = Constant.SESSION_USER) User loginUser, @RequestBody TagInfoRequest tagRequest) {
@@ -62,6 +66,7 @@ public class TagInfoController {
         return success(tagInfo.getId());
     }
 
+    @RequirePermission(TASK_EDIT)
     @PostMapping(value = "/update")
     public ResultInfo<Long> update(@RequestBody TagInfoRequest tagRequest) {
         var errorMsg = tagRequest.validateOnUpdate();
@@ -75,12 +80,14 @@ public class TagInfoController {
         return success(tagRequest.getId());
     }
 
+    @RequirePermission(TASK_VIEW)
     @GetMapping(value = "/get/{tagId}")
     public ResultInfo<TagInfo> get(@PathVariable Long tagId) {
         var tagInfo = tagInfoService.getById(tagId);
         return success(tagInfo);
     }
 
+    @RequirePermission(TASK_EDIT)
     @GetMapping(value = "/delete/{tagId}")
     public ResultInfo<Boolean> delete(@PathVariable Long tagId) {
         var tagInfo = tagInfoService.getById(tagId);
@@ -98,6 +105,7 @@ public class TagInfoController {
         return success(bool);
     }
 
+    @RequirePermission(TASK_VIEW)
     @GetMapping(value = "/page")
     public ResultInfo<IPage<TagInfo>> page(
             @RequestParam(name = "page", required = false, defaultValue = "1") Integer page,
@@ -114,6 +122,7 @@ public class TagInfoController {
         return success(iPage);
     }
 
+    @RequirePermission(TASK_VIEW)
     @GetMapping(value = "/list")
     public ResultInfo<List<TagInfo>> list(
             @RequestParam(name = "name", required = false) String name,

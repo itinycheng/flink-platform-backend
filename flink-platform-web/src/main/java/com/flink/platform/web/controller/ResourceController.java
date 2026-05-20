@@ -9,6 +9,7 @@ import com.flink.platform.common.enums.ResourceType;
 import com.flink.platform.dao.entity.Resource;
 import com.flink.platform.dao.entity.User;
 import com.flink.platform.dao.service.ResourceService;
+import com.flink.platform.web.annotation.RequirePermission;
 import com.flink.platform.web.common.RequestContext;
 import com.flink.platform.web.dto.ResultInfo;
 import com.flink.platform.web.dto.request.ResourceRequest;
@@ -38,6 +39,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
+import static com.flink.platform.common.enums.Permission.TASK_EDIT;
+import static com.flink.platform.common.enums.Permission.TASK_VIEW;
 import static com.flink.platform.common.enums.ResponseStatus.ERROR_PARAMETER;
 import static com.flink.platform.common.enums.ResponseStatus.FILE_EXISTS;
 import static com.flink.platform.web.dto.ResultInfo.failure;
@@ -56,6 +59,7 @@ public class ResourceController {
 
     private final StorageService storageService;
 
+    @RequirePermission(TASK_EDIT)
     @PostMapping(value = "/create")
     public ResultInfo<Long> create(
             @RequestAttribute(value = Constant.SESSION_USER) User loginUser,
@@ -74,6 +78,7 @@ public class ResourceController {
         return ResultInfo.success(resource.getId());
     }
 
+    @RequirePermission(TASK_EDIT)
     @PostMapping(value = "/update")
     public ResultInfo<Long> update(@RequestBody ResourceRequest resourceRequest) {
         var errorMsg = resourceRequest.validateOnUpdate();
@@ -87,12 +92,14 @@ public class ResourceController {
         return ResultInfo.success(resource.getId());
     }
 
+    @RequirePermission(TASK_VIEW)
     @GetMapping(value = "/get/{resourceId}")
     public ResultInfo<Resource> get(@PathVariable Long resourceId) {
         var resource = resourceService.getById(resourceId);
         return ResultInfo.success(resource);
     }
 
+    @RequirePermission(TASK_VIEW)
     @GetMapping(value = "/getWithParents/{resourceId}")
     public ResultInfo<List<Resource>> getWithParents(@PathVariable Long resourceId) {
         var resource = resourceService.getById(resourceId);
@@ -101,12 +108,14 @@ public class ResourceController {
         return ResultInfo.success(parents);
     }
 
+    @RequirePermission(TASK_EDIT)
     @GetMapping(value = "/delete/{resourceId}")
     public ResultInfo<Boolean> delete(@PathVariable Long resourceId) throws Exception {
         boolean bool = resourceManageService.removeById(resourceId);
         return ResultInfo.success(bool);
     }
 
+    @RequirePermission(TASK_VIEW)
     @GetMapping(value = "/page")
     public ResultInfo<IPage<Resource>> page(
             @RequestParam(name = "page", required = false, defaultValue = "1") Integer page,
@@ -128,6 +137,7 @@ public class ResourceController {
         return ResultInfo.success(iPage);
     }
 
+    @RequirePermission(TASK_VIEW)
     @GetMapping(value = "/list")
     public ResultInfo<List<Resource>> list(@RequestParam(name = "type", required = false) ResourceType type) {
         List<Resource> list = resourceService.list(new QueryWrapper<Resource>()
@@ -137,6 +147,7 @@ public class ResourceController {
         return ResultInfo.success(list);
     }
 
+    @RequirePermission(TASK_EDIT)
     @PostMapping("/upload")
     public ResponseEntity<Object> upload(
             @RequestParam(name = "id", required = false) Long id,
@@ -174,6 +185,7 @@ public class ResourceController {
         }
     }
 
+    @RequirePermission(TASK_EDIT)
     @PostMapping("/deleteFile")
     public ResultInfo<Boolean> deleteFile(
             @RequestAttribute(value = Constant.SESSION_USER) User loginUser,
