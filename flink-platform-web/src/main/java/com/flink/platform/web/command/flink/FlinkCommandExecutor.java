@@ -6,7 +6,7 @@ import com.flink.platform.dao.service.JobRunInfoService;
 import com.flink.platform.web.command.CommandExecutor;
 import com.flink.platform.web.command.JobCommand;
 import com.flink.platform.web.config.WorkerConfig;
-import com.flink.platform.web.environment.HadoopService;
+import com.flink.platform.web.environment.YarnAppService;
 import com.flink.platform.web.util.YarnHelper;
 import jakarta.annotation.Nonnull;
 import lombok.extern.slf4j.Slf4j;
@@ -41,7 +41,7 @@ public class FlinkCommandExecutor implements CommandExecutor {
 
     @Lazy
     @Autowired
-    private HadoopService hadoopService;
+    private YarnAppService yarnAppService;
 
     @Autowired
     private JobRunInfoService jobRunInfoService;
@@ -84,7 +84,7 @@ public class FlinkCommandExecutor implements CommandExecutor {
         try {
             var jobRunId = command.getJobRunId();
             var applicationTag = YarnHelper.getApplicationTag(jobRunId);
-            var statusReport = hadoopService.getStatusReportWithRetry(applicationTag);
+            var statusReport = yarnAppService.getStatusReportWithRetry(applicationTag);
             status = statusReport.getStatus();
             trackingUrl = statusReport.getTrackingUrl();
         } catch (Exception e) {

@@ -27,11 +27,11 @@ import static com.flink.platform.web.util.PathUtil.getLocalWorkRootPath;
 public class DispatcherService {
 
     @Autowired
-    public DispatcherService(@Lazy HadoopService hadoopService) {
-        this.hadoopService = hadoopService;
+    public DispatcherService(@Lazy HdfsFileService hdfsFileService) {
+        this.hdfsFileService = hdfsFileService;
     }
 
-    private final HadoopService hadoopService;
+    private final HdfsFileService hdfsFileService;
 
     public String buildLocalEnvFilePath(JobRunInfo jobRun, String fileSuffix) {
         var fileName = String.join(DOT, jobRun.getJobCode(), fileSuffix);
@@ -54,7 +54,7 @@ public class DispatcherService {
                 break;
             case FLINK_YARN_SESSION:
             case FLINK_YARN_RUN_APPLICATION:
-                hadoopService.writeToFilePath(filePath, content);
+                hdfsFileService.writeToFilePath(filePath, content);
                 break;
             default:
                 throw new IllegalArgumentException("Unsupported deploy mode: " + deployMode);

@@ -87,7 +87,7 @@ public class WorkerHeartbeat {
         tmp.setId(workerId);
         tmp.setHeartbeat(System.currentTimeMillis());
         tmp.setRole(ACTIVE);
-        tmp.setEnvironments(environmentRegistry.registered());
+        tmp.setEnvironments(environmentRegistry.specs());
         if (workerId == null) {
             tmp.setName(HOSTNAME);
             tmp.setIp(HOST_IP);

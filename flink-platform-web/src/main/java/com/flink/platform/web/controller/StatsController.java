@@ -2,7 +2,7 @@ package com.flink.platform.web.controller;
 
 import com.flink.platform.web.annotation.RequirePermission;
 import com.flink.platform.web.dto.ResultInfo;
-import com.flink.platform.web.environment.HadoopService;
+import com.flink.platform.web.environment.YarnAppService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
@@ -22,17 +22,17 @@ import static java.util.stream.Collectors.toMap;
 @RequestMapping("/stats")
 public class StatsController {
 
-    private final HadoopService hadoopService;
+    private final YarnAppService yarnAppService;
 
     @Autowired
-    public StatsController(@Lazy HadoopService hadoopService) {
-        this.hadoopService = hadoopService;
+    public StatsController(@Lazy YarnAppService yarnAppService) {
+        this.yarnAppService = yarnAppService;
     }
 
     @RequirePermission(WORKSPACE_VIEW)
     @GetMapping(value = "/runningYarnJobStatusList")
     public ResultInfo<Map<?, ?>> runningYarnJobStatusList() {
-        var runningApplications = hadoopService.getRunningApplications().entrySet().stream()
+        var runningApplications = yarnAppService.getRunningApplications().entrySet().stream()
                 .collect(toMap(Entry::getKey, entry -> entry.getValue().toString()));
         return success(runningApplications);
     }

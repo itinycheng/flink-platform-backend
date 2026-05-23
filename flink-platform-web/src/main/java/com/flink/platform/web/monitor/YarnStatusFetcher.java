@@ -2,7 +2,7 @@ package com.flink.platform.web.monitor;
 
 import com.flink.platform.common.enums.ExecutionStatus;
 import com.flink.platform.grpc.JobStatusReply;
-import com.flink.platform.web.environment.HadoopService;
+import com.flink.platform.web.environment.YarnAppService;
 import com.flink.platform.web.util.YarnHelper;
 import jakarta.annotation.Nonnull;
 import lombok.extern.slf4j.Slf4j;
@@ -20,11 +20,11 @@ import static com.flink.platform.common.enums.ExecutionStatus.FAILURE;
 @Component
 public class YarnStatusFetcher implements StatusFetcher {
 
-    private final HadoopService hadoopService;
+    private final YarnAppService yarnAppService;
 
     @Autowired
-    public YarnStatusFetcher(@Lazy HadoopService hadoopService) {
-        this.hadoopService = hadoopService;
+    public YarnStatusFetcher(@Lazy YarnAppService yarnAppService) {
+        this.yarnAppService = yarnAppService;
     }
 
     @Override
@@ -39,7 +39,7 @@ public class YarnStatusFetcher implements StatusFetcher {
     public JobStatusReply getStatus(@Nonnull StatusRequest request) {
         var applicationTag = YarnHelper.getApplicationTag(request.getJobRunId());
         try {
-            var statusReport = hadoopService.getStatusReportWithRetry(applicationTag);
+            var statusReport = yarnAppService.getStatusReportWithRetry(applicationTag);
             if (statusReport != null) {
                 return newJobStatusReply(
                         statusReport.getStatus(), statusReport.getStartTime(), statusReport.getFinishTime(), EMPTY);

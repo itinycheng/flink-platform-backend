@@ -6,23 +6,22 @@ import jakarta.annotation.PreDestroy;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Central registry indexing environment client holders by (type, name).
+ * Central registry indexing environment client holders by (type).
  */
 @Slf4j
 @Component
 public class EnvironmentRegistry {
 
-    private final Map<EnvironmentSpec, EnvironmentClientHolder<?>> holders = new ConcurrentHashMap<>();
+    private final Map<EnvironmentType, EnvironmentClientHolder<?>> holders = new ConcurrentHashMap<>();
 
     public <C> void register(EnvironmentSpec spec, EnvironmentClientFactory<C> factory) {
         var holder = new EnvironmentClientHolder<>(spec, factory);
-        var existing = holders.putIfAbsent(spec, holder);
+        var existing = holders.putIfAbsent(spec.getType(), holder);
         if (existing != null) {
             throw new IllegalStateException("Environment " + spec + " already registered with factory "
                     + existing.getSpec() + ", cannot register duplicate with factory "
@@ -32,30 +31,31 @@ public class EnvironmentRegistry {
     }
 
     @SuppressWarnings("unused")
-    public void unregister(EnvironmentSpec spec) {
-        var holder = holders.remove(spec);
+    public void unregister(EnvironmentType type) {
+        var holder = holders.remove(type);
         if (holder == null) {
-            log.warn("Environment {} unregistered", spec);
             return;
         }
 
         holder.close();
-        log.info("Unregistered environment: {}", spec);
+        log.info("Unregistered environment: {}", type);
+    }
+
+    public boolean hasClient(EnvironmentType type) {
+        return holders.containsKey(type);
     }
 
     @SuppressWarnings("unchecked")
-    public <C> C find(EnvironmentType type) {
-        for (var holder : holders.values()) {
-            if (type.equals(holder.getSpec().getType())) {
-                return (C) holder.get();
-            }
+    public <C> C getClient(EnvironmentType type) {
+        var holder = holders.get(type);
+        if (holder == null) {
+            throw new IllegalStateException("No environment registered for type: " + type);
         }
-
-        throw new IllegalStateException("No environment registered for type: " + type);
+        return (C) holder.get();
     }
 
-    public List<EnvironmentSpec> registered() {
-        return new ArrayList<>(holders.keySet());
+    public List<EnvironmentSpec> specs() {
+        return holders.values().stream().map(EnvironmentClientHolder::getSpec).toList();
     }
 
     public void checkHealth() {

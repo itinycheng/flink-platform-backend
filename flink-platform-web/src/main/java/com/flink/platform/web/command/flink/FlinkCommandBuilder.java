@@ -12,7 +12,7 @@ import com.flink.platform.dao.service.ConfigService;
 import com.flink.platform.dao.service.ResourceService;
 import com.flink.platform.web.command.CommandBuilder;
 import com.flink.platform.web.command.JobCommand;
-import com.flink.platform.web.environment.HadoopService;
+import com.flink.platform.web.environment.HdfsFileService;
 import com.flink.platform.web.service.ResourceManageService;
 import com.flink.platform.web.service.StorageService;
 import com.flink.platform.web.util.PathUtil;
@@ -62,7 +62,7 @@ public abstract class FlinkCommandBuilder implements CommandBuilder {
 
     @Lazy
     @Resource
-    protected HadoopService hadoopService;
+    protected HdfsFileService hdfsFileService;
 
     @Resource
     protected ConfigService configService;
@@ -183,7 +183,7 @@ public abstract class FlinkCommandBuilder implements CommandBuilder {
     // TODO: support more environments.
     private void copyToRemoteIfChanged(String localFile, String hdfsFile) {
         try {
-            hadoopService.copyIfNewHdfsAndFileChanged(localFile, hdfsFile);
+            hdfsFileService.copyIfNewHdfsAndFileChanged(localFile, hdfsFile);
         } catch (Exception e) {
             throw new RuntimeException("Copy %s from local to remote hdfs failed".formatted(localFile), e);
         }
