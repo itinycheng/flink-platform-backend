@@ -55,6 +55,11 @@
 			<artifactId>flink-platform-storage-all</artifactId>
 			<version>${project.version}</version>
 		</dependency>
+		<dependency>
+			<groupId>com.flink.platform</groupId>
+			<artifactId>flink-platform-environment-hadoop</artifactId>
+			<version>${project.version}</version>
+		</dependency>
 		<!-- spring start -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>

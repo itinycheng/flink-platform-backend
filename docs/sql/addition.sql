@@ -137,3 +137,6 @@ UPDATE platform.t_tag SET workspace_id = user_id;
 ALTER TABLE platform.t_user DROP COLUMN `type`;
 ALTER TABLE platform.t_user MODIFY COLUMN status varchar(32) COMMENT 'user status';
 
+
+-- Phase 5: t_worker.environments — JSON snapshot of detected node-local environments
+ALTER TABLE platform.t_worker ADD COLUMN environments TEXT DEFAULT NULL COMMENT 'JSON snapshot of detected envs (heartbeat-populated)' AFTER heartbeat;

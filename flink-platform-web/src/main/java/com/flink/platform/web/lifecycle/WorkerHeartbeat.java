@@ -6,6 +6,7 @@ import com.flink.platform.dao.entity.JobFlowRun;
 import com.flink.platform.dao.entity.Worker;
 import com.flink.platform.dao.service.JobFlowRunService;
 import com.flink.platform.dao.service.WorkerService;
+import com.flink.platform.environment.EnvironmentRegistry;
 import com.flink.platform.web.common.SpringContext;
 import com.flink.platform.web.service.JobFlowScheduleService;
 import com.flink.platform.web.util.ThreadUtil;
@@ -47,6 +48,8 @@ public class WorkerHeartbeat {
 
     private final JobFlowScheduleService jobFlowScheduleService;
 
+    private final EnvironmentRegistry environmentRegistry;
+
     private final String port;
 
     private final int grpcPort;
@@ -56,11 +59,13 @@ public class WorkerHeartbeat {
             WorkerService workerService,
             JobFlowRunService jobFlowRunService,
             JobFlowScheduleService jobFlowScheduleService,
+            EnvironmentRegistry environmentRegistry,
             @Value("${server.port}") String port,
             @Value("${spring.grpc.server.port}") int grpcPort) {
         this.workerService = workerService;
         this.jobFlowRunService = jobFlowRunService;
         this.jobFlowScheduleService = jobFlowScheduleService;
+        this.environmentRegistry = environmentRegistry;
         this.port = port;
         this.grpcPort = grpcPort;
     }
@@ -78,17 +83,18 @@ public class WorkerHeartbeat {
         var worker = workerService.getCurWorkerIdAndRole();
         var workerId = worker != null ? worker.getId() : null;
 
-        var temp = new Worker();
-        temp.setId(workerId);
-        temp.setHeartbeat(System.currentTimeMillis());
-        temp.setRole(ACTIVE);
+        var tmp = new Worker();
+        tmp.setId(workerId);
+        tmp.setHeartbeat(System.currentTimeMillis());
+        tmp.setRole(ACTIVE);
+        tmp.setEnvironments(environmentRegistry.registered());
         if (workerId == null) {
-            temp.setName(HOSTNAME);
-            temp.setIp(HOST_IP);
-            temp.setPort(port);
-            temp.setGrpcPort(grpcPort);
+            tmp.setName(HOSTNAME);
+            tmp.setIp(HOST_IP);
+            tmp.setPort(port);
+            tmp.setGrpcPort(grpcPort);
         }
-        workerService.saveOrUpdate(temp);
+        workerService.saveOrUpdate(tmp);
     }
 
     @SchedulerLock(name = "WorkerHeartbeat_recoverJobs", lockAtMostFor = "PT30S", lockAtLeastFor = "PT20S")

@@ -1,4 +1,4 @@
-package com.flink.platform.web.environment;
+package com.flink.platform.environment.hadoop;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.hadoop.conf.Configuration;
@@ -6,18 +6,24 @@ import org.apache.hadoop.fs.Path;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Optional;
 
-/** Hadoop util. */
+/** Discovers and loads core/hdfs/yarn-site.xml from HADOOP_HOME / HADOOP_CONF_DIR. */
 @Slf4j
-public class HadoopHelper {
+public class HadoopConfDiscovery {
 
     public static Configuration getHadoopConfiguration() {
+        return tryGetHadoopConfiguration()
+                .orElseThrow(() -> new RuntimeException("Could not find Hadoop configuration via any of the supported "
+                        + "methods (HADOOP_HOME, HADOOP_CONF_DIR)."));
+    }
+
+    public static Optional<Configuration> tryGetHadoopConfiguration() {
         var result = new Configuration();
         var foundHadoopConfiguration = false;
 
-        // Approach 1: HADOOP_HOME environment variables
+        // Approach 1: HADOOP_HOME environment variable
         var possibleHadoopConfPaths = new ArrayList<String>(2);
-
         final var hadoopHome = System.getenv("HADOOP_HOME");
         if (hadoopHome != null) {
             log.info("Searching Hadoop configuration files in HADOOP_HOME: {}", hadoopHome);
@@ -26,7 +32,7 @@ public class HadoopHelper {
         }
 
         for (var possibleHadoopConfPath : possibleHadoopConfPaths) {
-            foundHadoopConfiguration = addHadoopConfIfFound(result, possibleHadoopConfPath);
+            foundHadoopConfiguration = addHadoopConfIfFound(result, possibleHadoopConfPath) || foundHadoopConfiguration;
         }
 
         // Approach 2: HADOOP_CONF_DIR environment variable
@@ -36,12 +42,7 @@ public class HadoopHelper {
             foundHadoopConfiguration = addHadoopConfIfFound(result, hadoopConfDir) || foundHadoopConfiguration;
         }
 
-        if (!foundHadoopConfiguration) {
-            throw new RuntimeException("Could not find Hadoop configuration via any of the supported methods "
-                    + "(Hadoop configuration, environment variables).");
-        }
-
-        return result;
+        return foundHadoopConfiguration ? Optional.of(result) : Optional.empty();
     }
 
     private static boolean addHadoopConfIfFound(Configuration configuration, String possibleHadoopConfPath) {

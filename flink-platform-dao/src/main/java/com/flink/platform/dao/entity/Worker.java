@@ -5,13 +5,16 @@ import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
+import com.baomidou.mybatisplus.extension.handlers.Jackson3TypeHandler;
 import com.flink.platform.common.enums.WorkerStatus;
+import com.flink.platform.common.environment.EnvironmentSpec;
 import lombok.AccessLevel;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 import static com.flink.platform.common.constants.Constant.HEARTBEAT_TIMEOUT;
 
@@ -39,6 +42,9 @@ public class Worker {
     private WorkerStatus role;
 
     private Long heartbeat;
+
+    @TableField(typeHandler = Jackson3TypeHandler.class)
+    private List<EnvironmentSpec> environments;
 
     @Setter(AccessLevel.NONE)
     @TableField(update = "now()", updateStrategy = FieldStrategy.ALWAYS)

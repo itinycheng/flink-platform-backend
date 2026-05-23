@@ -24,4 +24,14 @@ public class ExceptionUtil {
             log.error("Unexpected error occurred.", throwable);
         }
     }
+
+    public static void runWithErrorLogging(String errMsg, Runnable... list) {
+        try {
+            for (Runnable runnable : list) {
+                runnable.run();
+            }
+        } catch (Throwable throwable) {
+            log.error(errMsg, throwable);
+        }
+    }
 }
