@@ -9,10 +9,11 @@ import org.jspecify.annotations.Nullable;
  * Holds a single environment instance with lazy client initialization.
  */
 @Slf4j
-@Getter
 public class EnvironmentClientHolder<C> implements AutoCloseable {
 
+    @Getter
     private final EnvironmentSpec spec;
+
     private final EnvironmentClientFactory<C> factory;
     private final Object lock = new Object();
 
@@ -29,26 +30,26 @@ public class EnvironmentClientHolder<C> implements AutoCloseable {
     }
 
     public C get() {
-        var tmp = client;
-        if (tmp != null) {
-            return tmp;
+        var c = client;
+        if (c != null) {
+            return c;
         }
 
         synchronized (lock) {
-            tmp = client;
-            if (tmp != null) {
-                return tmp;
+            c = client;
+            if (c != null) {
+                return c;
             }
 
+            log.info("Lazy initializing env client: {}", spec);
             try {
-                tmp = factory.create(spec);
-                log.info("Lazy inited env client: {}", spec);
+                c = factory.create(spec);
             } catch (Exception e) {
                 throw new RuntimeException("Create env client failed, spec: " + spec, e);
             }
 
-            client = tmp;
-            return tmp;
+            client = c;
+            return c;
         }
     }
 
@@ -63,9 +64,9 @@ public class EnvironmentClientHolder<C> implements AutoCloseable {
                 factory.close(c);
             } catch (Exception e) {
                 log.warn("Close env client failed, spec: {}", spec, e);
+            } finally {
+                client = null;
             }
-
-            client = null;
         }
     }
 

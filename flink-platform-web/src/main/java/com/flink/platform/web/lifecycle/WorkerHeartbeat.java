@@ -48,7 +48,7 @@ public class WorkerHeartbeat {
 
     private final JobFlowScheduleService jobFlowScheduleService;
 
-    private final EnvironmentRegistry environmentRegistry;
+    private final EnvironmentRegistry registry;
 
     private final String port;
 
@@ -59,13 +59,13 @@ public class WorkerHeartbeat {
             WorkerService workerService,
             JobFlowRunService jobFlowRunService,
             JobFlowScheduleService jobFlowScheduleService,
-            EnvironmentRegistry environmentRegistry,
+            EnvironmentRegistry registry,
             @Value("${server.port}") String port,
             @Value("${spring.grpc.server.port}") int grpcPort) {
         this.workerService = workerService;
         this.jobFlowRunService = jobFlowRunService;
         this.jobFlowScheduleService = jobFlowScheduleService;
-        this.environmentRegistry = environmentRegistry;
+        this.registry = registry;
         this.port = port;
         this.grpcPort = grpcPort;
     }
@@ -87,7 +87,7 @@ public class WorkerHeartbeat {
         tmp.setId(workerId);
         tmp.setHeartbeat(System.currentTimeMillis());
         tmp.setRole(ACTIVE);
-        tmp.setEnvironments(environmentRegistry.specs());
+        tmp.setEnvironments(registry.specs());
         if (workerId == null) {
             tmp.setName(HOSTNAME);
             tmp.setIp(HOST_IP);

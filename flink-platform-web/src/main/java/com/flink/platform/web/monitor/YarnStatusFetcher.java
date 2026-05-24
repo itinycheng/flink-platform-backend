@@ -5,9 +5,9 @@ import com.flink.platform.grpc.JobStatusReply;
 import com.flink.platform.web.environment.YarnAppService;
 import com.flink.platform.web.util.YarnHelper;
 import jakarta.annotation.Nonnull;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
@@ -18,14 +18,10 @@ import static com.flink.platform.common.enums.ExecutionStatus.FAILURE;
 @Slf4j
 @Order(1)
 @Component
+@RequiredArgsConstructor(onConstructor_ = @Autowired)
 public class YarnStatusFetcher implements StatusFetcher {
 
     private final YarnAppService yarnAppService;
-
-    @Autowired
-    public YarnStatusFetcher(@Lazy YarnAppService yarnAppService) {
-        this.yarnAppService = yarnAppService;
-    }
 
     @Override
     public boolean isSupported(@Nonnull StatusRequest request) {

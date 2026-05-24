@@ -22,7 +22,6 @@ import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.ListUtils;
 import org.apache.hadoop.fs.Path;
-import org.springframework.context.annotation.Lazy;
 
 import java.io.IOException;
 import java.net.URL;
@@ -60,7 +59,6 @@ public abstract class FlinkCommandBuilder implements CommandBuilder {
     @Resource
     protected ResourceManageService resourceManageService;
 
-    @Lazy
     @Resource
     protected HdfsFileService hdfsFileService;
 

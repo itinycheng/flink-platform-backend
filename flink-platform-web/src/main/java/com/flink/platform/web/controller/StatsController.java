@@ -3,9 +3,9 @@ package com.flink.platform.web.controller;
 import com.flink.platform.web.annotation.RequirePermission;
 import com.flink.platform.web.dto.ResultInfo;
 import com.flink.platform.web.environment.YarnAppService;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -20,14 +20,10 @@ import static java.util.stream.Collectors.toMap;
 @Slf4j
 @RestController
 @RequestMapping("/stats")
+@RequiredArgsConstructor(onConstructor_ = @Autowired)
 public class StatsController {
 
     private final YarnAppService yarnAppService;
-
-    @Autowired
-    public StatsController(@Lazy YarnAppService yarnAppService) {
-        this.yarnAppService = yarnAppService;
-    }
 
     @RequirePermission(WORKSPACE_VIEW)
     @GetMapping(value = "/runningYarnJobStatusList")

@@ -9,7 +9,6 @@ import org.apache.hadoop.fs.Path;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.DependsOn;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
@@ -22,7 +21,6 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  * {@link FileSystem} from {@link EnvironmentRegistry}.
  */
 @Slf4j
-@Lazy
 @Component
 @DependsOn("hadoopEnvironmentBootstrap")
 public class HdfsFileService {
@@ -31,7 +29,7 @@ public class HdfsFileService {
 
     private final EnvironmentRegistry registry;
 
-    private volatile boolean isPrimaryCluster = true;
+    private volatile boolean onPrimaryCluster;
 
     @Autowired
     public HdfsFileService(
@@ -41,12 +39,16 @@ public class HdfsFileService {
     }
 
     @PostConstruct
-    public void initPrimaryCluster() {
+    public void detectPrimaryCluster() {
+        if (!registry.hasClient(EnvironmentType.HDFS)) {
+            log.info("HDFS environment not registered; skipping primary cluster check.");
+            return;
+        }
         try {
-            isPrimaryCluster = primaryClusterIdFilePath.contains("hdfs")
+            onPrimaryCluster = primaryClusterIdFilePath.contains("hdfs")
                     && hdfsClient().exists(new Path(primaryClusterIdFilePath));
         } catch (Exception e) {
-            throw new RuntimeException("check cluster id failed");
+            throw new RuntimeException("check cluster id failed", e);
         }
     }
 
@@ -55,25 +57,25 @@ public class HdfsFileService {
     }
 
     public void copyIfNewHdfsAndFileChanged(String localFile, String hdfsFile) throws IOException {
-        if (isPrimaryCluster) {
+        if (onPrimaryCluster) {
             return;
         }
 
         var localPath = new Path(localFile);
         var hdfsPath = new Path(hdfsFile);
-        var hdfsClient = hdfsClient();
+        var client = hdfsClient();
 
         boolean isCopy = true;
-        if (hdfsClient.exists(hdfsPath)) {
-            var local = FileSystem.getLocal(hdfsClient.getConf());
+        if (client.exists(hdfsPath)) {
+            var local = FileSystem.getLocal(client.getConf());
             var localFileStatus = local.getFileStatus(localPath);
-            var hdfsFileStatus = hdfsClient.getFileStatus(hdfsPath);
+            var hdfsFileStatus = client.getFileStatus(hdfsPath);
             isCopy = localFileStatus.getLen() != hdfsFileStatus.getLen()
                     || localFileStatus.getModificationTime() > hdfsFileStatus.getModificationTime();
         }
 
         if (isCopy) {
-            hdfsClient.copyFromLocalFile(false, true, localPath, hdfsPath);
+            client.copyFromLocalFile(false, true, localPath, hdfsPath);
         }
     }
 

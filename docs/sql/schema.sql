@@ -466,7 +466,7 @@ CREATE TABLE `t_worker` (
   `grpc_port` int(6) DEFAULT NULL,
   `status` varchar(32) DEFAULT NULL,
   `heartbeat` bigint(11) DEFAULT NULL,
-  `environments` text DEFAULT NULL COMMENT 'JSON snapshot of detected envs (heartbeat-populated)',
+  `environments` text DEFAULT NULL COMMENT 'detected envs, heartbeat-populated',
   `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   `create_time` datetime DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),

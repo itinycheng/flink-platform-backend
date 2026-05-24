@@ -20,7 +20,6 @@ import org.apache.hadoop.yarn.client.api.YarnClient;
 import org.jspecify.annotations.Nullable;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.DependsOn;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.resilience.annotation.Retryable;
 import org.springframework.stereotype.Component;
 
@@ -42,10 +41,9 @@ import static org.apache.commons.lang3.ArrayUtils.EMPTY_STRING_ARRAY;
  * kills. Consumes a {@link YarnClient} from {@link EnvironmentRegistry}.
  */
 @Slf4j
-@Lazy
 @Component
-@RequiredArgsConstructor(onConstructor_ = @Autowired)
 @DependsOn("hadoopEnvironmentBootstrap")
+@RequiredArgsConstructor(onConstructor_ = @Autowired)
 public class YarnAppService {
 
     private static final int REQUEST_APP_REPORT_BATCH_SIZE = 100;
@@ -152,11 +150,11 @@ public class YarnAppService {
     }
 
     private List<ApplicationReport> getReportsWithRetry(Set<String> applicationTags) throws Exception {
-        var yarn = yarnClient();
-        var applications = yarn.getApplications(null, null, applicationTags);
+        var client = yarnClient();
+        var applications = client.getApplications(null, null, applicationTags);
         if (CollectionUtils.isEmpty(applications)) {
             ThreadUtil.sleep(THREE_SECOND_MILLIS);
-            applications = yarn.getApplications(null, null, applicationTags);
+            applications = client.getApplications(null, null, applicationTags);
         }
         return applications;
     }

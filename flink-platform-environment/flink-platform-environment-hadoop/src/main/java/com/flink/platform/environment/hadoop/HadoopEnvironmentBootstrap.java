@@ -24,14 +24,10 @@ public class HadoopEnvironmentBootstrap {
 
     @PostConstruct
     public void register() {
-        try {
-            HadoopDetector.detect().forEach(spec -> {
-                registerSpec(spec);
-                log.info("Hadoop env detect {}.", spec);
-            });
-        } catch (Exception e) {
-            log.error("Failed to register HadoopEnvironmentBootstrap.", e);
-        }
+        HadoopDetector.detect().forEach(spec -> {
+            registerSpec(spec);
+            log.info("Hadoop env detect {}.", spec);
+        });
     }
 
     private void registerSpec(EnvironmentSpec spec) {
