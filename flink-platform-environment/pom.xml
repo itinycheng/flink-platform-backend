@@ -16,6 +16,7 @@
 	<modules>
 		<module>flink-platform-environment-base</module>
 		<module>flink-platform-environment-hadoop</module>
+		<module>flink-platform-environment-all</module>
 	</modules>
 
 </project>

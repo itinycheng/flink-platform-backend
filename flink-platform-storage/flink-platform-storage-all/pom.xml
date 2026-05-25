@@ -10,7 +10,6 @@
 
 	<artifactId>flink-platform-storage-all</artifactId>
 	<name>flink-platform-storage-all</name>
-	<url>http://maven.apache.org</url>
 
 	<dependencies>
 		<dependency>

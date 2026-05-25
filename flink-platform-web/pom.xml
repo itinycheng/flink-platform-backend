@@ -57,7 +57,7 @@
 		</dependency>
 		<dependency>
 			<groupId>com.flink.platform</groupId>
-			<artifactId>flink-platform-environment-hadoop</artifactId>
+			<artifactId>flink-platform-environment-all</artifactId>
 			<version>${project.version}</version>
 		</dependency>
 		<!-- spring start -->
