@@ -23,10 +23,8 @@ public class LocalStorageSystem extends HdfsStorageSystem {
 
     public void open() throws IOException {
         org.apache.hadoop.conf.Configuration conf = new HdfsConfiguration();
-        Map<String, String> props = properties.getProperties();
-        if (props != null) {
-            props.forEach(conf::set);
-        }
+        Map<String, String> props = properties.getLocalProperties();
+        props.forEach(conf::set);
         log.info("=============== [storage configuration info start.] ===============");
         log.info("[storage type]: {}", properties.getType());
         log.info("[hadoop conf]: size:{}, {}", conf.size(), conf);

@@ -8,7 +8,8 @@ import lombok.Getter;
 @Getter
 public enum StorageType {
     LOCAL(0, "local"),
-    HDFS(1, "hdfs");
+    HDFS(1, "hdfs"),
+    S3(2, "s3");
 
     private final int code;
 

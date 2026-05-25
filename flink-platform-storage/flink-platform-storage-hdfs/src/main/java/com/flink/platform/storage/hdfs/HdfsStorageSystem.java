@@ -7,6 +7,7 @@ import com.flink.platform.storage.base.StorageStatus;
 import com.flink.platform.storage.base.StorageSystem;
 import jakarta.annotation.Nonnull;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
@@ -160,9 +161,14 @@ public class HdfsStorageSystem implements StorageSystem {
 
     @Override
     public void open() throws IOException {
-        System.setProperty("HADOOP_USER_NAME", properties.getUsername());
+        var hdfsProperties = properties.getHdfsProperties();
+        var username = hdfsProperties.get("hadoop.username");
+        if (StringUtils.isNoneBlank(username)) {
+            System.setProperty("HADOOP_USER_NAME", username.trim());
+        }
+
         org.apache.hadoop.conf.Configuration conf = new HdfsConfiguration();
-        properties.getProperties().forEach(conf::set);
+        hdfsProperties.forEach(conf::set);
         fs = FileSystem.newInstance(conf);
         // create and get root path.
         rootPath = initializeRootPath();
@@ -185,7 +191,7 @@ public class HdfsStorageSystem implements StorageSystem {
     }
 
     private String initializeRootPath() throws IOException {
-        String storageBasePath = properties.getStorageBasePath();
+        String storageBasePath = properties.getBasePath();
         Path basePath = new Path(storageBasePath);
         if (fs.exists(basePath)) {
             log.info("storage base dir: {} already exists", storageBasePath);

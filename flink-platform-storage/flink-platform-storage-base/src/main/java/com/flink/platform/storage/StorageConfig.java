@@ -27,23 +27,25 @@ public class StorageConfig {
                 return storageFactory.createStorageSystem(properties);
             }
         }
-        return null;
+
+        throw new RuntimeException("No storage factory found for type: " + storageType);
     }
 
+    /**
+     * !last-writer-wins.
+     */
     @Bean("primaryClusterIdFilePath")
     public String primaryClusterIdFilePath(StorageSystem storageSystem, StorageProperties properties) throws Exception {
-        String storageBasePath = properties.getStorageBasePath();
+        String storageBasePath = properties.getBasePath();
         String fileSeparator = storageSystem.getFileSeparator();
         String clusterIdFile = String.join(fileSeparator, storageBasePath, ".main_cluster_id");
-        if (!storageSystem.exists(clusterIdFile)) {
-            String clusterId = UUID.randomUUID().toString();
-            String tmpClusterIdFile = String.join(fileSeparator, storageBasePath, ".main_cluster_id" + clusterId);
 
-            storageSystem.createFile(tmpClusterIdFile, clusterId, true);
-            if (!storageSystem.exists(clusterIdFile)) {
-                storageSystem.rename(tmpClusterIdFile, clusterIdFile);
-            }
+        if (!storageSystem.exists(clusterIdFile)) {
+            var clusterId = UUID.randomUUID().toString();
+            storageSystem.createFile(clusterIdFile, clusterId, true);
+            log.info("Primary cluster ID file created at {}, content: {}", clusterIdFile, clusterId);
         }
+
         return storageSystem.normalizePath(clusterIdFile);
     }
 }

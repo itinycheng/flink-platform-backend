@@ -1,16 +1,25 @@
 storage:
   type: hdfs
-  username: hdfs
-  storageBasePath: hdfs:///flink-platform/
-  properties:
-    fs.hdfs.impl: org.apache.hadoop.hdfs.DistributedFileSystem
-    fs.defaultFS: hdfs://nameservice1
-    ha.zookeeper.quorum: 0.0.0.0:2181,0.0.0.0:2181,0.0.0.0:2181
-    dfs.client.failover.proxy.provider.nameservice1: org.apache.hadoop.hdfs.server.namenode.ha.ConfiguredFailoverProxyProvider
-    dfs.ha.automatic-failover.enabled.nameservice1: true
-    dfs.nameservices: nameservice1
-    dfs.ha.namenodes.nameservice1: namenode39,namenode127
-    dfs.namenode.rpc-address.nameservice1.namenode39: 0.0.0.0:8020
-    dfs.namenode.rpc-address.nameservice1.namenode127: 0.0.0.0:8020
-    dfs.namenode.servicerpc-address.nameservice1.namenode39: 0.0.0.0:8022
-    dfs.namenode.servicerpc-address.nameservice1.namenode127: 0.0.0.0:8022
+  basePath: flink-platform
+  backends:
+    local:
+    hdfs:
+      hadoop.username: hdfs
+      fs.hdfs.impl: org.apache.hadoop.hdfs.DistributedFileSystem
+      fs.defaultFS: hdfs://nameservice1
+      ha.zookeeper.quorum: 0.0.0.0:2181,0.0.0.0:2181,0.0.0.0:2181
+      dfs.client.failover.proxy.provider.nameservice1: org.apache.hadoop.hdfs.server.namenode.ha.ConfiguredFailoverProxyProvider
+      dfs.ha.automatic-failover.enabled.nameservice1: true
+      dfs.nameservices: nameservice1
+      dfs.ha.namenodes.nameservice1: namenode39,namenode127
+      dfs.namenode.rpc-address.nameservice1.namenode39: 0.0.0.0:8020
+      dfs.namenode.rpc-address.nameservice1.namenode127: 0.0.0.0:8020
+      dfs.namenode.servicerpc-address.nameservice1.namenode39: 0.0.0.0:8022
+      dfs.namenode.servicerpc-address.nameservice1.namenode127: 0.0.0.0:8022
+    s3:
+      bucket: datacenter
+      region: us-east-1
+      endpoint: http://minio.local:9000   # only for MinIO / S3-compatible services
+      path-style-access: true             # required when endpoint is set
+      access-key: ${AWS_ACCESS_KEY_ID:}
+      secret-key: ${AWS_SECRET_ACCESS_KEY:}

@@ -17,6 +17,7 @@
 		<module>flink-platform-storage-base</module>
 		<module>flink-platform-storage-hdfs</module>
 		<module>flink-platform-storage-local</module>
+		<module>flink-platform-storage-s3</module>
 		<module>flink-platform-storage-all</module>
 	</modules>
 

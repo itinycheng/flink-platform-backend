@@ -1,4 +1,4 @@
-package com.flink.platform.storage.hdfs;
+package com.flink.platform.storage.s3;
 
 import com.flink.platform.storage.StorageProperties;
 import com.flink.platform.storage.base.StorageFactory;
@@ -6,18 +6,16 @@ import com.flink.platform.storage.base.StorageSystem;
 import com.flink.platform.storage.base.StorageType;
 import com.google.auto.service.AutoService;
 
-/**
- * Hello world.
- */
+/** Factory for S3 storage system. Discovered via Java {@link java.util.ServiceLoader}. */
 @AutoService(StorageFactory.class)
-public class HdfsStorageFactory implements StorageFactory {
+public class S3StorageFactory implements StorageFactory {
 
     @Override
     public StorageSystem createStorageSystem(StorageProperties properties) {
         try {
-            var hdfsStorageSystem = new HdfsStorageSystem(properties);
-            hdfsStorageSystem.open();
-            return hdfsStorageSystem;
+            var s3 = new S3StorageSystem(properties);
+            s3.open();
+            return s3;
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -25,6 +23,6 @@ public class HdfsStorageFactory implements StorageFactory {
 
     @Override
     public StorageType getStorageType() {
-        return StorageType.HDFS;
+        return StorageType.S3;
     }
 }

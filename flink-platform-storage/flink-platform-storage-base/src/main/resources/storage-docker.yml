@@ -1,4 +1,5 @@
 storage:
   type: local
-  username: admin # unused in local storage.
-  storageBasePath: flink-platform
+  basePath: /app/data/flink-platform
+  backends:
+    local:
