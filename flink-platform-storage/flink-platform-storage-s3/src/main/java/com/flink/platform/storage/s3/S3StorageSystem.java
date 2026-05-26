@@ -78,22 +78,32 @@ public class S3StorageSystem implements StorageSystem {
     @Override
     public StorageStatus getFileStatus(String filePath) throws IOException {
         try {
-            var loc = parse(filePath);
-            var head = s3.headObject(
-                    HeadObjectRequest.builder().bucket(loc.bucket).key(loc.key).build());
+            var s3Location = parse(filePath);
+            var head = s3.headObject(HeadObjectRequest.builder()
+                    .bucket(s3Location.bucket)
+                    .key(s3Location.key)
+                    .build());
             var modTime = LocalDateTime.ofInstant(head.lastModified(), GLOBAL_ZONE_ID);
             return StorageStatus.of(head.contentLength(), modTime);
-        } catch (Exception e) {
+        } catch (S3Exception e) {
             throw new IOException("S3 object not found or head failed: " + filePath, e);
         }
     }
 
     @Override
     public void copyToLocalFile(String srcFile, String dstFile) throws IOException {
-        var loc = parse(srcFile);
+        var s3Location = parse(srcFile);
         var dstPath = Paths.get(dstFile);
-        Files.createDirectories(dstPath.getParent());
-        s3.getObject(GetObjectRequest.builder().bucket(loc.bucket).key(loc.key).build(), dstPath);
+        var parent = dstPath.getParent();
+        if (parent != null) {
+            Files.createDirectories(parent);
+        }
+        s3.getObject(
+                GetObjectRequest.builder()
+                        .bucket(s3Location.bucket)
+                        .key(s3Location.key)
+                        .build(),
+                dstPath);
     }
 
     @Override
@@ -105,8 +115,6 @@ public class S3StorageSystem implements StorageSystem {
             var localMtime = Files.getLastModifiedTime(localPath).toMillis();
             var remote = getFileStatusRaw(s3File);
             var remoteMtime = remote.lastModified().toEpochMilli();
-
-            // TODO: remote file length check ?
             isCopy = localSize != remote.contentLength() || localMtime < remoteMtime;
         }
         if (isCopy) {
@@ -165,7 +173,7 @@ public class S3StorageSystem implements StorageSystem {
                     .key(s3Location.key)
                     .build());
             return true;
-        } catch (Exception e) {
+        } catch (S3Exception e) {
             throw new IOException("delete failed: " + filePath, e);
         }
     }
@@ -211,6 +219,10 @@ public class S3StorageSystem implements StorageSystem {
     public boolean rename(String srcPath, String dstPath) throws IOException {
         var src = parse(srcPath);
         var dst = parse(dstPath);
+        if (src.equals(dst)) {
+            return true;
+        }
+
         try {
             s3.copyObject(CopyObjectRequest.builder()
                     .sourceBucket(src.bucket)
@@ -223,7 +235,7 @@ public class S3StorageSystem implements StorageSystem {
                     .key(src.key)
                     .build());
             return true;
-        } catch (Exception e) {
+        } catch (S3Exception e) {
             throw new IOException("rename failed: " + srcPath + " -> " + dstPath, e);
         }
     }
@@ -257,7 +269,7 @@ public class S3StorageSystem implements StorageSystem {
         var accessKey = props.accessKey();
         var secretKey = props.secretKey();
         builder.credentialsProvider(
-                (isNotBlank(accessKey) || isNotBlank(secretKey))
+                (isNotBlank(accessKey) && isNotBlank(secretKey))
                         ? StaticCredentialsProvider.create(
                                 AwsBasicCredentials.create(props.accessKey(), props.secretKey()))
                         : DefaultCredentialsProvider.builder().build());
@@ -288,18 +300,17 @@ public class S3StorageSystem implements StorageSystem {
     // ==================================================================
 
     private static String buildRootPath(String bucket, String basePath) {
-        var key = basePath == null ? "" : (basePath.startsWith(SLASH) ? basePath.substring(1) : basePath);
-        return S3_SCHEME_PREFIX + bucket + SLASH + key;
+        return S3_SCHEME_PREFIX + bucket + SLASH + stripLeadingSlash(basePath);
     }
 
     private HeadObjectResponse getFileStatusRaw(String path) throws IOException {
-        var s3Location = parse(path);
         try {
+            var s3Location = parse(path);
             return s3.headObject(HeadObjectRequest.builder()
                     .bucket(s3Location.bucket)
                     .key(s3Location.key)
                     .build());
-        } catch (Exception e) {
+        } catch (S3Exception e) {
             throw new IOException("S3 object not found or head failed: " + path, e);
         }
     }
@@ -319,11 +330,13 @@ public class S3StorageSystem implements StorageSystem {
         }
 
         var idx = stripped.indexOf(SLASH);
-        if (idx < 0) {
-            return new S3Location(stripped, "");
-        }
+        var bucket = idx < 0 ? stripped : stripped.substring(0, idx);
+        var key = idx < 0 ? "" : stripped.substring(idx + 1);
+        return new S3Location(bucket, key);
+    }
 
-        return new S3Location(stripped.substring(0, idx), stripped.substring(idx + 1));
+    private static String joinPath(String base, String relative) {
+        return stripTrailingSlash(base) + SLASH + stripLeadingSlash(relative);
     }
 
     private static String stripTrailingSlash(String s) {
@@ -334,12 +347,21 @@ public class S3StorageSystem implements StorageSystem {
         return s.endsWith(SLASH) ? s.substring(0, s.length() - 1) : s;
     }
 
-    private static String joinPath(String base, String relative) {
-        var a = stripTrailingSlash(base);
-        var b = relative.startsWith(SLASH) ? relative.substring(1) : relative;
-        return a + SLASH + b;
+    private static String stripLeadingSlash(String s) {
+        if (s == null || s.isEmpty()) {
+            return s;
+        }
+
+        return s.startsWith(SLASH) ? s.substring(1) : s;
     }
 
     /** Bucket + key pair derived from a {@code s3://bucket/key} URI. */
-    private record S3Location(String bucket, String key) {}
+    private record S3Location(String bucket, String key) {
+
+        private S3Location {
+            if (bucket == null || bucket.isEmpty()) {
+                throw new IllegalArgumentException("bucket is empty");
+            }
+        }
+    }
 }

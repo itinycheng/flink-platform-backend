@@ -12,16 +12,12 @@ import jakarta.annotation.Nonnull;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import static com.flink.platform.common.constants.Constant.EMPTY;
-import static com.flink.platform.common.constants.JobConstant.HADOOP_USER_NAME;
 import static com.flink.platform.common.enums.ExecutionStatus.SUBMITTED;
 import static com.flink.platform.common.enums.ExecutionStatus.SUCCESS;
 
@@ -31,9 +27,6 @@ import static com.flink.platform.common.enums.ExecutionStatus.SUCCESS;
 public class FlinkCommandExecutor implements CommandExecutor {
 
     private static final List<JobType> SUPPORTED_JOB_TYPES = Arrays.asList(JobType.FLINK_JAR, JobType.FLINK_SQL);
-
-    @Value("${storage.username}")
-    private String hadoopUser;
 
     @Autowired
     private WorkerConfig workerConfig;
@@ -57,7 +50,7 @@ public class FlinkCommandExecutor implements CommandExecutor {
                 flinkCommand.getJobRunId(),
                 flinkCommand.getMode(),
                 flinkCommand.toCommandString(),
-                buildEnvProps(),
+                null,
                 workerConfig.getFlinkSubmitTimeoutMills());
         flinkCommand.setTask(task);
         task.run();
@@ -109,11 +102,5 @@ public class FlinkCommandExecutor implements CommandExecutor {
         if (task != null) {
             task.cancel();
         }
-    }
-
-    private Map<String, String> buildEnvProps() {
-        var map = new HashMap<String, String>(1);
-        map.put(HADOOP_USER_NAME, hadoopUser);
-        return map;
     }
 }

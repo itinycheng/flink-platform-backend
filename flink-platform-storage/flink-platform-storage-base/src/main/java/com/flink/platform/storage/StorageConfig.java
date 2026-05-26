@@ -28,11 +28,11 @@ public class StorageConfig {
             }
         }
 
-        throw new RuntimeException("No storage factory found for type: " + storageType);
+        throw new IllegalStateException("No storage factory found for type: " + storageType);
     }
 
     /**
-     * !last-writer-wins.
+     * Multi-node init may race, last-writer-wins is acceptable.
      */
     @Bean("primaryClusterIdFilePath")
     public String primaryClusterIdFilePath(StorageSystem storageSystem, StorageProperties properties) throws Exception {

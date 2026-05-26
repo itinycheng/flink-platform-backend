@@ -163,7 +163,7 @@ public class HdfsStorageSystem implements StorageSystem {
     public void open() throws IOException {
         var hdfsProperties = properties.getHdfsProperties();
         var username = hdfsProperties.get("hadoop.username");
-        if (StringUtils.isNoneBlank(username)) {
+        if (StringUtils.isNotBlank(username)) {
             System.setProperty("HADOOP_USER_NAME", username.trim());
         }
 
