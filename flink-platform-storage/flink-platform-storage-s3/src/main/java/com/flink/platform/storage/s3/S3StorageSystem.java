@@ -29,6 +29,8 @@ import java.time.LocalDateTime;
 
 import static com.flink.platform.common.constants.Constant.GLOBAL_ZONE_ID;
 import static com.flink.platform.common.constants.Constant.SLASH;
+import static com.flink.platform.common.util.StringUtil.stripLeadingSlash;
+import static com.flink.platform.common.util.StringUtil.stripTrailingSlash;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 /**
@@ -337,22 +339,6 @@ public class S3StorageSystem implements StorageSystem {
 
     private static String joinPath(String base, String relative) {
         return stripTrailingSlash(base) + SLASH + stripLeadingSlash(relative);
-    }
-
-    private static String stripTrailingSlash(String s) {
-        if (s == null || s.isEmpty()) {
-            return s;
-        }
-
-        return s.endsWith(SLASH) ? s.substring(0, s.length() - 1) : s;
-    }
-
-    private static String stripLeadingSlash(String s) {
-        if (s == null || s.isEmpty()) {
-            return s;
-        }
-
-        return s.startsWith(SLASH) ? s.substring(1) : s;
     }
 
     /** Bucket + key pair derived from a {@code s3://bucket/key} URI. */

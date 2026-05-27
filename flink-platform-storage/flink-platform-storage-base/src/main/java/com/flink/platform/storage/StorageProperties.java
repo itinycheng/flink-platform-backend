@@ -34,9 +34,13 @@ public class StorageProperties {
     @Valid
     private BackendProperties backends = new BackendProperties();
 
-    public Map<String, String> getLocalProperties() {
+    public BackendProperties.LocalProperties getLocalProperties() {
         var local = backends.getLocal();
-        return local != null ? local : Map.of();
+        if (local != null) {
+            return local;
+        }
+
+        throw new IllegalStateException("Local properties must be provided when storage type is local");
     }
 
     public Map<String, String> getHdfsProperties() {
@@ -46,9 +50,10 @@ public class StorageProperties {
 
     public BackendProperties.S3Properties getS3Properties() {
         var s3 = backends.getS3();
-        if (s3 == null) {
-            throw new IllegalStateException("S3 properties must be provided when storage type is s3");
+        if (s3 != null) {
+            return s3;
         }
-        return s3;
+
+        throw new IllegalStateException("S3 properties must be provided when storage type is s3");
     }
 }

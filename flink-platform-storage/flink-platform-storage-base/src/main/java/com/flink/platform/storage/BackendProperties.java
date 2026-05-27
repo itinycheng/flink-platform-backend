@@ -11,12 +11,14 @@ import java.util.Map;
 @Data
 public class BackendProperties {
 
-    private @Nullable Map<String, String> local;
+    private @Nullable LocalProperties local;
 
     private @Nullable Map<String, String> hdfs;
 
     @Valid
     private @Nullable S3Properties s3;
+
+    public record LocalProperties(@NotBlank String workDir) {}
 
     public record S3Properties(
             @NotBlank String bucket,

@@ -1,5 +1,24 @@
 storage:
-  type: local
-  basePath: /app/data/flink-platform
+  type: ${STORAGE_TYPE:s3}
+  # Always interpreted as a path relative to the backend's namespace root:
+  #   s3:    s3://<bucket>/<basePath>
+  #   hdfs:  <fs.defaultFS>/<basePath>
+  #   local: <local.workDir>/<basePath>
+  basePath: flink-platform
   backends:
     local:
+      workDir: /app/data
+    s3:
+      bucket: ${S3_BUCKET:datacenter}
+      region: ${S3_REGION:us-east-1}
+      endpoint: ${S3_ENDPOINT:http://minio:9000}
+      path-style-access: true
+      access-key: ${AWS_ACCESS_KEY_ID:minioadmin}
+      secret-key: ${AWS_SECRET_ACCESS_KEY:minioadmin}
+    # Map keys with dots must be quoted with [] so Spring keeps them as a single key.
+    hdfs:
+      "[hadoop.username]": ${HADOOP_USER_NAME:root}
+      "[fs.defaultFS]": ${HDFS_DEFAULT_FS:hdfs://namenode:8020}
+      "[fs.hdfs.impl]": org.apache.hadoop.hdfs.DistributedFileSystem
+      "[dfs.replication]": "1"
+      "[dfs.client.use.datanode.hostname]": "true"

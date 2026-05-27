@@ -262,6 +262,7 @@ CREATE TABLE `t_job` (
   `description` varchar(255) DEFAULT NULL COMMENT 'job desc',
   `flow_id` bigint(11) DEFAULT NULL COMMENT 'job flow id',
   `user_id` bigint(11) NOT NULL COMMENT 'user id',
+  `workspace_id` bigint(11) NOT NULL COMMENT 'workspace id',
   `type` varchar(32) NOT NULL COMMENT 'job type',
   `version` varchar(32) DEFAULT NULL COMMENT 'job version',
   `deploy_mode` varchar(64) NOT NULL COMMENT 'deploy mode',
@@ -330,6 +331,7 @@ CREATE TABLE `t_job_flow_run` (
   `id` bigint(11) unsigned NOT NULL AUTO_INCREMENT,
   `name` varchar(255) NOT NULL,
   `user_id` bigint(11) NOT NULL,
+  `workspace_id` bigint(11) NOT NULL COMMENT 'workspace id',
   `flow_id` int(11) NOT NULL,
   `type` varchar(64) NOT NULL,
   `cron_expr` varchar(64) DEFAULT NULL,
@@ -363,6 +365,7 @@ CREATE TABLE `t_job_run` (
   `job_id` bigint(11) NOT NULL COMMENT 'job id',
   `flow_run_id` bigint(11) NOT NULL COMMENT 'flow run id',
   `user_id` bigint(11) NOT NULL COMMENT 'user id',
+  `workspace_id` bigint(11) NOT NULL COMMENT 'workspace id',
   `type` varchar(32) DEFAULT NULL COMMENT 'type',
   `version` varchar(32) DEFAULT NULL COMMENT 'version',
   `deploy_mode` varchar(64) DEFAULT NULL COMMENT 'deploy mode',
@@ -555,7 +558,14 @@ CREATE TABLE `t_audit_log` (
 -- Records of t_user
 -- ----------------------------
 BEGIN;
-INSERT INTO `t_user` VALUES (1, 'admin', '111111', 'super_admin@email.com', '[]', '{"global":"SUPER_ADMIN","workspaces":{}}', 'NORMAL', now(), now());
+INSERT INTO `t_user` VALUES (1, 'admin', '111111', 'super_admin@email.com', NULL, '[]', '{"global":"SUPER_ADMIN","workspaces":{}}', 'NORMAL', now(), now());
+COMMIT;
+
+-- ----------------------------
+-- Records of t_workspace
+-- ----------------------------
+BEGIN;
+INSERT INTO `t_workspace` VALUES (1, 'default', 'Default workspace.', '{}', 'ENABLE', now(), now());
 COMMIT;
 
 -- ----------------------------

@@ -36,9 +36,9 @@ public class StorageConfig {
      */
     @Bean("primaryClusterIdFilePath")
     public String primaryClusterIdFilePath(StorageSystem storageSystem, StorageProperties properties) throws Exception {
-        String storageBasePath = properties.getBasePath();
-        String fileSeparator = storageSystem.getFileSeparator();
-        String clusterIdFile = String.join(fileSeparator, storageBasePath, ".main_cluster_id");
+        var basePath = storageSystem.getRootPath();
+        var fileSeparator = storageSystem.getFileSeparator();
+        var clusterIdFile = String.join(fileSeparator, basePath, ".main_cluster_id");
 
         if (!storageSystem.exists(clusterIdFile)) {
             var clusterId = UUID.randomUUID().toString();
@@ -46,6 +46,6 @@ public class StorageConfig {
             log.info("Primary cluster ID file created at {}, content: {}", clusterIdFile, clusterId);
         }
 
-        return storageSystem.normalizePath(clusterIdFile);
+        return clusterIdFile;
     }
 }

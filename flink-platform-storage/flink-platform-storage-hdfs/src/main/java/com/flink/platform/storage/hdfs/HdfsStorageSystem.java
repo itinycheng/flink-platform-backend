@@ -1,6 +1,5 @@
 package com.flink.platform.storage.hdfs;
 
-import com.flink.platform.common.constants.Constant;
 import com.flink.platform.common.util.Preconditions;
 import com.flink.platform.storage.StorageProperties;
 import com.flink.platform.storage.base.StorageStatus;
@@ -21,6 +20,8 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 
 import static com.flink.platform.common.constants.Constant.GLOBAL_ZONE_ID;
+import static com.flink.platform.common.constants.Constant.SLASH;
+import static com.flink.platform.common.util.StringUtil.stripLeadingSlash;
 
 /**
  * hdfs storage system.
@@ -48,7 +49,7 @@ public class HdfsStorageSystem implements StorageSystem {
 
     @Override
     public String getFileSeparator() {
-        return Constant.SLASH;
+        return SLASH;
     }
 
     @Override
@@ -139,14 +140,8 @@ public class HdfsStorageSystem implements StorageSystem {
     }
 
     @Override
-    public String normalizePath(String path) throws IOException {
-        Path hdfsPath = new Path(path);
-        if (hdfsPath.isAbsolute()) {
-            return hdfsPath.toString();
-        }
-
-        FileStatus status = fs.getFileStatus(hdfsPath);
-        return status.getPath().toString();
+    public String normalizePath(String path) {
+        return fs.makeQualified(new Path(path)).toUri().toString();
     }
 
     @Override
@@ -190,19 +185,21 @@ public class HdfsStorageSystem implements StorageSystem {
         fs.close();
     }
 
+    /**
+     * basePath is always treated as absolute under the HDFS namespace root, so "flink-platform" and
+     * "/flink-platform" both resolve to <fs.defaultFS>/flink-platform.
+     */
     private String initializeRootPath() throws IOException {
-        String storageBasePath = properties.getBasePath();
-        Path basePath = new Path(storageBasePath);
-        if (fs.exists(basePath)) {
-            log.info("storage base dir: {} already exists", storageBasePath);
-        }
-
-        if (fs.mkdirs(basePath)) {
-            log.info("storage base dir: {} created successfully.", storageBasePath);
+        var absolutePath = SLASH + stripLeadingSlash(properties.getBasePath());
+        var path = new Path(absolutePath);
+        if (fs.exists(path)) {
+            log.info("storage base dir: {} already exists", absolutePath);
+        } else if (fs.mkdirs(path)) {
+            log.info("storage base dir: {} created successfully.", absolutePath);
         } else {
-            throw new RuntimeException("create storage base dir: %s failed.".formatted(storageBasePath));
+            throw new RuntimeException("create storage base dir: %s failed.".formatted(absolutePath));
         }
 
-        return normalizePath(storageBasePath);
+        return normalizePath(absolutePath);
     }
 }

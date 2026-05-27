@@ -19,7 +19,7 @@ storage:
     s3:
       bucket: datacenter
       region: us-east-1
-      endpoint: http://minio.local:9000   # only for MinIO / S3-compatible services
+      endpoint: http://minio:9000         # only for MinIO / S3-compatible services
       path-style-access: true             # required when endpoint is set
       access-key: ${AWS_ACCESS_KEY_ID:}
       secret-key: ${AWS_SECRET_ACCESS_KEY:}

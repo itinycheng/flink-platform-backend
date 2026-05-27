@@ -2,6 +2,7 @@ package com.flink.platform.common.util;
 
 import static com.flink.platform.common.constants.Constant.ELLIPSIS;
 import static com.flink.platform.common.constants.Constant.EMPTY;
+import static com.flink.platform.common.constants.Constant.SLASH;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
@@ -47,5 +48,21 @@ public class StringUtil {
 
         String truncated = truncateByBytes(str, maxBytes - ellipsisBytes);
         return truncated.length() < str.length() ? truncated + ELLIPSIS : str;
+    }
+
+    public static String stripTrailingSlash(String s) {
+        if (s == null || s.isEmpty()) {
+            return s;
+        }
+
+        return s.endsWith(SLASH) ? s.substring(0, s.length() - 1) : s;
+    }
+
+    public static String stripLeadingSlash(String s) {
+        if (s == null || s.isEmpty()) {
+            return s;
+        }
+
+        return s.startsWith(SLASH) ? s.substring(1) : s;
     }
 }

@@ -1,4 +1,4 @@
-FROM openjdk:21-jdk-slim
+FROM eclipse-temurin:21-jre-jammy
 
 COPY ./flink-platform-web/target/flink-platform-web-*.jar /app/flink-platform-web.jar
 
