@@ -3,10 +3,13 @@
     <words>
       <w>addrs</w>
       <w>classpaths</w>
+      <w>datanode</w>
       <w>deps</w>
       <w>envp</w>
       <w>envs</w>
       <w>hdfs</w>
+      <w>minio</w>
+      <w>namenode</w>
       <w>oidc</w>
       <w>openrewrite</w>
       <w>rwxr</w>

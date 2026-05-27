@@ -1,4 +1,29 @@
+# ============================================================
+# Storage selection is driven by Compose profile. .env sets the default;
+# the CLI flag overrides it.
+#   docker compose up -d                      # uses default from .env
+#   docker compose --profile local up -d      # local disk
+#   docker compose --profile s3    up -d      # MinIO / S3
+#   docker compose --profile hdfs  up -d      # HDFS
+# ============================================================
+
+# Reusable web config (x-fields are ignored by Compose at runtime)
+x-web-base: &web-base
+  build: .
+  ports:
+    - "9104:9104"
+    - "9898:9898"
+    - "5005:5005"
+
+x-web-env-common: &web-env-common
+  DB_HOST: mysql_db:3306
+  DB_USER: ${DEV_USER}
+  DB_PASSWORD: ${DEV_PASSWORD}
+
 services:
+  # ============================================================
+  # Core (always on)
+  # ============================================================
   mysql_db:
     image: mysql:8.0.32
     ports:
@@ -8,14 +33,35 @@ services:
       - ./docker/mysql:/var/lib/mysql
     restart: always
     environment:
-      MYSQL_ROOT_PASSWORD: 123456
+      MYSQL_ROOT_PASSWORD: ${DEV_PASSWORD}
+      MYSQL_DATABASE: platform
+      MYSQL_USER: ${DEV_USER}
+      MYSQL_PASSWORD: ${DEV_PASSWORD}
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-p123456"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u${DEV_USER}", "-p${DEV_PASSWORD}"]
       interval: 5s
       timeout: 3s
       retries: 20
       start_period: 20s
 
+  # ============================================================
+  # Local storage  (profile: local)
+  # ============================================================
+  web-local:
+    <<: *web-base
+    profiles: ["local"]
+    depends_on:
+      mysql_db:
+        condition: service_healthy
+    volumes:
+      - ./docker/local:/app/data
+    environment:
+      <<: *web-env-common
+      STORAGE_TYPE: local
+
+  # ============================================================
+  # S3 storage  (profile: s3)
+  # ============================================================
   minio:
     image: minio/minio:latest
     profiles: ["s3"]
@@ -26,8 +72,8 @@ services:
       - ./docker/minio:/data
     restart: always
     environment:
-      MINIO_ROOT_USER: minioadmin
-      MINIO_ROOT_PASSWORD: minioadmin
+      MINIO_ROOT_USER: ${DEV_USER}
+      MINIO_ROOT_PASSWORD: ${DEV_PASSWORD}
     command: server /data --console-address ":9001"
     healthcheck:
       test: ["CMD", "mc", "ready", "local"]
@@ -45,11 +91,31 @@ services:
         condition: service_healthy
     entrypoint: >
       /bin/sh -c "
-      /usr/bin/mc alias set local http://minio:9000 minioadmin minioadmin;
+      /usr/bin/mc alias set local http://minio:9000 ${DEV_USER} ${DEV_PASSWORD};
       /usr/bin/mc mb --ignore-existing local/datacenter;
       exit 0;
       "
 
+  web-s3:
+    <<: *web-base
+    profiles: ["s3"]
+    depends_on:
+      mysql_db:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+      minio_init:
+        condition: service_completed_successfully
+    environment:
+      <<: *web-env-common
+      STORAGE_TYPE: s3
+      AWS_ACCESS_KEY_ID: ${DEV_USER}
+      AWS_SECRET_ACCESS_KEY: ${DEV_PASSWORD}
+      S3_ENDPOINT: http://minio:9000
+
+  # ============================================================
+  # HDFS storage  (profile: hdfs)
+  # ============================================================
   namenode:
     image: apache/hadoop:3
     profiles: ["hdfs"]
@@ -91,36 +157,18 @@ services:
     volumes:
       - ./docker/hdfs/data:/tmp/hadoop-root/dfs/data
 
-  web:
-    build: .
-    ports:
-      - "9104:9104"
-      - "9898:9898"
-      - "5005:5005"
+  web-hdfs:
+    <<: *web-base
+    profiles: ["hdfs"]
     depends_on:
       mysql_db:
         condition: service_healthy
-      minio:
-        condition: service_healthy
-        required: false
-      minio_init:
-        condition: service_completed_successfully
-        required: false
       namenode:
         condition: service_healthy
-        required: false
       datanode:
         condition: service_started
-        required: false
     environment:
-      DB_HOST: mysql_db:3306
-      DB_USER: root
-      DB_PASSWORD: 123456
-      STORAGE_TYPE: ${STORAGE_TYPE:-s3}
-      # S3 / MinIO (used when STORAGE_TYPE=s3)
-      AWS_ACCESS_KEY_ID: minioadmin
-      AWS_SECRET_ACCESS_KEY: minioadmin
-      S3_ENDPOINT: http://minio:9000
-      # HDFS (used when STORAGE_TYPE=hdfs)
-      HDFS_DEFAULT_FS: ${HDFS_DEFAULT_FS:-hdfs://namenode:8020}
-      HADOOP_USER_NAME: ${HADOOP_USER_NAME:-root}
+      <<: *web-env-common
+      STORAGE_TYPE: hdfs
+      HDFS_DEFAULT_FS: hdfs://namenode:8020
+      HADOOP_USER_NAME: root
