@@ -139,9 +139,13 @@ public class HdfsStorageSystem implements StorageSystem {
         return fs.rename(src, dst);
     }
 
+    /**
+     * overwrite this method when extends by an object storage system.
+     */
     @Override
     public String normalizePath(String path) {
-        return fs.makeQualified(new Path(path)).toUri().toString();
+        var uri = fs.makeQualified(new Path(path)).toUri();
+        return uri.getScheme() + ":" + uri.getPath();
     }
 
     @Override

@@ -262,6 +262,10 @@ public class S3StorageSystem implements StorageSystem {
     @Override
     public void open() {
         var props = properties.getS3Properties();
+        if (isNotBlank(props.endpoint()) && !props.pathStyleAccess()) {
+            throw new IllegalStateException("path-style-access must be true when endpoint is set: " + props.endpoint());
+        }
+
         var builder = S3Client.builder()
                 .region(Region.of(props.region()))
                 .serviceConfiguration(S3Configuration.builder()
