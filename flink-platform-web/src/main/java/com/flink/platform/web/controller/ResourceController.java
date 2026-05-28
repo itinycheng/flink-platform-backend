@@ -19,7 +19,6 @@ import com.flink.platform.web.util.ResourceUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.hadoop.fs.Path;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -33,8 +32,9 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -151,7 +151,7 @@ public class ResourceController {
     @PostMapping("/upload")
     public ResponseEntity<Object> upload(
             @RequestParam(name = "id", required = false) Long id,
-            @RequestParam(name = "pid") Long pid,
+            @RequestParam(name = "pid", required = false) Long pid,
             @RequestParam(name = "file") MultipartFile file)
             throws Exception {
         String localFileName = null;
@@ -161,8 +161,10 @@ public class ResourceController {
                 var resource = resourceService.getById(pid);
                 parentDir = resource.getFullName();
             }
+
+            var fileName = file.getOriginalFilename();
             var absStorageFilePath = resourceManageService.getAbsStorageFilePath(
-                    RequestContext.requireWorkspaceId(), parentDir, file.getOriginalFilename());
+                    RequestContext.requireWorkspaceId(), parentDir, fileName);
             if (id == null && storageService.exists(absStorageFilePath)) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(FILE_EXISTS.getDesc());
             }
@@ -172,25 +174,22 @@ public class ResourceController {
             storageService.copyFromLocal(localFileName, absStorageFilePath, true, true);
 
             var resource = new Resource();
-            resource.setFullName(absStorageFilePath);
-            resource.setName(new Path(absStorageFilePath).getName());
+            resource.setName(fileName);
+            resource.setFullName(storageService.normalizePath(absStorageFilePath));
             return ResponseEntity.status(HttpStatus.OK).body(success(resource));
         } catch (Exception e) {
             log.error("upload file error", e);
             if (StringUtils.isNotBlank(localFileName)) {
-                new File(localFileName).delete();
+                Files.deleteIfExists(Path.of(localFileName));
             }
 
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("upload failed");
         }
     }
 
     @RequirePermission(TASK_EDIT)
     @PostMapping("/deleteFile")
-    public ResultInfo<Boolean> deleteFile(
-            @RequestAttribute(value = Constant.SESSION_USER) User loginUser,
-            @RequestBody ResourceRequest resourceRequest)
-            throws IOException {
+    public ResultInfo<Boolean> deleteFile(@RequestBody ResourceRequest resourceRequest) throws IOException {
         if (StringUtils.isBlank(resourceRequest.getFullName())) {
             return failure(ERROR_PARAMETER, "file path is null");
         }

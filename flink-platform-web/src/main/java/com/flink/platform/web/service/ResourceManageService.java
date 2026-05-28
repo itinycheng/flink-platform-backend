@@ -69,6 +69,15 @@ public class ResourceManageService {
     }
 
     public String getAbsStorageFilePath(Long workspaceId, String parentPath, String fileName) {
+        if (StringUtils.isBlank(fileName)
+                || fileName.contains("/")
+                || fileName.contains("\\")
+                || fileName.contains("\0")
+                || ".".equals(fileName)
+                || "..".equals(fileName)) {
+            throw new IllegalArgumentException("invalid file name: " + fileName);
+        }
+
         var fileSeparator = storageService.getFileSeparator();
         if (StringUtils.isBlank(parentPath)) {
             var workspaceDir = USER_DIR_PREFIX + workspaceId;
