@@ -17,5 +17,10 @@
 			<artifactId>flink-platform-environment-hadoop</artifactId>
 			<version>${project.version}</version>
 		</dependency>
+		<dependency>
+			<groupId>com.flink.platform</groupId>
+			<artifactId>flink-platform-environment-s3</artifactId>
+			<version>${project.version}</version>
+		</dependency>
 	</dependencies>
 </project>

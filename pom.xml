@@ -156,6 +156,12 @@
 				<groupId>com.baomidou</groupId>
 				<artifactId>dynamic-datasource-spring-boot4-starter</artifactId>
 				<version>${dynamic-datasource.version}</version>
+				<exclusions>
+					<exclusion>
+						<groupId>com.oracle.database.spring</groupId>
+						<artifactId>oracle-spring-boot-starter-ucp</artifactId>
+					</exclusion>
+				</exclusions>
 			</dependency>
 			<dependency>
 				<groupId>org.springframework.grpc</groupId>
@@ -239,6 +245,10 @@
 				<artifactId>hive-jdbc</artifactId>
 				<version>${hive.version}</version>
 				<exclusions>
+					<exclusion>
+						<groupId>org.apache.hive</groupId>
+						<artifactId>hive-metastore</artifactId>
+					</exclusion>
 					<exclusion>
 						<groupId>org.apache.avro</groupId>
 						<artifactId>avro</artifactId>
