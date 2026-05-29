@@ -1,6 +1,7 @@
 package com.flink.platform.web.dto.request;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.flink.platform.common.enums.JobFlowType;
 import com.flink.platform.common.util.DateUtil;
 import com.flink.platform.dao.entity.ExecutionConfig;
 import com.flink.platform.dao.entity.JobFlow;
@@ -16,11 +17,17 @@ import org.quartz.CronExpression;
 
 import java.util.Date;
 import java.util.List;
+import java.util.Set;
+
+import static com.flink.platform.common.enums.JobFlowType.JOB_FLOW;
+import static com.flink.platform.common.enums.JobFlowType.JOB_LIST;
 
 /** Job flow request info. */
 @Getter
 @NoArgsConstructor
 public class JobFlowRequest {
+
+    private static final Set<JobFlowType> VALID_TYPE = Set.of(JOB_FLOW, JOB_LIST);
 
     private static WorkerConfig workerConfig_;
 
@@ -29,6 +36,11 @@ public class JobFlowRequest {
 
     public String validateOnCreate() {
         var msg = verifyName();
+        if (msg != null) {
+            return msg;
+        }
+
+        msg = verifyType();
         if (msg != null) {
             return msg;
         }
@@ -48,6 +60,11 @@ public class JobFlowRequest {
 
     public String validateOnUpdate() {
         var msg = verifyId();
+        if (msg != null) {
+            return msg;
+        }
+
+        msg = verifyType();
         if (msg != null) {
             return msg;
         }
@@ -87,6 +104,15 @@ public class JobFlowRequest {
         String errorMsg = null;
         if (getName() == null) {
             errorMsg = "The name of Job flow isn't null";
+        }
+        return errorMsg;
+    }
+
+    public String verifyType() {
+        String errorMsg = null;
+        var type = getType();
+        if (type != null && !VALID_TYPE.contains(type)) {
+            errorMsg = "The type of Job flow isn't valid, the valid types are " + VALID_TYPE;
         }
         return errorMsg;
     }
