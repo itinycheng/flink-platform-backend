@@ -8,6 +8,7 @@
       <w>envp</w>
       <w>envs</w>
       <w>hdfs</w>
+      <w>jdbc</w>
       <w>minio</w>
       <w>namenode</w>
       <w>oidc</w>

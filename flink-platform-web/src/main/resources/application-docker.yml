@@ -23,8 +23,6 @@ auth:
     username-claim: preferred_username  # Claim used as local username: "sub" (Google/Casdoor/Okta), "oid" (Entra ID), "preferred_username" (Keycloak)
 
 spring:
-  application:
-    name: flink-platform-backend
   datasource:
     dynamic:
       # strict: true

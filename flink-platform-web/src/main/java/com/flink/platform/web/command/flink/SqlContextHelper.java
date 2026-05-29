@@ -20,7 +20,6 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
@@ -46,7 +45,7 @@ public class SqlContextHelper {
 
     private final ApolloVariableResolver apolloVariableResolver;
 
-    public String convertFromAndSaveToFile(JobRunInfo jobRun) throws IOException {
+    public String convertFromAndSaveToFile(JobRunInfo jobRun) throws Exception {
         var sqlContext = convertFrom(jobRun);
         var json = JsonUtil.toJsonString(sqlContext);
         // save to storage and execution environment.

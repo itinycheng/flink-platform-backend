@@ -1,4 +1,6 @@
 spring:
+  application:
+    name: flink-platform-web
   servlet:
     multipart:
       enabled: true

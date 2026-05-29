@@ -29,6 +29,7 @@ import java.time.LocalDateTime;
 
 import static com.flink.platform.common.constants.Constant.GLOBAL_ZONE_ID;
 import static com.flink.platform.common.constants.Constant.SLASH;
+import static com.flink.platform.common.util.S3Util.toLocation;
 import static com.flink.platform.common.util.StringUtil.stripLeadingSlash;
 import static com.flink.platform.common.util.StringUtil.stripTrailingSlash;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
@@ -80,7 +81,7 @@ public class S3StorageSystem implements StorageSystem {
     @Override
     public StorageStatus getFileStatus(String filePath) throws IOException {
         try {
-            var s3Location = parse(filePath);
+            var s3Location = toLocation(filePath);
             var head = s3.headObject(HeadObjectRequest.builder()
                     .bucket(s3Location.bucket)
                     .key(s3Location.key)
@@ -94,7 +95,7 @@ public class S3StorageSystem implements StorageSystem {
 
     @Override
     public void copyToLocalFile(String srcFile, String dstFile) throws IOException {
-        var s3Location = parse(srcFile);
+        var s3Location = toLocation(srcFile);
         var dstPath = Paths.get(dstFile);
         var parent = dstPath.getParent();
         if (parent != null) {
@@ -127,7 +128,7 @@ public class S3StorageSystem implements StorageSystem {
     @Override
     public void copyFromLocalFile(String srcFile, String dstFile, boolean delSrc, boolean overwrite)
             throws IOException {
-        var s3Location = parse(dstFile);
+        var s3Location = toLocation(dstFile);
         var srcPath = Paths.get(srcFile);
         if (!overwrite && exists(dstFile)) {
             throw new IOException("destination already exists: " + dstFile);
@@ -145,7 +146,7 @@ public class S3StorageSystem implements StorageSystem {
 
     @Override
     public void createFile(String file, String data, boolean overwrite) throws IOException {
-        var s3Location = parse(file);
+        var s3Location = toLocation(file);
         if (!overwrite && exists(file)) {
             throw new IOException("destination already exists: " + file);
         }
@@ -164,7 +165,7 @@ public class S3StorageSystem implements StorageSystem {
             throw new IOException("recursive delete is not supported by S3StorageSystem");
         }
 
-        var s3Location = parse(filePath);
+        var s3Location = toLocation(filePath);
         if (s3Location.key.isEmpty() || s3Location.key.endsWith(SLASH)) {
             throw new IOException("refuse to delete directory-like path: " + filePath);
         }
@@ -198,7 +199,7 @@ public class S3StorageSystem implements StorageSystem {
 
     @Override
     public boolean exists(String path) throws IOException {
-        var s3Location = parse(path);
+        var s3Location = toLocation(path);
         if (s3Location.key.isEmpty() || s3Location.key.endsWith(SLASH)) {
             throw new IOException("not a file path: " + path);
         }
@@ -219,8 +220,8 @@ public class S3StorageSystem implements StorageSystem {
 
     @Override
     public boolean rename(String srcPath, String dstPath) throws IOException {
-        var src = parse(srcPath);
-        var dst = parse(dstPath);
+        var src = toLocation(srcPath);
+        var dst = toLocation(dstPath);
         if (src.equals(dst)) {
             return true;
         }
@@ -311,7 +312,7 @@ public class S3StorageSystem implements StorageSystem {
 
     private HeadObjectResponse getFileStatusRaw(String path) throws IOException {
         try {
-            var s3Location = parse(path);
+            var s3Location = toLocation(path);
             return s3.headObject(HeadObjectRequest.builder()
                     .bucket(s3Location.bucket)
                     .key(s3Location.key)
@@ -321,37 +322,7 @@ public class S3StorageSystem implements StorageSystem {
         }
     }
 
-    private static S3Location parse(String pathStr) {
-        if (pathStr == null) {
-            throw new IllegalArgumentException("path is null");
-        }
-
-        String stripped;
-        if (pathStr.startsWith(S3_SCHEME_PREFIX)) {
-            stripped = pathStr.substring(S3_SCHEME_PREFIX.length());
-        } else if (pathStr.startsWith(S3A_SCHEME_PREFIX)) {
-            stripped = pathStr.substring(S3A_SCHEME_PREFIX.length());
-        } else {
-            throw new IllegalArgumentException("not an S3 path: " + pathStr);
-        }
-
-        var idx = stripped.indexOf(SLASH);
-        var bucket = idx < 0 ? stripped : stripped.substring(0, idx);
-        var key = idx < 0 ? "" : stripped.substring(idx + 1);
-        return new S3Location(bucket, key);
-    }
-
     private static String joinPath(String base, String relative) {
         return stripTrailingSlash(base) + SLASH + stripLeadingSlash(relative);
-    }
-
-    /** Bucket + key pair derived from a {@code s3://bucket/key} URI. */
-    private record S3Location(String bucket, String key) {
-
-        private S3Location {
-            if (bucket == null || bucket.isEmpty()) {
-                throw new IllegalArgumentException("bucket is empty");
-            }
-        }
     }
 }

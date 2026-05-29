@@ -95,3 +95,40 @@ See design: [docs/execution-log-archival.md](docs/execution-log-archival.md)
 - [ ] Backfill procedure documented for existing deployments
 - [ ] (Later) `JobRunArchiver` SPI for pluggable external targets (ClickHouse, S3, ...)
 
+---
+
+## Cross-Medium File Dispatch (HDFS ↔ S3)
+
+`EnvironmentFileService` currently assumes **storage and the active dispatch environment
+are on the same medium**. `EnvironmentFileAdapter.buildTempPath` derives tmp paths from
+`storageService.getRootPath()` and fail-fasts when scheme mismatches. This works for
+single-medium deployments but blocks legitimate hybrid setups:
+
+- **MinIO + HDFS in the same machine room** — both deployed locally; want platform to
+  dispatch to whichever medium the job needs (YARN session → HDFS, Flink-on-K8s → S3).
+- **Hybrid cloud (machine room HDFS + AWS node)** — a single scheduler cluster spanning
+  on-prem and cloud; AWS nodes ideally prefer S3 over HDFS-over-VPN.
+- **Heterogeneous job mix** — storage on HDFS for reliability, but specific jobs read /
+  write S3-compatible buckets via `s3a://`.
+
+### What's Needed
+
+- [ ] **Path-scheme-based routing** in `EnvironmentFileService.copyIfChanged` /
+      `writeToFilePath`: pick adapter by URI scheme of the target path, falling back to
+      `@Order` only when scheme is absent.
+- [ ] **`buildTempPath(EnvironmentType, segments...)`** overload that lets caller specify
+      medium explicitly; `DispatcherService` chooses by deploy mode (YARN_SESSION → HDFS,
+      future K8S_S3 → S3, ...).
+- [ ] **Per-call `onPrimaryCluster` check** instead of cached state: takes the call's
+      target path scheme into account so cross-medium copies aren't incorrectly skipped.
+- [ ] **Independent S3 tmp config** (e.g., `environment.s3.tmp-uri`) for the case where
+      storage is on HDFS but dispatch needs to land on S3 — current "derive from storage
+      rootPath" approach has no source of S3 bucket info in that scenario.
+- [ ] (Optional) **Per-node adapter priority override** (env var or property) so AWS nodes
+      can prefer S3 while machine-room nodes prefer HDFS within the same scheduler cluster.
+
+### Out of Scope (for now)
+
+- Acted on if/when a real user needs hybrid-medium dispatch. Single-medium deployments
+  work fine with the current strict abstraction.
+

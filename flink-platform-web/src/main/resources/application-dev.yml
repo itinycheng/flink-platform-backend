@@ -24,8 +24,6 @@ auth:
 
 
 spring:
-  application:
-    name: flink-platform-backend
   datasource:
     dynamic:
       # strict: true

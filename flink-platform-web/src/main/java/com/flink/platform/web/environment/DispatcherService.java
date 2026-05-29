@@ -9,12 +9,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import java.io.IOException;
 import java.nio.file.Path;
 
 import static com.flink.platform.common.constants.Constant.DOT;
 import static com.flink.platform.common.constants.Constant.OS_FILE_SEPARATOR;
-import static com.flink.platform.common.constants.Constant.SLASH;
 import static com.flink.platform.common.constants.Constant.TMP;
 import static com.flink.platform.common.constants.JobConstant.JOB_RUN_DIR;
 import static com.flink.platform.web.util.PathUtil.getLocalWorkRootPath;
@@ -27,7 +25,7 @@ import static com.flink.platform.web.util.PathUtil.getLocalWorkRootPath;
 @RequiredArgsConstructor(onConstructor_ = @Autowired)
 public class DispatcherService {
 
-    private final HdfsFileService hdfsFileService;
+    private final EnvironmentFileService fileService;
 
     public String buildLocalEnvFilePath(JobRunInfo jobRun, String fileSuffix) {
         var fileName = String.join(DOT, jobRun.getJobCode(), fileSuffix);
@@ -37,12 +35,11 @@ public class DispatcherService {
             case RUN_LOCAL, FLINK_YARN_PER ->
                 String.join(OS_FILE_SEPARATOR, getLocalWorkRootPath(), TMP, JOB_RUN_DIR, fileName);
             case FLINK_YARN_SESSION, FLINK_YARN_RUN_APPLICATION ->
-                String.join(SLASH, "hdfs:/tmp", applicationName, JOB_RUN_DIR, fileName);
-            default -> throw new IllegalArgumentException("Unsupported deploy mode: " + deployMode);
+                fileService.buildTempPath(applicationName, JOB_RUN_DIR, fileName);
         };
     }
 
-    public void writeToLocalEnv(DeployMode deployMode, String filePath, String content) throws IOException {
+    public void writeToLocalEnv(DeployMode deployMode, String filePath, String content) throws Exception {
         switch (deployMode) {
             case RUN_LOCAL:
             case FLINK_YARN_PER:
@@ -50,7 +47,7 @@ public class DispatcherService {
                 break;
             case FLINK_YARN_SESSION:
             case FLINK_YARN_RUN_APPLICATION:
-                hdfsFileService.writeToFilePath(filePath, content);
+                fileService.writeToFilePath(filePath, content);
                 break;
             default:
                 throw new IllegalArgumentException("Unsupported deploy mode: " + deployMode);
