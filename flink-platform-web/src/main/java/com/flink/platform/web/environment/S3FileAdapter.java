@@ -26,9 +26,8 @@ import static com.flink.platform.common.util.S3Util.toLocation;
 @Slf4j
 @Component
 @Order(2)
-@SuppressWarnings("resource")
 @DependsOn("s3EnvironmentBootstrap")
-public class S3FileAdapter extends EnvironmentFileAdapter {
+public class S3FileAdapter extends EnvironmentFileAdapter<S3Client> {
 
     private final StorageService storageService;
 
@@ -46,10 +45,6 @@ public class S3FileAdapter extends EnvironmentFileAdapter {
         return EnvironmentType.S3;
     }
 
-    private S3Client s3Client() {
-        return registry.getClient(EnvironmentType.S3);
-    }
-
     @Override
     protected boolean checkOnPrimaryCluster(String primaryClusterIdFilePath) {
         if (!primaryClusterIdFilePath.startsWith(S3_SCHEME_PREFIX)) {
@@ -58,7 +53,7 @@ public class S3FileAdapter extends EnvironmentFileAdapter {
 
         var s3Location = toLocation(primaryClusterIdFilePath);
         try {
-            s3Client()
+            getClient()
                     .headObject(HeadObjectRequest.builder()
                             .bucket(s3Location.bucket)
                             .key(s3Location.key)
@@ -81,7 +76,7 @@ public class S3FileAdapter extends EnvironmentFileAdapter {
 
         boolean isCopy = true;
         try {
-            var head = s3Client()
+            var head = getClient()
                     .headObject(HeadObjectRequest.builder()
                             .bucket(s3Location.bucket)
                             .key(s3Location.key)
@@ -95,7 +90,7 @@ public class S3FileAdapter extends EnvironmentFileAdapter {
         }
 
         if (isCopy) {
-            s3Client()
+            getClient()
                     .putObject(
                             PutObjectRequest.builder()
                                     .bucket(s3Location.getBucket())
@@ -108,7 +103,7 @@ public class S3FileAdapter extends EnvironmentFileAdapter {
     @Override
     public void writeToFilePath(String filePath, String content) {
         var s3Location = toLocation(filePath);
-        s3Client()
+        getClient()
                 .putObject(
                         PutObjectRequest.builder()
                                 .bucket(s3Location.bucket)

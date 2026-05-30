@@ -11,7 +11,7 @@ import lombok.extern.slf4j.Slf4j;
  * direct content writes.
  */
 @Slf4j
-public abstract class EnvironmentFileAdapter {
+public abstract class EnvironmentFileAdapter<C> {
 
     protected final EnvironmentRegistry registry;
 
@@ -45,6 +45,10 @@ public abstract class EnvironmentFileAdapter {
     /** True if the underlying environment is registered and the client is reachable. */
     public final boolean isAvailable() {
         return registry.hasClient(supportedType());
+    }
+
+    public C getClient() {
+        return registry.getClient(supportedType());
     }
 
     /**

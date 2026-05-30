@@ -20,9 +20,8 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 @Slf4j
 @Component
 @Order(1)
-@SuppressWarnings("resource")
 @DependsOn("hadoopEnvironmentBootstrap")
-public class HdfsFileAdapter extends EnvironmentFileAdapter {
+public class HdfsFileAdapter extends EnvironmentFileAdapter<FileSystem> {
 
     private static final String HDFS_SCHEME_PREFIX = "hdfs:";
 
@@ -42,21 +41,17 @@ public class HdfsFileAdapter extends EnvironmentFileAdapter {
         return EnvironmentType.HDFS;
     }
 
-    private FileSystem hdfsClient() {
-        return registry.getClient(EnvironmentType.HDFS);
-    }
-
     @Override
     protected boolean checkOnPrimaryCluster(String primaryClusterIdFilePath) throws Exception {
         return primaryClusterIdFilePath.contains(HDFS_SCHEME_PREFIX)
-                && hdfsClient().exists(new Path(primaryClusterIdFilePath));
+                && getClient().exists(new Path(primaryClusterIdFilePath));
     }
 
     @Override
     protected void doCopyIfChanged(String localFile, String remoteFile) throws IOException {
         var localPath = new Path(localFile);
         var hdfsPath = new Path(remoteFile);
-        var client = hdfsClient();
+        var client = getClient();
 
         boolean isCopy = true;
         if (client.exists(hdfsPath)) {
@@ -75,7 +70,7 @@ public class HdfsFileAdapter extends EnvironmentFileAdapter {
     @Override
     public void writeToFilePath(String filePath, String content) throws IOException {
         var path = new Path(filePath);
-        try (var out = hdfsClient().create(path, true)) {
+        try (var out = getClient().create(path, true)) {
             out.write(content.getBytes(UTF_8));
         }
     }

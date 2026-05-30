@@ -6,6 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.conf.Configuration;
 
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -27,10 +28,23 @@ public final class HadoopDetector {
     private static List<EnvironmentSpec> specsFromConf(Configuration conf) {
         var out = new ArrayList<EnvironmentSpec>();
 
-        var nameServices = conf.get("dfs.nameservices");
         String hdfsName = null;
+        var nameServices = conf.get("dfs.nameservices");
         if (StringUtils.isNotBlank(nameServices)) {
             hdfsName = nameServices.split(",")[0].trim();
+        } else {
+            // Fall back to parsing fs.defaultFS.
+            var defaultFs = conf.get("fs.defaultFS");
+            if (StringUtils.isNotBlank(defaultFs) && defaultFs.startsWith("hdfs:")) {
+                try {
+                    hdfsName = URI.create(defaultFs).getHost();
+                } catch (Exception e) {
+                    log.warn("Failed to parse fs.defaultFS={}", defaultFs, e);
+                }
+            }
+        }
+
+        if (StringUtils.isNotBlank(hdfsName)) {
             out.add(new EnvironmentSpec(EnvironmentType.HDFS, hdfsName));
             log.info("Detected HDFS env: name = {}", hdfsName);
         }

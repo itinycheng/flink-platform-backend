@@ -8,12 +8,11 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
+import software.amazon.awssdk.core.exception.SdkClientException;
 
 /**
- * Unconditionally registers a single S3 environment at Spring startup. The actual credential and
- * endpoint resolution is deferred to {@link S3ClientFactory}, which delegates to the AWS SDK
- * default chain. The client is built lazily on first use, and health checks invalidate it if
- * resolution ultimately fails.
+ * Registers a single S3 environment at Spring startup.
  */
 @Slf4j
 @Component
@@ -27,8 +26,23 @@ public class S3EnvironmentBootstrap {
 
     @PostConstruct
     public void register() {
+        if (!hasResolvableCredentials()) {
+            log.info("AWS credentials not resolvable in node context; skipping S3 env registration.");
+            return;
+        }
+
         var spec = new EnvironmentSpec(EnvironmentType.S3, DEFAULT_S3_NAME);
         registry.register(spec, s3ClientFactory);
         log.info("S3 env registered: {}", spec);
+    }
+
+    private boolean hasResolvableCredentials() {
+        try (var provider = DefaultCredentialsProvider.builder().build()) {
+            provider.resolveCredentials();
+            return true;
+        } catch (SdkClientException e) {
+            log.debug("AWS credentials lookup failed: {}", e.toString());
+            return false;
+        }
     }
 }

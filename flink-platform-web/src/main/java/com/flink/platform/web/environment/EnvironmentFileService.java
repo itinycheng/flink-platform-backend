@@ -18,7 +18,7 @@ import java.util.List;
 @RequiredArgsConstructor(onConstructor_ = @Autowired)
 public class EnvironmentFileService {
 
-    private final List<EnvironmentFileAdapter> adapters;
+    private final List<EnvironmentFileAdapter<?>> adapters;
 
     public void copyIfChanged(String localFile, String remoteFile) throws Exception {
         firstAdapter().copyIfChanged(localFile, remoteFile);
@@ -32,18 +32,16 @@ public class EnvironmentFileService {
         return firstAdapter().buildTempPath(segments);
     }
 
-    private EnvironmentFileAdapter firstAdapter() {
+    private EnvironmentFileAdapter<?> firstAdapter() {
         if (adapters.isEmpty()) {
             throw new IllegalStateException(
                     "No environment file adapter registered; ensure HDFS or S3 environment is registered");
         }
 
-        var adapter = adapters.getFirst();
-        if (!adapter.isAvailable()) {
-            throw new IllegalStateException(
-                    "First environment adapter is not available, type: " + adapter.supportedType());
-        }
-
-        return adapter;
+        return adapters.stream()
+                .filter(EnvironmentFileAdapter::isAvailable)
+                .findFirst()
+                .orElseThrow(() -> new IllegalStateException("No available environment file adapter; types tried: "
+                        + adapters.stream().map(a -> a.supportedType().name()).toList()));
     }
 }

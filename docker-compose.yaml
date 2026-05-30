@@ -111,7 +111,8 @@ services:
       STORAGE_TYPE: s3
       AWS_ACCESS_KEY_ID: ${DEV_USER}
       AWS_SECRET_ACCESS_KEY: ${DEV_PASSWORD}
-      S3_ENDPOINT: http://minio:9000
+      AWS_REGION: us-east-1
+      AWS_ENDPOINT_URL_S3: http://minio:9000
 
   # ============================================================
   # HDFS storage  (profile: hdfs)
@@ -135,6 +136,7 @@ services:
       HDFS-SITE.XML_dfs.namenode.datanode.registration.ip-hostname-check: "false"
     volumes:
       - ./docker/hdfs/name:/tmp/hadoop-root/dfs/name
+      - ./docker/hdfs/conf:/opt/hadoop/etc/hadoop
     healthcheck:
       test: ["CMD-SHELL", "curl -sf http://localhost:9870/ > /dev/null"]
       interval: 10s
@@ -172,3 +174,6 @@ services:
       STORAGE_TYPE: hdfs
       HDFS_DEFAULT_FS: hdfs://namenode:8020
       HADOOP_USER_NAME: root
+      HADOOP_CONF_DIR: /etc/hadoop
+    volumes:
+      - ./docker/hdfs/conf:/etc/hadoop:ro

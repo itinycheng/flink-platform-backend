@@ -10,11 +10,11 @@ storage:
       workDir: /app/data
     s3:
       bucket: ${S3_BUCKET:datacenter}
-      region: ${S3_REGION:us-east-1}
-      endpoint: ${S3_ENDPOINT:http://minio:9000}
-      path-style-access: true
-      access-key: ${AWS_ACCESS_KEY_ID:minioadmin}
-      secret-key: ${AWS_SECRET_ACCESS_KEY:minioadmin}
+      region: ${AWS_REGION:us-east-1}
+      endpoint: ${AWS_ENDPOINT_URL_S3:http://minio:9000}
+      path-style-access: ${S3_FORCE_PATH_STYLE:true}
+      access-key: ${AWS_ACCESS_KEY_ID:admin}
+      secret-key: ${AWS_SECRET_ACCESS_KEY:admin123}
     # Map keys with dots must be quoted with [] so Spring keeps them as a single key.
     hdfs:
       "[hadoop.username]": ${HADOOP_USER_NAME:root}
