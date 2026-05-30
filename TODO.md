@@ -132,3 +132,45 @@ single-medium deployments but blocks legitimate hybrid setups:
 - Acted on if/when a real user needs hybrid-medium dispatch. Single-medium deployments
   work fine with the current strict abstraction.
 
+---
+
+## Primary Cluster Marker — Stale `.main_cluster_id` After Switching
+
+`StorageConfig.primaryClusterIdFilePath` writes a random-UUID marker file under the storage
+root when the file is missing. `EnvironmentFileAdapter.checkOnPrimaryCluster` (e.g.
+`S3FileAdapter`) only checks **whether the file exists**, never reads its content. This
+means the marker validates *existence*, not *ownership*.
+
+### Problem
+
+- Switching primary cluster (DR failover, migration to a new bucket/HDFS, swapping storage
+  endpoints) leaves the old marker file in place. Any new node mounting the same storage
+  finds the file and decides it is "on the primary cluster" — even when it isn't.
+- A demoted/old primary brought back online sees its old marker and resumes acting as
+  primary → split-brain risk: two clusters writing job artifacts as if they own the
+  storage.
+- `if (!exists) createFile(UUID.randomUUID())` only writes on first boot; the UUID inside
+  is never compared, so it serves no functional purpose today.
+
+### Possible Solutions (to choose later)
+
+1. **Explicit primary cluster ID via config** — declare `storage.primary-cluster-id` in
+   yaml/Apollo/env. Marker file is overwritten on every startup with this ID; check
+   compares file content against the configured ID. Switching primary = update one config
+   value, no manual file deletion.
+2. **Derive cluster ID from the storage's canonical location** — hash of
+   `${type}://${endpoint}/${bucket}`. Same physical storage → same ID; changing storage
+   automatically yields a new ID and obsoletes the old marker.
+3. **Keep UUID + add content comparison + provide a CLI/admin endpoint** to manage
+   (validate / delete / recreate) the marker. Documented runbook step for primary
+   switches. Smallest change but still relies on operator discipline.
+4. **Drop the file entirely; use existing distributed coordination** (MySQL ShedLock or a
+   new ZK/etcd dependency) for primary election. Marker file becomes informational only.
+
+### Notes
+
+- Recommended starting point: solution 1 + content comparison from solution 3.
+- Today's behavior is "first cluster to boot wins forever" — works only for green-field
+  deployments that never change storage. Any real ops scenario (failover, migration,
+  multi-region) breaks silently.
+

@@ -5,6 +5,12 @@
 #   docker compose --profile local up -d      # local disk
 #   docker compose --profile s3    up -d      # MinIO / S3
 #   docker compose --profile hdfs  up -d      # HDFS
+#
+# Note: when switching to/from the hdfs profile (or after changing namenode
+# CORE-SITE.XML_* / HDFS-SITE.XML_* env vars), clear the bind-mounted hadoop
+# conf so the namenode regenerates it on the next start:
+#   rm -rf ./docker/hdfs/conf
+# Otherwise the old generated core-site.xml / hdfs-site.xml will be reused.
 # ============================================================
 
 # Reusable web config (x-fields are ignored by Compose at runtime)

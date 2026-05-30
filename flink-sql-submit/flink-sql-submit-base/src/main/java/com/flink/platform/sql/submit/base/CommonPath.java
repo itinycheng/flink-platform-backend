@@ -12,11 +12,11 @@ public interface CommonPath {
 
     InputStream getInputStream() throws IOException;
 
-    String readAndDelete() throws IOException;
-
     static CommonPath parse(String path) {
         if (path.startsWith("hdfs:")) {
             return new HdfsPath(path);
+        } else if (path.startsWith("s3://")) {
+            return new S3Path(path);
         } else {
             return new LocalPath(path);
         }
