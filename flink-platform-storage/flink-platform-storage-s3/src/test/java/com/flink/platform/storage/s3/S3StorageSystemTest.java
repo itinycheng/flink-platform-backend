@@ -20,12 +20,14 @@ import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.S3Configuration;
 import software.amazon.awssdk.services.s3.model.CreateBucketRequest;
 
+import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -147,6 +149,124 @@ class S3StorageSystemTest {
     void mkdir_isNoOp() {
         // S3 has no real directories; mkdir always succeeds without creating anything.
         assertTrue(storage.mkdir("s3://" + BUCKET + "/anywhere"));
+    }
+
+    @Test
+    void s3aSchemeIsAccepted() throws Exception {
+        var s3Path = "s3://" + BUCKET + "/scheme/file.txt";
+        storage.createFile(s3Path, "x", true);
+        // s3a:// alias must resolve to the same object.
+        var s3aPath = "s3a://" + BUCKET + "/scheme/file.txt";
+        assertTrue(storage.exists(s3aPath));
+        var status = storage.getFileStatus(s3aPath);
+        assertEquals(1L, status.getByteLength());
+    }
+
+    @Test
+    void copyFromLocal_overwriteFalseRejectsExisting(@TempDir Path tmp) throws Exception {
+        var localSrc = tmp.resolve("src.txt");
+        Files.writeString(localSrc, "first");
+        var path = "s3://" + BUCKET + "/overwrite/x.txt";
+
+        // First write succeeds.
+        storage.copyFromLocalFile(localSrc.toString(), path, false, false);
+        assertTrue(storage.exists(path));
+
+        // Second write with overwrite=false must reject.
+        Files.writeString(localSrc, "second");
+        var ex = assertThrows(
+                IOException.class, () -> storage.copyFromLocalFile(localSrc.toString(), path, false, false));
+        assertTrue(ex.getMessage().contains("already exists"));
+    }
+
+    @Test
+    void existsReturnsFalseForDirectoryLikePath() throws Exception {
+        // Align with HDFS semantics: exists returns true/false, never throws for absent keys.
+        // S3 has no real dirs, so a "dir/" key with no marker object simply does not exist.
+        assertFalse(storage.exists("s3://" + BUCKET + "/dir/"));
+    }
+
+    @Test
+    void deleteRejectsDirectoryLikePath() {
+        assertThrows(IllegalStateException.class, () -> storage.delete("s3://" + BUCKET + "/dir/", false));
+    }
+
+    @Test
+    void mutatingOpsRejectDirectoryLikePath(@TempDir Path tmpDir) throws Exception {
+        var dirLike = "s3://" + BUCKET + "/dir/";
+        var local = tmpDir.resolve("local.txt");
+        Files.writeString(local, "x");
+
+        assertThrows(IllegalStateException.class, () -> storage.createFile(dirLike, "x", true));
+        assertThrows(
+                IllegalStateException.class, () -> storage.copyFromLocalFile(local.toString(), dirLike, false, true));
+        assertThrows(IllegalStateException.class, () -> storage.getFileStatus(dirLike));
+        assertThrows(IllegalStateException.class, () -> storage.copyToLocalFile(dirLike, local.toString()));
+        assertThrows(IllegalStateException.class, () -> storage.rename(dirLike, "s3://" + BUCKET + "/dir2/file.txt"));
+        assertThrows(IllegalStateException.class, () -> storage.rename("s3://" + BUCKET + "/dir2/file.txt", dirLike));
+    }
+
+    @Test
+    void getParentPath_handlesAllForms() {
+        assertEquals("s3://" + BUCKET + "/a/b", storage.getParentPath("s3://" + BUCKET + "/a/b/c.txt"));
+        assertEquals("s3://" + BUCKET + "/a", storage.getParentPath("s3://" + BUCKET + "/a/b/"));
+        assertEquals("s3://" + BUCKET, storage.getParentPath("s3://" + BUCKET + "/a"));
+        // Bucket-root has no parent — return as-is rather than chopping into the scheme.
+        assertEquals("s3://" + BUCKET, storage.getParentPath("s3://" + BUCKET));
+        assertEquals("s3://" + BUCKET, storage.getParentPath("s3://" + BUCKET + "/"));
+    }
+
+    @Test
+    void getParentPath_rejectsNonS3Uri() {
+        assertThrows(IllegalArgumentException.class, () -> storage.getParentPath("a/b"));
+        assertThrows(IllegalArgumentException.class, () -> storage.getParentPath("/foo/bar"));
+        assertThrows(IllegalArgumentException.class, () -> storage.getParentPath("hdfs://nn/foo"));
+    }
+
+    @Test
+    void parseRejectsEmptyBucket() {
+        // S3Location's constructor enforces non-empty bucket; "s3:///key" parses to empty bucket.
+        var ex = assertThrows(IllegalArgumentException.class, () -> storage.exists("s3:///key"));
+        assertTrue(ex.getMessage().contains("bucket is empty"));
+    }
+
+    @Test
+    void rename_dstExists_returnsFalseAndKeepsSrc() throws Exception {
+        var src = "s3://" + BUCKET + "/rename/src.txt";
+        var dst = "s3://" + BUCKET + "/rename/dst.txt";
+        storage.createFile(src, "src-content", true);
+        storage.createFile(dst, "dst-content", true);
+
+        // dst already exists → match HDFS rename semantics: return false, leave src in place.
+        assertFalse(storage.rename(src, dst));
+        assertTrue(storage.exists(src));
+        assertTrue(storage.exists(dst));
+    }
+
+    @Test
+    void rename_samePath_isNoOp() throws Exception {
+        var path = "s3://" + BUCKET + "/rename/same.txt";
+        storage.createFile(path, "x", true);
+        // Same source and destination — must not delete the file.
+        assertTrue(storage.rename(path, path));
+        assertTrue(storage.exists(path));
+    }
+
+    @Test
+    void open_failsWhenEndpointSetButPathStyleDisabled() {
+        // Custom endpoint without path-style addressing breaks MinIO/SeaweedFS — must fail fast.
+        var props = new StorageProperties();
+        props.setType("s3");
+        props.setBasePath("platform");
+        var backends = new BackendProperties();
+        backends.setS3(new BackendProperties.S3Properties(
+                BUCKET, "us-east-1", S3MOCK.getHttpEndpoint(), false, "test", "test"));
+        props.setBackends(backends);
+
+        try (var storage = new S3StorageSystem(props)) {
+            var ex = assertThrows(IllegalStateException.class, storage::open);
+            assertTrue(ex.getMessage().contains("path-style-access"));
+        }
     }
 
     // ==================================================================

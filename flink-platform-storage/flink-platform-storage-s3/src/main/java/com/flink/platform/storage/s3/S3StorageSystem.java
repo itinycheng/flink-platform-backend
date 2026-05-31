@@ -1,5 +1,6 @@
 package com.flink.platform.storage.s3;
 
+import com.flink.platform.common.model.S3Location;
 import com.flink.platform.common.util.Preconditions;
 import com.flink.platform.storage.StorageProperties;
 import com.flink.platform.storage.base.StorageStatus;
@@ -70,18 +71,18 @@ public class S3StorageSystem implements StorageSystem {
 
     @Override
     public String getParentPath(String filePath) {
-        var trimmed = stripTrailingSlash(filePath);
-        var idx = trimmed.lastIndexOf(SLASH);
-        if (idx < 0) {
-            return trimmed;
-        }
-        return trimmed.substring(0, idx);
+        var s3Location = toLocation(filePath);
+        var trimmedKey = stripTrailingSlash(s3Location.key);
+        var idx = trimmedKey.lastIndexOf(SLASH);
+        var parentKey = idx < 0 ? "" : trimmedKey.substring(0, idx);
+        return S3_SCHEME_PREFIX + s3Location.bucket + (parentKey.isEmpty() ? "" : SLASH + parentKey);
     }
 
     @Override
     public StorageStatus getFileStatus(String filePath) throws IOException {
+        var s3Location = toLocation(filePath);
+        requireFilePath(s3Location);
         try {
-            var s3Location = toLocation(filePath);
             var head = s3.headObject(HeadObjectRequest.builder()
                     .bucket(s3Location.bucket)
                     .key(s3Location.key)
@@ -96,6 +97,7 @@ public class S3StorageSystem implements StorageSystem {
     @Override
     public void copyToLocalFile(String srcFile, String dstFile) throws IOException {
         var s3Location = toLocation(srcFile);
+        requireFilePath(s3Location);
         var dstPath = Paths.get(dstFile);
         var parent = dstPath.getParent();
         if (parent != null) {
@@ -129,6 +131,7 @@ public class S3StorageSystem implements StorageSystem {
     public void copyFromLocalFile(String srcFile, String dstFile, boolean delSrc, boolean overwrite)
             throws IOException {
         var s3Location = toLocation(dstFile);
+        requireFilePath(s3Location);
         var srcPath = Paths.get(srcFile);
         if (!overwrite && exists(dstFile)) {
             throw new IOException("destination already exists: " + dstFile);
@@ -147,6 +150,7 @@ public class S3StorageSystem implements StorageSystem {
     @Override
     public void createFile(String file, String data, boolean overwrite) throws IOException {
         var s3Location = toLocation(file);
+        requireFilePath(s3Location);
         if (!overwrite && exists(file)) {
             throw new IOException("destination already exists: " + file);
         }
@@ -166,9 +170,7 @@ public class S3StorageSystem implements StorageSystem {
         }
 
         var s3Location = toLocation(filePath);
-        if (s3Location.key.isEmpty() || s3Location.key.endsWith(SLASH)) {
-            throw new IOException("refuse to delete directory-like path: " + filePath);
-        }
+        requireFilePath(s3Location);
 
         try {
             s3.deleteObject(DeleteObjectRequest.builder()
@@ -200,10 +202,6 @@ public class S3StorageSystem implements StorageSystem {
     @Override
     public boolean exists(String path) throws IOException {
         var s3Location = toLocation(path);
-        if (s3Location.key.isEmpty() || s3Location.key.endsWith(SLASH)) {
-            throw new IOException("not a file path: " + path);
-        }
-
         try {
             s3.headObject(HeadObjectRequest.builder()
                     .bucket(s3Location.bucket)
@@ -222,8 +220,15 @@ public class S3StorageSystem implements StorageSystem {
     public boolean rename(String srcPath, String dstPath) throws IOException {
         var src = toLocation(srcPath);
         var dst = toLocation(dstPath);
+        requireFilePath(src);
+        requireFilePath(dst);
         if (src.equals(dst)) {
             return true;
+        }
+
+        // Match HDFS FileSystem.rename semantics: refuse to overwrite an existing destination.
+        if (exists(dstPath)) {
+            return false;
         }
 
         try {
@@ -308,6 +313,13 @@ public class S3StorageSystem implements StorageSystem {
 
     private static String buildRootPath(String bucket, String basePath) {
         return S3_SCHEME_PREFIX + bucket + SLASH + stripLeadingSlash(basePath);
+    }
+
+    private static void requireFilePath(S3Location s3Location) {
+        if (!s3Location.isFilePath()) {
+            throw new IllegalStateException(
+                    "not a file path: " + S3_SCHEME_PREFIX + s3Location.bucket + SLASH + s3Location.key);
+        }
     }
 
     private HeadObjectResponse getFileStatusRaw(String path) throws IOException {
