@@ -1,38 +1,25 @@
 package com.flink.platform.plugin.apollo;
 
 import com.ctrip.framework.apollo.spring.annotation.EnableApolloConfig;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.Properties;
-
 /**
- * apollo configuration.
+ * Apollo configuration. Bootstrap properties are imported from {@code apollo-<profile>.properties}
+ * via {@code spring.config.import} in {@code application.yml}; Apollo's
+ * {@code ApolloApplicationContextInitializer} promotes the standard keys (app.id, apollo.meta,
+ * apollo.cluster, apollo.cache-dir, env) into system properties before {@code ConfigService}
+ * initializes.
  */
 @Configuration
 @EnableApolloConfig
 public class ApolloConf {
 
-    private static final String CONFIG = "META-INF/app.properties";
-
-    private static final String SALT = "apollo.salt";
-
     private final String secretKey;
 
-    public ApolloConf() {
-        try (InputStream input = Thread.currentThread().getContextClassLoader().getResourceAsStream(CONFIG)) {
-            if (input == null) {
-                throw new IOException("No apollo config file found, path: " + CONFIG);
-            }
-
-            Properties properties = new Properties();
-            properties.load(input);
-            this.secretKey = properties.getProperty(SALT);
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to load " + CONFIG, e);
-        }
+    public ApolloConf(@Value("${apollo.salt}") String secretKey) {
+        this.secretKey = secretKey;
     }
 
     @Bean

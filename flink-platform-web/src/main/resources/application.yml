@@ -7,7 +7,9 @@ spring:
       max-file-size: 500MB
       max-request-size: 500MB
   config:
-    import: classpath:storage-${spring.profiles.active}.yml
+    import:
+      - classpath:storage-${spring.profiles.active}.yml
+      - classpath:apollo-${spring.profiles.active}.properties
 
 management:
   metrics:
