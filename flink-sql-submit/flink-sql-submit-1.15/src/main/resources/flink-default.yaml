@@ -10,8 +10,6 @@ streaming:
   restart-strategy.failure-rate.max-failures-per-interval: 3
   state.backend: rocksdb # hashmap
   state.checkpoint-storage: filesystem
-  state.checkpoints.dir: hdfs:///flink/checkpoints
-  state.savepoints.dir: hdfs:///flink/savepoints
   state.backend.incremental: true
   state.checkpoints.num-retained: 2
   execution.checkpointing.mode: EXACTLY_ONCE # AT_LEAST_ONCE
