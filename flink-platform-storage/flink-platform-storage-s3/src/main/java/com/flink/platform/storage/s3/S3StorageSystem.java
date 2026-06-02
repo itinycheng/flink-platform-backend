@@ -285,12 +285,24 @@ public class S3StorageSystem implements StorageSystem {
                         ? StaticCredentialsProvider.create(
                                 AwsBasicCredentials.create(props.accessKey(), props.secretKey()))
                         : DefaultCredentialsProvider.builder().build());
-
         if (isNotBlank(props.endpoint())) {
             builder.endpointOverride(URI.create(props.endpoint()));
         }
-
         this.s3 = builder.build();
+
+        try {
+            // Fail-fast: verify the configured bucket is reachable and accessible before declaring storage ready.
+            s3.headBucket(b -> b.bucket(props.bucket()));
+        } catch (Exception e) {
+            s3.close();
+            throw new IllegalStateException(
+                    "S3 bucket not accessible at startup: " + props.bucket() + " (region="
+                            + props.region()
+                            + ", endpoint=" + props.endpoint()
+                            + ")",
+                    e);
+        }
+
         this.rootPath = stripTrailingSlash(buildRootPath(props.bucket(), properties.getBasePath()));
         log.info(
                 "S3 storage initialized: region={}, endpoint={}, pathStyle={}, basePath={}",

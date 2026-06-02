@@ -7,6 +7,11 @@ import com.flink.platform.environment.EnvironmentClientFactory;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.HeadBucketRequest;
+import software.amazon.awssdk.services.s3.model.S3Exception;
+
+import static software.amazon.awssdk.http.HttpStatusCode.BAD_REQUEST;
+import static software.amazon.awssdk.http.HttpStatusCode.INTERNAL_SERVER_ERROR;
 
 /**
  * Builds {@link S3Client} for S3-typed environments.
@@ -14,6 +19,8 @@ import software.amazon.awssdk.services.s3.S3Client;
 @Slf4j
 @Component
 public class S3ClientFactory implements EnvironmentClientFactory<S3Client> {
+
+    private static final String HEALTH_PROBE_BUCKET = "INVALID-HEALTH-PROBE-BUCKET";
 
     @Override
     public EnvironmentType supportedType() {
@@ -28,13 +35,25 @@ public class S3ClientFactory implements EnvironmentClientFactory<S3Client> {
         return client;
     }
 
+    /**
+     * Probes the S3 endpoint with a HeadBucket against a bucket name that cannot exist.
+     *
+     * <p>A 4xx response means the service is reachable and credentials work; only network
+     * failures or 5xx are treated as unhealthy. Avoids requiring {@code s3:ListAllMyBuckets} (which
+     * is account-level and rarely granted under least-privilege IAM).
+     *
+     * <p>Refer to: {@link software.amazon.awssdk.http.HttpStatusCode}
+     */
     @Override
     public boolean healthy(S3Client client) {
         try {
-            client.listBuckets();
+            client.headBucket(
+                    HeadBucketRequest.builder().bucket(HEALTH_PROBE_BUCKET).build());
             return true;
+        } catch (S3Exception e) {
+            return e.statusCode() >= BAD_REQUEST && e.statusCode() < INTERNAL_SERVER_ERROR;
         } catch (Exception e) {
-            log.warn("S3Client health probe failed: {}", e.toString());
+            log.warn("S3Client health probe failed", e);
             return false;
         }
     }
