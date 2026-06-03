@@ -1,18 +1,15 @@
 package com.flink.platform.common.enums;
 
-/** Alert type. */
+/** Resource type. */
 public enum ResourceType {
-    JAR,
-
-    SHELL,
-
+    FILE,
     DIR;
 
     public boolean isFile() {
-        return !isDir();
+        return this == FILE;
     }
 
     public boolean isDir() {
-        return DIR == this;
+        return this == DIR;
     }
 }

@@ -42,8 +42,7 @@ public class ResourceManageService {
                     return resourceService.save(entity);
                 }
                 break;
-            case JAR:
-            case SHELL:
+            case FILE:
                 if (storageService.exists(entity.getFullName())) {
                     return resourceService.save(entity);
                 }

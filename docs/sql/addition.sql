@@ -140,3 +140,6 @@ ALTER TABLE platform.t_user MODIFY COLUMN status varchar(32) COMMENT 'user statu
 
 -- 2026-05-24
 ALTER TABLE platform.t_worker ADD COLUMN environments TEXT DEFAULT NULL COMMENT 'detected envs, heartbeat-populated' AFTER heartbeat;
+
+-- 2026-06-03
+UPDATE platform.t_resource SET type = 'FILE' WHERE type IN ('JAR', 'SHELL');

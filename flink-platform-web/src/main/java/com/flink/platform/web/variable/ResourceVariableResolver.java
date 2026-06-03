@@ -15,7 +15,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static com.flink.platform.common.constants.JobConstant.RESOURCE_PATTERN;
-import static com.flink.platform.common.enums.JobType.SHELL;
+import static com.flink.platform.common.util.FileUtil.OWNER_EXEC_PERMS;
 import static com.flink.platform.web.util.ResourceUtil.copyFromStorageToLocal;
 import static com.flink.platform.web.util.ResourceUtil.getAbsoluteStoragePath;
 
@@ -47,9 +47,7 @@ public class ResourceVariableResolver implements VariableResolver {
                 if ("local".equalsIgnoreCase(storage)) {
                     var localPath = copyFromStorageToLocal(absoluteStoragePath);
                     result.put(variable, localPath);
-
-                    // Make the local file readable and executable.
-                    setPermissionsIfNeeded(jobRun, localPath);
+                    makeExecutable(localPath);
                 } else {
                     result.put(variable, absoluteStoragePath);
                 }
@@ -61,13 +59,11 @@ public class ResourceVariableResolver implements VariableResolver {
         }
     }
 
-    private void setPermissionsIfNeeded(@Nullable JobRunInfo jobRun, String localPath) {
-        if (jobRun != null && SHELL.equals(jobRun.getType())) {
-            try {
-                FileUtil.setPermissions(Path.of(localPath), "rwxr--r--");
-            } catch (Exception e) {
-                log.error("Failed to set file permissions", e);
-            }
+    private void makeExecutable(String localPath) {
+        try {
+            FileUtil.setPermissions(Path.of(localPath), OWNER_EXEC_PERMS);
+        } catch (Exception e) {
+            log.error("Failed to set file permissions", e);
         }
     }
 }

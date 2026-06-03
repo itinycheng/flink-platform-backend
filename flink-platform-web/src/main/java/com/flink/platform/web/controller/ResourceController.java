@@ -139,11 +139,14 @@ public class ResourceController {
 
     @RequirePermission(TASK_VIEW)
     @GetMapping(value = "/list")
-    public ResultInfo<List<Resource>> list(@RequestParam(name = "type", required = false) ResourceType type) {
+    public ResultInfo<List<Resource>> list(
+            @RequestParam(name = "type", required = false) ResourceType type,
+            @RequestParam(name = "ext", required = false) String ext) {
         List<Resource> list = resourceService.list(new QueryWrapper<Resource>()
                 .lambda()
                 .eq(Resource::getWorkspaceId, RequestContext.requireWorkspaceId())
-                .eq(Objects.nonNull(type), Resource::getType, type));
+                .eq(Objects.nonNull(type), Resource::getType, type)
+                .likeLeft(StringUtils.isNotBlank(ext), Resource::getName, ext));
         return ResultInfo.success(list);
     }
 

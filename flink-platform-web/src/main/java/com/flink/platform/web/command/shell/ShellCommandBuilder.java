@@ -18,6 +18,7 @@ import java.io.IOException;
 import java.nio.file.Path;
 
 import static com.flink.platform.common.enums.JobType.SHELL;
+import static com.flink.platform.common.util.FileUtil.OWNER_EXEC_PERMS;
 import static com.flink.platform.web.util.CommandUtil.commandType;
 import static com.flink.platform.web.util.CommandUtil.getShellCommand;
 
@@ -46,7 +47,7 @@ public class ShellCommandBuilder implements CommandBuilder {
         var commandFilePath = dispatcherService.buildLocalEnvFilePath(jobRun, commandType());
         var commandPath = Path.of(commandFilePath);
         FileUtil.rewriteFile(commandPath, jobRun.getSubject());
-        FileUtil.setPermissions(commandPath, "rwxr--r--");
+        FileUtil.setPermissions(commandPath, OWNER_EXEC_PERMS);
 
         var shellCommand = new ShellCommand(jobRun.getId(), null, getShellCommand(commandFilePath));
         populateTimeout(shellCommand, jobRun);
