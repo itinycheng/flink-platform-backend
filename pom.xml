@@ -56,7 +56,7 @@
 		<clickhouse-jdbc.version>0.9.6</clickhouse-jdbc.version>
 		<hadoop.version>3.3.5</hadoop.version>
 		<hive.version>2.3.9</hive.version>
-		<aws-sdk.version>2.44.12</aws-sdk.version>
+		<aws-sdk.version>2.46.2</aws-sdk.version>
 		<s3mock.version>5.0.0</s3mock.version>
 		<testcontainers.version>2.0.5</testcontainers.version>
 		<mybatis-plus.version>3.5.16</mybatis-plus.version>
