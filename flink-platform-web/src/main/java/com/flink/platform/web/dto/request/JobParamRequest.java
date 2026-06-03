@@ -5,6 +5,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.experimental.Delegate;
 
+import static com.flink.platform.common.enums.JobParamType.JOB_FLOW;
 import static com.flink.platform.common.util.Preconditions.requireNotNull;
 
 /** job param request info. */
@@ -16,7 +17,7 @@ public class JobParamRequest {
     private final JobParam jobParam = new JobParam();
 
     public String validateOnCreate() {
-        String msg = verifyName();
+        var msg = verifyName();
         if (msg != null) {
             return msg;
         }
@@ -30,6 +31,11 @@ public class JobParamRequest {
     }
 
     public String validateOnUpdate() {
+        var msg = verifyType();
+        if (msg != null) {
+            return msg;
+        }
+
         return verifyId();
     }
 
@@ -38,7 +44,9 @@ public class JobParamRequest {
     }
 
     public String verifyType() {
-        return requireNotNull(getType(), "The jobParam type cannot be null");
+        return JOB_FLOW.equals(getType())
+                ? "Unsupported param type: JOB_FLOW, please set it within the job flow instead"
+                : null;
     }
 
     public String verifyName() {
