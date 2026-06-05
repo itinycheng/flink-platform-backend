@@ -2,10 +2,13 @@ package com.flink.platform.dao.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.handlers.Jackson3TypeHandler;
 import com.flink.platform.dao.entity.JobFlow;
 import com.flink.platform.dao.query.JobFlowPageQuery;
 import com.flink.platform.dao.view.JobFlowDetails;
 import org.apache.ibatis.annotations.Param;
+import org.apache.ibatis.annotations.Result;
+import org.apache.ibatis.annotations.Results;
 import org.apache.ibatis.annotations.Select;
 
 /** job flow info Mapper. */
@@ -22,6 +25,15 @@ public interface JobFlowMapper extends BaseMapper<JobFlow> {
             """)
     JobFlow queryJobFlowByJobId(@Param("jobId") Long jobId);
 
+    @Results(
+            id = "jobFlowDetailsMap",
+            value = {
+                @Result(property = "config", column = "config", typeHandler = Jackson3TypeHandler.class),
+                @Result(property = "tags", column = "tags", typeHandler = Jackson3TypeHandler.class),
+                @Result(property = "alerts", column = "alerts", typeHandler = Jackson3TypeHandler.class),
+                @Result(property = "timeout", column = "timeout", typeHandler = Jackson3TypeHandler.class),
+                @Result(property = "params", column = "params", typeHandler = Jackson3TypeHandler.class),
+            })
     @Select("""
             <script>
             SELECT f.id, f.code, f.name, f.user_id, f.workspace_id, f.description,
