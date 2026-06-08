@@ -4,7 +4,7 @@ storage:
   backends:
     local:
     hdfs:
-      hadoop.username: hadoop
+      hadoop.username: hdfs
       fs.hdfs.impl: org.apache.hadoop.hdfs.DistributedFileSystem
       fs.defaultFS: hdfs://nameservice1
       ha.zookeeper.quorum: 0.0.0.0:2181,0.0.0.0:2181,0.0.0.0:2181

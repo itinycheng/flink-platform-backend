@@ -17,7 +17,7 @@ storage:
       secret-key: ${AWS_SECRET_ACCESS_KEY:admin123}
     # Map keys with dots must be quoted with [] so Spring keeps them as a single key.
     hdfs:
-      "[hadoop.username]": ${HADOOP_USER_NAME:hadoop}
+      "[hadoop.username]": ${HADOOP_USER_NAME:hdfs}
       "[fs.defaultFS]": ${HDFS_DEFAULT_FS:hdfs://namenode:8020}
       "[fs.hdfs.impl]": org.apache.hadoop.hdfs.DistributedFileSystem
       "[dfs.replication]": "1"
