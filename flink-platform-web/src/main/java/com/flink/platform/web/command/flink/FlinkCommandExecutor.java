@@ -19,7 +19,6 @@ import java.util.List;
 
 import static com.flink.platform.common.constants.Constant.EMPTY;
 import static com.flink.platform.common.enums.ExecutionStatus.SUBMITTED;
-import static com.flink.platform.common.enums.ExecutionStatus.SUCCESS;
 
 /** Flink command executor. */
 @Slf4j
@@ -59,14 +58,9 @@ public class FlinkCommandExecutor implements CommandExecutor {
         var jobId = task.getJobId();
         var callback = task.buildShellCallback();
 
-        // call `killCommand` method if execute command failed.
-        if (!SUCCESS.equals(task.finalStatus())) {
-            return new JobCallback(jobId, appId, null, callback, EMPTY, task.finalStatus());
-        }
-
-        // If both appId and jobId are empty, means that there is no need to submit task to Yarn.
+        // No appId/jobId captured: nothing was submitted to YARN — use the shell's exit status as the final status.
         if (StringUtils.isEmpty(appId) && StringUtils.isEmpty(jobId)) {
-            return new JobCallback(jobId, appId, EMPTY, callback, EMPTY, SUCCESS);
+            return new JobCallback(jobId, appId, EMPTY, callback, EMPTY, task.finalStatus());
         }
 
         // Get the application report from Hadoop Yarn.
@@ -76,8 +70,10 @@ public class FlinkCommandExecutor implements CommandExecutor {
             var jobRunId = command.getJobRunId();
             var applicationTag = YarnHelper.getApplicationTag(jobRunId);
             var statusReport = yarnAppService.getStatusReportWithRetry(applicationTag);
-            status = statusReport.getStatus();
-            trackingUrl = statusReport.getTrackingUrl();
+            if (statusReport != null) {
+                status = statusReport.getStatus();
+                trackingUrl = statusReport.getTrackingUrl();
+            }
         } catch (Exception e) {
             log.error("Failed to get ApplicationReport after command executed", e);
         }
