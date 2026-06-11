@@ -316,7 +316,7 @@ CREATE TABLE `t_job_param` (
   `description` varchar(255) DEFAULT NULL COMMENT 'description',
   `type` varchar(100) DEFAULT NULL COMMENT 'param type',
   `param_name` varchar(255) DEFAULT NULL COMMENT 'param name',
-  `param_value` varchar(255) DEFAULT NULL COMMENT 'param value',
+  `param_value` varchar(2048) DEFAULT NULL COMMENT 'param value',
   `status` varchar(100) DEFAULT NULL COMMENT 'status',
   `create_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT 'create time',
   `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'update time',

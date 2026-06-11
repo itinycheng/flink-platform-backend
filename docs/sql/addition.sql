@@ -143,3 +143,6 @@ ALTER TABLE platform.t_worker ADD COLUMN environments TEXT DEFAULT NULL COMMENT 
 
 -- 2026-06-03
 UPDATE platform.t_resource SET type = 'FILE' WHERE type IN ('JAR', 'SHELL');
+ALTER TABLE t_job_param MODIFY COLUMN `param_value` varchar(2048) DEFAULT NULL COMMENT 'param value';
+ALTER TABLE platform.t_job CHANGE COLUMN variables params TEXT COMMENT 'params';
+ALTER TABLE platform.t_job_run CHANGE COLUMN variables params TEXT COMMENT 'params';
