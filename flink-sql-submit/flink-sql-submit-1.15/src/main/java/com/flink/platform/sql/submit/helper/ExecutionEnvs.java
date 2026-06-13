@@ -7,12 +7,17 @@ import org.apache.flink.table.api.bridge.java.StreamTableEnvironment;
 
 import com.flink.platform.common.enums.ExecutionMode;
 import com.flink.platform.common.exception.FlinkJobGenException;
+import com.flink.platform.sql.submit.base.common.FlinkEnvAdapter;
 import com.flink.platform.sql.submit.common.FlinkEnvironment;
 import lombok.val;
 
+import java.util.Map;
+
 /** create execution environment. */
 public class ExecutionEnvs {
-    public static FlinkEnvironment createExecutionEnv(ExecutionMode execMode, Configuration configuration) {
+
+    public static FlinkEnvAdapter createExecutionEnv(ExecutionMode execMode, Map<String, String> configMap) {
+        val configuration = Configuration.fromMap(configMap);
         val settingBuilder = EnvironmentSettings.newInstance().withConfiguration(configuration);
         switch (execMode) {
             case BATCH:

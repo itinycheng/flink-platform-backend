@@ -1,51 +1,88 @@
 package com.flink.platform.sql.submit.common;
 
-import org.apache.flink.api.common.JobExecutionResult;
-import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
+import org.apache.flink.streaming.api.functions.sink.PrintSinkFunction;
 import org.apache.flink.table.api.StatementSet;
 import org.apache.flink.table.api.Table;
-import org.apache.flink.table.api.TableResult;
 import org.apache.flink.table.api.bridge.java.StreamTableEnvironment;
 import org.apache.flink.table.functions.UserDefinedFunction;
-import org.apache.flink.types.Row;
 
-import lombok.Data;
+import com.flink.platform.common.exception.FlinkJobGenException;
+import com.flink.platform.sql.submit.base.common.FlinkEnvAdapter;
 import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 
-@Data
 @Getter
-public class FlinkEnvironment {
+@RequiredArgsConstructor
+public class FlinkEnvironment implements FlinkEnvAdapter {
 
     private final StreamExecutionEnvironment env;
 
     private final StreamTableEnvironment tableEnv;
 
-    public TableResult executeSql(String sql) {
-        return tableEnv.executeSql(sql);
+    private transient StatementSet pendingStatementSet;
+
+    private transient boolean hasRegisteredSelect;
+
+    @Override
+    public void setConfig(String key, String value) {
+        tableEnv.getConfig().getConfiguration().setString(key, value);
     }
 
-    public StatementSet createStatementSet() {
-        return tableEnv.createStatementSet();
+    @Override
+    public void createTemporarySystemFunction(String name, String className) {
+        tableEnv.createTemporarySystemFunction(name, loadClass(className));
     }
 
-    public Table sqlQuery(String query) {
-        return tableEnv.sqlQuery(query);
+    @Override
+    public void createTemporaryFunction(String name, String className) {
+        tableEnv.createTemporaryFunction(name, loadClass(className));
     }
 
-    public DataStream<Row> toDataStream(Table table) {
-        return tableEnv.toDataStream(table);
+    @Override
+    public void executeAndPrint(String sql) {
+        tableEnv.executeSql(sql).print();
     }
 
-    public JobExecutionResult execute() throws Exception {
-        return env.execute();
+    @Override
+    public void registerSelect(String sql) {
+        Table table = tableEnv.sqlQuery(sql);
+        tableEnv.toDataStream(table).addSink(new PrintSinkFunction<>());
+        hasRegisteredSelect = true;
     }
 
-    public void createTemporarySystemFunction(String name, Class<? extends UserDefinedFunction> functionClass) {
-        tableEnv.createTemporarySystemFunction(name, functionClass);
+    @Override
+    public void registerInsert(String insertSql) {
+        if (pendingStatementSet == null) {
+            pendingStatementSet = tableEnv.createStatementSet();
+        }
+        pendingStatementSet.addInsertSql(insertSql);
     }
 
-    public void createTemporaryFunction(String path, Class<? extends UserDefinedFunction> functionClass) {
-        tableEnv.createTemporaryFunction(path, functionClass);
+    @Override
+    public void execute() throws Exception {
+        if (pendingStatementSet != null) {
+            try {
+                pendingStatementSet.execute();
+            } finally {
+                pendingStatementSet = null;
+            }
+        }
+        if (hasRegisteredSelect) {
+            try {
+                env.execute();
+            } finally {
+                hasRegisteredSelect = false;
+            }
+        }
+    }
+
+    private static Class<? extends UserDefinedFunction> loadClass(String className) {
+        try {
+            ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+            return Class.forName(className, true, classLoader).asSubclass(UserDefinedFunction.class);
+        } catch (Exception e) {
+            throw new FlinkJobGenException("cannot load function class: " + className, e);
+        }
     }
 }
