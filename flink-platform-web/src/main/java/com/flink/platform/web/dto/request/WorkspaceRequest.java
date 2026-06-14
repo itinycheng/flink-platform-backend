@@ -6,6 +6,7 @@ import lombok.NoArgsConstructor;
 import lombok.experimental.Delegate;
 
 import static com.flink.platform.common.util.Preconditions.requireNotNull;
+import static com.flink.platform.web.dto.request.RequestValidations.requireValidName;
 
 /** Workspace request. */
 @Getter
@@ -16,7 +17,7 @@ public class WorkspaceRequest {
     private final Workspace workspace = new Workspace();
 
     public String validateOnCreate() {
-        var msg = nameNotNull();
+        var msg = verifyName();
         if (msg != null) {
             return msg;
         }
@@ -25,15 +26,20 @@ public class WorkspaceRequest {
     }
 
     public String validateOnUpdate() {
-        return idNotNull();
+        var msg = idNotNull();
+        if (msg != null) {
+            return msg;
+        }
+
+        return verifyName();
     }
 
     public String idNotNull() {
         return requireNotNull(getId(), "The workspace id cannot be null");
     }
 
-    public String nameNotNull() {
-        return requireNotNull(getName(), "The workspace name cannot be null");
+    public String verifyName() {
+        return requireValidName(getName(), "workspace");
     }
 
     public String statusNotNull() {

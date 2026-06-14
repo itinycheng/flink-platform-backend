@@ -12,23 +12,18 @@ import lombok.experimental.Delegate;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 
-import java.util.regex.Pattern;
-
 import static com.flink.platform.common.enums.DependentStrategy.LAST_EXECUTION_AFTER_TIME;
 import static com.flink.platform.common.enums.DependentStrategy.LAST_EXECUTION_AS_EXPECTED;
 import static com.flink.platform.common.enums.JobType.CONDITION;
 import static com.flink.platform.common.enums.JobType.DEPENDENT;
 import static com.flink.platform.common.enums.JobType.SUB_FLOW;
 import static com.flink.platform.common.util.Preconditions.requireNotNull;
+import static com.flink.platform.web.dto.request.RequestValidations.requireValidName;
 
 /** Job request info. */
 @Getter
 @NoArgsConstructor
 public class JobInfoRequest {
-
-    private static final String JOB_NAME_REGEX = "^[a-zA-Z][a-zA-Z0-9._-]{5,64}$";
-
-    private static final Pattern JOB_NAME_PATTERN = Pattern.compile(JOB_NAME_REGEX);
 
     @Delegate
     private final JobInfo jobInfo = new JobInfo();
@@ -96,13 +91,7 @@ public class JobInfoRequest {
     }
 
     public String verifyName() {
-        String errorMsg = null;
-        if (getName() == null) {
-            errorMsg = "The name of Job cannot be null";
-        } else if (!JOB_NAME_PATTERN.matcher(getName()).matches()) {
-            errorMsg = String.format("invalid job name, regex: `%s`", JOB_NAME_REGEX);
-        }
-        return errorMsg;
+        return requireValidName(getName(), "job");
     }
 
     public String verifyType() {

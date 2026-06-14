@@ -5,21 +5,16 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.experimental.Delegate;
 
-import java.util.regex.Pattern;
-
 import static com.flink.platform.common.enums.ResourceType.DIR;
 import static com.flink.platform.common.util.Preconditions.requireNotNull;
 import static com.flink.platform.common.util.Preconditions.requireState;
+import static com.flink.platform.web.dto.request.RequestValidations.requireValidName;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 /** Alert request info. */
 @Getter
 @NoArgsConstructor
 public class ResourceRequest {
-
-    private static final String NAME_REGEX = "^[a-zA-Z0-9._-]{5,64}$";
-
-    private static final Pattern NAME_PATTERN = Pattern.compile(NAME_REGEX);
 
     @Delegate
     private final Resource resource = new Resource();
@@ -49,13 +44,7 @@ public class ResourceRequest {
     }
 
     public String verifyName() {
-        String errorMsg = null;
-        if (getName() == null) {
-            errorMsg = "The name of resource cannot be null";
-        } else if (!NAME_PATTERN.matcher(getName()).matches()) {
-            errorMsg = String.format("invalid job name, regex: `%s`", NAME_REGEX);
-        }
-        return errorMsg;
+        return requireValidName(getName(), "resource");
     }
 
     public String fullNameNotBlank() {
