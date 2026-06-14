@@ -22,6 +22,7 @@
 		<module>flink-sql-submit-1.15</module>
 		<module>flink-sql-submit-1.12</module>
 		<module>flink-sql-submit-base</module>
+		<module>flink-sql-submit-1.20</module>
 	</modules>
 
 	<build>

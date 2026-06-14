@@ -14,6 +14,7 @@
       <w>namenode</w>
       <w>oidc</w>
       <w>openrewrite</w>
+      <w>rocksdb</w>
       <w>rwxr</w>
       <w>sqls</w>
       <w>tmpdir</w>
