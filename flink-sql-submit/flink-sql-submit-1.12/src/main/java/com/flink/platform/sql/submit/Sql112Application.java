@@ -35,7 +35,6 @@ public class Sql112Application {
         // step 1: create and configure environment
         TableEnvironment tEnv = ExecutionEnvs.createExecutionEnv(sqlContext.getExecMode());
         Map<String, String> configMap = ConfigLoader.loadDefault(sqlContext.getExecMode());
-        configMap.putAll(sqlContext.getConfigs());
         configMap.putAll(sqlContext.getSqls().stream()
                 .filter(sql -> SqlType.SET.equals(sql.getType()))
                 .map(Sql::getOperands)

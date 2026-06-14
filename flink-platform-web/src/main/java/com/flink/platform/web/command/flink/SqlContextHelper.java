@@ -26,7 +26,6 @@ import java.util.Map;
 import static com.flink.platform.common.constants.JobConstant.JSON_FILE_SUFFIX;
 import static com.flink.platform.common.constants.JobConstant.SQL_PATTERN;
 import static java.util.Collections.emptyList;
-import static java.util.Collections.emptyMap;
 import static java.util.stream.Collectors.toList;
 
 /** Sql context helper. */
@@ -62,9 +61,10 @@ public class SqlContextHelper {
         var flinkJob = jobRun.getConfig().unwrap(FlinkJob.class);
         var sqlContext = new SqlContext();
         sqlContext.setId(jobRun.getJobCode());
+        sqlContext.setJobId(jobRun.getJobId());
+        sqlContext.setWorkspaceId(jobRun.getWorkspaceId());
         sqlContext.setSqls(toSqls(jobRun.getSubject()));
         sqlContext.setExecMode(jobRun.getExecMode());
-        sqlContext.setConfigs(toConfigs(flinkJob.getConfigs()));
         sqlContext.setCatalogs(toCatalogs(flinkJob.getCatalogs(), jobRun.getParams()));
         sqlContext.setFunctions(toFunctions());
         return sqlContext;
@@ -99,10 +99,6 @@ public class SqlContextHelper {
                     return new Catalog(catalogInfo.getName(), catalogInfo.getType(), createSql);
                 })
                 .collect(toList());
-    }
-
-    private Map<String, String> toConfigs(Map<String, String> configs) {
-        return configs != null ? configs : emptyMap();
     }
 
     public List<Sql> toSqls(String subject) {

@@ -33,8 +33,7 @@ public abstract class SqlApplication {
 
         // step 1: create and configure environment
         Map<String, String> configMap = new HashMap<>();
-        configMap.putAll(ConfigLoader.loadDefault(sqlContext.getExecMode()));
-        configMap.putAll(sqlContext.getConfigs());
+        configMap.putAll(ConfigLoader.loadDefault(sqlContext.getExecMode(), sqlContext));
         configMap.putAll(sqlContext.getSqls().stream()
                 .filter(sql -> SqlType.SET.equals(sql.getType()))
                 .map(Sql::getOperands)

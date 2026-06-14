@@ -4,7 +4,6 @@ import com.flink.platform.common.enums.ExecutionMode;
 import lombok.Data;
 
 import java.util.List;
-import java.util.Map;
 
 /** sql context. */
 @Data
@@ -12,12 +11,13 @@ public class SqlContext {
 
     private String id;
 
+    private Long jobId;
+
+    private Long workspaceId;
+
     private List<Sql> sqls;
 
     private ExecutionMode execMode;
-
-    /** flink-conf.yaml configs. */
-    private Map<String, String> configs;
 
     private List<Catalog> catalogs;
 
