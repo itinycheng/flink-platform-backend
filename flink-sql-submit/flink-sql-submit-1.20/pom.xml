@@ -24,10 +24,16 @@
 			<artifactId>flink-sql-submit-base</artifactId>
 			<version>${project.version}</version>
 		</dependency>
-		<!-- flink -->
+		<!-- flink for compile and JUnit test -->
 		<dependency>
 			<groupId>org.apache.flink</groupId>
-			<artifactId>flink-table-api-java-bridge</artifactId>
+			<artifactId>flink-table-planner-loader</artifactId>
+			<version>${flink.version}</version>
+			<scope>${scope.provided}</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.flink</groupId>
+			<artifactId>flink-table-runtime</artifactId>
 			<version>${flink.version}</version>
 			<scope>${scope.provided}</scope>
 		</dependency>

@@ -24,6 +24,7 @@ import org.apache.commons.collections4.ListUtils;
 import org.apache.hadoop.fs.Path;
 
 import java.io.IOException;
+import java.net.URI;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -143,7 +144,13 @@ public abstract class FlinkCommandBuilder implements CommandBuilder {
 
     private String getLocalPathOfMainJar(JobRunInfo jobRun) throws IOException {
         var jarPath = jobRun.getSubject();
-        if (!jarPath.toLowerCase().startsWith("hdfs")) {
+        try {
+            var scheme = URI.create(jarPath).getScheme();
+            if (scheme == null || "file".equalsIgnoreCase(scheme)) {
+                return jarPath;
+            }
+        } catch (IllegalArgumentException e) {
+            log.warn("Treating jar path as local due to URI parse failure: {}", jarPath, e);
             return jarPath;
         }
 
