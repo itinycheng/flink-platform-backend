@@ -30,7 +30,7 @@ public class ExecutionEnvs {
                 throw new FlinkJobGenException("unknown execution mode");
         }
 
-        val env = StreamExecutionEnvironment.getExecutionEnvironment();
+        val env = StreamExecutionEnvironment.getExecutionEnvironment(configuration);
         val streamEnv = StreamTableEnvironment.create(env, settingBuilder.build());
         return new FlinkEnvironment(env, streamEnv);
     }

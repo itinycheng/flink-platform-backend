@@ -12,10 +12,13 @@ streaming:
   state.checkpoint-storage: filesystem
   state.backend.incremental: true
   state.checkpoints.num-retained: 2
+  state.checkpoints.dir: hdfs:///flink/checkpoints/{{workspace}}/{{job}}
+  state.savepoints.dir: hdfs:///flink/savepoints/{{workspace}}/{{job}}
   execution.checkpointing.mode: EXACTLY_ONCE # AT_LEAST_ONCE
   execution.checkpointing.interval: 5min
   execution.checkpointing.min-pause: 2min
   execution.checkpointing.tolerable-failed-checkpoints: 0
+  high-availability.storageDir: hdfs:///flink/recovery/{{workspace}}/{{job}}
 
 batch:
   parallelism.default: 1

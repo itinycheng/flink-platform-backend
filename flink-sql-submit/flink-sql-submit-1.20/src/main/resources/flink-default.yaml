@@ -18,6 +18,7 @@ streaming:
   execution.checkpointing.interval: 5min
   execution.checkpointing.min-pause: 2min
   execution.checkpointing.tolerable-failed-checkpoints: 0
+  high-availability.storageDir: hdfs:///flink/recovery/{{workspace}}/{{job}}
 
 batch:
   parallelism.default: 1
