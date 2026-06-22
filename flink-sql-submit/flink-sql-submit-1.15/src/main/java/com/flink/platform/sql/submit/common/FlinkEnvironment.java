@@ -47,7 +47,7 @@ public class FlinkEnvironment implements FlinkEnvAdapter {
     @Override
     public void registerSelect(String sql) {
         Table table = tableEnv.sqlQuery(sql);
-        tableEnv.toDataStream(table).addSink(new PrintSinkFunction<>());
+        tableEnv.toChangelogStream(table).addSink(new PrintSinkFunction<>());
         hasRegisteredSelect = true;
     }
 

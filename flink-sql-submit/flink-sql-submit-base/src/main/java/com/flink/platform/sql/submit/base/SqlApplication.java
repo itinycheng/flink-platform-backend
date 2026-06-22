@@ -38,6 +38,7 @@ public abstract class SqlApplication {
                 .filter(sql -> SqlType.SET.equals(sql.getType()))
                 .map(Sql::getOperands)
                 .collect(toMap(operands -> operands[0], operands -> operands[1])));
+        log.info("Resolved Flink configuration: {}", configMap);
 
         FlinkEnvAdapter env = createExecutionEnv(sqlContext.getExecMode(), configMap);
 

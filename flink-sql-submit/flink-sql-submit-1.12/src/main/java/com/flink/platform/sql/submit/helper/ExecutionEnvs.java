@@ -34,7 +34,6 @@ public class ExecutionEnvs {
             default:
                 throw new FlinkJobGenException("unknown execution mode");
         }
-        // Flink 1.12's EnvironmentSettings has no withConfiguration(); apply post-creation.
         tEnv.getConfig().getConfiguration().addAll(configuration);
         return new FlinkEnvironment(tEnv);
     }
