@@ -115,7 +115,7 @@ public class WorkerHeartbeat {
     private void updateJobFlowRunHost(List<JobFlowRun> list) {
         jobFlowRunService.updateBatchById(list.stream()
                 .map(jobFlowRun -> {
-                    JobFlowRun newJobFlowRun = new JobFlowRun();
+                    var newJobFlowRun = new JobFlowRun();
                     newJobFlowRun.setId(jobFlowRun.getId());
                     newJobFlowRun.setHost(HOST_IP);
                     return newJobFlowRun;

@@ -25,6 +25,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
+
 import static com.flink.platform.common.constants.JobConstant.FLOW_RUN_ID;
 import static com.flink.platform.common.enums.ExecutionStatus.CREATED;
 import static com.flink.platform.common.enums.ExecutionStatus.FAILURE;
@@ -122,6 +124,8 @@ public class FlowCommandExecutor implements CommandExecutor {
         jobflowRun.setHost("");
         jobflowRun.setFlow(new JobFlowDag());
         jobflowRun.setStatus(CREATED);
+        // Will be overwritten by JobFlowRunner.execute when the runOnce trigger fires.
+        jobflowRun.setScheduleTime(LocalDateTime.now());
         jobFlowRunService.save(jobflowRun);
         return jobflowRun.getId();
     }

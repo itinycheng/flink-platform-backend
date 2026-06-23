@@ -65,6 +65,9 @@ public class JobFlowRun {
 
     private ExecutionStatus status;
 
+    /** Quartz scheduledFireTime. */
+    private LocalDateTime scheduleTime;
+
     private LocalDateTime startTime;
 
     private LocalDateTime endTime;

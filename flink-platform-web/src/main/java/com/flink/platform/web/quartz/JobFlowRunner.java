@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.flink.platform.alert.AlertSendingService;
 import com.flink.platform.common.constants.Constant;
 import com.flink.platform.common.model.JobVertex;
+import com.flink.platform.common.util.DateUtil;
 import com.flink.platform.common.util.JsonUtil;
 import com.flink.platform.common.util.NumberUtil;
 import com.flink.platform.dao.entity.ExecutionConfig;
@@ -24,6 +25,7 @@ import org.quartz.Job;
 import org.quartz.JobDataMap;
 import org.quartz.JobExecutionContext;
 
+import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -122,6 +124,9 @@ public class JobFlowRunner implements Job {
             jobFlowRun.setTimeout(jobFlow.getTimeout());
             jobFlowRun.setParams(jobFlow.getParams());
             jobFlowRun.setStatus(SUBMITTED);
+            var scheduledFire = context.getScheduledFireTime();
+            jobFlowRun.setScheduleTime(
+                    scheduledFire != null ? DateUtil.toLocalDateTime(scheduledFire) : LocalDateTime.now());
             jobFlowRunService.saveOrUpdate(jobFlowRun);
 
             // register job flow run.

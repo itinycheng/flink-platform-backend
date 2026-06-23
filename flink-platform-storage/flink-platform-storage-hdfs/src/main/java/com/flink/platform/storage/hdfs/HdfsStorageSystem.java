@@ -21,6 +21,7 @@ import java.time.LocalDateTime;
 
 import static com.flink.platform.common.constants.Constant.GLOBAL_ZONE_ID;
 import static com.flink.platform.common.constants.Constant.SLASH;
+import static com.flink.platform.common.constants.JobConstant.HADOOP_USER_NAME;
 import static com.flink.platform.common.util.StringUtil.stripLeadingSlash;
 
 /**
@@ -163,7 +164,7 @@ public class HdfsStorageSystem implements StorageSystem {
         var hdfsProperties = properties.getHdfsProperties();
         var username = hdfsProperties.get("hadoop.username");
         if (StringUtils.isNotBlank(username)) {
-            System.setProperty("HADOOP_USER_NAME", username.trim());
+            System.setProperty(HADOOP_USER_NAME, username.trim());
         }
 
         org.apache.hadoop.conf.Configuration conf = new HdfsConfiguration();

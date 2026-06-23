@@ -41,6 +41,20 @@ public class JobConstant {
 
     public static final String CUR_MILLISECOND = "curMillisecond";
 
+    public static final String BIZ_YEAR = "bizYear";
+
+    public static final String BIZ_MONTH = "bizMonth";
+
+    public static final String BIZ_DAY = "bizDay";
+
+    public static final String BIZ_HOUR = "bizHour";
+
+    public static final String BIZ_MINUTE = "bizMinute";
+
+    public static final String BIZ_SECOND = "bizSecond";
+
+    public static final String BIZ_MILLISECOND = "bizMillisecond";
+
     public static final int SQL_PATTERN_FLAGS = Pattern.CASE_INSENSITIVE | Pattern.MULTILINE | Pattern.DOTALL;
 
     public static final int VARIABLE_PATTERN_FLAGS = Pattern.CASE_INSENSITIVE | Pattern.MULTILINE;
@@ -50,11 +64,24 @@ public class JobConstant {
     public static final Pattern LIMIT_PATTERN =
             Pattern.compile("LIMIT\\s+(?<num1>\\d+)(,\\s*(?<num2>\\d+))?$", SQL_PATTERN_FLAGS);
 
-    // ${time:yyyyMMdd[curDate-3d]}
+    // ${time:yyyyMMdd[cur*-3d]} / ${time:yyyyMMdd[biz*-1d]}
     public static final Pattern TIME_PATTERN = Pattern.compile(
             String.format(
-                    "\\$\\{\\s*time:(?<format>.+?)\\[(?<baseTime>%s|%s|%s|%s|%s|%s|%s)(?<operator>\\+|-)?(?<duration>\\w+)?\\]\\s*}",
-                    CUR_YEAR, CUR_MONTH, CUR_DAY, CUR_HOUR, CUR_MINUTE, CUR_SECOND, CUR_MILLISECOND),
+                    "\\$\\{\\s*time:(?<format>.+?)\\[(?<baseTime>%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s)(?<operator>\\+|-)?(?<duration>\\w+)?\\]\\s*}",
+                    CUR_YEAR,
+                    CUR_MONTH,
+                    CUR_DAY,
+                    CUR_HOUR,
+                    CUR_MINUTE,
+                    CUR_SECOND,
+                    CUR_MILLISECOND,
+                    BIZ_YEAR,
+                    BIZ_MONTH,
+                    BIZ_DAY,
+                    BIZ_HOUR,
+                    BIZ_MINUTE,
+                    BIZ_SECOND,
+                    BIZ_MILLISECOND),
             VARIABLE_PATTERN_FLAGS);
 
     // ${jobRun:id}

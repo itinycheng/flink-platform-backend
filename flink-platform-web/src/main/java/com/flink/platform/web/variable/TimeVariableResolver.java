@@ -4,10 +4,13 @@ import com.flink.platform.common.constants.JobConstant;
 import com.flink.platform.common.util.DateUtil;
 import com.flink.platform.common.util.DurationUtil;
 import com.flink.platform.dao.entity.JobRunInfo;
+import com.flink.platform.dao.service.JobFlowRunService;
 import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.jspecify.annotations.Nullable;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
@@ -18,7 +21,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.function.Supplier;
+import java.util.function.Function;
 
 import static com.flink.platform.common.constants.JobConstant.TIME_PATTERN;
 import static com.flink.platform.common.util.Preconditions.checkNotNull;
@@ -26,17 +29,23 @@ import static com.flink.platform.common.util.Preconditions.checkNotNull;
 /**
  * Time variable resolver.
  * Resolves ${time:format[baseTime±duration]} placeholders.
- * Example: ${time:yyyyMMdd[curDay-1d]}
+ * baseTime is one of:
+ *   cur* (curYear/curMonth/curDay/curHour/curMinute/curSecond/curMillisecond) — wall-clock now()
+ *   biz* (bizYear/bizMonth/bizDay/bizHour/bizMinute/bizSecond/bizMillisecond) — anchored to JobFlowRun.scheduleTime
  */
 @Slf4j
 @Order(5)
 @Component
+@RequiredArgsConstructor(onConstructor_ = @Autowired)
 public class TimeVariableResolver implements VariableResolver {
+
+    private final JobFlowRunService jobFlowRunService;
 
     @Override
     public Map<String, Object> resolve(@Nullable JobRunInfo jobRun, String content) {
         var result = new HashMap<String, Object>();
         var matcher = TIME_PATTERN.matcher(content);
+        var ctx = new ResolveContext(jobRun);
         while (matcher.find()) {
             var variable = matcher.group();
             if (result.containsKey(variable)) {
@@ -48,7 +57,7 @@ public class TimeVariableResolver implements VariableResolver {
             var operator = matcher.group("operator");
             var duration = matcher.group("duration");
             var baseTimeUnit = BaseTimeUnit.of(baseTime);
-            var destTime = baseTimeUnit.provider.get();
+            var destTime = baseTimeUnit.provider.apply(ctx);
             // dest time plus duration.
             if (StringUtils.isNotBlank(duration)) {
                 var parsedDuration = DurationUtil.parse(duration);
@@ -63,23 +72,70 @@ public class TimeVariableResolver implements VariableResolver {
         return result;
     }
 
+    /** Resolution context shared across all base-time-unit lookups for one resolve() call. */
+    final class ResolveContext {
+
+        private final @Nullable JobRunInfo jobRun;
+
+        private @Nullable LocalDateTime scheduleTimeCache;
+
+        private boolean scheduleTimeLoaded;
+
+        ResolveContext(@Nullable JobRunInfo jobRun) {
+            this.jobRun = jobRun;
+        }
+
+        LocalDateTime scheduleTime() {
+            if (!scheduleTimeLoaded) {
+                scheduleTimeCache = loadScheduleTime();
+                scheduleTimeLoaded = true;
+            }
+            return checkNotNull(
+                    scheduleTimeCache,
+                    "biz* time variable requires a schedule-time anchor, but none could be resolved for the job run");
+        }
+
+        private @Nullable LocalDateTime loadScheduleTime() {
+            if (jobRun == null) {
+                return null;
+            }
+            var flowRunId = jobRun.getFlowRunId();
+            if (flowRunId == null) {
+                return jobRun.getCreateTime();
+            }
+            var flowRun = jobFlowRunService.getById(flowRunId);
+            return flowRun != null ? flowRun.getScheduleTime() : jobRun.getCreateTime();
+        }
+    }
+
     @Getter
     enum BaseTimeUnit {
-        CUR_YEAR(JobConstant.CUR_YEAR, () -> LocalDateTime.of(LocalDate.now(), LocalTime.MIN)
+        CUR_YEAR(JobConstant.CUR_YEAR, ctx -> LocalDateTime.of(LocalDate.now(), LocalTime.MIN)
                 .withDayOfYear(1)),
-        CUR_MONTH(JobConstant.CUR_MONTH, () -> LocalDateTime.of(LocalDate.now(), LocalTime.MIN)
+        CUR_MONTH(JobConstant.CUR_MONTH, ctx -> LocalDateTime.of(LocalDate.now(), LocalTime.MIN)
                 .withDayOfMonth(1)),
-        CUR_DAY(JobConstant.CUR_DAY, () -> LocalDateTime.of(LocalDate.now(), LocalTime.MIN)),
-        CUR_HOUR(JobConstant.CUR_HOUR, () -> LocalDateTime.now().truncatedTo(ChronoUnit.HOURS)),
-        CUR_MINUTE(JobConstant.CUR_MINUTE, () -> LocalDateTime.now().truncatedTo(ChronoUnit.MINUTES)),
-        CUR_SECOND(JobConstant.CUR_SECOND, () -> LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS)),
-        CUR_MILLISECOND(JobConstant.CUR_MILLISECOND, () -> LocalDateTime.now().truncatedTo(ChronoUnit.MILLIS));
+        CUR_DAY(JobConstant.CUR_DAY, ctx -> LocalDateTime.of(LocalDate.now(), LocalTime.MIN)),
+        CUR_HOUR(JobConstant.CUR_HOUR, ctx -> LocalDateTime.now().truncatedTo(ChronoUnit.HOURS)),
+        CUR_MINUTE(JobConstant.CUR_MINUTE, ctx -> LocalDateTime.now().truncatedTo(ChronoUnit.MINUTES)),
+        CUR_SECOND(JobConstant.CUR_SECOND, ctx -> LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS)),
+        CUR_MILLISECOND(JobConstant.CUR_MILLISECOND, ctx -> LocalDateTime.now().truncatedTo(ChronoUnit.MILLIS)),
+        BIZ_YEAR(
+                JobConstant.BIZ_YEAR,
+                ctx -> ctx.scheduleTime().truncatedTo(ChronoUnit.DAYS).withDayOfYear(1)),
+        BIZ_MONTH(
+                JobConstant.BIZ_MONTH,
+                ctx -> ctx.scheduleTime().truncatedTo(ChronoUnit.DAYS).withDayOfMonth(1)),
+        BIZ_DAY(JobConstant.BIZ_DAY, ctx -> ctx.scheduleTime().truncatedTo(ChronoUnit.DAYS)),
+        BIZ_HOUR(JobConstant.BIZ_HOUR, ctx -> ctx.scheduleTime().truncatedTo(ChronoUnit.HOURS)),
+        BIZ_MINUTE(JobConstant.BIZ_MINUTE, ctx -> ctx.scheduleTime().truncatedTo(ChronoUnit.MINUTES)),
+        BIZ_SECOND(JobConstant.BIZ_SECOND, ctx -> ctx.scheduleTime().truncatedTo(ChronoUnit.SECONDS)),
+        BIZ_MILLISECOND(JobConstant.BIZ_MILLISECOND, ctx -> ctx.scheduleTime().truncatedTo(ChronoUnit.MILLIS));
 
         private final String name;
 
-        private final Supplier<LocalDateTime> provider;
+        private final Function<TimeVariableResolver.ResolveContext, LocalDateTime> provider;
 
-        BaseTimeUnit(String name, Supplier<LocalDateTime> provider) {
+        BaseTimeUnit(String name, Function<TimeVariableResolver.ResolveContext, LocalDateTime> provider) {
             this.name = name;
             this.provider = provider;
         }
