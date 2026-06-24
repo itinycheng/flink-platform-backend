@@ -90,8 +90,7 @@ public class SqlContextHelper {
                         }
                     }
 
-                    for (var entry :
-                            apolloVariableResolver.resolve(null, createSql).entrySet()) {
+                    for (var entry : apolloVariableResolver.resolve(createSql).entrySet()) {
                         createSql = createSql.replace(
                                 entry.getKey(), entry.getValue().toString());
                     }

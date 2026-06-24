@@ -42,7 +42,7 @@ public class TimeVariableResolver implements VariableResolver {
     private final JobFlowRunService jobFlowRunService;
 
     @Override
-    public Map<String, Object> resolve(@Nullable JobRunInfo jobRun, String content) {
+    public Map<String, Object> resolve(JobRunInfo jobRun, String content) {
         var result = new HashMap<String, Object>();
         var matcher = TIME_PATTERN.matcher(content);
         var ctx = new ResolveContext(jobRun);

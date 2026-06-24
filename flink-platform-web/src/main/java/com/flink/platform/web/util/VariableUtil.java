@@ -12,13 +12,11 @@ public class VariableUtil {
 
     public static String apolloConfig(String param) {
         var resolver = SpringContext.getBean(ApolloVariableResolver.class);
-        var result = resolver.resolve(null, param);
+        var result = resolver.resolve(param);
         if (!result.isEmpty()) {
             var value = result.values().iterator().next();
-            if (value != null) {
-                log.debug("Apollo config found, param:{}, value:{}", param, value);
-                return value.toString();
-            }
+            log.debug("Apollo config found, param:{}, value:{}", param, value);
+            return value.toString();
         }
         return param;
     }

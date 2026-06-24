@@ -2,7 +2,6 @@ package com.flink.platform.web.variable;
 
 import com.flink.platform.dao.entity.JobRunInfo;
 import lombok.extern.slf4j.Slf4j;
-import org.jspecify.annotations.Nullable;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
@@ -22,7 +21,7 @@ import static com.flink.platform.common.constants.JobConstant.SET_PARAM_PATTERN;
 public class SetParamVariableResolver implements VariableResolver {
 
     @Override
-    public Map<String, Object> resolve(@Nullable JobRunInfo jobRun, String content) {
+    public Map<String, Object> resolve(JobRunInfo jobRun, String content) {
         var result = new HashMap<String, Object>();
         var matcher = SET_PARAM_PATTERN.matcher(content);
         while (matcher.find()) {

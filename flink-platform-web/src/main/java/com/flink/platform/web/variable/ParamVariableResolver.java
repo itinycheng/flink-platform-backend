@@ -34,8 +34,8 @@ public class ParamVariableResolver implements VariableResolver {
     private final SubflowVariableResolver subflowResolver;
 
     @Override
-    public boolean supports(@Nullable JobRunInfo jobRun, String content) {
-        return jobRun != null && PARAM_PATTERN.matcher(content).find();
+    public boolean supports(JobRunInfo jobRun, String content) {
+        return PARAM_PATTERN.matcher(content).find();
     }
 
     @Override

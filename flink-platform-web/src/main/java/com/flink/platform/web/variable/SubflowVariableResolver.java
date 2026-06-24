@@ -33,9 +33,9 @@ public class SubflowVariableResolver implements VariableResolver {
     private final JobFlowRunService jobFlowRunService;
 
     @Override
-    public Map<String, Object> resolve(@Nullable JobRunInfo jobRun, String content) {
+    public Map<String, Object> resolve(JobRunInfo jobRun, String content) {
         var result = new HashMap<String, Object>();
-        if (jobRun == null || jobRun.getFlowRunId() == null) {
+        if (jobRun.getFlowRunId() == null) {
             return result;
         }
 

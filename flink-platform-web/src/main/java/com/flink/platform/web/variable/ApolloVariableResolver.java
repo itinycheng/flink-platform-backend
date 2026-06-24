@@ -5,7 +5,6 @@ import com.flink.platform.web.service.PluginService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.jspecify.annotations.Nullable;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
@@ -27,8 +26,12 @@ public class ApolloVariableResolver implements VariableResolver {
 
     private final PluginService pluginService;
 
+    public Map<String, Object> resolve(String content) {
+        return resolve(new JobRunInfo(), content);
+    }
+
     @Override
-    public Map<String, Object> resolve(@Nullable JobRunInfo jobRun, String content) {
+    public Map<String, Object> resolve(JobRunInfo jobRun, String content) {
         try {
             var result = new HashMap<String, Object>();
             var matcher = APOLLO_CONF_PATTERN.matcher(content);
