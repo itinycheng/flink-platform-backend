@@ -33,6 +33,13 @@ public class JobFlowRunService extends ServiceImpl<JobFlowRunMapper, JobFlowRun>
 
     private final JobRunInfoService jobRunService;
 
+    public JobFlowRun getLiteById(Long flowRunId) {
+        return getOne(new QueryWrapper<JobFlowRun>()
+                .lambda()
+                .select(JobFlowRun.class, info -> info.getTypeHandler() == null)
+                .eq(JobFlowRun::getId, flowRunId));
+    }
+
     @Transactional
     public void deleteAllById(long flowRunId) {
         jobRunService.remove(new QueryWrapper<JobRunInfo>().lambda().eq(JobRunInfo::getFlowRunId, flowRunId));

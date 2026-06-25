@@ -24,10 +24,12 @@ import static com.flink.platform.common.constants.JobConstant.APOLLO_CONF_PATTER
 @RequiredArgsConstructor(onConstructor_ = @Autowired)
 public class ApolloVariableResolver implements VariableResolver {
 
+    private static final JobRunInfo BLANK = new JobRunInfo();
+
     private final PluginService pluginService;
 
     public Map<String, Object> resolve(String content) {
-        return resolve(new JobRunInfo(), content);
+        return resolve(BLANK, content);
     }
 
     @Override

@@ -149,3 +149,4 @@ ALTER TABLE platform.t_job_run CHANGE COLUMN variables params TEXT COMMENT 'para
 
 -- 2026-06-23
 ALTER TABLE platform.t_job_flow_run ADD COLUMN `schedule_time` datetime NOT NULL AFTER `status`;
+UPDATE platform.t_job_flow_run SET schedule_time = start_time WHERE start_time IS NOT NULL;

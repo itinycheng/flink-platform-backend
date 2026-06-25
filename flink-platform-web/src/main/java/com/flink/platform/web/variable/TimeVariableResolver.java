@@ -27,11 +27,10 @@ import static com.flink.platform.common.constants.JobConstant.TIME_PATTERN;
 import static com.flink.platform.common.util.Preconditions.checkNotNull;
 
 /**
- * Time variable resolver.
- * Resolves ${time:format[baseTime±duration]} placeholders.
- * baseTime is one of:
- *   cur* (curYear/curMonth/curDay/curHour/curMinute/curSecond/curMillisecond) — wall-clock now()
- *   biz* (bizYear/bizMonth/bizDay/bizHour/bizMinute/bizSecond/bizMillisecond) — anchored to JobFlowRun.scheduleTime
+ * Time variable resolver. Resolves ${time:format[baseTime±duration]} placeholders. baseTime is one
+ * of: cur* (curYear/curMonth/curDay/curHour/curMinute/curSecond/curMillisecond) — wall-clock now()
+ * biz* (bizYear/bizMonth/bizDay/bizHour/bizMinute/bizSecond/bizMillisecond) — anchored to
+ * JobFlowRun.scheduleTime
  */
 @Slf4j
 @Order(5)
@@ -72,39 +71,26 @@ public class TimeVariableResolver implements VariableResolver {
         return result;
     }
 
-    /** Resolution context shared across all base-time-unit lookups for one resolve() call. */
     final class ResolveContext {
 
-        private final @Nullable JobRunInfo jobRun;
+        private final JobRunInfo jobRun;
 
-        private @Nullable LocalDateTime scheduleTimeCache;
+        private @Nullable LocalDateTime scheduleTime;
 
-        private boolean scheduleTimeLoaded;
-
-        ResolveContext(@Nullable JobRunInfo jobRun) {
+        ResolveContext(JobRunInfo jobRun) {
             this.jobRun = jobRun;
         }
 
-        LocalDateTime scheduleTime() {
-            if (!scheduleTimeLoaded) {
-                scheduleTimeCache = loadScheduleTime();
-                scheduleTimeLoaded = true;
+        public LocalDateTime scheduleTime() {
+            if (scheduleTime != null) {
+                return scheduleTime;
             }
-            return checkNotNull(
-                    scheduleTimeCache,
-                    "biz* time variable requires a schedule-time anchor, but none could be resolved for the job run");
-        }
 
-        private @Nullable LocalDateTime loadScheduleTime() {
-            if (jobRun == null) {
-                return null;
-            }
-            var flowRunId = jobRun.getFlowRunId();
-            if (flowRunId == null) {
-                return jobRun.getCreateTime();
-            }
-            var flowRun = jobFlowRunService.getById(flowRunId);
-            return flowRun != null ? flowRun.getScheduleTime() : jobRun.getCreateTime();
+            var flowRun = jobFlowRunService.getLiteById(jobRun.getFlowRunId());
+            scheduleTime = checkNotNull(
+                    flowRun.getScheduleTime(),
+                    "biz* time variable requires a schedule-time anchor, but none could be resolved for the job run");
+            return scheduleTime;
         }
     }
 

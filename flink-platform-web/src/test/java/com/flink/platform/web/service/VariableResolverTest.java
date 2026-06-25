@@ -1,23 +1,29 @@
 package com.flink.platform.web.service;
 
+import com.flink.platform.dao.entity.JobFlowRun;
 import com.flink.platform.dao.entity.JobRunInfo;
+import com.flink.platform.dao.service.JobFlowRunService;
 import com.flink.platform.web.util.ResourceUtil;
 import com.flink.platform.web.variable.JobRunVariableResolver;
 import com.flink.platform.web.variable.ResourceVariableResolver;
 import com.flink.platform.web.variable.TimeVariableResolver;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
+import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
+
+import java.time.LocalDateTime;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @ExtendWith(MockitoExtension.class)
 public class VariableResolverTest {
 
-    @org.mockito.Mock
-    private com.flink.platform.dao.service.JobFlowRunService jobFlowRunService;
+    @Mock
+    private JobFlowRunService jobFlowRunService;
 
     @InjectMocks
     private TimeVariableResolver timeVariableResolver;
@@ -77,97 +83,52 @@ public class VariableResolverTest {
 
     @Test
     public void bizDayResolvesToFlowScheduleTime() {
-        var flowRun = new com.flink.platform.dao.entity.JobFlowRun();
+        var flowRun = new JobFlowRun();
         flowRun.setId(100L);
-        flowRun.setScheduleTime(java.time.LocalDateTime.of(2024, 6, 21, 23, 59, 59));
-        Mockito.when(jobFlowRunService.getById(100L)).thenReturn(flowRun);
+        flowRun.setScheduleTime(LocalDateTime.of(2026, 6, 21, 23, 59, 59));
+        Mockito.when(jobFlowRunService.getLiteById(100L)).thenReturn(flowRun);
 
+        var time1 = "${time:yyyy-MM-dd HH:mm:ss[bizYear]}";
+        var time2 = "${time:yyyy-MM-dd HH:mm:ss[bizMonth]}";
+        var time3 = "${time:yyyy-MM-dd HH:mm:ss[bizDay]}";
+        var time4 = "${time:yyyy-MM-dd HH:mm:ss[bizHour]}";
+        var time5 = "${time:yyyy-MM-dd HH:mm:ss[bizMinute]}";
+        var time6 = "${time:yyyy-MM-dd HH:mm:ss[bizSecond]}";
+        var time7 = "${time:yyyy-MM-dd HH:mm:ss.SSS[bizMillisecond]}";
+        var time8 = "${time:yyyy-MM-dd HH:mm:ss.SSS[bizDay-1ms]}";
+        var time9 = "${time:yyyy-MM-dd HH:mm:ss[bizDay-1s]}";
+        var time10 = "${time:yyyy-MM-dd HH:mm:ss[bizDay-1m]}";
+        var time11 = "${time:yyyy-MM-dd HH:mm:ss[bizDay-1h]}";
+        var time12 = "${time:yyyy-MM-dd HH:mm:ss[bizDay-1d]}";
         var jobRun = new JobRunInfo();
         jobRun.setFlowRunId(100L);
+        jobRun.setSubject(String.join(
+                " ", time1, time2, time3, time4, time5, time6, time7, time8, time9, time10, time11, time12));
+        var result = timeVariableResolver.resolve(jobRun, jobRun.getSubject());
+
+        assertEquals("2026-01-01 00:00:00", result.get(time1));
+        assertEquals("2026-06-01 00:00:00", result.get(time2));
+        assertEquals("2026-06-21 00:00:00", result.get(time3));
+        assertEquals("2026-06-21 23:00:00", result.get(time4));
+        assertEquals("2026-06-21 23:59:00", result.get(time5));
+        assertEquals("2026-06-21 23:59:59", result.get(time6));
+        assertEquals("2026-06-21 23:59:59.000", result.get(time7));
+        assertEquals("2026-06-20 23:59:59.999", result.get(time8));
+        assertEquals("2026-06-20 23:59:59", result.get(time9));
+        assertEquals("2026-06-20 23:59:00", result.get(time10));
+        assertEquals("2026-06-20 23:00:00", result.get(time11));
+        assertEquals("2026-06-20 00:00:00", result.get(time12));
+        Mockito.verify(jobFlowRunService, Mockito.times(1)).getLiteById(100L);
+    }
+
+    @Test
+    public void bizThrowsWhenJobRunHasNoFlowRun() {
+        var jobRun = new JobRunInfo();
+        jobRun.setFlowRunId(null);
         jobRun.setSubject("dt=${time:yyyyMMdd[bizDay]}");
 
-        var result = timeVariableResolver.resolve(jobRun, jobRun.getSubject());
-        assertEquals("20240621", result.get("${time:yyyyMMdd[bizDay]}"));
-    }
-
-    @Test
-    public void bizDaySupportsOffset() {
-        var flowRun = new com.flink.platform.dao.entity.JobFlowRun();
-        flowRun.setId(101L);
-        flowRun.setScheduleTime(java.time.LocalDateTime.of(2024, 6, 21, 23, 59, 59));
-        Mockito.when(jobFlowRunService.getById(101L)).thenReturn(flowRun);
-
-        var jobRun = new JobRunInfo();
-        jobRun.setFlowRunId(101L);
-        jobRun.setSubject("dt=${time:yyyyMMdd[bizDay-1d]}");
-
-        var result = timeVariableResolver.resolve(jobRun, jobRun.getSubject());
-        assertEquals("20240620", result.get("${time:yyyyMMdd[bizDay-1d]}"));
-    }
-
-    @Test
-    public void bizUnitsConsistentAcrossMultiplePlaceholders() {
-        var flowRun = new com.flink.platform.dao.entity.JobFlowRun();
-        flowRun.setId(102L);
-        flowRun.setScheduleTime(java.time.LocalDateTime.of(2024, 12, 31, 23, 59, 59));
-        Mockito.when(jobFlowRunService.getById(102L)).thenReturn(flowRun);
-
-        var jobRun = new JobRunInfo();
-        jobRun.setFlowRunId(102L);
-        jobRun.setSubject("y=${time:yyyy[bizYear]} m=${time:yyyyMM[bizMonth]} d=${time:yyyyMMdd[bizDay]}");
-
-        var result = timeVariableResolver.resolve(jobRun, jobRun.getSubject());
-        assertEquals("2024", result.get("${time:yyyy[bizYear]}"));
-        assertEquals("202412", result.get("${time:yyyyMM[bizMonth]}"));
-        assertEquals("20241231", result.get("${time:yyyyMMdd[bizDay]}"));
-        Mockito.verify(jobFlowRunService, Mockito.times(1)).getById(102L);
-    }
-
-    @Test
-    public void bizDayFallsBackToJobRunCreateTimeWhenNotInFlow() {
-        var jobRun = new JobRunInfo();
-        jobRun.setFlowRunId(null); // ad-hoc
-        jobRun.setCreateTime(java.time.LocalDateTime.of(2024, 6, 21, 10, 0, 0));
-        jobRun.setSubject("dt=${time:yyyyMMdd[bizDay]}");
-
-        var result = timeVariableResolver.resolve(jobRun, jobRun.getSubject());
-        assertEquals("20240621", result.get("${time:yyyyMMdd[bizDay]}"));
-        Mockito.verifyNoInteractions(jobFlowRunService);
-    }
-
-    @Test
-    public void bizDayFallsBackThroughLegacyRowChain() {
-        var flowRun = new com.flink.platform.dao.entity.JobFlowRun();
-        flowRun.setId(103L);
-        flowRun.setScheduleTime(null);
-        flowRun.setStartTime(java.time.LocalDateTime.of(2024, 6, 21, 8, 30, 0));
-        Mockito.when(jobFlowRunService.getById(103L)).thenReturn(flowRun);
-
-        var jobRun = new JobRunInfo();
-        jobRun.setFlowRunId(103L);
-        jobRun.setSubject("dt=${time:yyyyMMdd[bizDay]}");
-
-        var result = timeVariableResolver.resolve(jobRun, jobRun.getSubject());
-        assertEquals("20240621", result.get("${time:yyyyMMdd[bizDay]}"));
-    }
-
-    @Test
-    public void bizDayFallsBackToFlowRunCreateTime() {
-        // Both scheduleTime and startTime null: only createTime remains in fallback chain.
-        var flowRun = new com.flink.platform.dao.entity.JobFlowRun();
-        flowRun.setId(104L);
-        flowRun.setScheduleTime(null);
-        flowRun.setStartTime(null);
-        org.springframework.test.util.ReflectionTestUtils.setField(
-                flowRun, "createTime", java.time.LocalDateTime.of(2024, 6, 21, 7, 0, 0));
-        Mockito.when(jobFlowRunService.getById(104L)).thenReturn(flowRun);
-
-        var jobRun = new JobRunInfo();
-        jobRun.setFlowRunId(104L);
-        jobRun.setSubject("dt=${time:yyyyMMdd[bizDay]}");
-
-        var result = timeVariableResolver.resolve(jobRun, jobRun.getSubject());
-        assertEquals("20240621", result.get("${time:yyyyMMdd[bizDay]}"));
+        Assertions.assertThrows(
+                NullPointerException.class, () -> timeVariableResolver.resolve(jobRun, jobRun.getSubject()));
     }
 
     @Test
