@@ -30,7 +30,7 @@ public class SqlCommandBuilder implements CommandBuilder {
     }
 
     @Override
-    public JobCommand buildCommand(Long flowRunId, @Nonnull JobRunInfo jobRun) {
+    public JobCommand buildCommand(@Nonnull JobRunInfo jobRun) {
         SqlJob sqlJob = jobRun.getConfig().unwrap(SqlJob.class);
         if (sqlJob == null) {
             throw new CommandUnableGenException("Invalid job config.");
@@ -46,7 +46,7 @@ public class SqlCommandBuilder implements CommandBuilder {
                     "No available sql or parsing failed, subject: %s".formatted(jobRun.getSubject()));
         }
 
-        SqlCommand sqlCommand = new SqlCommand(jobRun.getId(), sqlJob.getDsId(), sqlList);
+        var sqlCommand = new SqlCommand(jobRun.getId(), jobRun.getFlowRunId(), sqlJob.getDsId(), sqlList);
         populateTimeout(sqlCommand, jobRun);
         return sqlCommand;
     }

@@ -3,6 +3,8 @@ package com.flink.platform.web.command.subflow;
 import com.flink.platform.common.enums.ExecutionStatus;
 import com.flink.platform.common.enums.JobType;
 import com.flink.platform.common.util.ExceptionUtil;
+import com.flink.platform.common.util.JsonUtil;
+import com.flink.platform.dao.entity.ExecutionConfig;
 import com.flink.platform.dao.entity.JobFlow;
 import com.flink.platform.dao.entity.JobFlowDag;
 import com.flink.platform.dao.entity.JobFlowRun;
@@ -27,6 +29,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 
+import static com.flink.platform.common.constants.JobConstant.CONFIG;
 import static com.flink.platform.common.constants.JobConstant.FLOW_RUN_ID;
 import static com.flink.platform.common.enums.ExecutionStatus.CREATED;
 import static com.flink.platform.common.enums.ExecutionStatus.FAILURE;
@@ -57,27 +60,30 @@ public class FlowCommandExecutor implements CommandExecutor {
     @Override
     public JobCallback execCommand(@Nonnull JobCommand command) {
         var flowId = ((FlowCommand) command).getFlowId();
-        var jobFlow = jobFlowService.getById(flowId);
-        var self = SpringContext.getBean(FlowCommandExecutor.class);
-
-        var running = jobFlowRunService.findRunningFlow(flowId, jobFlow.getConfig());
+        var subFlow = jobFlowService.getById(flowId);
+        var running = jobFlowRunService.findRunningFlow(flowId, subFlow.getConfig());
         if (running != null) {
             log.info("Job flow is already running, flowId: {}, flowRunId: {}", flowId, running.getId());
             return new JobCallback("A running jobFlow already exists, flowRunId: " + running.getId(), FAILURE);
         }
 
+        // Use proxy to enable @Transactional.
+        var self = SpringContext.getBean(FlowCommandExecutor.class);
+        // Inherit parent flow's scheduleTime so the whole workflow tree shares one biz* anchor.
+        var scheduleTime = jobFlowRunService.resolveScheduleTimeOrNow(command.getFlowRunId());
+
         Long flowRunId;
         try {
-            flowRunId = self.runOnceInTransaction(jobFlow);
+            flowRunId = self.runOnceInTransaction(subFlow, scheduleTime);
         } catch (Exception e) {
-            log.error("Subflow run once time failed, flowId: {}", jobFlow.getId(), e);
+            log.error("Subflow run once time failed, flowId: {}", subFlow.getId(), e);
             return new JobCallback(ExceptionUtil.stackTrace(e), FAILURE);
         }
 
         // wait until job flow run is inserted.
         ExecutionStatus status = null;
         while (AppRunner.isRunning()) {
-            var jobFlowRun = jobFlowRunService.getById(flowRunId);
+            var jobFlowRun = jobFlowRunService.getLiteById(flowRunId);
             if (jobFlowRun != null && jobFlowRun.getStatus() != null) {
                 status = jobFlowRun.getStatus();
                 break;
@@ -106,10 +112,14 @@ public class FlowCommandExecutor implements CommandExecutor {
 
     // Don't use this method outside this class.
     @Transactional
-    public Long runOnceInTransaction(JobFlow jobFlow) {
-        var flowRunId = newAndSaveDefault(jobFlow);
-        var quartzInfo = new JobFlowQuartzInfo(jobFlow);
+    public Long runOnceInTransaction(JobFlow subFlow, LocalDateTime scheduleTime) {
+        var flowRunId = newAndSaveDefault(subFlow);
+        var quartzInfo = new JobFlowQuartzInfo(subFlow);
         quartzInfo.addData(FLOW_RUN_ID, flowRunId);
+
+        var config = new ExecutionConfig();
+        config.setScheduleTime(scheduleTime);
+        quartzInfo.addData(CONFIG, JsonUtil.toJsonString(config));
         quartzService.runOnce(quartzInfo);
         return flowRunId;
     }

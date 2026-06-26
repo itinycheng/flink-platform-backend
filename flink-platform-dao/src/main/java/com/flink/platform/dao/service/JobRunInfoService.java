@@ -13,7 +13,6 @@ import com.flink.platform.dao.mapper.JobRunInfoMapper;
 import jakarta.annotation.Nonnull;
 import org.springframework.stereotype.Service;
 
-import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -63,7 +62,7 @@ public class JobRunInfoService extends ServiceImpl<JobRunInfoMapper, JobRunInfo>
                 .in(JobRunInfo::getType, SUB_FLOW));
     }
 
-    public JobRunInfo getLiteById(Serializable id) {
+    public JobRunInfo getLiteById(Long id) {
         return getOne(new QueryWrapper<JobRunInfo>()
                 .lambda()
                 .select(JobRunInfo.class, this::isNonLargeField)

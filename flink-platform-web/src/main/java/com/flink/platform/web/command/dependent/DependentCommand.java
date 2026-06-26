@@ -12,8 +12,8 @@ public class DependentCommand extends JobCommand {
 
     private final String message;
 
-    public DependentCommand(long jobRunId, boolean success, String message) {
-        super(jobRunId);
+    public DependentCommand(long jobRunId, Long flowRunId, boolean success, String message) {
+        super(jobRunId, flowRunId);
         this.success = success;
         this.message = message;
     }

@@ -82,14 +82,9 @@ public class TimeVariableResolver implements VariableResolver {
         }
 
         public LocalDateTime scheduleTime() {
-            if (scheduleTime != null) {
-                return scheduleTime;
+            if (scheduleTime == null) {
+                scheduleTime = jobFlowRunService.resolveScheduleTimeOrNow(jobRun.getFlowRunId());
             }
-
-            var flowRun = jobFlowRunService.getLiteById(jobRun.getFlowRunId());
-            scheduleTime = checkNotNull(
-                    flowRun.getScheduleTime(),
-                    "biz* time variable requires a schedule-time anchor, but none could be resolved for the job run");
             return scheduleTime;
         }
     }

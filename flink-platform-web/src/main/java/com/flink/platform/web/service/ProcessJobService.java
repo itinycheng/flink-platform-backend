@@ -86,7 +86,7 @@ public class ProcessJobService {
                 .filter(builder -> builder.isSupported(jobType, version))
                 .findFirst()
                 .orElseThrow(() -> new UnrecoverableException("No available job command builder"))
-                .buildCommand(jobRun.getFlowRunId(), jobRun);
+                .buildCommand(jobRun);
 
         // step 4: submit job
         var callback = jobCommandExecutors.stream()

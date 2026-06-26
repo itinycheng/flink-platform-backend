@@ -40,7 +40,7 @@ public interface CommandExecutor {
     default void kill(long jobRunId) {
         JobCommand jobCommand = RUNNING_MAP.get(jobRunId);
         if (jobCommand == null) {
-            jobCommand = new JobCommand(jobRunId) {
+            jobCommand = new JobCommand(jobRunId, null) {
                 @Override
                 public String toCommandString() {
                     return "no class matched";

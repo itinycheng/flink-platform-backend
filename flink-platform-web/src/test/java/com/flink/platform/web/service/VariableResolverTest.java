@@ -1,5 +1,6 @@
 package com.flink.platform.web.service;
 
+import com.flink.platform.dao.entity.ExecutionConfig;
 import com.flink.platform.dao.entity.JobFlowRun;
 import com.flink.platform.dao.entity.JobRunInfo;
 import com.flink.platform.dao.service.JobFlowRunService;
@@ -7,7 +8,6 @@ import com.flink.platform.web.util.ResourceUtil;
 import com.flink.platform.web.variable.JobRunVariableResolver;
 import com.flink.platform.web.variable.ResourceVariableResolver;
 import com.flink.platform.web.variable.TimeVariableResolver;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -83,10 +83,8 @@ public class VariableResolverTest {
 
     @Test
     public void bizDayResolvesToFlowScheduleTime() {
-        var flowRun = new JobFlowRun();
-        flowRun.setId(100L);
-        flowRun.setScheduleTime(LocalDateTime.of(2026, 6, 21, 23, 59, 59));
-        Mockito.when(jobFlowRunService.getLiteById(100L)).thenReturn(flowRun);
+        Mockito.when(jobFlowRunService.resolveScheduleTimeOrNow(100L))
+                .thenReturn(LocalDateTime.of(2026, 6, 21, 23, 59, 59));
 
         var time1 = "${time:yyyy-MM-dd HH:mm:ss[bizYear]}";
         var time2 = "${time:yyyy-MM-dd HH:mm:ss[bizMonth]}";
@@ -118,17 +116,37 @@ public class VariableResolverTest {
         assertEquals("2026-06-20 23:59:00", result.get(time10));
         assertEquals("2026-06-20 23:00:00", result.get(time11));
         assertEquals("2026-06-20 00:00:00", result.get(time12));
-        Mockito.verify(jobFlowRunService, Mockito.times(1)).getLiteById(100L);
+        Mockito.verify(jobFlowRunService, Mockito.times(1)).resolveScheduleTimeOrNow(100L);
     }
 
     @Test
-    public void bizThrowsWhenJobRunHasNoFlowRun() {
+    public void bizFallsBackToNowWhenJobRunHasNoFlowRun() {
+        // Flow-less runs (e.g. reactive) have no schedule anchor, so biz* falls back to now().
+        Mockito.when(jobFlowRunService.resolveScheduleTimeOrNow(null))
+                .thenReturn(LocalDateTime.of(2026, 6, 21, 23, 59, 59));
+
         var jobRun = new JobRunInfo();
         jobRun.setFlowRunId(null);
         jobRun.setSubject("dt=${time:yyyyMMdd[bizDay]}");
 
-        Assertions.assertThrows(
-                NullPointerException.class, () -> timeVariableResolver.resolve(jobRun, jobRun.getSubject()));
+        var result = timeVariableResolver.resolve(jobRun, jobRun.getSubject());
+        assertEquals("20260621", result.get("${time:yyyyMMdd[bizDay]}"));
+    }
+
+    @Test
+    public void effectiveScheduleTimePrefersConfigOverride() {
+        var flowRun = new JobFlowRun();
+        flowRun.setScheduleTime(LocalDateTime.of(2026, 6, 21, 0, 0, 0));
+
+        // user/parent override carried in config wins over the flow run's own scheduleTime
+        var config = new ExecutionConfig();
+        config.setScheduleTime(LocalDateTime.of(2024, 1, 2, 3, 4, 5));
+        flowRun.setConfig(config);
+        assertEquals(LocalDateTime.of(2024, 1, 2, 3, 4, 5), flowRun.getResolvedScheduleTime());
+
+        // no override -> falls back to the flow run's scheduleTime
+        flowRun.setConfig(null);
+        assertEquals(LocalDateTime.of(2026, 6, 21, 0, 0, 0), flowRun.getResolvedScheduleTime());
     }
 
     @Test

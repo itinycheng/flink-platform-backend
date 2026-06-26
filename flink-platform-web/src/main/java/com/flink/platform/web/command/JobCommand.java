@@ -11,6 +11,9 @@ public abstract class JobCommand implements Comparable<JobCommand> {
 
     protected final long jobRunId;
 
+    /** Parent flow run id; {@code null} when the job runs outside a flow. */
+    protected final Long flowRunId;
+
     protected AbstractTask task;
 
     /**

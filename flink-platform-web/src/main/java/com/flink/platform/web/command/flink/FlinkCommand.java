@@ -34,8 +34,8 @@ public class FlinkCommand extends JobCommand {
 
     private List<URL> classpaths;
 
-    public FlinkCommand(long jobRunId, DeployMode mode) {
-        super(jobRunId);
+    public FlinkCommand(long jobRunId, Long flowRunId, DeployMode mode) {
+        super(jobRunId, flowRunId);
         this.mode = mode;
     }
 

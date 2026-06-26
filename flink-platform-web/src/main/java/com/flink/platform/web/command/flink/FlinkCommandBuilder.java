@@ -84,13 +84,13 @@ public abstract class FlinkCommandBuilder implements CommandBuilder {
     }
 
     @Override
-    public JobCommand buildCommand(Long flowRunId, @Nonnull JobRunInfo jobRun) throws Exception {
+    public JobCommand buildCommand(@Nonnull JobRunInfo jobRun) throws Exception {
         var flinkJob = jobRun.getConfig().unwrap(FlinkJob.class);
         var flinkConfig = configService.findFlinkByVersion(jobRun.getVersion());
         var extJarStoragePaths = getExtJarPaths(flinkJob);
 
         var deployMode = jobRun.getDeployMode();
-        var command = new FlinkCommand(jobRun.getId(), deployMode);
+        var command = new FlinkCommand(jobRun.getId(), jobRun.getFlowRunId(), deployMode);
         var execMode = EXEC_MODE.formatted(deployMode.mode, deployMode.target);
         command.setPrefix(flinkConfig.getCommandPath() + execMode);
 

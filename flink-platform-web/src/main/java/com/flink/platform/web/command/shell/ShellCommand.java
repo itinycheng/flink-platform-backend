@@ -13,8 +13,8 @@ public class ShellCommand extends JobCommand {
 
     private final String script;
 
-    public ShellCommand(long jobRunId, Map<String, String> envp, String script) {
-        super(jobRunId);
+    public ShellCommand(long jobRunId, Long flowRunId, Map<String, String> envp, String script) {
+        super(jobRunId, flowRunId);
         this.envp = envp;
         this.script = script;
     }

@@ -43,11 +43,12 @@ public class DependentCommandBuilder implements CommandBuilder {
     }
 
     @Override
-    public JobCommand buildCommand(Long flowRunId, @Nonnull JobRunInfo jobRun) {
+    public JobCommand buildCommand(@Nonnull JobRunInfo jobRun) {
         Long jobRunId = jobRun.getId();
+        Long flowRunId = jobRun.getFlowRunId();
         DependentJob dependentJob = jobRun.getConfig().unwrap(DependentJob.class);
         if (CollectionUtils.isEmpty(dependentJob.getDependentItems())) {
-            return new DependentCommand(jobRunId, true, null);
+            return new DependentCommand(jobRunId, flowRunId, true, null);
         }
 
         List<DependentItem> dependentItems = dependentJob.getDependentItems();
@@ -61,7 +62,7 @@ public class DependentCommandBuilder implements CommandBuilder {
                                 item.getLatestFlowRunId(), item.getLatestJobRunId(), item.getLatestStatus(), matched))
                 .collect(joining(LINE_SEPARATOR));
 
-        DependentCommand dependentCommand = new DependentCommand(jobRunId, matched, message);
+        DependentCommand dependentCommand = new DependentCommand(jobRunId, flowRunId, matched, message);
         populateTimeout(dependentCommand, jobRun);
         return dependentCommand;
     }

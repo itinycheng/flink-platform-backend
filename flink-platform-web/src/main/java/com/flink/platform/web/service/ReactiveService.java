@@ -64,7 +64,7 @@ public class ReactiveService {
                 .filter(builder -> builder.isSupported(jobInfo.getType(), jobInfo.getVersion()))
                 .findFirst()
                 .orElseThrow(() -> new UnrecoverableException("No available job command builder"))
-                .buildCommand(null, jobRun)
+                .buildCommand(jobRun)
                 .toCommandString();
 
         CompletableFuture.runAsync(

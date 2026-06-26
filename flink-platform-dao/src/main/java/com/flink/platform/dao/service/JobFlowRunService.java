@@ -24,6 +24,7 @@ import java.util.Map;
 
 import static com.flink.platform.common.enums.ExecutionStatus.getNonTerminals;
 import static com.flink.platform.common.enums.ExecutionStrategy.ONLY_CUR_JOB;
+import static com.flink.platform.common.util.Preconditions.checkNotNull;
 
 /** job config info. */
 @Service
@@ -38,6 +39,19 @@ public class JobFlowRunService extends ServiceImpl<JobFlowRunMapper, JobFlowRun>
                 .lambda()
                 .select(JobFlowRun.class, info -> info.getTypeHandler() == null)
                 .eq(JobFlowRun::getId, flowRunId));
+    }
+
+    public LocalDateTime resolveScheduleTimeOrNow(Long flowRunId) {
+        if (flowRunId == null) {
+            return LocalDateTime.now();
+        }
+
+        var flowRun = getOne(new QueryWrapper<JobFlowRun>()
+                .lambda()
+                .select(JobFlowRun::getScheduleTime, JobFlowRun::getConfig)
+                .eq(JobFlowRun::getId, flowRunId));
+        checkNotNull(flowRun, "No JobFlowRun found for flowRunId=" + flowRunId);
+        return flowRun.getResolvedScheduleTime();
     }
 
     @Transactional

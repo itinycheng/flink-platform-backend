@@ -1,13 +1,10 @@
 package com.flink.platform.web.command.condition;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import com.flink.platform.common.enums.ExecutionCondition;
 import com.flink.platform.common.enums.ExecutionStatus;
 import com.flink.platform.common.enums.JobType;
-import com.flink.platform.common.model.JobEdge;
 import com.flink.platform.common.model.JobVertex;
 import com.flink.platform.dao.entity.JobFlowDag;
-import com.flink.platform.dao.entity.JobFlowRun;
 import com.flink.platform.dao.entity.JobRunInfo;
 import com.flink.platform.dao.entity.task.ConditionJob;
 import com.flink.platform.dao.service.JobFlowRunService;
@@ -20,8 +17,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-
-import java.util.List;
 
 import static com.flink.platform.common.enums.JobType.CONDITION;
 import static java.util.stream.Collectors.toList;
@@ -42,31 +37,31 @@ public class ConditionCommandBuilder implements CommandBuilder {
     }
 
     @Override
-    public JobCommand buildCommand(Long flowRunId, @Nonnull JobRunInfo jobRunInfo) {
-        Long jobRunId = jobRunInfo.getId();
+    public JobCommand buildCommand(@Nonnull JobRunInfo jobRunInfo) {
+        var jobRunId = jobRunInfo.getId();
+        var flowRunId = jobRunInfo.getFlowRunId();
         if (flowRunId == null) {
-            return new ConditionCommand(jobRunId, true);
+            return new ConditionCommand(jobRunId, null, true);
         }
 
-        JobFlowRun jobFlowRun = jobFlowRunService.getById(flowRunId);
-        JobFlowDag flow = jobFlowRun.getFlow();
-        JobVertex vertex = flow.getVertex(jobRunInfo.getJobId());
-        List<Long> jobIds =
+        var jobFlowRun = jobFlowRunService.getById(flowRunId);
+        var flow = jobFlowRun.getFlow();
+        var vertex = flow.getVertex(jobRunInfo.getJobId());
+        var jobIds =
                 flow.getPreVertices(vertex).stream().map(JobVertex::getJobId).collect(toList());
 
         if (CollectionUtils.isEmpty(jobIds)) {
-            return new ConditionCommand(jobRunId, true);
+            return new ConditionCommand(jobRunId, flowRunId, true);
         }
 
-        List<JobRunInfo> prevJobRunList = jobRunInfoService.list(new QueryWrapper<JobRunInfo>()
+        var prevJobRunList = jobRunInfoService.list(new QueryWrapper<JobRunInfo>()
                 .lambda()
                 .eq(JobRunInfo::getFlowRunId, flowRunId)
                 .in(JobRunInfo::getJobId, jobIds));
 
-        Long toVertexId = jobRunInfo.getJobId();
-        ExecutionCondition condition =
-                jobRunInfo.getConfig().unwrap(ConditionJob.class).getCondition();
-        boolean success =
+        var toVertexId = jobRunInfo.getJobId();
+        var condition = jobRunInfo.getConfig().unwrap(ConditionJob.class).getCondition();
+        var success =
                 switch (condition) {
                     case AND ->
                         CollectionUtils.isNotEmpty(prevJobRunList)
@@ -81,13 +76,13 @@ public class ConditionCommandBuilder implements CommandBuilder {
                                                 == getExpectedStatus(flow, jobRun.getJobId(), toVertexId));
                 };
 
-        ConditionCommand conditionCommand = new ConditionCommand(jobRunId, success);
+        var conditionCommand = new ConditionCommand(jobRunId, flowRunId, success);
         populateTimeout(conditionCommand, jobRunInfo);
         return conditionCommand;
     }
 
     private ExecutionStatus getExpectedStatus(JobFlowDag flow, Long fromJobId, Long toJobId) {
-        JobEdge edge = flow.getEdge(fromJobId, toJobId);
+        var edge = flow.getEdge(fromJobId, toJobId);
         if (edge == null) {
             throw new RuntimeException("No edge found, fromVId: %d, toVid: %d".formatted(fromJobId, toJobId));
         }

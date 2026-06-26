@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.baomidou.mybatisplus.extension.handlers.Jackson3TypeHandler;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.flink.platform.common.enums.ExecutionStatus;
 import com.flink.platform.common.enums.JobFlowType;
 import com.flink.platform.dao.entity.alert.AlertConfigList;
@@ -82,5 +83,13 @@ public class JobFlowRun {
 
         Duration duration = Duration.between(startTime, endTime);
         return DurationFormatUtils.formatDuration(duration.toMillis(), "HH:mm:ss");
+    }
+
+    @JsonIgnore
+    public LocalDateTime getResolvedScheduleTime() {
+        if (config != null && config.getScheduleTime() != null) {
+            return config.getScheduleTime();
+        }
+        return scheduleTime;
     }
 }

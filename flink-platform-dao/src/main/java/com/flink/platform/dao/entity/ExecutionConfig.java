@@ -4,6 +4,8 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.flink.platform.common.enums.ExecutionStrategy;
 import lombok.Data;
 
+import java.time.LocalDateTime;
+
 /**
  * JobFlow execution config.
  */
@@ -15,7 +17,11 @@ public class ExecutionConfig {
 
     private Long startJobId;
 
-    private boolean visibleToDependent;
+    /**
+     * User-supplied override for the biz* anchor.
+     * Null = no override; effective anchor falls back to t_job_flow_run.schedule_time.
+     */
+    private LocalDateTime scheduleTime;
 
     /**
      * Both used in JobFlow and JobFlowRun.

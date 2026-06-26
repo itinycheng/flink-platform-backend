@@ -15,8 +15,8 @@ public class SqlCommand extends JobCommand {
 
     private final List<String> sqls;
 
-    public SqlCommand(long jobRunId, @Nonnull Long dsId, @Nonnull List<String> sqls) {
-        super(jobRunId);
+    public SqlCommand(long jobRunId, Long flowRunId, @Nonnull Long dsId, @Nonnull List<String> sqls) {
+        super(jobRunId, flowRunId);
         this.dsId = dsId;
         this.sqls = sqls;
     }

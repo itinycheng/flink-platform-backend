@@ -9,8 +9,8 @@ public class ConditionCommand extends JobCommand {
 
     private final boolean success;
 
-    public ConditionCommand(long jobRunId, boolean success) {
-        super(jobRunId);
+    public ConditionCommand(long jobRunId, Long flowRunId, boolean success) {
+        super(jobRunId, flowRunId);
         this.success = success;
     }
 

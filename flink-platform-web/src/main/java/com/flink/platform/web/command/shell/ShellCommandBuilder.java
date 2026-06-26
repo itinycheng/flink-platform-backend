@@ -40,7 +40,7 @@ public class ShellCommandBuilder implements CommandBuilder {
     }
 
     @Override
-    public JobCommand buildCommand(Long flowRunId, @Nonnull JobRunInfo jobRun) throws IOException {
+    public JobCommand buildCommand(@Nonnull JobRunInfo jobRun) throws IOException {
         var storageFilePath = jobRunExtraService.buildStoragePath(jobRun, commandType());
         storageService.createFile(storageFilePath, jobRun.getSubject(), true);
 
@@ -49,7 +49,8 @@ public class ShellCommandBuilder implements CommandBuilder {
         FileUtil.rewriteFile(commandPath, jobRun.getSubject());
         FileUtil.setPermissions(commandPath, OWNER_EXEC_PERMS);
 
-        var shellCommand = new ShellCommand(jobRun.getId(), null, getShellCommand(commandFilePath));
+        var shellCommand =
+                new ShellCommand(jobRun.getId(), jobRun.getFlowRunId(), null, getShellCommand(commandFilePath));
         populateTimeout(shellCommand, jobRun);
         return shellCommand;
     }

@@ -22,8 +22,8 @@ public class FlowCommandBuilder implements CommandBuilder {
     }
 
     @Override
-    public JobCommand buildCommand(Long flowRunId, @Nonnull JobRunInfo jobRun) {
+    public JobCommand buildCommand(@Nonnull JobRunInfo jobRun) {
         var config = (FlowJob) jobRun.getConfig();
-        return new FlowCommand(jobRun.getId(), config.getFlowId());
+        return new FlowCommand(jobRun.getId(), jobRun.getFlowRunId(), config.getFlowId());
     }
 }
