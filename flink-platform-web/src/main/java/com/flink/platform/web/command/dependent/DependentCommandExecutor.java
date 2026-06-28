@@ -25,7 +25,7 @@ public class DependentCommandExecutor implements CommandExecutor {
     @Nonnull
     @Override
     public JobCallback execCommand(@Nonnull JobCommand command) {
-        DependentCommand dependentCommand = (DependentCommand) command;
+        var dependentCommand = (DependentCommand) command;
         return new JobCallback(dependentCommand.getMessage(), dependentCommand.isSuccess() ? SUCCESS : FAILURE);
     }
 }

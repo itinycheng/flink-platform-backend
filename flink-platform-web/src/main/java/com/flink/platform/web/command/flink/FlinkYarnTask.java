@@ -12,7 +12,6 @@ import org.apache.commons.lang3.StringUtils;
 
 import java.util.Map;
 import java.util.function.BiConsumer;
-import java.util.regex.Matcher;
 
 import static com.flink.platform.common.constants.JobConstant.APP_ID_PATTERN;
 import static com.flink.platform.common.constants.JobConstant.JOB_ID_PATTERN;
@@ -60,7 +59,7 @@ public class FlinkYarnTask extends ShellTask {
         // kill application.
         try {
             if (FLINK_YARN_PER.equals(mode) || FLINK_YARN_RUN_APPLICATION.equals(mode)) {
-                String applicationTag = YarnHelper.getApplicationTag(jobRunId);
+                var applicationTag = YarnHelper.getApplicationTag(jobRunId);
                 yarnAppService.killApplication(applicationTag);
             } else {
                 log.warn("Kill command unsupported deployMode: {}, applicationId: {}", mode, appId);
@@ -77,14 +76,14 @@ public class FlinkYarnTask extends ShellTask {
             }
 
             if (StringUtils.isEmpty(appId)) {
-                String id = extractApplicationId(line);
+                var id = extractApplicationId(line);
                 if (StringUtils.isNotEmpty(id)) {
                     appId = id;
                 }
             }
 
             if (StringUtils.isEmpty(jobId)) {
-                String id = extractJobId(line);
+                var id = extractJobId(line);
                 if (StringUtils.isNotEmpty(id)) {
                     jobId = id;
                 }
@@ -93,7 +92,7 @@ public class FlinkYarnTask extends ShellTask {
     }
 
     public static String extractApplicationId(String message) {
-        Matcher matcher = APP_ID_PATTERN.matcher(message);
+        var matcher = APP_ID_PATTERN.matcher(message);
         if (matcher.find()) {
             return matcher.group(0);
         } else {
@@ -102,7 +101,7 @@ public class FlinkYarnTask extends ShellTask {
     }
 
     public static String extractJobId(String message) {
-        Matcher matcher = JOB_ID_PATTERN.matcher(message);
+        var matcher = JOB_ID_PATTERN.matcher(message);
         if (matcher.find()) {
             return matcher.group(1);
         } else {

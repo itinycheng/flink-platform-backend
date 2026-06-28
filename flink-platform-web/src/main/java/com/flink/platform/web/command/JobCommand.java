@@ -31,8 +31,8 @@ public abstract class JobCommand implements Comparable<JobCommand> {
      */
     @Override
     public int compareTo(JobCommand o) {
-        LocalDateTime t1 = this.expectedStopTime;
-        LocalDateTime t2 = o.getExpectedStopTime();
+        var t1 = this.expectedStopTime;
+        var t2 = o.getExpectedStopTime();
         if (t1 == null && t2 != null) {
             return 1;
         }
@@ -41,14 +41,12 @@ public abstract class JobCommand implements Comparable<JobCommand> {
             return -1;
         }
 
-        int cmp = t1 == t2 ? 0 : t1.compareTo(t2);
+        var cmp = t1 == t2 ? 0 : t1.compareTo(t2);
         return cmp == 0 ? Long.compare(this.jobRunId, o.getJobRunId()) : cmp;
     }
 
     /**
-     * build a command.
-     *
-     * @return command to execute.
+     * build a command, return command to execute.
      */
     public abstract String toCommandString();
 }

@@ -41,7 +41,7 @@ public class FlinkCommand extends JobCommand {
 
     @Override
     public String toCommandString() {
-        StringBuilder command = new StringBuilder(prefix + LINE_SEPARATOR);
+        var command = new StringBuilder(prefix + LINE_SEPARATOR);
         if (StringUtils.isNotBlank(optionArgs)) {
             command.append(optionArgs).append(LINE_SEPARATOR);
         }

@@ -2,11 +2,7 @@ package com.flink.platform.web.command;
 
 import com.flink.platform.common.enums.JobType;
 import com.flink.platform.dao.entity.JobRunInfo;
-import com.flink.platform.dao.entity.task.BaseJob;
 import jakarta.annotation.Nonnull;
-
-import java.time.Duration;
-import java.time.LocalDateTime;
 
 /** Command builder. */
 public interface CommandBuilder {
@@ -35,14 +31,14 @@ public interface CommandBuilder {
      * populate timeout info if exists.
      */
     default void populateTimeout(JobCommand command, JobRunInfo jobRun) {
-        BaseJob config = jobRun.getConfig();
+        var config = jobRun.getConfig();
         if (config == null) {
             return;
         }
 
-        Duration timeout = jobRun.getConfig().parseTimeout();
+        var timeout = jobRun.getConfig().parseTimeout();
         if (timeout != null) {
-            LocalDateTime plus = jobRun.getSubmitTime().plus(timeout);
+            var plus = jobRun.getSubmitTime().plus(timeout);
             command.setExpectedStopTime(plus);
             command.setTimeout(timeout);
         }

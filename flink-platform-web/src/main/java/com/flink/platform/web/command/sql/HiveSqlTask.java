@@ -4,13 +4,13 @@ import com.flink.platform.dao.entity.Datasource;
 import com.flink.platform.dao.entity.ds.DatasourceParam;
 import com.flink.platform.dao.entity.result.JobCallback;
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.collect.Maps;
 import jakarta.annotation.Nonnull;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hive.jdbc.HiveStatement;
 import org.springframework.util.CollectionUtils;
 
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.StringJoiner;
@@ -31,7 +31,7 @@ public class HiveSqlTask extends SqlTask {
 
     @Override
     public JobCallback buildResult() {
-        JobCallback callback = super.buildResult();
+        var callback = super.buildResult();
         callback.setMessage(callback.getMessage() + "\n### Log: ###\n" + logBuffer.toString());
         return callback;
     }
@@ -51,14 +51,14 @@ public class HiveSqlTask extends SqlTask {
     @Override
     public DatasourceParam getDatasourceParam() {
         // sql set conf(spark conf) -> connection param
-        List<String> sqlList = super.getSqlList();
-        Datasource datasource = super.getDatasource();
-        DatasourceParam datasourceParam = datasource.getParams();
-        String datasourceUrl = datasourceParam.getUrl();
-        Map<String, String> sparkConf = getSparkConf(sqlList);
+        var sqlList = super.getSqlList();
+        var datasource = super.getDatasource();
+        var datasourceParam = datasource.getParams();
+        var datasourceUrl = datasourceParam.getUrl();
+        var sparkConf = getSparkConf(sqlList);
         // jdbc:hive2://<host>:<port>/<dbName>;<sessionVars>?<kyuubiConfs>#<[spark|hive]Vars>
-        boolean containsParamFlag = StringUtils.contains(datasourceUrl, "#");
-        StringJoiner sparkConfStr = new StringJoiner(";", containsParamFlag ? ";" : "#", "");
+        var containsParamFlag = StringUtils.contains(datasourceUrl, "#");
+        var sparkConfStr = new StringJoiner(";", containsParamFlag ? ";" : "#", "");
         sparkConf.forEach((k, v) -> sparkConfStr.add(k + "=" + v));
         datasourceParam.setUrl(datasourceUrl + sparkConfStr);
         return datasourceParam;
@@ -66,25 +66,24 @@ public class HiveSqlTask extends SqlTask {
 
     @VisibleForTesting
     protected Map<String, String> getSparkConf(List<String> sqlList) {
-        Map<String, String> sparkConf = Maps.newLinkedHashMap();
-        sparkConf.putAll(getDefaultSparkConf());
+        var sparkConf = new LinkedHashMap<>(getDefaultSparkConf());
         if (CollectionUtils.isEmpty(sqlList)) {
             return sparkConf;
         }
-        for (String sql : sqlList) {
+        for (var sql : sqlList) {
             if (!isSetSparkConf(sql)) {
                 continue;
             }
             sql = StringUtils.trim(sql);
-            String kvs = StringUtils.trim(StringUtils.replaceIgnoreCase(sql, "set ", ""));
-            String[] kv = StringUtils.split(kvs, "=");
+            var kvs = StringUtils.trim(StringUtils.replaceIgnoreCase(sql, "set ", ""));
+            var kv = StringUtils.split(kvs, "=");
             sparkConf.put(StringUtils.trim(kv[0]), StringUtils.trim(kv[1]));
         }
         return sparkConf;
     }
 
     private Map<String, String> getDefaultSparkConf() {
-        Map<String, String> sparkDefaultConf = Maps.newLinkedHashMap();
+        var sparkDefaultConf = new LinkedHashMap<String, String>();
         sparkDefaultConf.put("spark.app.name", getSparkAppName());
         // submit yarn queue
         // sparkDefaultVar.put("spark.yarn.queue", "root.users.hdfs");
@@ -99,7 +98,7 @@ public class HiveSqlTask extends SqlTask {
         if (!StringUtils.startsWithIgnoreCase(sql, "set")) {
             return false;
         }
-        String confVal = StringUtils.trim(StringUtils.replaceIgnoreCase(sql, "set ", ""));
+        var confVal = StringUtils.trim(StringUtils.replaceIgnoreCase(sql, "set ", ""));
         if (!StringUtils.startsWithIgnoreCase(confVal, "spark")) {
             return false;
         }
@@ -112,7 +111,7 @@ public class HiveSqlTask extends SqlTask {
 
     private void storeLog() {
         try {
-            HiveStatement statement = (HiveStatement) getStatement();
+            var statement = (HiveStatement) getStatement();
             while (logBuffer.length() < 60_000 && statement.hasMoreLogs()) {
                 for (String log : statement.getQueryLog()) {
                     logBuffer.append(log).append(LINE_SEPARATOR);

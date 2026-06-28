@@ -10,7 +10,6 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
-import java.io.InputStream;
 import java.util.Map;
 import java.util.function.BiConsumer;
 
@@ -75,10 +74,10 @@ public class ShellTask extends AbstractTask {
         log.info("Exec command: {}, with user-defined env vars: {}", command, envp);
         this.process = Runtime.getRuntime().exec(command, SystemUtil.toEnvArray(merged));
         this.processId = CommandUtil.getProcessId(process);
-        try (InputStream stdStream = process.getInputStream();
-                InputStream errStream = process.getErrorStream()) {
-            Thread stdThread = Thread.ofVirtual().unstarted(new CollectLogRunnable(stdStream, STD, logConsumer));
-            Thread errThread = Thread.ofVirtual().unstarted(new CollectLogRunnable(errStream, ERR, logConsumer));
+        try (var stdStream = process.getInputStream();
+                var errStream = process.getErrorStream()) {
+            var stdThread = Thread.ofVirtual().unstarted(new CollectLogRunnable(stdStream, STD, logConsumer));
+            var errThread = Thread.ofVirtual().unstarted(new CollectLogRunnable(errStream, ERR, logConsumer));
 
             try {
                 stdThread.start();
@@ -123,7 +122,7 @@ public class ShellTask extends AbstractTask {
     }
 
     public ShellCallback buildShellCallback() {
-        ShellCallback callback = new ShellCallback(exited, exitValue, processId);
+        var callback = new ShellCallback(exited, exitValue, processId);
         callback.setStdMsg(getStdMsg());
         callback.setErrMsg(getErrMsg());
         return callback;

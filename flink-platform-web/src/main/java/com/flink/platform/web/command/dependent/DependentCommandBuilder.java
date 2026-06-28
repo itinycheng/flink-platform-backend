@@ -5,7 +5,6 @@ import com.flink.platform.common.enums.JobType;
 import com.flink.platform.dao.entity.JobFlowRun;
 import com.flink.platform.dao.entity.JobRunInfo;
 import com.flink.platform.dao.entity.task.DependentJob;
-import com.flink.platform.dao.entity.task.DependentJob.DependentItem;
 import com.flink.platform.dao.service.JobFlowRunService;
 import com.flink.platform.dao.service.JobRunInfoService;
 import com.flink.platform.web.command.CommandBuilder;
@@ -21,7 +20,6 @@ import org.springframework.stereotype.Component;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Date;
-import java.util.List;
 
 import static com.flink.platform.common.constants.Constant.LINE_SEPARATOR;
 import static com.flink.platform.common.enums.JobType.DEPENDENT;
@@ -44,25 +42,25 @@ public class DependentCommandBuilder implements CommandBuilder {
 
     @Override
     public JobCommand buildCommand(@Nonnull JobRunInfo jobRun) {
-        Long jobRunId = jobRun.getId();
-        Long flowRunId = jobRun.getFlowRunId();
-        DependentJob dependentJob = jobRun.getConfig().unwrap(DependentJob.class);
+        var jobRunId = jobRun.getId();
+        var flowRunId = jobRun.getFlowRunId();
+        var dependentJob = jobRun.getConfig().unwrap(DependentJob.class);
         if (CollectionUtils.isEmpty(dependentJob.getDependentItems())) {
             return new DependentCommand(jobRunId, flowRunId, true, null);
         }
 
-        List<DependentItem> dependentItems = dependentJob.getDependentItems();
-        boolean matched = dependentJob.getRelation() == DependentJob.DependentRelation.OR
+        var dependentItems = dependentJob.getDependentItems();
+        var matched = dependentJob.getRelation() == DependentJob.DependentRelation.OR
                 ? dependentItems.stream().anyMatch(this::populateAndEvaluateConditions)
                 : dependentItems.stream().allMatch(this::populateAndEvaluateConditions);
 
-        String message = dependentItems.stream()
+        var message = dependentItems.stream()
                 .map(item -> "flowRunId: %s, jobRunId: %s, status: %s, Verification passed: %s"
                         .formatted(
                                 item.getLatestFlowRunId(), item.getLatestJobRunId(), item.getLatestStatus(), matched))
                 .collect(joining(LINE_SEPARATOR));
 
-        DependentCommand dependentCommand = new DependentCommand(jobRunId, flowRunId, matched, message);
+        var dependentCommand = new DependentCommand(jobRunId, flowRunId, matched, message);
         populateTimeout(dependentCommand, jobRun);
         return dependentCommand;
     }
@@ -80,11 +78,11 @@ public class DependentCommandBuilder implements CommandBuilder {
             return false;
         }
 
-        Long flowRunId = dependentItem.getLatestFlowRunId();
-        LocalDateTime createAt = dependentItem.getLatestCreateTime();
+        var flowRunId = dependentItem.getLatestFlowRunId();
+        var createAt = dependentItem.getLatestCreateTime();
 
         // base time.
-        LocalDateTime now = LocalDateTime.now();
+        var now = LocalDateTime.now();
         LocalDateTime sinceTime;
         switch (dependentItem.getStrategy()) {
             case LAST_EXECUTION_AFTER_TIME:
@@ -95,14 +93,14 @@ public class DependentCommandBuilder implements CommandBuilder {
                 sinceTime = createAt;
                 LocalDateTime nextTriggerTime;
                 try {
-                    JobFlowRun jobFlowRun = jobFlowRunService.getOne(new QueryWrapper<JobFlowRun>()
+                    var jobFlowRun = jobFlowRunService.getOne(new QueryWrapper<JobFlowRun>()
                             .lambda()
                             .select(JobFlowRun::getCronExpr)
                             .eq(JobFlowRun::getId, flowRunId));
-                    CronExpression cronExpression = new CronExpression(jobFlowRun.getCronExpr());
-                    Date sinceDate =
+                    var cronExpression = new CronExpression(jobFlowRun.getCronExpr());
+                    var sinceDate =
                             Date.from(sinceTime.atZone(ZoneId.systemDefault()).toInstant());
-                    Date nextTriggerDate = cronExpression.getNextValidTimeAfter(sinceDate);
+                    var nextTriggerDate = cronExpression.getNextValidTimeAfter(sinceDate);
                     nextTriggerTime = nextTriggerDate != null
                             ? nextTriggerDate
                                     .toInstant()
@@ -121,7 +119,7 @@ public class DependentCommandBuilder implements CommandBuilder {
 
     public void populateLatestExecutionInfo(DependentJob.DependentItem dependentItem) {
         if (dependentItem.getJobId() != null) {
-            JobRunInfo jobRun = jobRunInfoService.getOne(new QueryWrapper<JobRunInfo>()
+            var jobRun = jobRunInfoService.getOne(new QueryWrapper<JobRunInfo>()
                     .lambda()
                     .select(
                             JobRunInfo::getId,
@@ -138,7 +136,7 @@ public class DependentCommandBuilder implements CommandBuilder {
                 dependentItem.setLatestCreateTime(jobRun.getCreateTime());
             }
         } else {
-            JobFlowRun jobFlowRun = jobFlowRunService.getOne(new QueryWrapper<JobFlowRun>()
+            var jobFlowRun = jobFlowRunService.getOne(new QueryWrapper<JobFlowRun>()
                     .lambda()
                     .select(JobFlowRun::getId, JobFlowRun::getStatus, JobFlowRun::getCreateTime)
                     .eq(JobFlowRun::getFlowId, dependentItem.getFlowId())
