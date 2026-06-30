@@ -15,23 +15,26 @@ public class ExceptionUtil {
         return writer.toString();
     }
 
-    public static void runWithErrorLogging(Runnable... list) {
-        try {
-            for (Runnable runnable : list) {
+    public static void runWithErrorLogging(ThrowingRunnable... tasks) {
+        runWithErrorLogging("Unexpected error occurred.", tasks);
+    }
+
+    public static void runWithErrorLogging(String errMsg, ThrowingRunnable... tasks) {
+        for (ThrowingRunnable runnable : tasks) {
+            try {
                 runnable.run();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                return;
+            } catch (Throwable throwable) {
+                log.error(errMsg, throwable);
             }
-        } catch (Throwable throwable) {
-            log.error("Unexpected error occurred.", throwable);
         }
     }
 
-    public static void runWithErrorLogging(String errMsg, Runnable... list) {
-        try {
-            for (Runnable runnable : list) {
-                runnable.run();
-            }
-        } catch (Throwable throwable) {
-            log.error(errMsg, throwable);
-        }
+    @FunctionalInterface
+    public interface ThrowingRunnable {
+
+        void run() throws Exception;
     }
 }
