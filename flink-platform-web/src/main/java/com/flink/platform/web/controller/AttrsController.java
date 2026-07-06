@@ -1,7 +1,6 @@
 package com.flink.platform.web.controller;
 
 import com.flink.platform.common.enums.DeployMode;
-import com.flink.platform.common.enums.ExecutionCondition;
 import com.flink.platform.common.enums.ExecutionStatus;
 import com.flink.platform.common.enums.JobType;
 import com.flink.platform.common.util.EnumUtil;
@@ -31,8 +30,6 @@ import static com.flink.platform.common.enums.DeployMode.FLINK_YARN_PER;
 import static com.flink.platform.common.enums.DeployMode.FLINK_YARN_RUN_APPLICATION;
 import static com.flink.platform.common.enums.DeployMode.FLINK_YARN_SESSION;
 import static com.flink.platform.common.enums.DeployMode.RUN_LOCAL;
-import static com.flink.platform.common.enums.ExecutionCondition.AND;
-import static com.flink.platform.common.enums.ExecutionCondition.OR;
 import static com.flink.platform.common.enums.ExecutionStatus.FAILURE;
 import static com.flink.platform.common.enums.ExecutionStatus.SUCCESS;
 import static com.flink.platform.common.enums.ResponseStatus.ERROR_PARAMETER;
@@ -49,14 +46,6 @@ public class AttrsController {
     private static final String CLASS_PATH_PREFIX = "com.flink.platform.common.enums";
 
     private final ConfigService configService;
-
-    @GetMapping(value = "/preconditions")
-    public ResultInfo<List<ExecutionCondition>> precondition() {
-        var conditions = new ArrayList<ExecutionCondition>();
-        conditions.add(AND);
-        conditions.add(OR);
-        return success(conditions);
-    }
 
     @GetMapping(value = "/dependentRelations")
     public ResultInfo<DependentJob.DependentRelation[]> dependentRelations() {

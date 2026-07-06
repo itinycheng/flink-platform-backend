@@ -12,7 +12,7 @@ import org.quartz.JobKey;
 
 import java.util.concurrent.ExecutorService;
 
-import static com.flink.platform.common.enums.ExecutionCondition.AND;
+import static com.flink.platform.common.enums.ExecutionCondition.ALL_MATCHED;
 
 /**
  * submit single job. <br>
@@ -30,7 +30,7 @@ public class JobRunner implements Job {
         Long jobId = Long.parseLong(key.getName());
 
         JobVertex jobVertex = new JobVertex(jobId);
-        jobVertex.setPrecondition(AND);
+        jobVertex.setPrecondition(ALL_MATCHED);
         EXECUTOR.execute(() -> {
             JobExecuteThread callable = new JobExecuteThread(null, jobVertex);
             JobResponse response = callable.get();
