@@ -97,8 +97,9 @@ public class JobInfoController {
             return failure(ERROR_PARAMETER, errorMsg);
         }
 
-        var jobInfo = jobInfoRequest.getJobInfo();
-        return success(jobInfoService.updateJob(jobInfo));
+        var job = jobInfoRequest.getJobInfo();
+        var updated = jobFlowService.updateJobAndSyncPrecondition(job);
+        return success(updated);
     }
 
     @RequirePermission(TASK_VIEW)
@@ -236,8 +237,7 @@ public class JobInfoController {
 
     @RequirePermission(TASK_PURGE)
     @GetMapping(value = "/purge/{jobId}")
-    public ResultInfo<Long> purge(
-            @RequestAttribute(value = Constant.SESSION_USER) User loginUser, @PathVariable long jobId) {
+    public ResultInfo<Long> purge(@PathVariable long jobId) {
         var jobInfo = jobInfoService.getById(jobId);
         if (jobInfo == null) {
             return failure(ERROR_PARAMETER);

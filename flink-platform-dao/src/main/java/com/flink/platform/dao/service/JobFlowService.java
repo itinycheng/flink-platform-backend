@@ -15,6 +15,7 @@ import com.flink.platform.dao.entity.JobFlowDag.NodeLayout;
 import com.flink.platform.dao.entity.JobFlowRun;
 import com.flink.platform.dao.entity.JobInfo;
 import com.flink.platform.dao.entity.JobRunInfo;
+import com.flink.platform.dao.entity.task.ConditionJob;
 import com.flink.platform.dao.mapper.JobFlowMapper;
 import com.flink.platform.dao.query.JobFlowPageQuery;
 import com.flink.platform.dao.view.JobFlowDetails;
@@ -29,6 +30,7 @@ import java.util.List;
 import static com.flink.platform.common.enums.JobFlowStatus.OFFLINE;
 import static com.flink.platform.common.enums.JobFlowStatus.ONLINE;
 import static com.flink.platform.common.enums.JobFlowType.JOB_LIST;
+import static com.flink.platform.common.enums.JobType.CONDITION;
 import static java.util.stream.Collectors.toList;
 import static org.apache.commons.collections4.CollectionUtils.isNotEmpty;
 
@@ -106,7 +108,7 @@ public class JobFlowService extends ServiceImpl<JobFlowMapper, JobFlow> {
 
         // copy jobs not in workflow.
         if (JOB_LIST.equals(jobFlow.getType())) {
-            List<Long> jobIds = vertices.stream().map(JobVertex::getJobId).toList();
+            var jobIds = vertices.stream().map(JobVertex::getJobId).toList();
             jobInfoService
                     .list(new QueryWrapper<JobInfo>()
                             .lambda()
@@ -128,10 +130,10 @@ public class JobFlowService extends ServiceImpl<JobFlowMapper, JobFlow> {
 
     @Transactional(rollbackFor = Exception.class)
     public void deleteAllById(long flowId) {
-        List<JobInfo> jobInfoList =
+        var jobInfoList =
                 jobInfoService.list(new QueryWrapper<JobInfo>().lambda().eq(JobInfo::getFlowId, flowId));
         if (isNotEmpty(jobInfoList)) {
-            List<Long> jobIds = jobInfoList.stream().map(JobInfo::getId).collect(toList());
+            var jobIds = jobInfoList.stream().map(JobInfo::getId).collect(toList());
             jobRunInfoService.remove(new QueryWrapper<JobRunInfo>().lambda().in(JobRunInfo::getJobId, jobIds));
             jobInfoService.remove(new QueryWrapper<JobInfo>().lambda().in(JobInfo::getId, jobIds));
         }
@@ -140,12 +142,45 @@ public class JobFlowService extends ServiceImpl<JobFlowMapper, JobFlow> {
     }
 
     @Transactional(rollbackFor = Exception.class)
+    public JobInfo updateJobAndSyncPrecondition(JobInfo job) {
+        var updated = jobInfoService.updateJob(job);
+        if (!CONDITION.equals(job.getType())) {
+            return updated;
+        }
+        if (job.getFlowId() == null || job.getConfig() == null) {
+            return updated;
+        }
+
+        var config = job.getConfig().unwrap(ConditionJob.class);
+        var jobFlow = getById(job.getFlowId());
+        if (config == null || config.getCondition() == null || jobFlow == null) {
+            return updated;
+        }
+
+        var flow = jobFlow.getFlow();
+        if (flow == null) {
+            return updated;
+        }
+
+        flow.getVertices().stream()
+                .filter(v -> job.getId().equals(v.getJobId()))
+                .filter(v -> config.getCondition() != v.getPrecondition())
+                .forEach(v -> {
+                    v.setPrecondition(config.getCondition());
+                    var newJobFlow = new JobFlow();
+                    newJobFlow.setId(jobFlow.getId());
+                    newJobFlow.setFlow(flow);
+                    updateById(newJobFlow);
+                });
+        return updated;
+    }
+
     public void updateFlowById(JobFlow origin) {
         if (origin.getId() == null) {
             return;
         }
 
-        JobFlow newJobFlow = new JobFlow();
+        var newJobFlow = new JobFlow();
         newJobFlow.setId(origin.getId());
         if (origin.getFlow() != null) {
             newJobFlow.setFlow(origin.getFlow());
@@ -156,7 +191,7 @@ public class JobFlowService extends ServiceImpl<JobFlowMapper, JobFlow> {
     }
 
     public JobFlowRun copyToJobFlowRun(JobFlow jobFlow) {
-        JobFlowRun jobFlowRun = new JobFlowRun();
+        var jobFlowRun = new JobFlowRun();
         jobFlowRun.setName(jobFlow.getName());
         jobFlowRun.setFlowId(jobFlow.getId());
         jobFlowRun.setUserId(jobFlow.getUserId());
