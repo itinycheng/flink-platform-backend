@@ -47,7 +47,7 @@ public class JobFlowService extends ServiceImpl<JobFlowMapper, JobFlow> {
     private final JobRunInfoService jobRunInfoService;
 
     @Transactional
-    public JobFlow cloneJobFlow(long flowId) {
+    public JobFlow cloneJobFlow(long flowId, Long userId) {
         // clone jobFlow.
         final var jobFlow = getById(flowId);
         jobFlow.setId(null);
@@ -56,6 +56,7 @@ public class JobFlowService extends ServiceImpl<JobFlowMapper, JobFlow> {
         jobFlow.setName(StringUtil.truncateByBytes(nameCopied, 64, true));
         jobFlow.setCode(UuidGenerator.generateShortUuid());
         jobFlow.setStatus(OFFLINE);
+        jobFlow.setUserId(userId);
         save(jobFlow);
 
         var flow = jobFlow.getFlow();
@@ -71,6 +72,7 @@ public class JobFlowService extends ServiceImpl<JobFlowMapper, JobFlow> {
             jobInfo.setId(null);
             jobInfo.setFlowId(jobFlow.getId());
             jobInfo.setName("%s-copy".formatted(jobInfo.getName()));
+            jobInfo.setUserId(userId);
             jobInfoService.save(jobInfo);
             newIdMap.put(vertex.getJobId(), jobInfo.getId());
         }
@@ -118,6 +120,7 @@ public class JobFlowService extends ServiceImpl<JobFlowMapper, JobFlow> {
                         jobInfo.setId(null);
                         jobInfo.setFlowId(jobFlow.getId());
                         jobInfo.setName("%s-copy".formatted(jobInfo.getName()));
+                        jobInfo.setUserId(userId);
                         jobInfoService.save(jobInfo);
                     });
         }

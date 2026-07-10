@@ -158,8 +158,9 @@ public class JobFlowController {
 
     @RequirePermission(TASK_EDIT)
     @GetMapping(value = "/copy/{flowId}")
-    public ResultInfo<Long> copy(@PathVariable Long flowId) {
-        var jobFlow = jobFlowService.cloneJobFlow(flowId);
+    public ResultInfo<Long> copy(
+            @PathVariable Long flowId, @RequestAttribute(value = Constant.SESSION_USER) User loginUser) {
+        var jobFlow = jobFlowService.cloneJobFlow(flowId, loginUser.getId());
         return success(jobFlow.getId());
     }
 
