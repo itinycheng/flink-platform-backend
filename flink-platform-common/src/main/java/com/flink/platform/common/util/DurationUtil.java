@@ -1,6 +1,7 @@
 package com.flink.platform.common.util;
 
 import lombok.Getter;
+import lombok.val;
 
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
@@ -16,6 +17,8 @@ import static java.util.Locale.US;
 /** Duration utils, copy from flink. */
 public class DurationUtil {
 
+    private static final int MAX_HUMANIZE_UNITS = 3;
+
     private static final Map<String, ChronoUnit> LABEL_TO_UNIT_MAP = Optional.of(TimeUnit.values())
             .map(timeUnits -> {
                 Map<String, ChronoUnit> labelToUnit = new HashMap<>();
@@ -27,6 +30,40 @@ public class DurationUtil {
                 return labelToUnit;
             })
             .get();
+
+    /**
+     * Format the given {@link Duration} into a compact human-readable string like "1h 43m 20s".
+     */
+    public static String humanizeDuration(Duration duration) {
+        val totalSeconds = duration.getSeconds();
+        val negative = totalSeconds < 0;
+        val remaining = Math.abs(totalSeconds);
+        val days = remaining / 86400;
+        val hours = remaining % 86400 / 3600;
+        val minutes = remaining % 3600 / 60;
+        val seconds = remaining % 60;
+
+        val values = new long[] {days, hours, minutes, seconds};
+        val units = new String[] {"d", "h", "m", "s"};
+        val sb = new StringBuilder();
+        if (negative) {
+            sb.append('-');
+        }
+
+        int shown = 0;
+        for (int i = 0; i < values.length && shown < MAX_HUMANIZE_UNITS; i++) {
+            if (values[i] == 0) {
+                continue;
+            }
+            if (shown > 0) {
+                sb.append(' ');
+            }
+            sb.append(values[i]).append(units[i]);
+            shown++;
+        }
+
+        return shown == 0 ? "0s" : sb.toString();
+    }
 
     /**
      * Parse the given string to a java {@link Duration}. The string is in format "{length

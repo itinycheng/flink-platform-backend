@@ -8,12 +8,12 @@ import com.baomidou.mybatisplus.extension.handlers.Jackson3TypeHandler;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.flink.platform.common.enums.ExecutionStatus;
 import com.flink.platform.common.enums.JobFlowType;
+import com.flink.platform.common.util.DurationUtil;
 import com.flink.platform.dao.entity.alert.AlertConfigList;
 import lombok.AccessLevel;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.apache.commons.lang3.time.DurationFormatUtils;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -81,8 +81,8 @@ public class JobFlowRun {
             return EMPTY;
         }
 
-        Duration duration = Duration.between(startTime, endTime);
-        return DurationFormatUtils.formatDuration(duration.toMillis(), "HH:mm:ss");
+        var duration = Duration.between(startTime, endTime);
+        return DurationUtil.humanizeDuration(duration);
     }
 
     @JsonIgnore
