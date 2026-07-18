@@ -42,18 +42,6 @@ public class CatalogInfo implements Serializable {
      */
     private Long workspaceId;
 
-    /** default database. */
-    @Deprecated
-    private String defaultDatabase;
-
-    /** config dir path. */
-    @Deprecated
-    private String configPath;
-
-    /** config properties. */
-    @Deprecated
-    private String configs;
-
     /** catalog create sql. */
     private String createSql;
 

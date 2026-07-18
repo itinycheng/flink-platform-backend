@@ -32,10 +32,6 @@ public class User {
 
     private String externalId;
 
-    @Deprecated(forRemoval = true)
-    @TableField(typeHandler = Jackson3TypeHandler.class)
-    private LongArrayList workers;
-
     @TableField(typeHandler = Jackson3TypeHandler.class)
     private UserRoles roles;
 

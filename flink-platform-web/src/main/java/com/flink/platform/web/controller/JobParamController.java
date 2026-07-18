@@ -4,7 +4,6 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.flink.platform.common.constants.Constant;
-import com.flink.platform.common.enums.Status;
 import com.flink.platform.dao.entity.JobInfo;
 import com.flink.platform.dao.entity.JobParam;
 import com.flink.platform.dao.entity.User;
@@ -25,8 +24,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-
-import java.util.List;
 
 import static com.flink.platform.common.constants.JobConstant.PARAM_FORMAT;
 import static com.flink.platform.common.enums.JobParamType.GLOBAL;
@@ -139,19 +136,5 @@ public class JobParamController {
                         .like(nonNull(name), JobParam::getParamName, name));
 
         return success(iPage);
-    }
-
-    @Deprecated
-    @RequirePermission(TASK_VIEW)
-    @GetMapping(value = "/list")
-    public ResultInfo<List<JobParam>> list(
-            @RequestParam(name = "flowId", required = false) Long flowId,
-            @RequestParam(name = "status", required = false) Status status) {
-        var list = jobParamService.list(new QueryWrapper<JobParam>()
-                .lambda()
-                .eq(JobParam::getWorkspaceId, RequestContext.requireWorkspaceId())
-                .eq(nonNull(flowId), JobParam::getFlowId, flowId)
-                .eq(nonNull(status), JobParam::getStatus, status));
-        return success(list);
     }
 }

@@ -17,8 +17,6 @@ import com.flink.platform.web.annotation.RequirePermission;
 import com.flink.platform.web.common.RequestContext;
 import com.flink.platform.web.dto.ResultInfo;
 import com.flink.platform.web.dto.request.JobInfoRequest;
-import com.flink.platform.web.quartz.JobQuartzInfo;
-import com.flink.platform.web.service.QuartzService;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -37,17 +35,12 @@ import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
 
-import static com.flink.platform.common.enums.ExecutionStatus.getNonTerminals;
 import static com.flink.platform.common.enums.JobStatus.ONLINE;
 import static com.flink.platform.common.enums.Permission.TASK_EDIT;
-import static com.flink.platform.common.enums.Permission.TASK_EXEC;
 import static com.flink.platform.common.enums.Permission.TASK_PURGE;
 import static com.flink.platform.common.enums.Permission.TASK_VIEW;
 import static com.flink.platform.common.enums.ResponseStatus.ERROR_PARAMETER;
-import static com.flink.platform.common.enums.ResponseStatus.EXIST_UNFINISHED_PROCESS;
-import static com.flink.platform.common.enums.ResponseStatus.NOT_RUNNABLE_STATUS;
 import static com.flink.platform.common.enums.ResponseStatus.OPERATION_NOT_ALLOWED;
-import static com.flink.platform.common.enums.ResponseStatus.SERVICE_ERROR;
 import static com.flink.platform.common.util.DateUtil.GLOBAL_DATE_TIME_FORMAT;
 import static com.flink.platform.web.dto.ResultInfo.failure;
 import static com.flink.platform.web.dto.ResultInfo.success;
@@ -68,8 +61,6 @@ public class JobInfoController {
     private final JobRunInfoService jobRunService;
 
     private final JobFlowService jobFlowService;
-
-    private final QuartzService quartzService;
 
     @RequirePermission(TASK_EDIT)
     @PostMapping(value = "/create")
@@ -207,32 +198,6 @@ public class JobInfoController {
                 .select(JobInfo.class, jobInfoService::isNonLargeField)
                 .in(JobInfo::getId, ids));
         return success(jobs);
-    }
-
-    @Deprecated
-    @RequirePermission(TASK_EXEC)
-    @GetMapping(value = "/schedule/runOnce/{jobId}")
-    public ResultInfo<Long> runOnce(@PathVariable long jobId) {
-        var jobInfo = jobInfoService.getById(jobId);
-        if (jobInfo.getStatus() != ONLINE) {
-            return failure(NOT_RUNNABLE_STATUS);
-        }
-
-        var unfinishedJob = jobRunService.getOne(new QueryWrapper<JobRunInfo>()
-                .lambda()
-                .eq(JobRunInfo::getJobId, jobId)
-                .in(JobRunInfo::getStatus, getNonTerminals())
-                .last("limit 1"));
-        if (unfinishedJob != null) {
-            return failure(EXIST_UNFINISHED_PROCESS);
-        }
-
-        var quartzInfo = new JobQuartzInfo(jobInfo);
-        if (quartzService.runOnce(quartzInfo)) {
-            return success(jobId);
-        } else {
-            return failure(SERVICE_ERROR);
-        }
     }
 
     @RequirePermission(TASK_PURGE)

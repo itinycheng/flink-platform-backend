@@ -27,7 +27,6 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 import java.util.Objects;
 
-import static com.flink.platform.common.constants.Constant.EMPTY;
 import static com.flink.platform.common.enums.Permission.TASK_EDIT;
 import static com.flink.platform.common.enums.Permission.TASK_VIEW;
 import static com.flink.platform.common.enums.ResponseStatus.ERROR_PARAMETER;
@@ -54,7 +53,6 @@ public class CatalogInfoController {
 
         var catalog = catalogRequest.getCatalogInfo();
         catalog.setId(null);
-        catalog.setDefaultDatabase(EMPTY);
         catalog.setUserId(loginUser.getId());
         catalog.setWorkspaceId(RequestContext.requireWorkspaceId());
         catalogService.save(catalog);
