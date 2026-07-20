@@ -185,10 +185,6 @@ public class JobInfoRequest {
             return "The flowId of FlowJob must be positive";
         }
 
-        if (flowJob.getExpectedFailureCorrectedTo() == null) {
-            return "The expectedFailureCorrectedTo of FlowJob cannot be null";
-        }
-
         if (flowJob.getParamTransferMode() == null) {
             return "The paramTransferMode of FlowJob cannot be null";
         }

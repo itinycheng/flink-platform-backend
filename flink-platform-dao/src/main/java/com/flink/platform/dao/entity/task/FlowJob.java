@@ -19,5 +19,6 @@ public class FlowJob extends BaseJob {
 
     private Set<String> paramNames;
 
+    @Deprecated(forRemoval = true)
     private ExecutionStatus expectedFailureCorrectedTo;
 }

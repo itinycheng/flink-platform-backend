@@ -1,7 +1,7 @@
 package com.flink.platform.web.monitor;
 
+import com.flink.platform.common.enums.ExecutionStatus;
 import com.flink.platform.common.util.DateUtil;
-import com.flink.platform.dao.entity.task.FlowJob;
 import com.flink.platform.dao.service.JobFlowRunService;
 import com.flink.platform.dao.service.JobRunInfoService;
 import com.flink.platform.grpc.JobStatusReply;
@@ -12,7 +12,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
-import static com.flink.platform.common.enums.ExecutionStatus.EXPECTED_FAILURE;
 import static com.flink.platform.common.enums.JobType.SUB_FLOW;
 
 @Slf4j
@@ -36,10 +35,9 @@ public class SubFlowStatusFetcher implements StatusFetcher {
         var backInfo = jobRun.getBackInfo();
         var jobFlowRun = jobFlowRunService.getById(backInfo.getFlowRunId());
         var status = jobFlowRun.getStatus();
-        if (EXPECTED_FAILURE.equals(status) && jobRun.getConfig() instanceof FlowJob config) {
-            if (config.getExpectedFailureCorrectedTo() != null) {
-                status = config.getExpectedFailureCorrectedTo();
-            }
+        // Reset EXPECTED_FAILURE to FAILURE.
+        if (ExecutionStatus.EXPECTED_FAILURE.equals(status)) {
+            status = ExecutionStatus.FAILURE;
         }
 
         return JobStatusReply.newBuilder()
