@@ -11,6 +11,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static java.util.Collections.emptyMap;
+import static java.util.Locale.ROOT;
 import static java.util.Objects.nonNull;
 import static java.util.stream.Collectors.toMap;
 
@@ -31,7 +32,7 @@ public class ConfigLoader {
         try {
             val resourceAsStream = ConfigLoader.class.getClassLoader().getResourceAsStream(DEFAULT_CONFIG);
             val configMap = new Yaml().<Map<String, Map<String, Object>>>load(resourceAsStream);
-            return configMap.getOrDefault(execMode.name().toLowerCase(), emptyMap()).entrySet().stream()
+            return configMap.getOrDefault(execMode.name().toLowerCase(ROOT), emptyMap()).entrySet().stream()
                     .filter(entry -> nonNull(entry.getKey()) && nonNull(entry.getValue()))
                     .collect(toMap(Map.Entry::getKey, entry -> entry.getValue().toString()));
         } catch (Exception e) {

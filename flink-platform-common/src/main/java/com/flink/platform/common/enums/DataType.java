@@ -5,6 +5,7 @@ import java.util.Map;
 
 import static com.flink.platform.common.constants.Constant.EMPTY;
 import static com.flink.platform.common.constants.Constant.SINGLE_QUOTE;
+import static java.util.Locale.ROOT;
 import static java.util.stream.Collectors.toMap;
 
 /** sql data type. */
@@ -43,6 +44,6 @@ public enum DataType {
             Arrays.stream(values()).collect(toMap(Enum::name, dataType -> dataType));
 
     public static DataType of(String type) {
-        return ENUM_MAP.get(type.toUpperCase());
+        return ENUM_MAP.get(type.toUpperCase(ROOT));
     }
 }

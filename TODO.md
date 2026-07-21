@@ -1,81 +1,5 @@
 # TODO
 
-## WorkspaceScopedService — Automatic Workspace Isolation for Save/Update/Delete
-
-### Problem
-
-Controllers correctly inject `workspaceId` on `create`, but `getById`, `updateById`, and
-`removeById` have no workspace ownership check. Any authenticated user who knows a resource ID
-can read, modify, or delete resources belonging to another workspace.
-
-### Solution
-
-Introduce a `WorkspaceScopedService` abstract base class that overrides the standard
-MyBatis-Plus methods to enforce workspace ownership transparently. Controllers require no
-changes beyond removing now-redundant `setWorkspaceId(...)` calls.
-
-### Architecture
-
-```
-dao layer (no dependency on web layer)
-  WorkspaceOwned           entity interface — exposes getWorkspaceId() / setWorkspaceId()
-  WorkspaceIdProvider      decoupling interface — defined in dao, implemented in web
-  WorkspaceScopedService   abstract base — overrides save / getById / updateById / removeById
-
-web layer
-  RequestContextWorkspaceIdProvider   reads ThreadLocal, implements WorkspaceIdProvider
-```
-
-**Fallback rule:** when `workspaceId == null` (non-HTTP context: Quartz, schedulers, etc.),
-all overridden methods delegate directly to the super implementation — no side effects.
-
-### Behavior of Overridden Methods
-
-| Method               | HTTP context (wsId present)                              | Non-HTTP context (wsId == null) |
-|----------------------|----------------------------------------------------------|---------------------------------|
-| `save(entity)`       | auto-sets `workspaceId` if not already set               | delegates to super              |
-| `getById(id)`        | returns `null` if resource belongs to another workspace  | delegates to super              |
-| `updateById(entity)` | returns `false` if resource belongs to another workspace | delegates to super              |
-| `removeById(id)`     | returns `false` if resource belongs to another workspace | delegates to super              |
-
-### Files to Create
-
-- [ ] `flink-platform-dao/.../entity/WorkspaceOwned.java`
-- [ ] `flink-platform-dao/.../service/WorkspaceIdProvider.java`
-- [ ] `flink-platform-dao/.../service/WorkspaceScopedService.java`
-- [ ] `flink-platform-web/.../config/RequestContextWorkspaceIdProvider.java`
-
-### Entities — add `implements WorkspaceOwned` (class declaration only, Lombok handles the rest)
-
-- [ ] `AlertInfo` / `CatalogInfo` / `Datasource` / `TagInfo` / `Resource` / `JobParam` / `JobFlow`
-
-### Services — change `extends ServiceImpl` → `extends WorkspaceScopedService`
-
-| Service              | Entity        |
-|----------------------|---------------|
-| `AlertService`       | `AlertInfo`   |
-| `CatalogInfoService` | `CatalogInfo` |
-| `DatasourceService`  | `Datasource`  |
-| `TagInfoService`     | `TagInfo`     |
-| `ResourceService`    | `Resource`    |
-| `JobParamService`    | `JobParam`    |
-| `JobFlowService`     | `JobFlow`     |
-
-### Controller Cleanup
-
-- [ ] Remove explicit `setWorkspaceId(RequestContext.requireWorkspaceId())` calls from all `create`
-  methods — `save()` now injects it automatically
-- [ ] `CatalogInfoController.delete`: replace `remove(QueryWrapper with workspaceId condition)` with
-  `removeById(catalogId)` — ownership is enforced by the base class
-
-### Out of Scope
-
-- `JobFlowRun` — `workspaceId` is set internally from `JobFlow` by the scheduler, not via HTTP
-- `JobInfo` — has no `workspaceId` field
-- `list`/`page` queries with manual `eq(workspaceId)` conditions — remain unchanged
-
----
-
 ## Execution Log Archival (`t_job_run` / `t_job_flow_run`)
 
 Keep the hot tables small by moving aged rows into monthly-partitioned archive tables, so
@@ -173,4 +97,89 @@ means the marker validates *existence*, not *ownership*.
 - Today's behavior is "first cluster to boot wins forever" — works only for green-field
   deployments that never change storage. Any real ops scenario (failover, migration,
   multi-region) breaks silently.
+
+---
+
+## Full Multi-Tenant Rollout — SQL-level Tenant Filter + TenantContext
+
+> Chosen approach over the `WorkspaceScopedService` base-class idea (first section): enforce
+> isolation at the **SQL layer** via MyBatis-Plus `TenantLineInnerInterceptor`, so `getById` /
+> `updateById` / `removeById` / custom queries are all auto-scoped without touching services or
+> mappers. This section is the plan to grow the current single-table pilot into full coverage.
+
+### Already implemented (pilot, scoped to `t_tag`)
+
+- `WorkspaceScoped` marker interface (`flink-platform-dao/.../entity/WorkspaceScoped.java`),
+  declares `Long getWorkspaceId()` as a compile-time contract.
+- `TagInfo implements WorkspaceScoped`.
+- `WorkspaceTenantLineHandler` — scoped tables derived at runtime from all `WorkspaceScoped`
+  entities via `TableInfoHelper` (no hardcoded table name; rename-safe). Lazily built + cached.
+  `ignoreTable` short-circuits when no workspace context (background threads unaffected).
+- Registered in `MybatisPlusConfig` (tenant interceptor before pagination).
+- `WorkspaceScopedValidator` (`ApplicationRunner`) — fail-fast at boot if any `WorkspaceScoped`
+  entity lacks a mapped `workspace_id` column.
+- Tests: `WorkspaceTenantLineHandlerTest` (6, incl. real SQL-rewrite), `WorkspaceScopedValidatorTest` (2).
+- Demo (reference only, delete when done): `RequestContextDemoTest` — shows runAs / runWithoutTenant.
+
+### Design decisions locked in
+
+- **Identify scoped tables by marker interface**, not annotation (avoids confusion with the
+  existing `@WorkspaceOptional` method annotation) and not by `workspace_id`-column-detection
+  (that would be opt-out / all-tables-at-once; we want explicit opt-in during rollout).
+- **Authorization vs isolation are separate**: `PermissionInterceptor` already blocks a forged
+  `X-Workspace-Id` for `@RequirePermission` endpoints (membership check). The tenant filter covers
+  the *resource-level* IDOR (a legit member fetching another workspace's row by id). Do NOT
+  re-add a membership check in `LoginInterceptor` — it was tried and reverted as redundant.
+
+### The core problem to solve for full rollout
+
+`workspace_id` only exists on HTTP threads (`RequestContext` set by `LoginInterceptor`).
+Background/internal threads have none, so today they read **across all workspaces** (fail-open).
+Fix = generalize `RequestContext` → `RequestContext` that any entry point populates, with two
+explicit scopes: `runAs(workspaceId, ...)` and `runWithoutTenant(...)`.
+
+### Work inventory (~10 focused sites, 0 business-logic changes)
+
+**Thread propagation — THE key lever, 1 file:**
+- [ ] `ThreadUtil` — decorate task submission to capture the submitting thread's `RequestContext`
+      and restore it in the worker thread. All pools go through `ThreadUtil.new*`
+      (`FlowExecuteThread`, `JobExecuteThread` virtual, gRPC executor, `CommandMonitor`,
+      `ReactiveService`, `WorkerHeartbeat`), so this one change covers the whole
+      `Quartz → FlowExecuteThread → JobExecuteThread` chain.
+
+**Generalize context:**
+- [ ] `RequestContext` → `RequestContext` (keep HTTP behavior identical; add `runAs` /
+      `runWithoutTenant`). Point `WorkspaceTenantLineHandler` at `RequestContext`.
+
+**Entry points — set context (`runAs`), workspace comes from domain object:**
+- [ ] `LoginInterceptor` — already sets it (HTTP header). Just switch to `RequestContext`.
+- [ ] `JobFlowRunner.execute` (Quartz) — `runAs(jobFlow.getWorkspaceId())`.
+- [ ] `FlowExecuteThread.run` — `runAs(jobFlowRun.getWorkspaceId())`.
+- [ ] `JobGrpcServer` (`processJob` / `killJob` / `savepointJob` / `getJobStatus`) — load
+      JobRun by `jobRunId`, then `runAs(workspaceId)`.
+- [ ] `InitJobFlowScheduler` recovery — per-flow `runAs` (or `runWithoutTenant` if only touching
+      non-scoped tables).
+
+**Entry points — explicit global scans (`runWithoutTenant`):**
+- [ ] `JobFlowScheduleService` (@Scheduled), cron `JobsInJobListStatusChecker` /
+      `UnscheduledJobFlowChecker`, `CommandMonitor` — only if they touch scoped tables.
+
+**Optional cleanup (net code reduction):**
+- [ ] Remove now-redundant `setWorkspaceId(requireWorkspaceId())` and
+      `.eq(workspaceId, requireWorkspaceId())` from ~10 controllers (interceptor does it).
+
+**Policy decision (later):**
+- [ ] Decide whether "no context on a scoped-table query" stays fail-open (current) or becomes
+      fail-closed (throw, forcing every background path to declare `runAs` / `runWithoutTenant`).
+
+### Add tables to scope (each is one line, handler never changes)
+
+- [ ] `AlertInfo` / `CatalogInfo` / `Datasource` / `Resource` / `JobParam` / `JobFlow` —
+      `implements WorkspaceScoped` (validator confirms each has a `workspace_id` column at boot).
+
+### Known limits (SQL-layer approach)
+
+- Raw / hand-written SQL and complex JOINs may not be rewritten reliably — audit needed.
+- Guarantees MP-mapped column, not the physical DB column (schema/migration owns that).
+- Unique constraints that must be per-workspace need `workspace_id` in the composite index.
 

@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
+import com.flink.platform.common.annotation.TenantId;
 import com.flink.platform.common.enums.Status;
 import com.flink.platform.common.enums.TagType;
 import lombok.AccessLevel;
@@ -34,6 +35,7 @@ public class TagInfo {
     /** user id. */
     private Long userId;
 
+    @TenantId
     private Long workspaceId;
 
     /** type. */

@@ -24,6 +24,7 @@ import static com.flink.platform.common.constants.JobConstant.USER_DIR_FORMAT;
 import static com.flink.platform.common.enums.ExecutionStatus.CREATED;
 import static com.flink.platform.common.util.DateUtil.DATE_FORMAT;
 import static com.flink.platform.common.util.DateUtil.READABLE_TIMESTAMP_FORMAT;
+import static java.util.Locale.ROOT;
 
 /** addition method. */
 @Service
@@ -108,7 +109,7 @@ public class JobRunExtraService {
                 JOB_RUN_DIR,
                 DateUtil.format(jobRun.getCreateTime(), DATE_FORMAT),
                 USER_DIR_FORMAT.formatted(jobRun.getUserId()),
-                jobRun.getType().name().toLowerCase(),
+                jobRun.getType().name().toLowerCase(ROOT),
                 JOB_DIR_FORMAT.formatted(jobRun.getJobId()),
                 buildTimestampedFileName(jobRun, fileSuffix));
         return String.join(fileSeparator, storageService.getRootPath(), relativePath);

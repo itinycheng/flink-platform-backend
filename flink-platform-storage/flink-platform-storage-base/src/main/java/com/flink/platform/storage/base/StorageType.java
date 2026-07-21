@@ -2,6 +2,8 @@ package com.flink.platform.storage.base;
 
 import lombok.Getter;
 
+import static java.util.Locale.ROOT;
+
 /**
  * Storage type.
  */
@@ -25,7 +27,7 @@ public enum StorageType {
             return null;
         }
 
-        name = name.toLowerCase();
+        name = name.toLowerCase(ROOT);
         for (StorageType storageType : StorageType.values()) {
             if (storageType.getName().equals(name)) {
                 return storageType;

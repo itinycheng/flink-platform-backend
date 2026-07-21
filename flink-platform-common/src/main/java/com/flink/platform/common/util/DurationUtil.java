@@ -12,7 +12,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import static java.util.Locale.US;
+import static java.util.Locale.ROOT;
 
 /** Duration utils, copy from flink. */
 public class DurationUtil {
@@ -96,7 +96,7 @@ public class DurationUtil {
         }
 
         final String number = trimmed.substring(0, pos);
-        final String unitLabel = trimmed.substring(pos).trim().toLowerCase(US);
+        final String unitLabel = trimmed.substring(pos).trim().toLowerCase(ROOT);
 
         if (number.isEmpty()) {
             throw new NumberFormatException("text does not start with a number");
