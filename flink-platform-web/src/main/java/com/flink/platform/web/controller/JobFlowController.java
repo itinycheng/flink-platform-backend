@@ -201,7 +201,6 @@ public class JobFlowController {
                 .list(new QueryWrapper<JobFlow>()
                         .lambda()
                         .select(JobFlow::getId, JobFlow::getName)
-                        .eq(JobFlow::getWorkspaceId, RequestContext.requireWorkspaceId())
                         .like(isNotBlank(name), JobFlow::getName, name)
                         .in(CollectionUtils.isNotEmpty(type), JobFlow::getType, type)
                         .in(CollectionUtils.isNotEmpty(status), JobFlow::getStatus, status))

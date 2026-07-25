@@ -94,11 +94,7 @@ public class AlertController {
             @RequestParam(name = "name", required = false) String name) {
         var pager = new Page<AlertInfo>(page, size);
         var iPage = alertService.page(
-                pager,
-                new QueryWrapper<AlertInfo>()
-                        .lambda()
-                        .eq(AlertInfo::getWorkspaceId, RequestContext.requireWorkspaceId())
-                        .like(Objects.nonNull(name), AlertInfo::getName, name));
+                pager, new QueryWrapper<AlertInfo>().lambda().like(Objects.nonNull(name), AlertInfo::getName, name));
 
         return success(iPage);
     }
@@ -106,9 +102,7 @@ public class AlertController {
     @RequirePermission(TASK_VIEW)
     @GetMapping(value = "/list")
     public ResultInfo<List<AlertInfo>> list() {
-        var list = alertService.list(new QueryWrapper<AlertInfo>()
-                .lambda()
-                .eq(AlertInfo::getWorkspaceId, RequestContext.requireWorkspaceId()));
+        var list = alertService.list(new QueryWrapper<AlertInfo>().lambda());
         return success(list);
     }
 }

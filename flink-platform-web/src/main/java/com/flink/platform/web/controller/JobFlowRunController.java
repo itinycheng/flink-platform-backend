@@ -92,7 +92,6 @@ public class JobFlowRunController {
         var queryWrapper = new QueryWrapper<JobFlowRun>()
                 .lambda()
                 .select(JobFlowRun.class, field -> !"flow".equals(field.getProperty()))
-                .eq(JobFlowRun::getWorkspaceId, RequestContext.requireWorkspaceId())
                 .eq(nonNull(id), JobFlowRun::getId, id)
                 .eq(nonNull(status), JobFlowRun::getStatus, status)
                 .likeRight(isNotEmpty(name), JobFlowRun::getName, name)

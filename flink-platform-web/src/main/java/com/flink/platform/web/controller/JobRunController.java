@@ -10,7 +10,6 @@ import com.flink.platform.dao.entity.User;
 import com.flink.platform.dao.service.JobInfoService;
 import com.flink.platform.dao.service.JobRunInfoService;
 import com.flink.platform.web.annotation.RequirePermission;
-import com.flink.platform.web.common.RequestContext;
 import com.flink.platform.web.dto.ResultInfo;
 import com.flink.platform.web.dto.request.JobRunRequest;
 import com.flink.platform.web.service.KillJobService;
@@ -79,7 +78,6 @@ public class JobRunController {
         var queryWrapper = new QueryWrapper<JobRunInfo>()
                 .lambda()
                 .select(JobRunInfo.class, jobRunInfoService::isNonLargeField)
-                .eq(JobRunInfo::getWorkspaceId, RequestContext.requireWorkspaceId())
                 .eq(nonNull(id), JobRunInfo::getId, id)
                 .eq(nonNull(flowRunId), JobRunInfo::getFlowRunId, flowRunId)
                 .eq(nonNull(jobId), JobRunInfo::getJobId, jobId)
@@ -118,7 +116,6 @@ public class JobRunController {
         var jobRun = jobRunInfoService.getOne(new QueryWrapper<JobRunInfo>()
                 .lambda()
                 .eq(JobRunInfo::getId, runId)
-                .eq(JobRunInfo::getWorkspaceId, RequestContext.requireWorkspaceId())
                 .in(JobRunInfo::getStatus, getNonTerminals()));
 
         if (jobRun == null) {

@@ -6,6 +6,7 @@ import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.baomidou.mybatisplus.extension.handlers.Jackson3TypeHandler;
+import com.flink.platform.common.annotation.TenantId;
 import com.flink.platform.common.enums.JobFlowStatus;
 import com.flink.platform.common.enums.JobFlowType;
 import com.flink.platform.dao.entity.alert.AlertConfigList;
@@ -38,6 +39,7 @@ public class JobFlow {
     private Long userId;
 
     /** workspace id. */
+    @TenantId
     private Long workspaceId;
 
     /** job flow description. */

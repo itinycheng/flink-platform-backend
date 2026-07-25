@@ -113,11 +113,7 @@ public class TagInfoController {
             @RequestParam(name = "name", required = false) String name) {
         var pager = new Page<TagInfo>(page, size);
         var iPage = tagInfoService.page(
-                pager,
-                new QueryWrapper<TagInfo>()
-                        .lambda()
-                        .eq(TagInfo::getWorkspaceId, RequestContext.requireWorkspaceId())
-                        .like(nonNull(name), TagInfo::getName, name));
+                pager, new QueryWrapper<TagInfo>().lambda().like(nonNull(name), TagInfo::getName, name));
 
         return success(iPage);
     }
@@ -129,7 +125,6 @@ public class TagInfoController {
             @RequestParam(name = "status", required = false) Status status) {
         var list = tagInfoService.list(new QueryWrapper<TagInfo>()
                 .lambda()
-                .eq(TagInfo::getWorkspaceId, RequestContext.requireWorkspaceId())
                 .eq(nonNull(status), TagInfo::getStatus, status)
                 .like(nonNull(name), TagInfo::getName, name));
         return success(list);

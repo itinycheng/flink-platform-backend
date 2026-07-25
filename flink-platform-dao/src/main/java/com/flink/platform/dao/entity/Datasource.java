@@ -6,6 +6,7 @@ import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.baomidou.mybatisplus.extension.handlers.Jackson3TypeHandler;
+import com.flink.platform.common.annotation.TenantId;
 import com.flink.platform.common.enums.DbType;
 import com.flink.platform.dao.entity.ds.DatasourceParam;
 import lombok.AccessLevel;
@@ -38,6 +39,7 @@ public class Datasource {
     /**
      * workspace id.
      */
+    @TenantId
     private Long workspaceId;
 
     /** database type. */

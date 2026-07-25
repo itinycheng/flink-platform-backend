@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
+import com.flink.platform.common.annotation.TenantId;
 import com.flink.platform.common.enums.ResourceType;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -45,6 +46,7 @@ public class Resource implements Serializable {
     /**
      * workspace id.
      */
+    @TenantId
     private Long workspaceId;
 
     /** resource type. */

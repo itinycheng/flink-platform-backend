@@ -123,10 +123,8 @@ public class ResourceController {
             @RequestParam(name = "name", required = false) String name,
             @RequestParam(name = "pid", required = false) Long pid) {
         Page<Resource> pager = new Page<>(page, size);
-        LambdaQueryWrapper<Resource> queryWrapper = new QueryWrapper<Resource>()
-                .lambda()
-                .eq(Resource::getWorkspaceId, RequestContext.requireWorkspaceId())
-                .like(Objects.nonNull(name), Resource::getName, name);
+        LambdaQueryWrapper<Resource> queryWrapper =
+                new QueryWrapper<Resource>().lambda().like(Objects.nonNull(name), Resource::getName, name);
         if (pid != null) {
             queryWrapper.eq(Resource::getPid, pid);
         } else {
@@ -144,7 +142,6 @@ public class ResourceController {
             @RequestParam(name = "ext", required = false) String ext) {
         List<Resource> list = resourceService.list(new QueryWrapper<Resource>()
                 .lambda()
-                .eq(Resource::getWorkspaceId, RequestContext.requireWorkspaceId())
                 .eq(Objects.nonNull(type), Resource::getType, type)
                 .likeLeft(StringUtils.isNotBlank(ext), Resource::getName, ext));
         return ResultInfo.success(list);

@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
+import com.flink.platform.common.annotation.TenantId;
 import com.flink.platform.common.enums.CatalogType;
 import lombok.AccessLevel;
 import lombok.Data;
@@ -40,6 +41,7 @@ public class CatalogInfo implements Serializable {
     /**
      * workspace id.
      */
+    @TenantId
     private Long workspaceId;
 
     /** catalog create sql. */

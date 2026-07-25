@@ -83,10 +83,8 @@ public class CatalogInfoController {
     @RequirePermission(TASK_EDIT)
     @GetMapping(value = "/delete/{catalogId}")
     public ResultInfo<Boolean> delete(@PathVariable Long catalogId) {
-        var bool = catalogService.remove(new QueryWrapper<CatalogInfo>()
-                .lambda()
-                .eq(CatalogInfo::getId, catalogId)
-                .eq(CatalogInfo::getWorkspaceId, RequestContext.requireWorkspaceId()));
+        var bool =
+                catalogService.remove(new QueryWrapper<CatalogInfo>().lambda().eq(CatalogInfo::getId, catalogId));
         return success(bool);
     }
 
@@ -102,7 +100,6 @@ public class CatalogInfoController {
                 pager,
                 new QueryWrapper<CatalogInfo>()
                         .lambda()
-                        .eq(CatalogInfo::getWorkspaceId, RequestContext.requireWorkspaceId())
                         .eq(Objects.nonNull(type), CatalogInfo::getType, type)
                         .like(Objects.nonNull(name), CatalogInfo::getName, name));
         return success(iPage);
@@ -111,9 +108,7 @@ public class CatalogInfoController {
     @RequirePermission(TASK_VIEW)
     @GetMapping(value = "/list")
     public ResultInfo<List<CatalogInfo>> list() {
-        var list = catalogService.list(new QueryWrapper<CatalogInfo>()
-                .lambda()
-                .eq(CatalogInfo::getWorkspaceId, RequestContext.requireWorkspaceId()));
+        var list = catalogService.list(new QueryWrapper<CatalogInfo>().lambda());
         return success(list);
     }
 }

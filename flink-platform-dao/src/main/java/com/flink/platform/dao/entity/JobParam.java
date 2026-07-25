@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
+import com.flink.platform.common.annotation.TenantId;
 import com.flink.platform.common.enums.JobParamType;
 import com.flink.platform.common.enums.Status;
 import lombok.AccessLevel;
@@ -36,6 +37,7 @@ public class JobParam implements Serializable {
     /**
      * workspace id.
      */
+    @TenantId
     private Long workspaceId;
 
     /** param type. */

@@ -6,6 +6,7 @@ import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.baomidou.mybatisplus.extension.handlers.Jackson3TypeHandler;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.flink.platform.common.annotation.TenantId;
 import com.flink.platform.common.enums.ExecutionStatus;
 import com.flink.platform.common.enums.JobFlowType;
 import com.flink.platform.common.util.DurationUtil;
@@ -36,6 +37,7 @@ public class JobFlowRun {
 
     private Long userId;
 
+    @TenantId
     private Long workspaceId;
 
     private JobFlowType type;

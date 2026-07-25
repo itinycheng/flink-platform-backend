@@ -62,7 +62,6 @@ public class JobParamController {
                 .eq(JobParam::getParamName, jobParamRequest.getParamName())
                 .eq(JobParam::getType, jobParamRequest.getType())
                 .eq(JOB_FLOW.equals(jobParamRequest.getType()), JobParam::getFlowId, jobParamRequest.getFlowId())
-                .eq(JobParam::getWorkspaceId, RequestContext.requireWorkspaceId())
                 .last("limit 1"));
         if (existed != null) {
             return failure(ERROR_PARAMETER, "param name already exists");
@@ -129,11 +128,7 @@ public class JobParamController {
             @RequestParam(name = "name", required = false) String name) {
         var pager = new Page<JobParam>(page, size);
         var iPage = jobParamService.page(
-                pager,
-                new QueryWrapper<JobParam>()
-                        .lambda()
-                        .eq(JobParam::getWorkspaceId, RequestContext.requireWorkspaceId())
-                        .like(nonNull(name), JobParam::getParamName, name));
+                pager, new QueryWrapper<JobParam>().lambda().like(nonNull(name), JobParam::getParamName, name));
 
         return success(iPage);
     }

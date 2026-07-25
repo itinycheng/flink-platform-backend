@@ -6,6 +6,7 @@ import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.baomidou.mybatisplus.extension.handlers.Jackson3TypeHandler;
+import com.flink.platform.common.annotation.TenantId;
 import com.flink.platform.common.enums.DeployMode;
 import com.flink.platform.common.enums.ExecutionMode;
 import com.flink.platform.common.enums.ExecutionStatus;
@@ -43,6 +44,7 @@ public class JobInfo implements Identifiable {
     private Long userId;
 
     /** workspace id. */
+    @TenantId
     private Long workspaceId;
 
     /** job desc. */

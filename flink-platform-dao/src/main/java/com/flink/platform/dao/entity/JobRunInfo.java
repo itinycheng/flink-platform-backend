@@ -6,6 +6,7 @@ import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.baomidou.mybatisplus.extension.handlers.Jackson3TypeHandler;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.flink.platform.common.annotation.TenantId;
 import com.flink.platform.common.enums.DeployMode;
 import com.flink.platform.common.enums.ExecutionMode;
 import com.flink.platform.common.enums.ExecutionStatus;
@@ -41,6 +42,7 @@ public class JobRunInfo implements Serializable {
 
     private Long userId;
 
+    @TenantId
     private Long workspaceId;
 
     private JobType type;

@@ -119,7 +119,6 @@ public class DatasourceController {
                 pager,
                 new QueryWrapper<Datasource>()
                         .lambda()
-                        .eq(Datasource::getWorkspaceId, RequestContext.requireWorkspaceId())
                         .eq(Objects.nonNull(type), Datasource::getType, type)
                         .like(Objects.nonNull(name), Datasource::getName, name));
         return success(iPage);
@@ -134,10 +133,8 @@ public class DatasourceController {
             dbType = jobtype.getDbType();
         }
 
-        var list = datasourceService.list(new QueryWrapper<Datasource>()
-                .lambda()
-                .eq(Objects.nonNull(dbType), Datasource::getType, dbType)
-                .eq(Datasource::getWorkspaceId, RequestContext.requireWorkspaceId()));
+        var list = datasourceService.list(
+                new QueryWrapper<Datasource>().lambda().eq(Objects.nonNull(dbType), Datasource::getType, dbType));
         return success(list);
     }
 }
