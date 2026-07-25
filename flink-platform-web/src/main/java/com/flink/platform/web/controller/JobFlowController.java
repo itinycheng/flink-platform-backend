@@ -42,6 +42,7 @@ import java.util.List;
 import java.util.Map;
 
 import static com.flink.platform.common.constants.JobConstant.CONFIG;
+import static com.flink.platform.common.constants.JobConstant.USER_ID;
 import static com.flink.platform.common.enums.JobFlowStatus.DELETE;
 import static com.flink.platform.common.enums.JobFlowStatus.OFFLINE;
 import static com.flink.platform.common.enums.JobFlowStatus.ONLINE;
@@ -283,7 +284,10 @@ public class JobFlowController {
 
     @RequirePermission(TASK_EXEC)
     @PostMapping(value = "/schedule/runOnce/{flowId}")
-    public ResultInfo<Long> runOnce(@PathVariable Long flowId, @RequestBody(required = false) ExecutionConfig config) {
+    public ResultInfo<Long> runOnce(
+            @PathVariable Long flowId,
+            @RequestAttribute(value = Constant.SESSION_USER) User loginUser,
+            @RequestBody(required = false) ExecutionConfig config) {
         var jobFlow = jobFlowService.getById(flowId);
         var status = jobFlow.getStatus();
         if (status == null || !status.isRunnable()) {
@@ -310,6 +314,7 @@ public class JobFlowController {
         // run once.
         var quartzInfo = new JobFlowQuartzInfo(jobFlow);
         quartzInfo.addData(CONFIG, JsonUtil.toJsonString(config));
+        quartzInfo.addData(USER_ID, loginUser.getId());
         if (quartzService.runOnce(quartzInfo)) {
             return success(flowId);
         } else {

@@ -183,3 +183,38 @@ explicit scopes: `runAs(workspaceId, ...)` and `runWithoutTenant(...)`.
 - Guarantees MP-mapped column, not the physical DB column (schema/migration owns that).
 - Unique constraints that must be per-workspace need `workspace_id` in the composite index.
 
+---
+
+## Record Who Stops / Kills a Run (Audit)
+
+Manual **run** now records the executor: `JobFlowRunner.execute` reads `USER_ID` from the Quartz
+data map and stamps it onto `t_job_flow_run.userId` (falls back to the flow creator for scheduled
+fires and sub-flows). **Stop / kill still records nobody** — the three entry points below capture
+no operator:
+
+- `JobFlowController.stop(flowId)` — stops scheduling.
+- `JobFlowRunController.kill(flowRunId)` — kills a running flow.
+- `JobRunController.kill(runId)` — kills a single running job.
+
+### Chosen approach — reuse the existing audit system (no new run-table columns)
+
+The `@Auditable` annotation can't be reused directly here: it treats the method **return value** as
+the entity snapshot, but these endpoints return `Long` / `Boolean`. So call `AuditLogService.save(...)`
+explicitly from each entry point. `operatorId` is available via `RequestContext.getUserId()` (set by
+`LoginInterceptor` on every HTTP request — no new controller params needed).
+
+- [ ] `OperationType` — add `STOP` (and/or `KILL`). Update the `AuditLog` / annotation Javadoc that
+      currently says "INSERT / UPDATE / DELETE".
+- [ ] `EntityType` — add `JOB_FLOW` / `JOB_FLOW_RUN` / `JOB_RUN` (currently only `JOB`).
+- [ ] In the three entry points: build an `AuditLog` (entityType, STOP, entityId = flow/run id,
+      snapshot = the run entity, operatorId = `RequestContext.getUserId()`) and `auditLogService.save(...)`.
+- [ ] Wrap the save in try/catch + log-warn on failure, mirroring `AuditAspect` (audit must never
+      break the kill/stop action itself).
+- [ ] (Optional) surface these entries in the existing audit-log UI / `AuditLogController`.
+
+### Notes
+
+- No schema migration on `t_job_run` / `t_job_flow_run`; only enum extensions + `t_audit_log` rows.
+- Alternative considered and rejected for now: a plain `log.info("... killed by {}", userId)` line —
+  zero schema cost but not queryable and lost on log rotation. Fine only for pure debugging.
+

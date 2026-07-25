@@ -109,6 +109,8 @@ public class JobConstant {
 
     public static final String CONFIG = "config";
 
+    public static final String USER_ID = "user_id";
+
     public static final String FLOW_RUN_ID = "flow_run_id";
 
     public static final String JOB_RUN_DIR = "job_run";

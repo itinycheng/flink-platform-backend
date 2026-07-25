@@ -31,6 +31,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import static com.flink.platform.common.constants.JobConstant.CONFIG;
 import static com.flink.platform.common.constants.JobConstant.FLOW_RUN_ID;
+import static com.flink.platform.common.constants.JobConstant.USER_ID;
 import static com.flink.platform.common.enums.ExecutionStatus.SUBMITTED;
 import static com.flink.platform.common.enums.JobFlowStatus.ONLINE;
 import static com.flink.platform.common.enums.JobFlowStatus.SCHEDULING;
@@ -112,7 +113,8 @@ public class JobFlowRunner implements Job {
             } else {
                 jobFlowRun.setFlow(jobFlow.getFlow());
             }
-            jobFlowRun.setUserId(jobFlow.getUserId());
+            var triggerUserId = NumberUtil.toLong(dataMap.get(USER_ID));
+            jobFlowRun.setUserId(triggerUserId != null ? triggerUserId : jobFlow.getUserId());
             jobFlowRun.setWorkspaceId(jobFlow.getWorkspaceId());
             jobFlowRun.setHost(Constant.HOST_IP);
             jobFlowRun.setType(jobFlow.getType());
