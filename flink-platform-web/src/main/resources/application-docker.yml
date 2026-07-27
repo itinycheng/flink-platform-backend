@@ -50,7 +50,7 @@ spring:
             isClustered: true
             clusterCheckinInterval: 10000
             useProperties: false
-            misfireThreshold: 5000
+            misfireThreshold: 30000
           threadPool:
             class: org.quartz.simpl.SimpleThreadPool
             threadCount: 20
