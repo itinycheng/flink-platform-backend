@@ -1,6 +1,7 @@
 package com.flink.platform.web.service;
 
 import com.flink.platform.alert.AlertSendingService;
+import com.flink.platform.common.util.ExceptionUtil;
 import com.flink.platform.dao.entity.JobFlowRun;
 import com.flink.platform.dao.service.JobFlowRunService;
 import com.flink.platform.web.config.WorkerConfig;
@@ -9,13 +10,14 @@ import com.flink.platform.web.runner.FlowExecuteThread;
 import com.flink.platform.web.util.ThreadUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang3.ObjectUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
-import java.util.concurrent.PriorityBlockingQueue;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadPoolExecutor;
 
 import static com.flink.platform.common.enums.ExecutionStatus.FAILURE;
@@ -33,7 +35,7 @@ public class JobFlowScheduleService {
 
     private final ThreadPoolExecutor flowExecService;
 
-    private final PriorityBlockingQueue<JobFlowRun> inFlightFlows;
+    private final Map<Long, JobFlowRun> inFlightFlowRuns = new ConcurrentHashMap<>();
 
     @Autowired
     public JobFlowScheduleService(
@@ -43,53 +45,57 @@ public class JobFlowScheduleService {
         this.alertSendingService = alertSendingService;
         this.flowExecService =
                 ThreadUtil.newFixedVirtualThreadExecutor("FlowExecThread", workerConfig.getFlowExecThreads());
-        this.inFlightFlows = new PriorityBlockingQueue<>(
-                workerConfig.getFlowExecThreads(), (o1, o2) -> ObjectUtils.compare(o2.getPriority(), o1.getPriority()));
     }
 
     @Scheduled(fixedDelay = 1000)
-    public void scheduleJobFlow() {
-        while (AppRunner.isRunning()) {
-            // TODO: activeCount is an approximate value.
-            if (flowExecService.getActiveCount() > workerConfig.getFlowExecThreads()) {
-                log.info(
-                        "No enough threads to start a new job flow, active count: {}",
-                        flowExecService.getActiveCount());
+    public void drainAndExecute() {
+        if (AppRunner.isStopped()) {
+            return;
+        }
+
+        var freeSlots = workerConfig.getFlowExecThreads() - inFlightFlowRuns.size();
+        if (freeSlots <= 0) {
+            return;
+        }
+
+        var inFlight = new HashSet<>(inFlightFlowRuns.keySet());
+        ExceptionUtil.runWithErrorLogging("Failed to drain job flow runs for execution.", () -> jobFlowRunService
+                .listExecutableRunsOnHost(inFlight, freeSlots)
+                .forEach(this::submitToExecutor));
+    }
+
+    private void submitToExecutor(JobFlowRun jobFlowRun) {
+        if (inFlightFlowRuns.putIfAbsent(jobFlowRun.getId(), jobFlowRun) != null) {
+            // Slot belongs to another in-flight run; don't touch it in the finally below.
+            log.warn("The JobFlowRun already managed, jobFlowRun: {}", jobFlowRun.getId());
+            return;
+        }
+
+        var submitted = false;
+        try {
+            var flow = jobFlowRun.getFlow();
+            if (flow == null || CollectionUtils.isEmpty(flow.getVertices())) {
+                log.warn("No JobVertex found, no scheduling required, flow run id: {}", jobFlowRun.getId());
+                failAndUpdateJobFlowRun(jobFlowRun);
+                alertSendingService.sendAlerts(jobFlowRun, "No job vertex found");
                 return;
             }
 
-            var jobFlowRun = inFlightFlows.poll();
-            if (jobFlowRun == null) {
-                return;
-            }
-
+            log.info("Submitting workflow to executor, flowRunId: {}", jobFlowRun.getId());
             flowExecService.execute(new FlowExecuteThread(jobFlowRun, workerConfig));
+            submitted = true;
+        } catch (Exception e) {
+            log.error("Failed to submit workflow to executor, flowRunId: {}", jobFlowRun.getId(), e);
+        } finally {
+            if (!submitted) {
+                inFlightFlowRuns.remove(jobFlowRun.getId());
+            }
         }
     }
 
-    public synchronized void registerToScheduler(JobFlowRun jobFlowRun) {
-        if (inFlightFlows.stream().anyMatch(inQueue -> inQueue.getId().equals(jobFlowRun.getId()))) {
-            log.warn("The JobFlowRun already registered, jobFlowRun: {} ", jobFlowRun);
-            return;
-        }
-
-        var flow = jobFlowRun.getFlow();
-        if (flow == null || CollectionUtils.isEmpty(flow.getVertices())) {
-            log.warn("No JobVertex found, no scheduling required, flow run id: {}", jobFlowRun.getId());
-            failAndUpdateJobFlowRun(jobFlowRun);
-            alertSendingService.sendAlerts(jobFlowRun, "No job vertex found");
-            return;
-        }
-
-        if (inFlightFlows.size() > 10 * workerConfig.getFlowExecThreads()) {
-            log.warn("Not have enough resources to execute flow: {}", jobFlowRun);
-            failAndUpdateJobFlowRun(jobFlowRun);
-            alertSendingService.sendAlerts(jobFlowRun, "Not have enough resources");
-            return;
-        }
-
-        log.info("Registering workflow to scheduler, flowRunId: {}", jobFlowRun.getId());
-        inFlightFlows.offer(jobFlowRun);
+    /** Release a run from the in-flight set once it reaches a terminal state. */
+    public void releaseInFlight(Long flowRunId) {
+        inFlightFlowRuns.remove(flowRunId);
     }
 
     private void failAndUpdateJobFlowRun(JobFlowRun jobFlowRun) {

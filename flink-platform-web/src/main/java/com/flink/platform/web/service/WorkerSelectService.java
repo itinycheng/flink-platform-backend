@@ -11,12 +11,15 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.Random;
+import java.util.stream.Collectors;
 
 /** Worker apply service. */
 @Service
 @RequiredArgsConstructor(onConstructor_ = @Autowired)
-public class WorkerApplyService {
+public class WorkerSelectService {
 
     private final WorkerService workerService;
 
@@ -56,5 +59,25 @@ public class WorkerApplyService {
 
         var idx = random.nextInt(workers.size());
         return workers.get(idx);
+    }
+
+    public Map<Long, Worker> mapActiveWorkersById() {
+        return workerService.listActiveWorkers().stream().collect(Collectors.toMap(Worker::getId, worker -> worker));
+    }
+
+    public @Nullable Worker randomWorker(List<Long> workerIds, Map<Long, Worker> activeWorkerMap) {
+        if (CollectionUtils.isEmpty(workerIds)) {
+            return null;
+        }
+
+        var candidates = workerIds.stream()
+                .map(activeWorkerMap::get)
+                .filter(Objects::nonNull)
+                .toList();
+        if (candidates.isEmpty()) {
+            return null;
+        }
+
+        return candidates.get(random.nextInt(candidates.size()));
     }
 }

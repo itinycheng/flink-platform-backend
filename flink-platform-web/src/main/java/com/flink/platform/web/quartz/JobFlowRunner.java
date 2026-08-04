@@ -19,7 +19,6 @@ import com.flink.platform.dao.service.JobInfoService;
 import com.flink.platform.dao.service.JobRunInfoService;
 import com.flink.platform.web.common.SpringContext;
 import com.flink.platform.web.config.WorkerConfig;
-import com.flink.platform.web.service.JobFlowScheduleService;
 import lombok.extern.slf4j.Slf4j;
 import org.quartz.Job;
 import org.quartz.JobDataMap;
@@ -50,8 +49,6 @@ public class JobFlowRunner implements Job {
     private final JobInfoService jobInfoService = SpringContext.getBean(JobInfoService.class);
 
     private final JobRunInfoService jobRunService = SpringContext.getBean(JobRunInfoService.class);
-
-    private final JobFlowScheduleService jobFlowScheduleService = SpringContext.getBean(JobFlowScheduleService.class);
 
     private final AlertSendingService alertSendingService = SpringContext.getBean(AlertSendingService.class);
 
@@ -131,8 +128,7 @@ public class JobFlowRunner implements Job {
                     scheduledFire != null ? DateUtil.toLocalDateTime(scheduledFire) : LocalDateTime.now());
             jobFlowRunService.saveOrUpdate(jobFlowRun);
 
-            // register job flow run.
-            jobFlowScheduleService.registerToScheduler(jobFlowRun);
+            // Persisted as non-terminal; JobFlowScheduleService.drainAndExecute picks it up by priority.
             log.info(
                     "Job flow run: {} is created, job flow: {}, time: {}",
                     jobFlowRun.getId(),

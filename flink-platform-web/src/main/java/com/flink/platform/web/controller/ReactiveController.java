@@ -11,7 +11,7 @@ import com.flink.platform.web.dto.ResultInfo;
 import com.flink.platform.web.dto.request.ReactiveRequest;
 import com.flink.platform.web.dto.response.ReactiveDataVo;
 import com.flink.platform.web.service.ReactiveService;
-import com.flink.platform.web.service.WorkerApplyService;
+import com.flink.platform.web.service.WorkerSelectService;
 import com.flink.platform.web.util.HttpUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -56,7 +56,7 @@ public class ReactiveController {
 
     private final DatasourceService datasourceService;
 
-    private final WorkerApplyService workerApplyService;
+    private final WorkerSelectService workerSelectService;
 
     private final RestTemplate restTemplate;
 
@@ -77,7 +77,7 @@ public class ReactiveController {
     @GetMapping(value = "/execLog/{execId}")
     public ResultInfo<?> execLog(
             @PathVariable String execId, @RequestParam(name = "worker", required = false) Long worker) {
-        var routeUrl = workerApplyService.chooseWorker(Collections.singletonList(worker));
+        var routeUrl = workerSelectService.chooseWorker(Collections.singletonList(worker));
         if (HttpUtil.isRemoteUrl(routeUrl)) {
             return restTemplate.getForObject(routeUrl + "/reactive/execLog/" + execId, ResultInfo.class);
         }
@@ -99,7 +99,7 @@ public class ReactiveController {
     public ResultInfo<?> execJob(@RequestBody ReactiveRequest reactiveRequest) {
         var execId = generateExecId();
         try {
-            var routeUrl = workerApplyService.chooseWorker(reactiveRequest.getRouteUrl());
+            var routeUrl = workerSelectService.chooseWorker(reactiveRequest.getRouteUrl());
             if (HttpUtil.isRemoteUrl(routeUrl)) {
                 return restTemplate.postForObject(routeUrl + "/reactive/execJob", reactiveRequest, ResultInfo.class);
             }

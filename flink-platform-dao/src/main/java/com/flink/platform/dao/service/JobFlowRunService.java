@@ -11,6 +11,8 @@ import com.flink.platform.dao.entity.JobRunInfo;
 import com.flink.platform.dao.mapper.JobFlowRunMapper;
 import jakarta.annotation.Nonnull;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -18,15 +20,18 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static com.flink.platform.common.constants.Constant.HOST_IP;
 import static com.flink.platform.common.enums.ExecutionStatus.getNonTerminals;
 import static com.flink.platform.common.enums.ExecutionStrategy.ONLY_CUR_JOB;
 import static com.flink.platform.common.util.Preconditions.checkNotNull;
 
 /** job config info. */
+@Slf4j
 @Service
 @DS("master_platform")
 @RequiredArgsConstructor(onConstructor_ = @Autowired)
@@ -34,11 +39,31 @@ public class JobFlowRunService extends ServiceImpl<JobFlowRunMapper, JobFlowRun>
 
     private final JobRunInfoService jobRunService;
 
+    public JobFlowRun getLiteByIdOrNull(Long flowRunId) {
+        try {
+            return getLiteById(flowRunId);
+        } catch (Exception e) {
+            log.warn("Get lite flow run {} failed", flowRunId, e);
+            return null;
+        }
+    }
+
     public JobFlowRun getLiteById(Long flowRunId) {
         return getOne(new QueryWrapper<JobFlowRun>()
                 .lambda()
                 .select(JobFlowRun.class, info -> info.getTypeHandler() == null)
                 .eq(JobFlowRun::getId, flowRunId));
+    }
+
+    public List<JobFlowRun> listExecutableRunsOnHost(Collection<Long> excludeRunIds, int limit) {
+        return list(new QueryWrapper<JobFlowRun>()
+                .lambda()
+                .eq(JobFlowRun::getHost, HOST_IP)
+                .in(JobFlowRun::getStatus, getNonTerminals())
+                .notIn(CollectionUtils.isNotEmpty(excludeRunIds), JobFlowRun::getId, excludeRunIds)
+                .orderByDesc(JobFlowRun::getPriority)
+                .orderByAsc(JobFlowRun::getId)
+                .last("LIMIT " + limit));
     }
 
     public LocalDateTime resolveScheduleTimeOrNow(Long flowRunId) {

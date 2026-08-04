@@ -4,22 +4,26 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.flink.platform.common.util.ExceptionUtil;
 import com.flink.platform.dao.entity.JobFlowRun;
 import com.flink.platform.dao.entity.Worker;
+import com.flink.platform.dao.entity.Workspace;
 import com.flink.platform.dao.service.JobFlowRunService;
 import com.flink.platform.dao.service.WorkerService;
+import com.flink.platform.dao.service.WorkspaceService;
 import com.flink.platform.environment.EnvironmentRegistry;
 import com.flink.platform.web.common.SpringContext;
-import com.flink.platform.web.service.JobFlowScheduleService;
+import com.flink.platform.web.service.WorkerSelectService;
 import com.flink.platform.web.util.ThreadUtil;
 import lombok.extern.slf4j.Slf4j;
 import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.time.StopWatch;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.stream.Stream;
 
 import static com.flink.platform.common.constants.Constant.HOSTNAME;
 import static com.flink.platform.common.constants.Constant.HOST_IP;
@@ -30,6 +34,7 @@ import static com.flink.platform.common.enums.WorkerStatus.DELETED;
 import static com.flink.platform.common.enums.WorkerStatus.INACTIVE;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toMap;
 
 /**
  * Work instance. <br>
@@ -46,9 +51,13 @@ public class WorkerHeartbeat {
 
     private final JobFlowRunService jobFlowRunService;
 
-    private final JobFlowScheduleService jobFlowScheduleService;
-
     private final EnvironmentRegistry registry;
+
+    private final WorkspaceService workspaceService;
+
+    private final WorkerSelectService workerSelectService;
+
+    private final WorkerHeartbeat self;
 
     private final String port;
 
@@ -56,30 +65,34 @@ public class WorkerHeartbeat {
 
     @Autowired
     public WorkerHeartbeat(
+            @Lazy WorkerHeartbeat self,
             WorkerService workerService,
             JobFlowRunService jobFlowRunService,
-            JobFlowScheduleService jobFlowScheduleService,
             EnvironmentRegistry registry,
+            WorkspaceService workspaceService,
+            WorkerSelectService workerSelectService,
             @Value("${server.port}") String port,
             @Value("${spring.grpc.server.port}") int grpcPort) {
+        this.self = self;
         this.workerService = workerService;
         this.jobFlowRunService = jobFlowRunService;
-        this.jobFlowScheduleService = jobFlowScheduleService;
         this.registry = registry;
+        this.workspaceService = workspaceService;
+        this.workerSelectService = workerSelectService;
         this.port = port;
         this.grpcPort = grpcPort;
     }
 
     public void heartbeat() {
         var stopwatch = StopWatch.createStarted();
-        reportStatus();
-        recoverJobs();
-
+        reportHeartbeat();
+        // via proxy so @SchedulerLock actually applies
+        self.reassignOrphans();
         stopwatch.stop();
         log.info("Worker heartbeat completed, cost {} ms", stopwatch.getTime());
     }
 
-    public void reportStatus() {
+    public void reportHeartbeat() {
         var worker = workerService.getCurWorkerIdAndRole();
         var workerId = worker != null ? worker.getId() : null;
 
@@ -97,33 +110,52 @@ public class WorkerHeartbeat {
         workerService.saveOrUpdate(tmp);
     }
 
-    @SchedulerLock(name = "WorkerHeartbeat_recoverJobs", lockAtMostFor = "PT30S", lockAtLeastFor = "PT20S")
-    public void recoverJobs() {
-        var pendingList = getInvalidWorkers().stream()
-                .flatMap(this::getUnfinishedByWorker)
-                .toList();
-        if (pendingList.isEmpty()) {
-            return;
+    @SchedulerLock(name = "WorkerHeartbeat_reassignOrphans", lockAtMostFor = "PT30S", lockAtLeastFor = "PT20S")
+    public void reassignOrphans() {
+        getUnhealthyWorkers().stream()
+                .map(this::getNonTerminalFlowRuns)
+                .filter(CollectionUtils::isNotEmpty)
+                .forEach(this::reassignHosts);
+    }
+
+    private void reassignHosts(List<JobFlowRun> flowRuns) {
+        var activeWorkerMap = workerSelectService.mapActiveWorkersById();
+        var workspaceIds =
+                flowRuns.stream().map(JobFlowRun::getWorkspaceId).distinct().collect(toList());
+        var workspaceMap = workspaceService.listByIds(workspaceIds).stream().collect(toMap(Workspace::getId, w -> w));
+
+        var reassigned = new ArrayList<JobFlowRun>();
+        for (var flowRun : flowRuns) {
+            var workspace = workspaceMap.get(flowRun.getWorkspaceId());
+            var workspaceWorkerIds = workspace != null && workspace.getConfig() != null
+                    ? workspace.getConfig().getWorkers()
+                    : null;
+            if (CollectionUtils.isEmpty(workspaceWorkerIds)) {
+                log.error("No workspace/worker found for flow run {}", flowRun.getId());
+                continue;
+            }
+
+            var target = workerSelectService.randomWorker(workspaceWorkerIds, activeWorkerMap);
+            if (target == null) {
+                log.error(
+                        "Workspace {} has no active worker; flow run {} held for recovery",
+                        flowRun.getWorkspaceId(),
+                        flowRun.getId());
+                continue;
+            }
+
+            var newFlowRun = new JobFlowRun();
+            newFlowRun.setId(flowRun.getId());
+            newFlowRun.setHost(target.getIp());
+            reassigned.add(newFlowRun);
         }
 
-        // TODO: dispatch JobFlowRun to other active workers?
-        pendingList.forEach(jobFlowRun -> jobFlowRun.setHost(HOST_IP));
-        updateJobFlowRunHost(pendingList);
-        pendingList.forEach(jobFlowScheduleService::registerToScheduler);
+        if (!reassigned.isEmpty()) {
+            jobFlowRunService.updateBatchById(reassigned);
+        }
     }
 
-    private void updateJobFlowRunHost(List<JobFlowRun> list) {
-        jobFlowRunService.updateBatchById(list.stream()
-                .map(jobFlowRun -> {
-                    var newJobFlowRun = new JobFlowRun();
-                    newJobFlowRun.setId(jobFlowRun.getId());
-                    newJobFlowRun.setHost(HOST_IP);
-                    return newJobFlowRun;
-                })
-                .toList());
-    }
-
-    private List<Worker> getInvalidWorkers() {
+    private List<Worker> getUnhealthyWorkers() {
         return workerService
                 .list(new QueryWrapper<Worker>()
                         .lambda()
@@ -134,13 +166,11 @@ public class WorkerHeartbeat {
                 .collect(toList());
     }
 
-    private Stream<JobFlowRun> getUnfinishedByWorker(Worker invalidWorker) {
-        return jobFlowRunService
-                .list(new QueryWrapper<JobFlowRun>()
-                        .lambda()
-                        .eq(JobFlowRun::getHost, invalidWorker.getIp())
-                        .in(JobFlowRun::getStatus, getNonTerminals()))
-                .stream();
+    private List<JobFlowRun> getNonTerminalFlowRuns(Worker worker) {
+        return jobFlowRunService.list(new QueryWrapper<JobFlowRun>()
+                .lambda()
+                .eq(JobFlowRun::getHost, worker.getIp())
+                .in(JobFlowRun::getStatus, getNonTerminals()));
     }
 
     public static class Scheduler {

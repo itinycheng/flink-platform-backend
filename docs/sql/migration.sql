@@ -151,6 +151,10 @@ ALTER TABLE platform.t_job_run CHANGE COLUMN variables params TEXT COMMENT 'para
 ALTER TABLE platform.t_job_flow_run ADD COLUMN `schedule_time` datetime NOT NULL AFTER `status`;
 UPDATE platform.t_job_flow_run SET schedule_time = start_time WHERE start_time IS NOT NULL;
 
+-- 2026-08-10
+-- Backs the priority-ordered scheduling pull: WHERE host=? AND status IN (...) ORDER BY priority DESC LIMIT n.
+CREATE INDEX t_job_flow_run_host_status_priority_idx USING BTREE ON platform.t_job_flow_run (host, status, priority);
+
 -- 2026-07-27
 -- Drop deprecated columns removed from CatalogInfo entity (avoids NOT NULL insert failure on catalog create).
 ALTER TABLE platform.t_catalog_info DROP COLUMN default_database, DROP COLUMN config_path, DROP COLUMN configs;

@@ -8,8 +8,10 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.validation.annotation.Validated;
 
-/** Worker config. <br/>
- * TODO: rename to WorkerProperties*/
+/**
+ * Worker config. <br/>
+ * TODO: rename to WorkerProperties
+ */
 @Setter
 @Getter
 @Validated
@@ -17,7 +19,11 @@ import org.springframework.validation.annotation.Validated;
 @ConfigurationProperties(prefix = "worker")
 public class WorkerConfig {
 
+    /**
+     * a value between 1 and 65535.
+     */
     @Min(1)
+    @Max(value = 10_000, message = "Used in `WHERE NOT IN (?)`, max value should be smaller than 10_000")
     private int flowExecThreads;
 
     @Min(1)

@@ -220,6 +220,90 @@ explicitly from each entry point. `operatorId` is available via `RequestContext.
 
 ---
 
+## Failover Hardening — Split-Brain Safety for Reassigned Flow Runs
+
+Centerless scheduler; ownership = `t_job_flow_run.host`; failover = `WorkerHeartbeat.reassignOrphans`
+rewriting `host` once a worker's heartbeat is older than `HEARTBEAT_TIMEOUT` (5 min). Core risk: a node
+deemed unhealthy keeps executing while a peer takes the run over → **double run**. The design below
+mirrors what Airflow (job-heartbeat + zombie reaper + `LocalTaskJob` self-kill + `try_number` identity +
+"adopt orphaned tasks") and DolphinScheduler (registry heartbeat + `host`-column ownership +
+fault-tolerance re-dispatch) do, but stays MySQL-only / no ZooKeeper / no new scheduled loops.
+
+### Already done (shipped, commit `e1b7fb20`)
+
+- `FlowExecuteThread.reassignedAway()` in the wait loop → `releaseInFlight` + abandon orchestration.
+- `JobExecuteThread.isFlowRunStopped()` also stops when `t_job_flow_run.host != HOST_IP`.
+- **Guarantee: once a flow is reassigned away, the old node stops launching not-yet-started vertices and
+  stops submitting not-yet-submitted jobs.** Covers the *DB-reachable-but-unhealthy* case only. Does NOT
+  kill already-running local processes; does NOT cover DB-partition zombies.
+
+### Guiding split by job type (decides how much each layer matters)
+
+- **A-class — externalized execution (Flink/Spark on YARN/K8s):** once the app_id is persisted, any node
+  just polls; re-run needs only submit-idempotency + reattach-by-app_id. "Problem is small."
+- **B-class — local execution (shell / python / mysql-jdbc):** runs inside the executor node's process
+  (`Runtime.exec`, tracked in `CommandExecutor.RUNNING_MAP`). A takeover re-runs from scratch; the only way
+  to prevent a concurrent double-run is the old owner **killing its own local process** on lease loss.
+
+### Deferred work (ROI order)
+
+- [ ] **P2 · Submit idempotency guard (no schema, no timer).** In `ProcessJobService.processJob` /
+      `CommandExecutor.exec`: if `jobRunId` already in `RUNNING_MAP`, or the job_run already has an app_id /
+      is already RUNNING → do NOT resubmit, attach/return instead. `RUNNING_MAP.put` currently overwrites
+      without a contains-check, so concurrent same-`jobRunId` submits are not deduped today.
+- [ ] **P2 · Persist app_id ASAP.** Today `ProcessJobService.processJob` writes status+app_id only in
+      step 5, *after* `exec()` returns. Write the app_id the moment it is known (inside `execCommand`), to
+      shrink the "submitted to cluster but app_id not yet in DB" window.
+- [ ] **P3 · Executor-side self-kill on lease expiry (B-class).** Reuse the *existing* `CommandMonitor`
+      2s loop (`scheduleWithFixedDelay(...,5,2,SECONDS)`): when this node's heartbeat lease is expired,
+      iterate `RUNNING_MAP` and `killCommand` each (recursive PID kill via `ShellTask.cancel` /
+      `CommandUtil.forceKill` already exists — local op, works under DB partition). Lease = last successful
+      `WorkerHeartbeat.reportHeartbeat` write; hold it in a tiny static (the reverted `WorkerLease`,
+      ~40 lines, one `AtomicLong`). **No new scheduled task** — renew hooks into the existing 30s heartbeat,
+      kill-check into the existing CommandMonitor loop.
+- [ ] **Redispatch semantics: `CREATED` instead of `KILLED` on failover.** Failover ≠ failure. On transfer,
+      reset the job_run to `CREATED` **and reselect `host`** (via `workerSelectService.randomWorker(routeUrl)`)
+      so a live node re-executes it (same row, no retry consumed, no bogus failure). Keep `KILLED` only for
+      *user-initiated* stop (`killRemoteFlow` when flow is KILLABLE/terminal) — add a separate
+      `redispatchJob(jobRunId)` path, don't change `killJob`. Order matters: **kill local process first,
+      then set CREATED** (else double run). A-class caveat: if an app_id already exists, keep monitoring
+      (reattach) — only reset to CREATED when no app_id was obtained. Crash case (not partition): the dead
+      node can't self-reset; the reassign/takeover path must reset its leftover job_runs on its behalf.
+- [ ] **Phase 1 · Idempotent task identity (optional backstop).** Add `attempt` column to `t_job_run` +
+      `UNIQUE(flow_run_id, job_id, attempt)`; `createJobRun` inserts next attempt and reads-existing on
+      duplicate-key. Collapses the "two job_run rows created" race to one row. Deprioritized: the sharper
+      double-submit ("same row submitted twice") is handled by P2's guard, not this constraint. Retries
+      today create a new row per attempt (`getCountAndLastJobRun` counts rows), so the unique key MUST
+      include `attempt`; backfill existing rows by id order. = Airflow `try_number`.
+- [ ] **Phase 4/5 · Architectural convergence (only if we want to delete the old path).** Add
+      `lease_expire_at` to `t_job_flow_run`; make `drainAndExecute` claim via atomic CAS
+      `UPDATE ... SET host=me, lease=now+TTL WHERE (host=me OR lease_expire_at<now) AND <non-terminal>`
+      (+ `SKIP LOCKED` on the select). Stealing becomes a side effect of normal drain → **delete
+      `reassignOrphans` + its `@SchedulerLock`**. Collapses 4 overlapping coordination primitives
+      (heartbeat / host / ShedLock / Quartz) into one lease.
+- [ ] **Liveness latency knob (no code, config).** MySQL-heartbeat death detection is coarse (5 min) vs
+      ZK sub-second. If failover is too slow, shorten heartbeat interval + `HEARTBEAT_TIMEOUT` (e.g.
+      15s / 45s) for near-second failover, at the cost of more frequent heartbeat writes. Keep the
+      self-fence timeout `< HEARTBEAT_TIMEOUT` with a safety gap.
+
+### Key design decisions (locked in during design discussion)
+
+- **The lease's only irreplaceable role is B-class executor self-kill.** For A-class, submit-idempotency +
+  reattach make it redundant. If the platform ever ran only Flink/YARN jobs, the lease could be dropped.
+- **Orchestrator host (`t_job_flow_run.host`) ≠ executor host (`t_job_run.host`).** The local subprocess
+  lives on the *executor*; self-kill therefore belongs on the executor side (`CommandMonitor`), gated by
+  *that* node's heartbeat lease — not the orchestrator's. `reassignOrphans` only rewrites the orchestrator
+  host today.
+- **Prefer CAS / atomic conditional UPDATE over `SELECT ... FOR UPDATE`.** FOR UPDATE only fits the short
+  claim critical section, can't own a run for its (minutes–hours) lifetime, and gives an uncontrollable
+  fencing window on connection drop. It does not solve the lease/liveness layer where failover actually
+  lives, and is heavier (explicit tx, MySQL 8, connection discipline) for equivalent claim power.
+- **True exactly-once needs resource-layer fencing** (deterministic Flink jobName / dedup key so the
+  cluster rejects duplicates). DB-only can guarantee "orchestration not duplicated / job_run not
+  re-created", not the one submit a partitioned node makes without touching the DB.
+
+---
+
 ## Cross-Timezone Scheduling — Per-Job Timezone (Layered Default)
 
 ### Problem

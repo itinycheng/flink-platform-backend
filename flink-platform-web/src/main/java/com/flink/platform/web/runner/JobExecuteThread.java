@@ -29,6 +29,7 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.function.Supplier;
 
+import static com.flink.platform.common.constants.Constant.HOST_IP;
 import static com.flink.platform.common.enums.ExecutionStatus.CREATED;
 import static com.flink.platform.common.enums.ExecutionStatus.ERROR;
 import static com.flink.platform.common.enums.ExecutionStatus.KILLABLE;
@@ -53,7 +54,7 @@ public class JobExecuteThread implements Supplier<JobResponse> {
 
     private final JobRunExtraService jobRunExtraService;
 
-    private final JobFlowRunService jobFlowRunService;
+    private final JobFlowRunService flowRunService;
 
     private final JobGrpcClient jobGrpcClient;
 
@@ -67,7 +68,7 @@ public class JobExecuteThread implements Supplier<JobResponse> {
         this.jobInfoService = SpringContext.getBean(JobInfoService.class);
         this.jobRunInfoService = SpringContext.getBean(JobRunInfoService.class);
         this.jobRunExtraService = SpringContext.getBean(JobRunExtraService.class);
-        this.jobFlowRunService = SpringContext.getBean(JobFlowRunService.class);
+        this.flowRunService = SpringContext.getBean(JobFlowRunService.class);
         this.jobGrpcClient = SpringContext.getBean(JobGrpcClient.class);
     }
 
@@ -106,7 +107,13 @@ public class JobExecuteThread implements Supplier<JobResponse> {
                 return new JobResponse(jobId, jobRunId, jobRunStatus);
             }
 
-            if (isFlowRunStopped()) {
+            var flowRun = flowRunService.getLiteByIdOrNull(flowRunId);
+            if (ownedByAnotherWorker(flowRun)) {
+                log.warn("Flow run {} owned by another worker, abandoning local execution of job {}", flowRunId, jobId);
+                return new JobResponse(jobId, jobRunId, null);
+            }
+
+            if (isFlowRunFinishedOrKilling(flowRun)) {
                 return new JobResponse(jobId, jobRunId, KILLED);
             }
 
@@ -228,7 +235,8 @@ public class JobExecuteThread implements Supplier<JobResponse> {
 
         var remaining = interval.toMillis();
         while (AppRunner.isRunning() && remaining > 0) {
-            if (isFlowRunStopped()) {
+            var flowRun = flowRunService.getLiteByIdOrNull(flowRunId);
+            if (ownedByAnotherWorker(flowRun) || isFlowRunFinishedOrKilling(flowRun)) {
                 return;
             }
 
@@ -323,18 +331,22 @@ public class JobExecuteThread implements Supplier<JobResponse> {
         }
     }
 
-    private boolean isFlowRunStopped() {
-        try {
-            var jobFlowRun = jobFlowRunService.getOne(new QueryWrapper<JobFlowRun>()
-                    .lambda()
-                    .select(JobFlowRun::getStatus)
-                    .eq(JobFlowRun::getId, flowRunId));
-            var flowStatus = jobFlowRun.getStatus();
-            return KILLABLE.equals(flowStatus) || flowStatus.isTerminalState();
-        } catch (Exception exception) {
-            log.error("Get flow run: {} status failed", flowRunId, exception);
+    private boolean isFlowRunFinishedOrKilling(JobFlowRun flowRun) {
+        if (flowRun == null) {
             return false;
         }
+
+        var flowStatus = flowRun.getStatus();
+        return KILLABLE.equals(flowStatus) || flowStatus.isTerminalState();
+    }
+
+    private boolean ownedByAnotherWorker(JobFlowRun flowRun) {
+        if (flowRun == null) {
+            return false;
+        }
+
+        var host = flowRun.getHost();
+        return host != null && !HOST_IP.equals(host);
     }
 
     private boolean noRunningJobs() {

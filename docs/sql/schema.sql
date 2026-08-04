@@ -353,7 +353,8 @@ CREATE TABLE `t_job_flow_run` (
   KEY `t_job_flow_run_create_time_idx` (`create_time`) USING BTREE,
   KEY `t_job_flow_run_name_idx` (`name`) USING BTREE,
   KEY `t_job_flow_run_end_time_idx` (`end_time`) USING BTREE,
-  KEY `t_job_flow_run_status_idx` (`status`) USING BTREE
+  KEY `t_job_flow_run_status_idx` (`status`) USING BTREE,
+  KEY `t_job_flow_run_host_status_priority_idx` (`host`,`status`,`priority`) USING BTREE
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4;
 
 -- ----------------------------

@@ -33,14 +33,14 @@ public class JobRunExtraService {
 
     private final JobRunInfoService jobRunService;
 
-    private final WorkerApplyService workerApplyService;
+    private final WorkerSelectService workerSelectService;
 
     private final StorageService storageService;
 
     private final List<VariableResolver> variableResolvers;
 
     public Long createJobRun(JobInfo jobInfo, Long flowRunId) {
-        var worker = workerApplyService.randomWorker(jobInfo.getRouteUrl());
+        var worker = workerSelectService.randomWorker(jobInfo.getRouteUrl());
         if (worker == null || StringUtils.isEmpty(worker.getIp())) {
             throw new IllegalStateException("No available worker found for job: " + jobInfo.getName());
         }

@@ -30,4 +30,10 @@ public class WorkerService extends ServiceImpl<WorkerMapper, Worker> {
                 list(new QueryWrapper<Worker>().lambda().in(Worker::getId, ids).in(Worker::getRole, ACTIVE));
         return workers.stream().filter(Worker::isActive).toList();
     }
+
+    public List<Worker> listActiveWorkers() {
+        return list(new QueryWrapper<Worker>().lambda().eq(Worker::getRole, ACTIVE)).stream()
+                .filter(Worker::isActive)
+                .toList();
+    }
 }
