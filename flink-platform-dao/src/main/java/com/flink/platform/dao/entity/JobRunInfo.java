@@ -11,11 +11,11 @@ import com.flink.platform.common.enums.DeployMode;
 import com.flink.platform.common.enums.ExecutionMode;
 import com.flink.platform.common.enums.ExecutionStatus;
 import com.flink.platform.common.enums.JobType;
+import com.flink.platform.common.util.DurationUtil;
 import com.flink.platform.dao.entity.result.JobCallback;
 import com.flink.platform.dao.entity.task.BaseJob;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.apache.commons.lang3.time.DurationFormatUtils;
 
 import java.io.Serializable;
 import java.time.Duration;
@@ -91,12 +91,8 @@ public class JobRunInfo implements Serializable {
             return EMPTY;
         }
 
-        try {
-            Duration duration = Duration.between(submitTime, endTime);
-            return DurationFormatUtils.formatDuration(duration.toMillis(), "HH:mm:ss");
-        } catch (Exception e) {
-            return null;
-        }
+        var duration = Duration.between(submitTime, endTime);
+        return DurationUtil.humanizeDuration(duration);
     }
 
     /**
