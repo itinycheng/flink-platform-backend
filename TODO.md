@@ -218,3 +218,121 @@ explicitly from each entry point. `operatorId` is available via `RequestContext.
 - Alternative considered and rejected for now: a plain `log.info("... killed by {}", userId)` line —
   zero schema cost but not queryable and lost on log rotation. Fine only for pure debugging.
 
+---
+
+## Cross-Timezone Scheduling — Per-Job Timezone (Layered Default)
+
+### Problem
+
+Timezone is **implicit and globally singular** today. `Constant.GLOBAL_TIME_ZONE =
+TimeZone.getDefault()` is the only source; everything (`DateUtil`, variable interpolation,
+Quartz) funnels through it. There is **no timezone field** on any job/flow, and Quartz
+triggers are built **without** `.inTimeZone(...)`, so they capture the JVM default at
+creation time and freeze it into the Quartz JDBC store.
+
+Consequences for a system deployed across China and the US:
+
+- **Same cron fires at different absolute instants** depending on each node's JVM default
+  timezone; containers default to UTC, not the host region.
+- **A single deployment cannot serve multiple timezones.** With region-isolated deployments
+  (separate DBs per region) this is fine, but a single-deployment setup running
+  globally-distributed jobs cannot express "this job runs on Beijing time, that one on New
+  York time".
+- **`${time:...}` interpolation** (`TimeVariableResolver`, `cur*` uses `LocalDate.now()` /
+  `LocalDateTime.now()` with no zone) resolves the wrong "today" across the date boundary —
+  a data-correctness bug (wrong partition), not just a display issue.
+- **DST**: only a *named* zone (`America/New_York`) keeps wall-clock time stable across DST;
+  a fixed offset (`GMT-5` / `+08:00`) drifts one hour twice a year.
+
+### Solution — Layered Timezone
+
+**Global default timezone (deployment-level) + optional per-job override (job-level).**
+When a job declares no timezone, fall back to the global default. This is the minimal
+implementation that unlocks cross-region scheduling while staying fully backward compatible:
+
+- Single-deployment-multi-timezone → set a timezone per job. ✅
+- Region-isolated deployments (China/US split, separate DBs) → leave every job blank,
+  all use the deployment default → **behaves identically to today**. ✅
+- Existing rows (`time_zone` NULL) → equal the deployment default = current behavior. ✅
+  (No breaking change to old data.)
+
+### Timezone Resolution (single decision point)
+
+Add one helper, e.g. `TimeZoneUtil.resolveZone(JobFlow/JobFlowRun)`:
+
+```
+job.timeZone (if set)  →  global default timezone  →  (global default = configurable /
+                                                        -Duser.timezone, else JVM default)
+```
+
+Everything that touches timezone calls this — never `TimeZone.getDefault()` directly.
+Guard: only accept **named** zones (`ZoneId.of(...)`), reject fixed offsets in validation so
+DST always works.
+
+### Files to Change
+
+- [ ] `docs/sql/schema.sql` — `t_job_flow` + `t_job_flow_run`: add
+      `time_zone varchar(64) DEFAULT NULL COMMENT 'schedule timezone; null = deployment default'`
+- [ ] `flink-platform-dao/.../entity/JobFlow.java` + `JobFlowRun.java` — add `String timeZone`
+- [ ] `flink-platform-common/.../util/TimeZoneUtil.java` (new) — `resolveZone(...)` layered
+      fallback + named-zone validation; keep `Constant.GLOBAL_TIME_ZONE` as the last-resort
+      default (optionally make the global default a config property instead of pure
+      `TimeZone.getDefault()`)
+- [ ] `flink-platform-web/.../quartz/IQuartzInfo.java` — add `TimeZone getTimeZone()`
+- [ ] `flink-platform-web/.../quartz/JobFlowQuartzInfo.java` — return
+      `resolveZone(jobFlow)`
+- [ ] `flink-platform-web/.../service/QuartzService.java:149` —
+      `cronSchedule(cron).inTimeZone(quartzInfo.getTimeZone())`
+- [ ] `flink-platform-web/.../service/QuartzService.java:162`,
+      `controller/QuartzController.java:53`, `dto/request/JobFlowRequest.java:150`,
+      `command/dependent/DependentCommandBuilder.java:100` — the 4 `new CronExpression(...)`:
+      add `cronExpression.setTimeZone(resolveZone(...))` so preview/validation/dependency
+      windows match actual firing
+- [ ] `flink-platform-web/.../variable/TimeVariableResolver.java` — `cur*` providers use
+      `LocalDate.now(zone)` / `LocalDateTime.now(zone)`; `biz*` anchor (`scheduleTime`)
+      converted with the same zone. Zone comes from the job being resolved.
+- [ ] `JobFlowRunner.java:127-129` — ensure `scheduleTime` (anchor of `biz*` vars) is stored
+      consistently with the job's zone
+- [ ] Frontend — one optional "timezone" dropdown on the flow edit page (blank = default).
+      No per-user timezone UI.
+
+### Deployment (independent of the code change, do either way)
+
+- [ ] Pin `-Duser.timezone` (or `ENV TZ`) per deployment in `Dockerfile` / startup — China
+      `Asia/Shanghai`, US `America/New_York`. **All nodes in one cluster must match** (shared
+      Quartz store), and must be **named** zones (DST). This becomes the "global default".
+
+### Out of Scope (avoid over-engineering; add later only if needed)
+
+- Per-user / per-tenant **display** timezone and a global frontend timezone switcher — YAGNI
+  for now. Only the schedule-level (per-job) timezone is in scope.
+- Migrating all storage to UTC — the layered approach is self-consistent without it, since
+  everything already routes through the resolved zone.
+
+### Notes
+
+- End goal is genuine cross-timezone support (per-job), not just "one timezone per
+  deployment" — the layered design delivers that while keeping region-isolated deployments
+  zero-impact.
+- Backward compatibility is the hard constraint: `time_zone` NULL must reproduce today's
+  behavior exactly.
+
+### Pitfalls to avoid
+
+- [ ] **Trigger timezone and variable-interpolation timezone are two independent code
+      paths — both must be passed the zone explicitly.** Fixing `QuartzService` (the trigger)
+      is **not** enough: if `TimeVariableResolver` still uses the JVM default, `${time:...}`
+      variables resolve in a different timezone than the schedule fires in — same DB, two
+      timezones. Both `cur*` and `biz*` must use the same resolved zone.
+- [ ] **DST-safe date arithmetic.** `TimeVariableResolver` currently does
+      `destTime.plus(parsedDuration)` on a **`LocalDateTime`** (zone-less), which adds a fixed
+      duration and drifts by an hour across a DST switch. When zone matters, do the +/-
+      arithmetic on a `ZonedDateTime` in the job's zone, not on `LocalDateTime`/epoch-duration.
+- [ ] **Multi-node: pass absolute instants between peers, never local-time strings.** We are
+      centerless + gRPC (`JobGrpcServer`/`JobGrpcClient`); if a node sends a formatted local
+      time string and the peer parses it in its own timezone, the two disagree. Audit that
+      cross-node job payloads carry epoch/`Instant`, not formatted local strings.
+- [ ] **Named zones only** (`Asia/Shanghai`, `America/New_York`) — reject fixed offsets and
+      ambiguous abbreviations (`CST` means both Beijing and US Central). Enforce in the
+      `time_zone` field validation.
+
