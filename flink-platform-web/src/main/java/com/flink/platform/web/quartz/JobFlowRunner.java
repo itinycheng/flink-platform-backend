@@ -128,7 +128,7 @@ public class JobFlowRunner implements Job {
                     scheduledFire != null ? DateUtil.toLocalDateTime(scheduledFire) : LocalDateTime.now());
             jobFlowRunService.saveOrUpdate(jobFlowRun);
 
-            // Persisted as non-terminal; JobFlowScheduleService.drainAndExecute picks it up by priority.
+            // Persisted as non-terminal; FlowRunDispatcher.drainAndExecute picks it up by priority.
             log.info(
                     "Job flow run: {} is created, job flow: {}, time: {}",
                     jobFlowRun.getId(),

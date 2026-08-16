@@ -157,11 +157,11 @@ explicit scopes: `runAs(workspaceId, ...)` and `runWithoutTenant(...)`.
 - [ ] `FlowExecuteThread.run` — `runAs(jobFlowRun.getWorkspaceId())`.
 - [ ] `JobGrpcServer` (`processJob` / `killJob` / `savepointJob` / `getJobStatus`) — load
       JobRun by `jobRunId`, then `runAs(workspaceId)`.
-- [ ] `InitJobFlowScheduler` recovery — per-flow `runAs` (or `runWithoutTenant` if only touching
-      non-scoped tables).
+- [ ] `FlowRunDispatcher.drainAndExecute` recovery — per-flow `runAs` (or `runWithoutTenant` if only
+      touching non-scoped tables).
 
 **Entry points — explicit global scans (`runWithoutTenant`):**
-- [ ] `JobFlowScheduleService` (@Scheduled), cron `JobsInJobListStatusChecker` /
+- [ ] `FlowRunDispatcher` (@Scheduled), cron `JobsInJobListStatusChecker` /
       `UnscheduledJobFlowChecker`, `CommandMonitor` — only if they touch scoped tables.
 
 **Optional cleanup (net code reduction):**
@@ -231,8 +231,9 @@ fault-tolerance re-dispatch) do, but stays MySQL-only / no ZooKeeper / no new sc
 
 ### Already done (shipped, commit `e1b7fb20`)
 
-- `FlowExecuteThread.reassignedAway()` in the wait loop → `releaseInFlight` + abandon orchestration.
-- `JobExecuteThread.isFlowRunStopped()` also stops when `t_job_flow_run.host != HOST_IP`.
+- `FlowExecuteThread.ownedByAnotherWorker()` in the wait loop → `releaseInFlight` + abandon orchestration.
+- `JobExecuteThread.ownedByAnotherWorker()` also stops when `t_job_flow_run.host != HOST_IP`
+  (finished/killing is a separate check, `isFlowRunFinishedOrKilling()`).
 - **Guarantee: once a flow is reassigned away, the old node stops launching not-yet-started vertices and
   stops submitting not-yet-submitted jobs.** Covers the *DB-reachable-but-unhealthy* case only. Does NOT
   kill already-running local processes; does NOT cover DB-partition zombies.

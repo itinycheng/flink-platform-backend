@@ -1,4 +1,4 @@
-package com.flink.platform.web.service;
+package com.flink.platform.web.runner;
 
 import com.flink.platform.alert.AlertSendingService;
 import com.flink.platform.common.util.ExceptionUtil;
@@ -6,7 +6,6 @@ import com.flink.platform.dao.entity.JobFlowRun;
 import com.flink.platform.dao.service.JobFlowRunService;
 import com.flink.platform.web.config.WorkerConfig;
 import com.flink.platform.web.lifecycle.AppRunner;
-import com.flink.platform.web.runner.FlowExecuteThread;
 import com.flink.platform.web.util.ThreadUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
@@ -21,11 +20,12 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadPoolExecutor;
 
 import static com.flink.platform.common.enums.ExecutionStatus.FAILURE;
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 /** Schedule job flow. */
 @Slf4j
 @Component
-public class JobFlowScheduleService {
+public class FlowRunDispatcher {
 
     private final WorkerConfig workerConfig;
 
@@ -38,7 +38,7 @@ public class JobFlowScheduleService {
     private final Map<Long, JobFlowRun> inFlightFlowRuns = new ConcurrentHashMap<>();
 
     @Autowired
-    public JobFlowScheduleService(
+    public FlowRunDispatcher(
             WorkerConfig workerConfig, JobFlowRunService jobFlowRunService, AlertSendingService alertSendingService) {
         this.workerConfig = workerConfig;
         this.jobFlowRunService = jobFlowRunService;
@@ -47,7 +47,7 @@ public class JobFlowScheduleService {
                 ThreadUtil.newFixedVirtualThreadExecutor("FlowExecThread", workerConfig.getFlowExecThreads());
     }
 
-    @Scheduled(fixedDelay = 1000)
+    @Scheduled(fixedDelay = 2, timeUnit = SECONDS)
     public void drainAndExecute() {
         if (AppRunner.isStopped()) {
             return;
@@ -93,7 +93,6 @@ public class JobFlowScheduleService {
         }
     }
 
-    /** Release a run from the in-flight set once it reaches a terminal state. */
     public void releaseInFlight(Long flowRunId) {
         inFlightFlowRuns.remove(flowRunId);
     }

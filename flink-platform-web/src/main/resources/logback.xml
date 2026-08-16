@@ -10,21 +10,6 @@
 		</encoder>
 	</appender>
 
-	<appender name="log" class="ch.qos.logback.core.rolling.RollingFileAppender">
-		<file>${log.home}/console.log</file>
-		<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-			<fileNamePattern>${log.home}/%d{yyyy-MM}/console-%d{yyyy-MM-dd}-%i.log.zip
-			</fileNamePattern>
-			<maxHistory>30</maxHistory>
-			<TimeBasedFileNamingAndTriggeringPolicy
-				class="ch.qos.logback.core.rolling.SizeAndTimeBasedFileNamingAndTriggeringPolicy">
-				<MaxFileSize>100MB</MaxFileSize>
-			</TimeBasedFileNamingAndTriggeringPolicy>
-		</rollingPolicy>
-		<encoder>
-			<pattern>${log.pattern}</pattern>
-		</encoder>
-	</appender>
 	<appender name="rollingFileInfo" class="ch.qos.logback.core.rolling.RollingFileAppender">
 		<file>${log.home}/info.log</file>
 		<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
@@ -41,6 +26,9 @@
 		</encoder>
 	</appender>
 	<appender name="rollingFileWarn" class="ch.qos.logback.core.rolling.RollingFileAppender">
+		<filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+			<level>WARN</level>
+		</filter>
 		<file>${log.home}/warn.log</file>
 		<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
 			<fileNamePattern>${log.home}/%d{yyyy-MM}/warn-%d{yyyy-MM-dd}-%i.log.zip
@@ -56,6 +44,9 @@
 		</encoder>
 	</appender>
 	<appender name="rollingFileError" class="ch.qos.logback.core.rolling.RollingFileAppender">
+		<filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+			<level>ERROR</level>
+		</filter>
 		<file>${log.home}/error.log</file>
 		<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
 			<fileNamePattern>${log.home}/%d{yyyy-MM}/error-%d{yyyy-MM-dd}-%i.log.zip
@@ -77,7 +68,6 @@
 	</logger>
 
 	<root level="INFO">
-		<appender-ref ref="log"/>
 		<appender-ref ref="console"/>
 		<appender-ref ref="rollingFileInfo"/>
 		<appender-ref ref="rollingFileWarn"/>

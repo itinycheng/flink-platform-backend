@@ -47,7 +47,7 @@ Config files are in `tools/maven/checkstyle.xml` and `tools/maven/suppressions.x
 
 ## Architecture Overview
 
-This is a **distributed, centerless job scheduling platform** for Apache Flink workflows. All deployed instances are equal workers — there is no dedicated master node. Coordination is handled via MySQL (Quartz JDBC store) and distributed locking (ShedLock).
+This is a **distributed, centerless scheduling system for unified batch and streaming workflows**. It orchestrates DAGs of heterogeneous job types — Flink SQL/JAR, Shell, and SQL against various engines (ClickHouse/MySQL/Hive/TiDB), among others; Flink is one supported execution engine, not the sole target. All deployed instances are equal workers — there is no dedicated master node. Coordination is handled via MySQL (Quartz JDBC store) and distributed locking (ShedLock).
 
 ### Module Layout
 
@@ -70,7 +70,7 @@ This is a **distributed, centerless job scheduling platform** for Apache Flink w
 2. `ProcessJobService` walks the `JobFlowDag` (a typed DAG of `JobVertex`/`JobEdge`) and enqueues jobs respecting dependencies.
 3. Each `JobVertex` maps to a `JobType` (e.g., `FLINK_SQL`, `SHELL`, `CLICKHOUSE_SQL`). The appropriate handler runs the job — often by spawning a subprocess (`flink-sql-submit-*` JARs) or executing a gRPC call to another node.
 4. Status is persisted to `t_job_run` / `t_job_flow_run` via the DAO layer.
-5. On node restart, `InitJobFlowScheduler` recovers in-flight workflows from the database.
+5. On node restart, `FlowRunDispatcher.drainAndExecute` recovers in-flight workflows by re-querying the node's own non-terminal runs; cross-node failover is handled by `WorkerHeartbeat.reassignOrphans`.
 
 ### DAG Model
 

@@ -10,7 +10,6 @@ import com.flink.platform.dao.util.JobFlowDagHelper;
 import com.flink.platform.web.common.SpringContext;
 import com.flink.platform.web.config.WorkerConfig;
 import com.flink.platform.web.lifecycle.AppRunner;
-import com.flink.platform.web.service.JobFlowScheduleService;
 import com.flink.platform.web.service.KillJobService;
 import com.flink.platform.web.util.ThreadUtil;
 import jakarta.annotation.Nonnull;
@@ -47,7 +46,7 @@ public class FlowExecuteThread implements Runnable {
 
     private final KillJobService killJobService = SpringContext.getBean(KillJobService.class);
 
-    private final JobFlowScheduleService jobFlowScheduleService = SpringContext.getBean(JobFlowScheduleService.class);
+    private final FlowRunDispatcher flowRunDispatcher = SpringContext.getBean(FlowRunDispatcher.class);
 
     public FlowExecuteThread(@Nonnull JobFlowRun jobFlowRun, @Nonnull WorkerConfig workerConfig) {
         this.jobFlowRun = jobFlowRun;
@@ -57,6 +56,16 @@ public class FlowExecuteThread implements Runnable {
 
     @Override
     public void run() {
+        try {
+            execute();
+        } catch (Exception e) {
+            log.error("Flow run {} execution aborted", jobFlowRun.getId(), e);
+        } finally {
+            flowRunDispatcher.releaseInFlight(jobFlowRun.getId());
+        }
+    }
+
+    private void execute() {
         // Update jobFlowRun.
         var newJobFlowRun = new JobFlowRun();
         newJobFlowRun.setId(jobFlowRun.getId());
@@ -84,10 +93,8 @@ public class FlowExecuteThread implements Runnable {
                 return;
             }
 
-            // Owned by another worker now, abandon local orchestration and release the claim.
             if (ownedByAnotherWorker()) {
-                log.warn("Flow run {} owned by another worker, abandoning local orchestration", jobFlowRun.getId());
-                jobFlowScheduleService.releaseInFlight(jobFlowRun.getId());
+                log.warn("Flow run {} owned by another worker, abandoning local execution", jobFlowRun.getId());
                 return;
             }
 
@@ -100,10 +107,10 @@ public class FlowExecuteThread implements Runnable {
             ThreadUtil.safeSleep(FIVE_SECOND_MILLIS);
         }
 
-        // Wait for all jobs complete.
         CompletableFuture.allOf(runningJobs.values().toArray(new CompletableFuture[0]))
-                .thenAccept(unused -> completeAndNotify(flow))
-                .whenComplete((unused, ex) -> jobFlowScheduleService.releaseInFlight(jobFlowRun.getId()));
+                .join();
+        // call completeAndNotify in current thread.
+        completeAndNotify(flow);
     }
 
     private void handleTimeout(TimeoutStrategy[] strategies) {
@@ -148,7 +155,7 @@ public class FlowExecuteThread implements Runnable {
     }
 
     private void handleResponse(JobResponse jobResponse, JobVertex jobVertex, JobFlowDag flow) {
-        if (jobResponse == null) {
+        if (jobResponse == null || jobResponse.getStatus() == null) {
             return;
         }
 

@@ -103,13 +103,12 @@ public class JobExecuteThread implements Supplier<JobResponse> {
                 return new JobResponse(jobId, jobRunId, SUCCESS);
             }
 
-            if (noRunningJobs() && ++retryAttempt > retryTimes) {
+            if (noRunInProgress() && ++retryAttempt > retryTimes) {
                 return new JobResponse(jobId, jobRunId, jobRunStatus);
             }
 
             var flowRun = flowRunService.getLiteByIdOrNull(flowRunId);
             if (ownedByAnotherWorker(flowRun)) {
-                log.warn("Flow run {} owned by another worker, abandoning local execution of job {}", flowRunId, jobId);
                 return new JobResponse(jobId, jobRunId, null);
             }
 
@@ -349,7 +348,7 @@ public class JobExecuteThread implements Supplier<JobResponse> {
         return host != null && !HOST_IP.equals(host);
     }
 
-    private boolean noRunningJobs() {
+    private boolean noRunInProgress() {
         return jobRunStatus == null || jobRunStatus.isTerminalState();
     }
 }
