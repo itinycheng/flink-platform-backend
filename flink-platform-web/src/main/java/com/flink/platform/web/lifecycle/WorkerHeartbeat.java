@@ -1,7 +1,6 @@
 package com.flink.platform.web.lifecycle;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import com.flink.platform.common.util.ExceptionUtil;
 import com.flink.platform.dao.entity.JobFlowRun;
 import com.flink.platform.dao.entity.Worker;
 import com.flink.platform.dao.entity.Workspace;
@@ -9,9 +8,7 @@ import com.flink.platform.dao.service.JobFlowRunService;
 import com.flink.platform.dao.service.WorkerService;
 import com.flink.platform.dao.service.WorkspaceService;
 import com.flink.platform.environment.EnvironmentRegistry;
-import com.flink.platform.web.common.SpringContext;
 import com.flink.platform.web.service.WorkerSelectService;
-import com.flink.platform.web.util.ThreadUtil;
 import lombok.extern.slf4j.Slf4j;
 import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
 import org.apache.commons.collections4.CollectionUtils;
@@ -19,11 +16,11 @@ import org.apache.commons.lang3.time.StopWatch;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Lazy;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ScheduledExecutorService;
 
 import static com.flink.platform.common.constants.Constant.HOSTNAME;
 import static com.flink.platform.common.constants.Constant.HOST_IP;
@@ -31,7 +28,6 @@ import static com.flink.platform.common.constants.Constant.LOCALHOST;
 import static com.flink.platform.common.enums.ExecutionStatus.getNonTerminals;
 import static com.flink.platform.common.enums.WorkerStatus.ACTIVE;
 import static com.flink.platform.common.enums.WorkerStatus.DELETED;
-import static com.flink.platform.common.enums.WorkerStatus.INACTIVE;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
@@ -83,6 +79,7 @@ public class WorkerHeartbeat {
         this.grpcPort = grpcPort;
     }
 
+    @Scheduled(fixedDelay = 30, timeUnit = SECONDS)
     public void heartbeat() {
         var stopwatch = StopWatch.createStarted();
         reportHeartbeat();
@@ -115,10 +112,10 @@ public class WorkerHeartbeat {
         getUnhealthyWorkers().stream()
                 .map(this::getNonTerminalFlowRuns)
                 .filter(CollectionUtils::isNotEmpty)
-                .forEach(this::reassignHosts);
+                .forEach(this::rehostFlowRuns);
     }
 
-    private void reassignHosts(List<JobFlowRun> flowRuns) {
+    private void rehostFlowRuns(List<JobFlowRun> flowRuns) {
         var activeWorkerMap = workerSelectService.mapActiveWorkersById();
         var workspaceIds =
                 flowRuns.stream().map(JobFlowRun::getWorkspaceId).distinct().collect(toList());
@@ -162,7 +159,7 @@ public class WorkerHeartbeat {
                         .ne(Worker::getRole, DELETED)
                         .ne(Worker::getIp, LOCALHOST))
                 .stream()
-                .filter(worker -> !worker.isActive() || INACTIVE.equals(worker.getRole()))
+                .filter(worker -> !worker.isActive())
                 .collect(toList());
     }
 
@@ -171,31 +168,5 @@ public class WorkerHeartbeat {
                 .lambda()
                 .eq(JobFlowRun::getHost, worker.getIp())
                 .in(JobFlowRun::getStatus, getNonTerminals()));
-    }
-
-    public static class Scheduler {
-
-        private static final ScheduledExecutorService EXECUTOR = createExecutor();
-
-        private static boolean started = false;
-
-        public static synchronized void start() {
-            if (started) {
-                log.warn("Worker heartbeat scheduler already started.");
-                return;
-            }
-
-            final var service = SpringContext.getBean(WorkerHeartbeat.class);
-            EXECUTOR.scheduleWithFixedDelay(
-                    () -> ExceptionUtil.runWithErrorLogging(service::heartbeat), 0, 30, SECONDS);
-            started = true;
-            log.info("Worker heartbeat scheduler started.");
-        }
-
-        private static ScheduledExecutorService createExecutor() {
-            var executor = ThreadUtil.newDaemonSingleScheduledExecutor("worker-heartbeat");
-            ThreadUtil.addShutdownHook(executor, "worker-heartbeat");
-            return executor;
-        }
     }
 }

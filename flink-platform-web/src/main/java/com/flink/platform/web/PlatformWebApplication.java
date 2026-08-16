@@ -2,7 +2,6 @@ package com.flink.platform.web;
 
 import com.flink.platform.web.lifecycle.AppRunner;
 import com.flink.platform.web.lifecycle.SystemInfoLogger;
-import com.flink.platform.web.lifecycle.WorkerHeartbeat;
 import net.javacrumbs.shedlock.spring.annotation.EnableSchedulerLock;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -33,6 +32,5 @@ public class PlatformWebApplication {
 
     public static void contextRefreshed() {
         SystemInfoLogger.logDetails();
-        WorkerHeartbeat.Scheduler.start();
     }
 }

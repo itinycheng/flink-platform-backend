@@ -17,6 +17,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import static com.flink.platform.common.constants.Constant.HEARTBEAT_TIMEOUT;
+import static com.flink.platform.common.enums.WorkerStatus.ACTIVE;
 
 /** Worker instance. */
 @Data
@@ -54,6 +55,10 @@ public class Worker {
     private LocalDateTime createTime;
 
     public boolean isActive() {
+        if (!ACTIVE.equals(this.role)) {
+            return false;
+        }
+
         if (this.heartbeat == null) {
             return false;
         }
