@@ -265,7 +265,7 @@ fault-tolerance re-dispatch) do, but stays MySQL-only / no ZooKeeper / no new sc
 - [ ] **Redispatch semantics: `CREATED` instead of `KILLED` on failover.** Failover ≠ failure. On transfer,
       reset the job_run to `CREATED` **and reselect `host`** (via `workerSelectService.randomWorker(routeUrl)`)
       so a live node re-executes it (same row, no retry consumed, no bogus failure). Keep `KILLED` only for
-      *user-initiated* stop (`killRemoteFlow` when flow is KILLABLE/terminal) — add a separate
+      *user-initiated* stop (`killFlowRun` when flow is KILLABLE/terminal) — add a separate
       `redispatchJob(jobRunId)` path, don't change `killJob`. Order matters: **kill local process first,
       then set CREATED** (else double run). A-class caveat: if an app_id already exists, keep monitoring
       (reattach) — only reset to CREATED when no app_id was obtained. Crash case (not partition): the dead

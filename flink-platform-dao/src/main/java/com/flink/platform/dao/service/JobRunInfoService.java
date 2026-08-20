@@ -77,4 +77,12 @@ public class JobRunInfoService extends ServiceImpl<JobRunInfoMapper, JobRunInfo>
             Long workspaceId, LocalDateTime startTime, LocalDateTime endTime) {
         return baseMapper.countJobRunGroupByStatus(workspaceId, startTime, endTime);
     }
+
+    public List<JobRunInfo> listLiteNonTerminalRuns(Long flowRunId) {
+        return list(new QueryWrapper<JobRunInfo>()
+                .lambda()
+                .select(JobRunInfo.class, info -> info.getTypeHandler() == null)
+                .eq(JobRunInfo::getFlowRunId, flowRunId)
+                .in(JobRunInfo::getStatus, getNonTerminals()));
+    }
 }

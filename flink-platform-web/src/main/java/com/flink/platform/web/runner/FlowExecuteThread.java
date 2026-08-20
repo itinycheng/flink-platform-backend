@@ -117,7 +117,7 @@ public class FlowExecuteThread implements Runnable {
         for (var strategy : strategies) {
             switch (strategy) {
                 case ALARM -> alertSendingService.sendAlerts(jobFlowRun, "execution timeout");
-                case FAILURE -> killJobService.killRemoteFlow(jobFlowRun.getId());
+                case FAILURE -> killJobService.killFlowRun(jobFlowRun.getId());
             }
         }
     }

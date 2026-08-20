@@ -117,7 +117,7 @@ public class JobFlowRunController {
             return failure(FLOW_ALREADY_TERMINATED);
         }
 
-        var isSuccess = killJobService.killRemoteFlow(flowRunId);
+        var isSuccess = killJobService.killFlowRun(flowRunId);
         return isSuccess ? success(flowRunId) : failure(KILL_FLOW_EXCEPTION_FOUND);
     }
 

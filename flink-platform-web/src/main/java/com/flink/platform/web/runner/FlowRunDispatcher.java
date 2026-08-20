@@ -6,6 +6,7 @@ import com.flink.platform.dao.entity.JobFlowRun;
 import com.flink.platform.dao.service.JobFlowRunService;
 import com.flink.platform.web.config.WorkerConfig;
 import com.flink.platform.web.lifecycle.AppRunner;
+import com.flink.platform.web.service.KillJobService;
 import com.flink.platform.web.util.ThreadUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
@@ -20,6 +21,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadPoolExecutor;
 
 import static com.flink.platform.common.enums.ExecutionStatus.FAILURE;
+import static com.flink.platform.common.enums.ExecutionStatus.KILLABLE;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 /** Schedule job flow. */
@@ -33,16 +35,22 @@ public class FlowRunDispatcher {
 
     private final AlertSendingService alertSendingService;
 
+    private final KillJobService killJobService;
+
     private final ThreadPoolExecutor flowExecService;
 
     private final Map<Long, JobFlowRun> inFlightFlowRuns = new ConcurrentHashMap<>();
 
     @Autowired
     public FlowRunDispatcher(
-            WorkerConfig workerConfig, JobFlowRunService jobFlowRunService, AlertSendingService alertSendingService) {
+            WorkerConfig workerConfig,
+            JobFlowRunService jobFlowRunService,
+            AlertSendingService alertSendingService,
+            KillJobService killJobService) {
         this.workerConfig = workerConfig;
         this.jobFlowRunService = jobFlowRunService;
         this.alertSendingService = alertSendingService;
+        this.killJobService = killJobService;
         this.flowExecService =
                 ThreadUtil.newFixedVirtualThreadExecutor("FlowExecThread", workerConfig.getFlowExecThreads());
     }
@@ -66,13 +74,19 @@ public class FlowRunDispatcher {
 
     private void submitToExecutor(JobFlowRun jobFlowRun) {
         if (inFlightFlowRuns.putIfAbsent(jobFlowRun.getId(), jobFlowRun) != null) {
-            // Slot belongs to another in-flight run; don't touch it in the finally below.
             log.warn("The JobFlowRun already managed, jobFlowRun: {}", jobFlowRun.getId());
             return;
         }
 
         var submitted = false;
         try {
+            var status = jobFlowRun.getStatus();
+            if (KILLABLE.equals(status) || status.isTerminalState()) {
+                log.info("Flow run {} is {}, finalizing kill instead of executing", jobFlowRun.getId(), status);
+                killJobService.forceKillFlowRun(jobFlowRun.getId());
+                return;
+            }
+
             var flow = jobFlowRun.getFlow();
             if (flow == null || CollectionUtils.isEmpty(flow.getVertices())) {
                 log.warn("No JobVertex found, no scheduling required, flow run id: {}", jobFlowRun.getId());

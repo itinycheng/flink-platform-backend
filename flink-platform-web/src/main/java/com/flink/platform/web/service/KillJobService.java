@@ -2,6 +2,7 @@ package com.flink.platform.web.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.flink.platform.common.exception.UnrecoverableException;
+import com.flink.platform.dao.entity.JobFlowRun;
 import com.flink.platform.dao.entity.JobRunInfo;
 import com.flink.platform.dao.service.JobFlowRunService;
 import com.flink.platform.dao.service.JobRunInfoService;
@@ -29,28 +30,32 @@ public class KillJobService {
 
     private final JobGrpcClient jobGrpcClient;
 
-    private final JobRunInfoService jobRunInfoService;
+    private final JobRunInfoService jobRunService;
 
     private final List<CommandExecutor> jobCommandExecutors;
 
     private final JobFlowRunService jobFlowRunService;
 
-    /**
-     * Get unfinished jobs and kill them concurrently.
-     */
-    public boolean killRemoteFlow(Long flowRunId) {
-        var jobRunList = jobRunInfoService.list(new QueryWrapper<JobRunInfo>()
-                .lambda()
-                .select(JobRunInfo::getId, JobRunInfo::getHost)
-                .eq(JobRunInfo::getFlowRunId, flowRunId)
-                .in(JobRunInfo::getStatus, getNonTerminals()));
-        if (CollectionUtils.isEmpty(jobRunList)) {
+    public void forceKillFlowRun(Long flowRunId) {
+        killFlowRun(flowRunId);
+
+        var newFlowRun = new JobFlowRun();
+        newFlowRun.setId(flowRunId);
+        newFlowRun.setStatus(KILLED);
+        newFlowRun.setEndTime(LocalDateTime.now());
+        jobFlowRunService.updateById(newFlowRun);
+    }
+
+    public boolean killFlowRun(Long flowRunId) {
+        var runList = jobRunService.listLiteNonTerminalRuns(flowRunId);
+        if (CollectionUtils.isEmpty(runList)) {
             jobFlowRunService.updateStatusById(flowRunId, KILLED);
             return true;
         }
 
+        // kill remote runs.
         jobFlowRunService.updateStatusById(flowRunId, KILLABLE);
-        return jobRunList.parallelStream()
+        return runList.parallelStream()
                 .map(this::attemptToKillJob)
                 .reduce((bool1, bool2) -> bool1 && bool2)
                 .orElse(false);
@@ -66,7 +71,7 @@ public class KillJobService {
     }
 
     public void killJob(final long jobRunId) {
-        var jobRun = jobRunInfoService.getOne(new QueryWrapper<JobRunInfo>()
+        var jobRun = jobRunService.getOne(new QueryWrapper<JobRunInfo>()
                 .lambda()
                 .select(JobRunInfo::getType)
                 .eq(JobRunInfo::getId, jobRunId)
@@ -83,7 +88,7 @@ public class KillJobService {
                 .orElseThrow(() -> new UnrecoverableException("No available job command executor"))
                 .kill(jobRunId);
 
-        jobRun = jobRunInfoService.getOne(new QueryWrapper<JobRunInfo>()
+        jobRun = jobRunService.getOne(new QueryWrapper<JobRunInfo>()
                 .lambda()
                 .select(JobRunInfo::getStatus)
                 .eq(JobRunInfo::getId, jobRunId));
@@ -95,7 +100,7 @@ public class KillJobService {
             newJobRun.setId(jobRunId);
             newJobRun.setStatus(KILLED);
             newJobRun.setEndTime(LocalDateTime.now());
-            jobRunInfoService.updateById(newJobRun);
+            jobRunService.updateById(newJobRun);
             log.info("Kill job run: {} finished, time: {}", jobRunId, System.currentTimeMillis());
         }
     }
@@ -106,7 +111,7 @@ public class KillJobService {
         var host = jobRun.getHost();
         var stub = jobGrpcClient.grpcClient(host);
         var request = KillJobRequest.newBuilder().setJobRunId(jobRun.getId()).build();
-        stub.killJob(request);
-        return true;
+        var reply = stub.killJob(request);
+        return reply != null;
     }
 }

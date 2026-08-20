@@ -107,7 +107,7 @@ public class FlowCommandExecutor implements CommandExecutor {
 
         // avoid circular dependency.
         var service = SpringContext.getBean(KillJobService.class);
-        service.killRemoteFlow(backInfo.getFlowRunId());
+        service.killFlowRun(backInfo.getFlowRunId());
     }
 
     // Don't use this method outside this class.
