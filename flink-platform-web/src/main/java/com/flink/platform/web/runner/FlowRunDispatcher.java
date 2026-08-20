@@ -66,6 +66,7 @@ public class FlowRunDispatcher {
             return;
         }
 
+        // TODO: when a host owns many non-terminal runs, the following can get costly.
         var inFlight = new HashSet<>(inFlightFlowRuns.keySet());
         ExceptionUtil.runWithErrorLogging("Failed to drain job flow runs for execution.", () -> jobFlowRunService
                 .listExecutableRunsOnHost(inFlight, freeSlots)
@@ -81,7 +82,7 @@ public class FlowRunDispatcher {
         var submitted = false;
         try {
             var status = jobFlowRun.getStatus();
-            if (KILLABLE.equals(status) || status.isTerminalState()) {
+            if (KILLABLE.equals(status)) {
                 log.info("Flow run {} is {}, finalizing kill instead of executing", jobFlowRun.getId(), status);
                 killJobService.forceKillFlowRun(jobFlowRun.getId());
                 return;

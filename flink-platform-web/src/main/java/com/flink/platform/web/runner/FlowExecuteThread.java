@@ -108,9 +108,9 @@ public class FlowExecuteThread implements Runnable {
         }
 
         CompletableFuture.allOf(runningJobs.values().toArray(new CompletableFuture[0]))
+                // call completeAndNotify in the last completed thread.
+                .thenAccept(unused -> completeAndNotify(flow))
                 .join();
-        // call completeAndNotify in current thread.
-        completeAndNotify(flow);
     }
 
     private void handleTimeout(TimeoutStrategy[] strategies) {

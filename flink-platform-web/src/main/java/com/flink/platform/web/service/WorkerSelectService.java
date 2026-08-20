@@ -16,7 +16,7 @@ import java.util.Objects;
 import java.util.Random;
 import java.util.stream.Collectors;
 
-/** Worker apply service. */
+/** Worker select service. */
 @Service
 @RequiredArgsConstructor(onConstructor_ = @Autowired)
 public class WorkerSelectService {

@@ -267,6 +267,8 @@ public class JobExecuteThread implements Supplier<JobResponse> {
         return jobRunInfoService.getById(reply.getJobRunId());
     }
 
+    // Deliberately no ownership/kill check: a DB read per waiting job every 5s isn't worth it for the rare,
+    // reassignment case — the new owner re-adopts the same jobRun and both converge at the remote job's terminal state.
     public StatusInfo updateAndWaitForComplete(JobGrpcServiceBlockingStub stub, JobRunInfo jobRun) {
         while (AppRunner.isRunning()) {
             try {

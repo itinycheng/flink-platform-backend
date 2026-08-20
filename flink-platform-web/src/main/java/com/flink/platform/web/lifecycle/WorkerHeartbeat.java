@@ -1,6 +1,7 @@
 package com.flink.platform.web.lifecycle;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.flink.platform.alert.AlertSendingService;
 import com.flink.platform.dao.entity.JobFlowRun;
 import com.flink.platform.dao.entity.Worker;
 import com.flink.platform.dao.entity.Workspace;
@@ -53,6 +54,8 @@ public class WorkerHeartbeat {
 
     private final WorkerSelectService workerSelectService;
 
+    private final AlertSendingService alertSendingService;
+
     private final WorkerHeartbeat self;
 
     private final String port;
@@ -67,6 +70,7 @@ public class WorkerHeartbeat {
             EnvironmentRegistry registry,
             WorkspaceService workspaceService,
             WorkerSelectService workerSelectService,
+            AlertSendingService alertSendingService,
             @Value("${server.port}") String port,
             @Value("${spring.grpc.server.port}") int grpcPort) {
         this.self = self;
@@ -75,6 +79,7 @@ public class WorkerHeartbeat {
         this.registry = registry;
         this.workspaceService = workspaceService;
         this.workerSelectService = workerSelectService;
+        this.alertSendingService = alertSendingService;
         this.port = port;
         this.grpcPort = grpcPort;
     }
@@ -83,8 +88,8 @@ public class WorkerHeartbeat {
     public void heartbeat() {
         var stopwatch = StopWatch.createStarted();
         reportHeartbeat();
-        // via proxy so @SchedulerLock actually applies
         self.reassignOrphans();
+
         stopwatch.stop();
         log.info("Worker heartbeat completed, cost {} ms", stopwatch.getTime());
     }
@@ -109,13 +114,15 @@ public class WorkerHeartbeat {
 
     @SchedulerLock(name = "WorkerHeartbeat_reassignOrphans", lockAtMostFor = "PT30S", lockAtLeastFor = "PT20S")
     public void reassignOrphans() {
-        getUnhealthyWorkers().stream()
-                .map(this::getNonTerminalFlowRuns)
-                .filter(CollectionUtils::isNotEmpty)
-                .forEach(this::rehostFlowRuns);
+        getUnhealthyWorkers().forEach(this::reassignFlowRunsOf);
     }
 
-    private void rehostFlowRuns(List<JobFlowRun> flowRuns) {
+    private void reassignFlowRunsOf(Worker deadWorker) {
+        var flowRuns = getNonTerminalFlowRuns(deadWorker);
+        if (CollectionUtils.isEmpty(flowRuns)) {
+            return;
+        }
+
         var activeWorkerMap = workerSelectService.mapActiveWorkersById();
         var workspaceIds =
                 flowRuns.stream().map(JobFlowRun::getWorkspaceId).distinct().collect(toList());
@@ -138,6 +145,8 @@ public class WorkerHeartbeat {
                         "Workspace {} has no active worker; flow run {} held for recovery",
                         flowRun.getWorkspaceId(),
                         flowRun.getId());
+                alertSendingService.sendAlerts(
+                        flowRun, "No active worker in workspace; flow run held for recovery on the dead host");
                 continue;
             }
 

@@ -19,11 +19,8 @@ import org.springframework.validation.annotation.Validated;
 @ConfigurationProperties(prefix = "worker")
 public class WorkerConfig {
 
-    /**
-     * a value between 1 and 65535.
-     */
     @Min(1)
-    @Max(value = 10_000, message = "Used in `WHERE NOT IN (?)`, max value should be smaller than 10_000")
+    @Max(value = 65_535, message = "Feeds `WHERE ... NOT IN (?)`; <= 65_535 (JDBC param limit); <= 1000 is recommended")
     private int flowExecThreads;
 
     @Min(1)

@@ -67,7 +67,7 @@ spring:
         negotiationType: plaintext
 
 worker:
-  flowExecThreads: 100
+  flowExecThreads: 500
   perFlowExecThreads: 5
   maxPerFlowExecThreads: 10
   errorRetries: 3
