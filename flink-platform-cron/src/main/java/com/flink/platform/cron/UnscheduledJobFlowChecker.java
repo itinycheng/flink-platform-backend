@@ -32,7 +32,7 @@ public class UnscheduledJobFlowChecker {
         jobFlowService.getUnscheduledJobFlows().forEach(jobFlow -> {
             String content = ALERT_TEMPLATE.formatted(
                     jobFlow.getName(), jobFlow.getStatus().name());
-            alertSendingService.sendErrAlerts(jobFlow, content);
+            alertSendingService.sendErrAlertsDirectly(jobFlow, content);
         });
 
         stopWatch.stop();

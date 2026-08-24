@@ -24,7 +24,7 @@ public enum ExecutionStatus {
     @Deprecated
     ABNORMAL(5, TerminalState.TERMINAL),
 
-    /** Internal status for job run only. */
+    /** Internal status for job run only; a flow run converges it to FAILURE. */
     ERROR(6, TerminalState.TERMINAL),
 
     @Deprecated

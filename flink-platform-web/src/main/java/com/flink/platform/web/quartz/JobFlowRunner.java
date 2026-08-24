@@ -83,7 +83,7 @@ public class JobFlowRunner implements Job {
                             "The job: {} is in non-terminal status, job run id: {}",
                             runningJob.getName(),
                             runningJob.getId());
-                    alertSendingService.sendErrAlerts(jobFlow, "There is already a running job: " + runningJob.getId());
+                    alertSendingService.sendErrAlertsDirectly(jobFlow, "There is already a running job: " + runningJob.getId());
                     return;
                 }
             } else {
@@ -93,7 +93,7 @@ public class JobFlowRunner implements Job {
                             "The job flow: {} is in non-terminal status, run id: {}",
                             jobFlow.getName(),
                             runningFlow.getId());
-                    alertSendingService.sendErrAlerts(
+                    alertSendingService.sendErrAlertsDirectly(
                             jobFlow, "There is already a running jobFlowRun: " + runningFlow.getId());
                     return;
                 }

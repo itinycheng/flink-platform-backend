@@ -55,6 +55,11 @@ public class JobFlowRequest {
             return msg;
         }
 
+        msg = verifyAlerts();
+        if (msg != null) {
+            return msg;
+        }
+
         return verifyCronExpr();
     }
 

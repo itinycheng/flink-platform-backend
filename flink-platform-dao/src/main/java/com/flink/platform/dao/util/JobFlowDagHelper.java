@@ -43,11 +43,10 @@ public class JobFlowDagHelper {
                         }
                     }
 
-                    if (statusSet.contains(ERROR)) {
-                        return ERROR;
-                    } else if (statusSet.contains(KILLED)) {
+                    if (statusSet.contains(KILLED)) {
                         return KILLED;
                     } else if (statusSet.contains(FAILURE)
+                            || statusSet.contains(ERROR)
                             || statusSet.contains(NOT_EXIST)
                             || statusSet.contains(ABNORMAL)) {
                         return FAILURE;

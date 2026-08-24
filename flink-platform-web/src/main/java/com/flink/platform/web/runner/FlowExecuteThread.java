@@ -122,7 +122,7 @@ public class FlowExecuteThread implements Runnable {
     private void handleTimeout(TimeoutStrategy[] strategies) {
         for (var strategy : strategies) {
             switch (strategy) {
-                case ALARM -> alertSendingService.sendAlerts(jobFlowRun, "execution timeout");
+                case ALARM -> alertSendingService.sendAlertsDirectly(jobFlowRun, "execution timeout");
                 case FAILURE -> killJobService.killFlowRun(jobFlowRun.getId());
             }
         }

@@ -94,6 +94,16 @@ public class AttrsController {
         return success(Arrays.asList(SUCCESS, FAILURE));
     }
 
+    @GetMapping(value = "/alertStatuses")
+    public ResultInfo<List<ExecutionStatus>> alertStatuses() {
+        var deprecated = EnumUtil.getDeprecatedEnums(ExecutionStatus.class);
+        var statuses = Arrays.stream(ExecutionStatus.values())
+                .filter(ExecutionStatus::isTerminalState)
+                .filter(status -> !deprecated.contains(status))
+                .toList();
+        return success(statuses);
+    }
+
     @GetMapping(value = "/enums")
     public ResultInfo<List<Map<String, String>>> list(@RequestParam(name = "className") String className) {
         if (StringUtils.isEmpty(className)) {

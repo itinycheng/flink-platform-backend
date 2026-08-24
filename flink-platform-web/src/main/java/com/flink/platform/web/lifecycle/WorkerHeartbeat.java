@@ -145,7 +145,7 @@ public class WorkerHeartbeat {
                         "Workspace {} has no active worker; flow run {} held for recovery",
                         flowRun.getWorkspaceId(),
                         flowRun.getId());
-                alertSendingService.sendAlerts(
+                alertSendingService.sendAlertsDirectly(
                         flowRun, "No active worker in workspace; flow run held for recovery on the dead host");
                 continue;
             }

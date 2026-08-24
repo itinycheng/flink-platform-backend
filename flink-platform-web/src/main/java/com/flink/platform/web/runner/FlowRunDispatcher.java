@@ -92,7 +92,7 @@ public class FlowRunDispatcher {
             if (flow == null || CollectionUtils.isEmpty(flow.getVertices())) {
                 log.warn("No JobVertex found, no scheduling required, flow run id: {}", jobFlowRun.getId());
                 failAndUpdateJobFlowRun(jobFlowRun);
-                alertSendingService.sendAlerts(jobFlowRun, "No job vertex found");
+                alertSendingService.sendAlertsDirectly(jobFlowRun, "No job vertex found");
                 return;
             }
 
