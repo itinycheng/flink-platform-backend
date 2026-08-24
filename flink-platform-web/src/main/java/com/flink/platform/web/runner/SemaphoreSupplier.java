@@ -23,7 +23,7 @@ public class SemaphoreSupplier implements Supplier<JobResponse> {
 
         try {
             if (AppRunner.isStopped()) {
-                return null;
+                return JobResponse.ABORTED;
             }
 
             return supplier.get();

@@ -1,15 +1,12 @@
 package com.flink.platform.web.runner;
 
 import com.flink.platform.common.enums.ExecutionStatus;
-import lombok.Data;
+import org.jspecify.annotations.Nullable;
+
+import static com.flink.platform.common.enums.ExecutionStatus.ERROR;
 
 /** Job response. */
-@Data
-public class JobResponse {
+public record JobResponse(long jobId, @Nullable Long jobRunId, ExecutionStatus status) {
 
-    private final long jobId;
-
-    private final Long jobRunId;
-
-    private final ExecutionStatus status;
+    public static final JobResponse ABORTED = new JobResponse(-1L, null, ERROR);
 }

@@ -12,7 +12,6 @@ import com.flink.platform.web.config.WorkerConfig;
 import com.flink.platform.web.lifecycle.AppRunner;
 import com.flink.platform.web.service.KillJobService;
 import com.flink.platform.web.util.ThreadUtil;
-import jakarta.annotation.Nonnull;
 import lombok.extern.slf4j.Slf4j;
 
 import java.time.LocalDateTime;
@@ -32,14 +31,6 @@ public class FlowExecuteThread implements Runnable {
 
     private static final ExecutorService jobExecService = ThreadUtil.newVirtualThreadExecutor("JobExecuteThread");
 
-    private final JobFlowRun jobFlowRun;
-
-    private final WorkerConfig workerConfig;
-
-    private final Semaphore semaphore;
-
-    private final Map<Long, CompletableFuture<Void>> runningJobs = new ConcurrentHashMap<>();
-
     private final JobFlowRunService jobFlowRunService = SpringContext.getBean(JobFlowRunService.class);
 
     private final AlertSendingService alertSendingService = SpringContext.getBean(AlertSendingService.class);
@@ -48,7 +39,17 @@ public class FlowExecuteThread implements Runnable {
 
     private final FlowRunDispatcher flowRunDispatcher = SpringContext.getBean(FlowRunDispatcher.class);
 
-    public FlowExecuteThread(@Nonnull JobFlowRun jobFlowRun, @Nonnull WorkerConfig workerConfig) {
+    private final Map<Long, CompletableFuture<Void>> runningJobs = new ConcurrentHashMap<>();
+
+    private final JobFlowRun jobFlowRun;
+
+    private final WorkerConfig workerConfig;
+
+    private final Semaphore semaphore;
+
+    private volatile boolean aborted = false;
+
+    public FlowExecuteThread(JobFlowRun jobFlowRun, WorkerConfig workerConfig) {
         this.jobFlowRun = jobFlowRun;
         this.workerConfig = workerConfig;
         this.semaphore = new Semaphore(getParallelism());
@@ -93,6 +94,11 @@ public class FlowExecuteThread implements Runnable {
                 return;
             }
 
+            if (aborted) {
+                log.warn("Flow run {} aborted locally, leaving it for the new owner / restart", jobFlowRun.getId());
+                return;
+            }
+
             if (ownedByAnotherWorker()) {
                 log.warn("Flow run {} owned by another worker, abandoning local execution", jobFlowRun.getId());
                 return;
@@ -107,8 +113,8 @@ public class FlowExecuteThread implements Runnable {
             ThreadUtil.safeSleep(FIVE_SECOND_MILLIS);
         }
 
+        // Wait for all jobs complete, call completeAndNotify in the last completed thread.
         CompletableFuture.allOf(runningJobs.values().toArray(new CompletableFuture[0]))
-                // call completeAndNotify in the last completed thread.
                 .thenAccept(unused -> completeAndNotify(flow))
                 .join();
     }
@@ -155,12 +161,13 @@ public class FlowExecuteThread implements Runnable {
     }
 
     private void handleResponse(JobResponse jobResponse, JobVertex jobVertex, JobFlowDag flow) {
-        if (jobResponse == null || jobResponse.getStatus() == null) {
+        if (jobResponse == JobResponse.ABORTED) {
+            aborted = true;
             return;
         }
 
-        jobVertex.setJobRunId(jobResponse.getJobRunId());
-        jobVertex.setJobRunStatus(jobResponse.getStatus());
+        jobVertex.setJobRunId(jobResponse.jobRunId());
+        jobVertex.setJobRunStatus(jobResponse.status());
 
         for (var nextVertex : flow.getNextVertices(jobVertex)) {
             if (flow.isPreconditionSatisfied(nextVertex)) {
