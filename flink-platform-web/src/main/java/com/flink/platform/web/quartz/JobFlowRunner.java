@@ -83,7 +83,8 @@ public class JobFlowRunner implements Job {
                             "The job: {} is in non-terminal status, job run id: {}",
                             runningJob.getName(),
                             runningJob.getId());
-                    alertSendingService.sendErrAlertsDirectly(jobFlow, "There is already a running job: " + runningJob.getId());
+                    alertSendingService.sendErrAlertsDirectly(
+                            jobFlow, "There is already a running job: " + runningJob.getId());
                     return;
                 }
             } else {
