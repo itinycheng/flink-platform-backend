@@ -5,8 +5,8 @@ import com.flink.platform.dao.entity.result.JobCallback;
 import com.flink.platform.web.common.ValueSortedMap;
 import jakarta.annotation.Nonnull;
 
-import static com.flink.platform.common.enums.ExecutionStatus.KILLABLE;
 import static com.flink.platform.common.enums.ExecutionStatus.KILLED;
+import static com.flink.platform.common.enums.ExecutionStatus.KILLING;
 
 /** parse result. */
 public interface CommandExecutor {
@@ -27,7 +27,7 @@ public interface CommandExecutor {
         try {
             RUNNING_MAP.put(jobRunId, command);
             JobCallback callback = execCommand(command);
-            if (callback.getStatus() == KILLABLE) {
+            if (callback.getStatus() == KILLING) {
                 killCommand(command);
                 callback.setStatus(KILLED);
             }

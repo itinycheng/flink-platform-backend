@@ -33,7 +33,7 @@ public class JobRunInfoService extends ServiceImpl<JobRunInfoMapper, JobRunInfo>
     public static final List<ExecutionStatus> UNEXPECTED = new ArrayList<>() {
         {
             addAll(FAILURE_STATUSES);
-            add(ExecutionStatus.KILLABLE);
+            add(ExecutionStatus.KILLING);
         }
     };
 

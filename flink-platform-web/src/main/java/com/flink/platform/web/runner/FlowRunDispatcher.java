@@ -21,7 +21,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadPoolExecutor;
 
 import static com.flink.platform.common.enums.ExecutionStatus.FAILURE;
-import static com.flink.platform.common.enums.ExecutionStatus.KILLABLE;
+import static com.flink.platform.common.enums.ExecutionStatus.KILLING;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 /** Schedule job flow. */
@@ -82,7 +82,7 @@ public class FlowRunDispatcher {
         var submitted = false;
         try {
             var status = jobFlowRun.getStatus();
-            if (KILLABLE.equals(status)) {
+            if (KILLING.equals(status)) {
                 log.info("Flow run {} is {}, finalizing kill instead of executing", jobFlowRun.getId(), status);
                 killJobService.forceKillFlowRun(jobFlowRun.getId());
                 return;

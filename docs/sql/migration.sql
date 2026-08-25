@@ -156,3 +156,14 @@ UPDATE platform.t_job_flow_run SET schedule_time = start_time WHERE start_time I
 CREATE INDEX t_job_flow_run_host_status_priority_idx USING BTREE ON platform.t_job_flow_run (host, status, priority);
 -- Drop deprecated columns removed from CatalogInfo entity (avoids NOT NULL insert failure on catalog create).
 ALTER TABLE platform.t_catalog_info DROP COLUMN default_database, DROP COLUMN config_path, DROP COLUMN configs;
+
+-- 2026-08-25
+-- ExecutionStatus.KILLABLE renamed to KILLING.
+-- The status columns are persisted by MyBatis-Plus's default enum handler (Enum.valueOf by name), which does
+-- NOT honor @JsonAlias, so a legacy 'KILLABLE' row would fail to deserialize under the new code. These two
+-- columns must therefore be migrated. JSON blobs (t_job_flow(_run).alerts/flow, t_job(_run).config) are read
+-- by Jackson and keep loading via @JsonAlias("KILLABLE"), so they need no migration.
+-- MUST run during a full stop of all workers, before starting the new code: old nodes still write 'KILLABLE',
+-- and the new code throws on reading it, so the two versions cannot run concurrently.
+UPDATE platform.t_job_run SET status = 'KILLING' WHERE status = 'KILLABLE';
+UPDATE platform.t_job_flow_run SET status = 'KILLING' WHERE status = 'KILLABLE';

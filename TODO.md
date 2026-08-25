@@ -102,80 +102,68 @@ means the marker validates *existence*, not *ownership*.
 
 ## Full Multi-Tenant Rollout — SQL-level Tenant Filter + TenantContext
 
-> Chosen approach over the `WorkspaceScopedService` base-class idea (first section): enforce
-> isolation at the **SQL layer** via MyBatis-Plus `TenantLineInnerInterceptor`, so `getById` /
-> `updateById` / `removeById` / custom queries are all auto-scoped without touching services or
-> mappers. This section is the plan to grow the current single-table pilot into full coverage.
+> The SQL-layer tenant filter is already live (`@TenantId` + `WorkspaceTenantLineHandler`, 10 tables
+> scoped, auto-applied to `getById` / `updateById` / `removeById` / custom queries). What remains is
+> propagating `workspace_id` into background threads and deciding fail-open vs fail-close. Only the
+> unfinished work is tracked below.
 
-### Already implemented (pilot, scoped to `t_tag`)
+### Guardrail (don't redo)
 
-- `WorkspaceScoped` marker interface (`flink-platform-dao/.../entity/WorkspaceScoped.java`),
-  declares `Long getWorkspaceId()` as a compile-time contract.
-- `TagInfo implements WorkspaceScoped`.
-- `WorkspaceTenantLineHandler` — scoped tables derived at runtime from all `WorkspaceScoped`
-  entities via `TableInfoHelper` (no hardcoded table name; rename-safe). Lazily built + cached.
-  `ignoreTable` short-circuits when no workspace context (background threads unaffected).
-- Registered in `MybatisPlusConfig` (tenant interceptor before pagination).
-- `WorkspaceScopedValidator` (`ApplicationRunner`) — fail-fast at boot if any `WorkspaceScoped`
-  entity lacks a mapped `workspace_id` column.
-- Tests: `WorkspaceTenantLineHandlerTest` (6, incl. real SQL-rewrite), `WorkspaceScopedValidatorTest` (2).
-- Demo (reference only, delete when done): `RequestContextDemoTest` — shows runAs / runWithoutTenant.
-
-### Design decisions locked in
-
-- **Identify scoped tables by marker interface**, not annotation (avoids confusion with the
-  existing `@WorkspaceOptional` method annotation) and not by `workspace_id`-column-detection
-  (that would be opt-out / all-tables-at-once; we want explicit opt-in during rollout).
-- **Authorization vs isolation are separate**: `PermissionInterceptor` already blocks a forged
-  `X-Workspace-Id` for `@RequirePermission` endpoints (membership check). The tenant filter covers
-  the *resource-level* IDOR (a legit member fetching another workspace's row by id). Do NOT
-  re-add a membership check in `LoginInterceptor` — it was tried and reverted as redundant.
+- **Do not re-add a workspace membership check in `LoginInterceptor`** — it was tried and reverted as
+  redundant. `PermissionInterceptor` already blocks a forged `X-Workspace-Id` on `@RequirePermission`
+  endpoints; the tenant filter only needs to cover resource-level IDOR (a legit member fetching another
+  workspace's row by id).
 
 ### The core problem to solve for full rollout
 
 `workspace_id` only exists on HTTP threads (`RequestContext` set by `LoginInterceptor`).
-Background/internal threads have none, so today they read **across all workspaces** (fail-open).
-Fix = generalize `RequestContext` → `RequestContext` that any entry point populates, with two
-explicit scopes: `runAs(workspaceId, ...)` and `runWithoutTenant(...)`.
+Background / internal threads have none, so scoped-table queries there run **across all workspaces**
+(fail-open). Today this is *functionally* safe: the background chain
+(`FlowRunDispatcher → FlowExecuteThread → JobExecuteThread`) addresses every scoped table by a precise
+key (PK, or `(jobId, flowRunId)`), never a "list all rows in my workspace" query, so the missing filter
+changes no result. It becomes a problem the moment (a) a background query starts relying on the filter
+to narrow results, or (b) we flip to fail-close (below). Fix = let any entry point populate
+`RequestContext`, using two explicit scopes: `runAs(workspaceId, ...)` (already present — the primitive
+the entry points below will call) and `runWithoutTenant(...)` (still to be added).
 
-### Work inventory (~10 focused sites, 0 business-logic changes)
+### Work inventory (background context propagation)
 
 **Thread propagation — THE key lever, 1 file:**
 - [ ] `ThreadUtil` — decorate task submission to capture the submitting thread's `RequestContext`
       and restore it in the worker thread. All pools go through `ThreadUtil.new*`
       (`FlowExecuteThread`, `JobExecuteThread` virtual, gRPC executor, `CommandMonitor`,
-      `ReactiveService`, `WorkerHeartbeat`), so this one change covers the whole
+      `ReactiveService`, `WorkerHeartbeat`). Note: a plain `ThreadLocal` does **not** cross a pool
+      boundary on its own, and `InheritableThreadLocal` doesn't help with pooled/reused threads — so
+      this capture/restore decoration is what actually propagates context down the
       `Quartz → FlowExecuteThread → JobExecuteThread` chain.
 
-**Generalize context:**
-- [ ] `RequestContext` → `RequestContext` (keep HTTP behavior identical; add `runAs` /
-      `runWithoutTenant`). Point `WorkspaceTenantLineHandler` at `RequestContext`.
-
-**Entry points — set context (`runAs`), workspace comes from domain object:**
-- [ ] `LoginInterceptor` — already sets it (HTTP header). Just switch to `RequestContext`.
+**Entry points — set context (`runAs`), workspace comes from the domain object:**
+- [ ] `FlowExecuteThread.run` — `runAs(jobFlowRun.getWorkspaceId())`. This is the anchor: it cannot be
+      inherited from the `@Scheduled` dispatcher thread (which has no context), so it must be set here.
+      Once set, `ThreadUtil` propagation carries it down to `JobExecuteThread` automatically —
+      `JobExecuteThread` (holds only `flowRunId`, no workspaceId) then needs no change.
 - [ ] `JobFlowRunner.execute` (Quartz) — `runAs(jobFlow.getWorkspaceId())`.
-- [ ] `FlowExecuteThread.run` — `runAs(jobFlowRun.getWorkspaceId())`.
-- [ ] `JobGrpcServer` (`processJob` / `killJob` / `savepointJob` / `getJobStatus`) — load
-      JobRun by `jobRunId`, then `runAs(workspaceId)`.
-- [ ] `FlowRunDispatcher.drainAndExecute` recovery — per-flow `runAs` (or `runWithoutTenant` if only
-      touching non-scoped tables).
+- [ ] `JobGrpcServer` (`processJob` / `killJob` / `savepointJob` / `getJobStatus`) — the remote
+      handler also has no context; load JobRun by `jobRunId`, then `runAs(workspaceId)`.
 
-**Entry points — explicit global scans (`runWithoutTenant`):**
-- [ ] `FlowRunDispatcher` (@Scheduled), cron `JobsInJobListStatusChecker` /
-      `UnscheduledJobFlowChecker`, `CommandMonitor` — only if they touch scoped tables.
+**Entry points — explicit global scans (`runWithoutTenant`, to be added):**
+- [ ] `FlowRunDispatcher.drainAndExecute` (@Scheduled) — `listExecutableRunsOnHost(...)` is a genuine
+      cross-workspace scan (a worker adopts every workspace's runs on this host). MUST be
+      `runWithoutTenant`, not `runAs`.
+- [ ] Cron `JobsInJobListStatusChecker` / `UnscheduledJobFlowChecker`, `CommandMonitor` — only if they
+      touch scoped tables.
 
 **Optional cleanup (net code reduction):**
 - [ ] Remove now-redundant `setWorkspaceId(requireWorkspaceId())` and
       `.eq(workspaceId, requireWorkspaceId())` from ~10 controllers (interceptor does it).
 
-**Policy decision (later):**
-- [ ] Decide whether "no context on a scoped-table query" stays fail-open (current) or becomes
-      fail-closed (throw, forcing every background path to declare `runAs` / `runWithoutTenant`).
-
-### Add tables to scope (each is one line, handler never changes)
-
-- [ ] `AlertInfo` / `CatalogInfo` / `Datasource` / `Resource` / `JobParam` / `JobFlow` —
-      `implements WorkspaceScoped` (validator confirms each has a `workspace_id` column at boot).
+**Policy decision — fail-open vs fail-close:**
+- [ ] Decide whether "no context on a scoped-table query" stays **fail-open** (current) or becomes
+      **fail-close** (throw). Hard prerequisite for fail-close: every background entry point above must
+      first declare `runAs` / `runWithoutTenant`, otherwise the whole
+      `FlowRunDispatcher → FlowExecuteThread → JobExecuteThread` chain throws on its first scoped query.
+      Also audit raw SQL / JOINs (see Known limits) — the interceptor can't rewrite those, so they
+      would silently bypass a fail-close guard.
 
 ### Known limits (SQL-layer approach)
 

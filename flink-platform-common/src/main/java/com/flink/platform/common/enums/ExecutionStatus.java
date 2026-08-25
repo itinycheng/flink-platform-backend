@@ -1,5 +1,6 @@
 package com.flink.platform.common.enums;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
 import lombok.Getter;
 
 import java.util.Arrays;
@@ -31,8 +32,8 @@ public enum ExecutionStatus {
     NOT_EXIST(7, TerminalState.TERMINAL),
     CREATED(8, TerminalState.NON_TERMINAL),
 
-    // TODO: rename to KILLING
-    KILLABLE(9, TerminalState.NON_TERMINAL),
+    @JsonAlias("KILLABLE")
+    KILLING(9, TerminalState.TRANSIENT),
 
     /** ! Only for jobFlow final status. */
     EXPECTED_FAILURE(10, TerminalState.TERMINAL);
@@ -41,7 +42,7 @@ public enum ExecutionStatus {
             Stream.of(FAILURE, KILLED, ABNORMAL, ERROR, NOT_EXIST).collect(toSet());
 
     public static final List<ExecutionStatus> NON_TERMINALS = Arrays.stream(values())
-            .filter(executionStatus -> executionStatus.terminalState == TerminalState.NON_TERMINAL)
+            .filter(executionStatus -> executionStatus.terminalState != TerminalState.TERMINAL)
             .collect(toList());
 
     @Getter
@@ -56,6 +57,11 @@ public enum ExecutionStatus {
 
     public boolean isTerminalState() {
         return terminalState == TerminalState.TERMINAL;
+    }
+
+    /** A transitional state that is on its way to a terminal one (e.g. {@link #KILLING} moving toward KILLED). */
+    public boolean isTransient() {
+        return terminalState == TerminalState.TRANSIENT;
     }
 
     public static List<ExecutionStatus> getNonTerminals() {
@@ -78,6 +84,7 @@ public enum ExecutionStatus {
 
     private enum TerminalState {
         TERMINAL,
-        NON_TERMINAL
+        NON_TERMINAL,
+        TRANSIENT
     }
 }

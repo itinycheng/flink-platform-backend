@@ -32,8 +32,8 @@ import java.util.function.Supplier;
 import static com.flink.platform.common.constants.Constant.HOST_IP;
 import static com.flink.platform.common.enums.ExecutionStatus.CREATED;
 import static com.flink.platform.common.enums.ExecutionStatus.ERROR;
-import static com.flink.platform.common.enums.ExecutionStatus.KILLABLE;
 import static com.flink.platform.common.enums.ExecutionStatus.KILLED;
+import static com.flink.platform.common.enums.ExecutionStatus.KILLING;
 import static com.flink.platform.common.enums.ExecutionStatus.SUCCESS;
 import static com.flink.platform.grpc.JobGrpcServiceGrpc.JobGrpcServiceBlockingStub;
 import static com.flink.platform.web.runner.JobExecuteThread.FlowAction.ABANDON;
@@ -357,7 +357,7 @@ public class JobExecuteThread implements Supplier<JobResponse> {
         }
 
         var flowStatus = flowRun.getStatus();
-        if (KILLABLE.equals(flowStatus) || flowStatus.isTerminalState()) {
+        if (KILLING.equals(flowStatus) || flowStatus.isTerminalState()) {
             return TERMINATE;
         }
 

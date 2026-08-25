@@ -18,8 +18,8 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.List;
 
-import static com.flink.platform.common.enums.ExecutionStatus.KILLABLE;
 import static com.flink.platform.common.enums.ExecutionStatus.KILLED;
+import static com.flink.platform.common.enums.ExecutionStatus.KILLING;
 import static com.flink.platform.common.enums.ExecutionStatus.getNonTerminals;
 
 /** Kill job service. */
@@ -54,7 +54,7 @@ public class KillJobService {
         }
 
         // kill remote runs.
-        jobFlowRunService.updateStatusById(flowRunId, KILLABLE);
+        jobFlowRunService.updateStatusById(flowRunId, KILLING);
         return runList.parallelStream()
                 .map(this::attemptToKillJob)
                 .reduce((bool1, bool2) -> bool1 && bool2)

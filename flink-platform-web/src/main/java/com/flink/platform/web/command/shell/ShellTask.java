@@ -15,8 +15,8 @@ import java.util.function.BiConsumer;
 
 import static com.flink.platform.common.constants.Constant.LINE_SEPARATOR;
 import static com.flink.platform.common.enums.ExecutionStatus.FAILURE;
-import static com.flink.platform.common.enums.ExecutionStatus.KILLABLE;
 import static com.flink.platform.common.enums.ExecutionStatus.KILLED;
+import static com.flink.platform.common.enums.ExecutionStatus.KILLING;
 import static com.flink.platform.common.enums.ExecutionStatus.SUCCESS;
 import static com.flink.platform.web.util.CollectLogRunnable.CmdOutType;
 import static com.flink.platform.web.util.CollectLogRunnable.CmdOutType.ERR;
@@ -138,7 +138,7 @@ public class ShellTask extends AbstractTask {
             return FAILURE;
         }
 
-        return KILLABLE;
+        return KILLING;
     }
 
     public BiConsumer<CmdOutType, String> newLogBuffer(BiConsumer<CmdOutType, String> consumer) {
