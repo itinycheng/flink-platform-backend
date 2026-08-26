@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Test;
 import java.util.regex.Matcher;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class JobConstantTest {
@@ -30,6 +31,24 @@ class JobConstantTest {
         assertEquals("bizDay", m.group("baseTime"));
         assertEquals("-", m.group("operator"));
         assertEquals("1d", m.group("duration"));
+    }
+
+    @Test
+    void timePatternMatchesWithoutBracket() {
+        Matcher m = JobConstant.TIME_PATTERN.matcher("${time:yyyyMMdd}");
+        assertTrue(m.find());
+        assertEquals("yyyyMMdd", m.group("format"));
+        assertNull(m.group("baseTime"));
+        assertNull(m.group("operator"));
+        assertNull(m.group("duration"));
+    }
+
+    @Test
+    void timePatternMatchesWithoutBracketWithSeparators() {
+        Matcher m = JobConstant.TIME_PATTERN.matcher("${time:yyyy-MM-dd HH:mm:ss}");
+        assertTrue(m.find());
+        assertEquals("yyyy-MM-dd HH:mm:ss", m.group("format"));
+        assertNull(m.group("baseTime"));
     }
 
     @Test

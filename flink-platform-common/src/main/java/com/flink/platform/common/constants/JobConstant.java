@@ -64,10 +64,10 @@ public class JobConstant {
     public static final Pattern LIMIT_PATTERN =
             Pattern.compile("LIMIT\\s+(?<num1>\\d+)(,\\s*(?<num2>\\d+))?$", SQL_PATTERN_FLAGS);
 
-    // ${time:yyyyMMdd[cur*-3d]} / ${time:yyyyMMdd[biz*-1d]}
+    // Supports: ${time:yyyyMMdd} / ${time:yyyyMMdd[cur*-3d]} / ${time:yyyyMMdd[biz*-1d]}
     public static final Pattern TIME_PATTERN = Pattern.compile(
             String.format(
-                    "\\$\\{\\s*time:(?<format>.+?)\\[(?<baseTime>%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s)(?<operator>\\+|-)?(?<duration>\\w+)?\\]\\s*}",
+                    "\\$\\{\\s*time:(?<format>.+?)(?:\\[(?<baseTime>%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s)(?<operator>[+\\-])?(?<duration>\\w+)?])?\\s*}",
                     CUR_YEAR,
                     CUR_MONTH,
                     CUR_DAY,

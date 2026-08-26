@@ -27,9 +27,11 @@ import static com.flink.platform.common.constants.JobConstant.TIME_PATTERN;
 import static com.flink.platform.common.util.Preconditions.checkNotNull;
 
 /**
- * Time variable resolver. Resolves ${time:format[baseTime±duration]} placeholders. baseTime is one
- * of: cur* (curYear/curMonth/curDay/curHour/curMinute/curSecond/curMillisecond) — wall-clock now()
- * biz* (bizYear/bizMonth/bizDay/bizHour/bizMinute/bizSecond/bizMillisecond) — anchored to
+ * Time variable resolver. Resolves ${time:format[baseTime±duration]} placeholders. The
+ * [baseTime±duration] part is optional: ${time:yyyyMMdd} / ${time:yyyy-MM-dd} resolve against the
+ * current wall-clock time. When present, baseTime is one of: cur*
+ * (curYear/curMonth/curDay/curHour/curMinute/curSecond/curMillisecond) — wall-clock now() biz*
+ * (bizYear/bizMonth/bizDay/bizHour/bizMinute/bizSecond/bizMillisecond) — anchored to
  * JobFlowRun.scheduleTime
  */
 @Slf4j
@@ -52,11 +54,12 @@ public class TimeVariableResolver implements VariableResolver {
             }
 
             var format = checkNotNull(matcher.group("format"));
-            var baseTime = checkNotNull(matcher.group("baseTime"));
+            var baseTime = matcher.group("baseTime");
             var operator = matcher.group("operator");
             var duration = matcher.group("duration");
-            var baseTimeUnit = BaseTimeUnit.of(baseTime);
-            var destTime = baseTimeUnit.provider.apply(ctx);
+            var destTime = baseTime == null
+                    ? LocalDateTime.now()
+                    : BaseTimeUnit.of(baseTime).provider.apply(ctx);
             // dest time plus duration.
             if (StringUtils.isNotBlank(duration)) {
                 var parsedDuration = DurationUtil.parse(duration);

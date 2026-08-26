@@ -1,5 +1,6 @@
 package com.flink.platform.web.service;
 
+import com.flink.platform.common.util.DateUtil;
 import com.flink.platform.dao.entity.ExecutionConfig;
 import com.flink.platform.dao.entity.JobFlowRun;
 import com.flink.platform.dao.entity.JobRunInfo;
@@ -157,5 +158,52 @@ public class VariableResolverTest {
 
         timeVariableResolver.resolve(jobRun, jobRun.getSubject());
         Mockito.verifyNoInteractions(jobFlowRunService);
+    }
+
+    @Test
+    public void noBracketResolvesToCurrentDate() {
+        var jobRun = new JobRunInfo();
+        jobRun.setSubject("dt=${time:yyyyMMdd}");
+
+        var result = timeVariableResolver.resolve(jobRun, jobRun.getSubject());
+        // No bracket -> current wall-clock time. Compare against now() formatted the same way; the
+        // yyyyMMdd granularity makes this robust unless the test straddles midnight.
+        var expected = DateUtil.format(LocalDateTime.now(), "yyyyMMdd");
+        assertEquals(expected, result.get("${time:yyyyMMdd}"));
+    }
+
+    @Test
+    public void noBracketWithSeparatorsResolvesToCurrentDate() {
+        var jobRun = new JobRunInfo();
+        jobRun.setSubject("dt=${time:yyyy-MM-dd}");
+
+        var result = timeVariableResolver.resolve(jobRun, jobRun.getSubject());
+        var expected = DateUtil.format(LocalDateTime.now(), "yyyy-MM-dd");
+        assertEquals(expected, result.get("${time:yyyy-MM-dd}"));
+    }
+
+    @Test
+    public void noBracketDoesNotTriggerFlowRunLookup() {
+        // Bracket-less form uses now() directly, so it must never hit the flow run service.
+        var jobRun = new JobRunInfo();
+        jobRun.setFlowRunId(300L);
+        jobRun.setSubject("dt=${time:yyyyMMdd}");
+
+        timeVariableResolver.resolve(jobRun, jobRun.getSubject());
+        Mockito.verifyNoInteractions(jobFlowRunService);
+    }
+
+    @Test
+    public void mixedBracketAndNoBracketInSameContent() {
+        Mockito.when(jobFlowRunService.resolveScheduleTimeOrNow(100L))
+                .thenReturn(LocalDateTime.of(2026, 6, 21, 23, 59, 59));
+
+        var jobRun = new JobRunInfo();
+        jobRun.setFlowRunId(100L);
+        jobRun.setSubject("biz=${time:yyyyMMdd[bizDay]} plain=${time:yyyyMMdd}");
+
+        var result = timeVariableResolver.resolve(jobRun, jobRun.getSubject());
+        assertEquals("20260621", result.get("${time:yyyyMMdd[bizDay]}"));
+        assertEquals(DateUtil.format(LocalDateTime.now(), "yyyyMMdd"), result.get("${time:yyyyMMdd}"));
     }
 }
