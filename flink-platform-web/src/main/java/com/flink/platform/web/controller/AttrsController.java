@@ -95,11 +95,12 @@ public class AttrsController {
     }
 
     @GetMapping(value = "/alertStatuses")
-    public ResultInfo<List<ExecutionStatus>> alertStatuses() {
+    public ResultInfo<List<Map<String, String>>> alertStatuses() {
         var deprecated = EnumUtil.getDeprecatedEnums(ExecutionStatus.class);
         var statuses = Arrays.stream(ExecutionStatus.values())
                 .filter(ExecutionStatus::isTerminalState)
                 .filter(status -> !deprecated.contains(status))
+                .map(enumConstant -> Map.of("name", enumConstant.name()))
                 .toList();
         return success(statuses);
     }

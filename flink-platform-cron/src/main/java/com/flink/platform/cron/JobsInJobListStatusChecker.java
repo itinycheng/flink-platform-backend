@@ -26,7 +26,7 @@ public class JobsInJobListStatusChecker {
 
     private final AlertSendingService alertSendingService;
 
-    @Scheduled(initialDelay = 2 * 60 * 1000, fixedDelay = 10 * 60 * 1000)
+    @Scheduled(initialDelay = 2 * 60 * 1000, fixedDelay = 30 * 60 * 1000)
     @SchedulerLock(name = "JobsInJobListStatusChecker_checkJobStatus", lockAtMostFor = "PT8M", lockAtLeastFor = "PT5M")
     public void checkJobStatus() {
         var stopWatch = StopWatch.createStarted();

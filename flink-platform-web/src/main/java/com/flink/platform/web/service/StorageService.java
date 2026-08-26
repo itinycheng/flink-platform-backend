@@ -47,6 +47,7 @@ public class StorageService {
             return true;
         }
 
+        log.warn("moveToTrash failed for path [{}], falling back to permanent delete. ", path);
         return storageSystem.delete(path, recursive);
     }
 

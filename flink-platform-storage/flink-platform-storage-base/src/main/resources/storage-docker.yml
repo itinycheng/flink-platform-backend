@@ -22,3 +22,4 @@ storage:
       "[fs.hdfs.impl]": org.apache.hadoop.hdfs.DistributedFileSystem
       "[dfs.replication]": "1"
       "[dfs.client.use.datanode.hostname]": "true"
+      "[fs.trash.interval]": ${HDFS_TRASH_INTERVAL:2880}

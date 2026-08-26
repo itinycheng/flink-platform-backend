@@ -7,6 +7,7 @@ storage:
       hadoop.username: hdfs
       fs.hdfs.impl: org.apache.hadoop.hdfs.DistributedFileSystem
       fs.defaultFS: hdfs://nameservice1
+      fs.trash.interval: 2880
       ha.zookeeper.quorum: 0.0.0.0:2181,0.0.0.0:2181,0.0.0.0:2181
       dfs.client.failover.proxy.provider.nameservice1: org.apache.hadoop.hdfs.server.namenode.ha.ConfiguredFailoverProxyProvider
       dfs.ha.automatic-failover.enabled.nameservice1: true
