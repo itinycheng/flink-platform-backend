@@ -36,7 +36,7 @@ public interface JobRunInfoMapper extends BaseMapper<JobRunInfo> {
                     WHERE t1.id = t2.id
                     </script>
                     """)
-    List<JobRunInfo> lastJobRunList(@Param("flowRunId") Long flowRunId, @Param("jobIds") List<Long> jobIds);
+    List<JobRunInfo> selectLatestLiteRunPerJob(@Param("flowRunId") Long flowRunId, @Param("jobIds") List<Long> jobIds);
 
     @Select("""
             <script>

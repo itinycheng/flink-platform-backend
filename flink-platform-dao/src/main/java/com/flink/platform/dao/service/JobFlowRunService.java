@@ -25,6 +25,8 @@ import java.util.List;
 import java.util.Map;
 
 import static com.flink.platform.common.constants.Constant.HOST_IP;
+import static com.flink.platform.common.enums.ExecutionStatus.EXECUTABLE_STATUSES;
+import static com.flink.platform.common.enums.ExecutionStatus.WAITING;
 import static com.flink.platform.common.enums.ExecutionStatus.getNonTerminals;
 import static com.flink.platform.common.enums.ExecutionStrategy.ONLY_CUR_JOB;
 import static com.flink.platform.common.util.Preconditions.checkNotNull;
@@ -52,11 +54,18 @@ public class JobFlowRunService extends ServiceImpl<JobFlowRunMapper, JobFlowRun>
                 .eq(JobFlowRun::getId, flowRunId));
     }
 
+    public List<JobFlowRun> listWaitingRunsOnHost() {
+        return list(new QueryWrapper<JobFlowRun>()
+                .lambda()
+                .eq(JobFlowRun::getHost, HOST_IP)
+                .eq(JobFlowRun::getStatus, WAITING));
+    }
+
     public List<JobFlowRun> listExecutableRunsOnHost(Collection<Long> excludeRunIds, int limit) {
         return list(new QueryWrapper<JobFlowRun>()
                 .lambda()
                 .eq(JobFlowRun::getHost, HOST_IP)
-                .in(JobFlowRun::getStatus, getNonTerminals())
+                .in(JobFlowRun::getStatus, EXECUTABLE_STATUSES)
                 .notIn(CollectionUtils.isNotEmpty(excludeRunIds), JobFlowRun::getId, excludeRunIds)
                 .orderByDesc(JobFlowRun::getPriority)
                 .orderByAsc(JobFlowRun::getId)
@@ -81,6 +90,25 @@ public class JobFlowRunService extends ServiceImpl<JobFlowRunMapper, JobFlowRun>
         newJobFlowRun.setId(flowRunId);
         newJobFlowRun.setStatus(status);
         updateById(newJobFlowRun);
+    }
+
+    public boolean updateStatusFromWaiting(Long flowRunId, ExecutionStatus status) {
+        var newFlowRun = new JobFlowRun();
+        newFlowRun.setId(flowRunId);
+        newFlowRun.setStatus(status);
+        if (status.isTerminalState()) {
+            // startTime stays null: the run never executed, and stamping it here would report a run that
+            // waited for hours as having taken zero time. The wait itself is scheduleTime -> endTime.
+            newFlowRun.setEndTime(LocalDateTime.now());
+        }
+
+        var update = baseMapper.update(
+                newFlowRun,
+                new QueryWrapper<JobFlowRun>()
+                        .lambda()
+                        .eq(JobFlowRun::getId, flowRunId)
+                        .eq(JobFlowRun::getStatus, WAITING));
+        return update == 1;
     }
 
     public JobFlowRun findRunningFlow(@Nonnull Long flowId, ExecutionConfig config) {

@@ -3,9 +3,7 @@ package com.flink.platform.common.enums;
 import com.fasterxml.jackson.annotation.JsonAlias;
 
 /**
- * Trigger rule over a vertex's upstream edges: how upstream statuses gate whether this vertex runs.
- *
- * <p>TODO: rename to TriggerRule.
+ * TODO: rename to TriggerRule.
  */
 public enum ExecutionCondition {
 
@@ -21,5 +19,31 @@ public enum ExecutionCondition {
     ALL_DONE,
 
     /** At least one upstream reached a terminal state, regardless of the edge's expected status. */
-    ANY_DONE
+    ANY_DONE;
+
+    public boolean requiresAllQualified() {
+        switch (this) {
+            case ALL_MATCHED:
+            case ALL_DONE:
+                return true;
+            case ANY_MATCHED:
+            case ANY_DONE:
+                return false;
+            default:
+                throw new IllegalStateException("Unhandled execution condition: " + this);
+        }
+    }
+
+    public boolean requiresStatusMatched() {
+        switch (this) {
+            case ALL_MATCHED:
+            case ANY_MATCHED:
+                return true;
+            case ALL_DONE:
+            case ANY_DONE:
+                return false;
+            default:
+                throw new IllegalStateException("Unhandled execution condition: " + this);
+        }
+    }
 }

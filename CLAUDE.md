@@ -33,7 +33,12 @@ Web UI is served on port **9104**, gRPC on port **9898**.
 
 ## Code Quality Tools
 
-The project enforces Checkstyle, Error Prone, NullAway, and Spotless (Palantir Java Format) at build time:
+The project enforces Checkstyle, NullAway, and Spotless (Palantir Java Format) at build time.
+
+Error Prone is on the compiler command line but runs none of its own checks — `-XepDisableAllChecks`
+turns all of them off, and `-Xep:NullAway:ERROR` re-enables just NullAway. Error Prone is only there
+because NullAway is implemented as an Error Prone plugin and cannot be loaded without it. NullAway
+runs with `OnlyNullMarked`, so it checks a class only if that class (or its package) is `@NullMarked`.
 
 ```bash
 # Check formatting
@@ -104,7 +109,15 @@ Schema SQL lives in `docs/sql/schema.sql`.
 
 ### Java Version Notes
 
-The root project targets Java 21. However, `flink-sql-submit-*` and `flink-platform-udf` must compile to Java 8 (`<maven.compiler.source>8</maven.compiler.source>`) because they run inside Flink's classloader. Do not use Java 9+ APIs in those modules.
+The root project targets Java 21, but three modules set `<maven.compiler.release>8</maven.compiler.release>`:
+
+| Module | Why |
+|---|---|
+| `flink-sql-submit` (and its `-1.12` / `-1.15` / `-1.20` children) | runs inside Flink's classloader |
+| `flink-platform-udf` | runs inside Flink's classloader |
+| **`flink-platform-common`** | `flink-platform-udf` depends on it |
+
+`flink-platform-common` is the easy one to miss — it holds the shared enums, utils, and DAG model, so it *looks* like ordinary Java 21 code, and everything that consumes it (dao, web) really is Java 21. Inside it, no Java 9+ APIs, and none of `switch` expressions, `var`, records, or text blocks. Write the old `case X:` / `return` form; `ExecutionCondition.requiresStatusMatch` is the reference example.
 
 ### Job Handler Extension Point
 
@@ -131,6 +144,31 @@ Job subjects and configs support runtime variable substitution:
 
 - **`DefinitionException`** — wraps a `ResponseStatus` enum value; thrown for business/user errors; caught by `ApiExceptionHandler` and returned as a structured `ResultInfo` response.
 - **`UncaughtException`** — internal errors that propagate through (used for gRPC client-side error propagation).
+
+### DAO Naming Conventions
+
+Mapper methods mirror SQL statements; service methods express the caller's contract. Never mix the two vocabularies.
+
+**Mapper — only the four SQL verbs.** `select*` (every read: single, list, page, aggregate), `insert*`, `update*`, `delete*`. Do not use `query`, `find`, `get`, `list`, `load`, or `fetch` in a mapper — those describe intent, which belongs to the service. `select*` also keeps custom methods in the same namespace as `BaseMapper`'s `selectById` / `selectList` / `selectPage` / `selectCount`. Aggregates use `select` too (`selectRunCountGroupByStatus`, not `countRunGroupByStatus`). Structure: `select` + result shape + constraint, e.g. `selectLatestRunPerJob`, `selectPageDetails`, `selectParamsForUpdate`, `updateStatusById`.
+
+**Service — the prefix is the contract.**
+
+| Prefix | Returns | Contract |
+|---|---|---|
+| `get*` | single object | **never null** — throw `DefinitionException` when absent |
+| `find*` | single object | **nullable** — caller must null-check |
+| `list*` | collection | **never null** — return `List.of()` when empty |
+| `map*` | `Map` | **never null** — return `Map.of()` when empty; the name must state the key (`mapLatestLiteRunByFlowId`), since a `Map<Long, T>` gives no hint whether the key is a flow id, a run id, or something else |
+| `page*` | `IPage` | pagination |
+| `count*` / `exists*` | number / boolean | no entity returned |
+| `create*` `update*` `delete*` `save*` | — | generic writes |
+| domain verb | — | `submit*`, `cancel*`, `retry*`, `archive*`, `reassign*` — preferred over generic CRUD when the operation has business meaning |
+
+`select*` / `query*` must never appear in a service — that leaks the persistence layer. Once `get` or `find` is chosen the contract is binding: a `get*` returning null or a `find*` throwing is worse than a bad name.
+
+**Name the semantics, not the projection.** `listLatestRunPerJob` over `listLastWithoutLargeFields` — which columns were selected is a Javadoc detail, not part of the name. If a full and a lite variant must coexist, use a `Lite` suffix rather than a `WithoutXxx` middle clause.
+
+Some pre-existing methods still use `query*` / bare-noun names; migrate them when touching the surrounding code rather than in a separate sweep.
 
 ### Testing Conventions
 

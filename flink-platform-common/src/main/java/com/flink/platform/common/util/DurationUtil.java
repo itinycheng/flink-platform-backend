@@ -14,7 +14,7 @@ import java.util.stream.Collectors;
 
 import static java.util.Locale.ROOT;
 
-/** Duration utils, copy from flink. */
+/** Duration utils. */
 public class DurationUtil {
 
     private static final int MAX_HUMANIZE_UNITS = 3;

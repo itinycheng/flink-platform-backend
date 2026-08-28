@@ -21,6 +21,7 @@ import com.flink.platform.dao.entity.task.ConditionJob;
 import com.flink.platform.dao.mapper.JobFlowMapper;
 import com.flink.platform.dao.query.JobFlowPageQuery;
 import com.flink.platform.dao.view.JobFlowDetails;
+import com.flink.platform.dao.view.JobFlowLatestRun;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -28,6 +29,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static com.flink.platform.common.enums.JobFlowStatus.OFFLINE;
 import static com.flink.platform.common.enums.JobFlowStatus.ONLINE;
@@ -36,6 +38,7 @@ import static com.flink.platform.common.enums.JobType.CONDITION;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static java.util.stream.Collectors.toList;
+import static org.apache.commons.collections4.CollectionUtils.isEmpty;
 import static org.apache.commons.collections4.CollectionUtils.isNotEmpty;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
@@ -232,5 +235,15 @@ public class JobFlowService extends ServiceImpl<JobFlowMapper, JobFlow> {
                 .ne(isNull(query.getStatus()), JobFlow::getStatus, JobFlowStatus.DELETE)
                 .orderByDesc(query.isSortByIdDesc(), JobFlow::getId);
         return baseMapper.selectPageDetails(new Page<>(query.getPage(), query.getSize()), wrapper);
+    }
+
+    public Map<Long, JobFlowLatestRun> mapLatestRunByFlowId(List<Long> flowIds) {
+        if (isEmpty(flowIds)) {
+            return Map.of();
+        }
+
+        var latestRuns = new HashMap<Long, JobFlowLatestRun>();
+        baseMapper.selectLatestRunPerFlow(flowIds).forEach(flow -> latestRuns.put(flow.getFlowId(), flow));
+        return latestRuns;
     }
 }

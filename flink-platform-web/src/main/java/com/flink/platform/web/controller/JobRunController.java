@@ -103,7 +103,7 @@ public class JobRunController {
             return success(Collections.emptyList());
         }
 
-        var jobRunList = jobRunInfoService.listLastWithoutLargeFields(request.getFlowRunId(), request.getJobIds());
+        var jobRunList = jobRunInfoService.listLatestLiteRunPerJob(request.getFlowRunId(), request.getJobIds());
         var existedJobs = jobRunList.stream().map(JobRunInfo::getJobId).collect(toList());
         var unRunJobIds = CollectionUtils.subtract(request.getJobIds(), existedJobs);
         var jobList = jobInfoService.listWithoutLargeFields(unRunJobIds);

@@ -159,11 +159,9 @@ ALTER TABLE platform.t_catalog_info DROP COLUMN default_database, DROP COLUMN co
 
 -- 2026-08-25
 -- ExecutionStatus.KILLABLE renamed to KILLING.
--- The status columns are persisted by MyBatis-Plus's default enum handler (Enum.valueOf by name), which does
--- NOT honor @JsonAlias, so a legacy 'KILLABLE' row would fail to deserialize under the new code. These two
--- columns must therefore be migrated. JSON blobs (t_job_flow(_run).alerts/flow, t_job(_run).config) are read
--- by Jackson and keep loading via @JsonAlias("KILLABLE"), so they need no migration.
--- MUST run during a full stop of all workers, before starting the new code: old nodes still write 'KILLABLE',
--- and the new code throws on reading it, so the two versions cannot run concurrently.
 UPDATE platform.t_job_run SET status = 'KILLING' WHERE status = 'KILLABLE';
 UPDATE platform.t_job_flow_run SET status = 'KILLING' WHERE status = 'KILLABLE';
+
+-- 2026-08-30
+ALTER TABLE platform.t_job_flow     ADD COLUMN depends_on varchar(2048) DEFAULT NULL COMMENT 'flow dependencies' AFTER flow;
+ALTER TABLE platform.t_job_flow_run ADD COLUMN depends_on varchar(2048) DEFAULT NULL COMMENT 'flow dependencies' AFTER flow;

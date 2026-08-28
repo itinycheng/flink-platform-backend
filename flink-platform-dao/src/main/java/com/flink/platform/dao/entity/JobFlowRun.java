@@ -47,6 +47,9 @@ public class JobFlowRun implements Identifiable {
     @TableField(typeHandler = Jackson3TypeHandler.class)
     private JobFlowDag flow;
 
+    @TableField(typeHandler = Jackson3TypeHandler.class)
+    private DependencyConfig dependsOn;
+
     private String host;
 
     private Integer priority;

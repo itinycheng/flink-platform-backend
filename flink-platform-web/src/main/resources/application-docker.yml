@@ -74,3 +74,4 @@ worker:
   reactiveExecThreads: 10
   flinkSubmitTimeoutMills: 300000
   maxShellExecTimeoutMills: 28800000
+  flowWaitTimeout: 12h

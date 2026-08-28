@@ -17,8 +17,10 @@ import org.quartz.TriggerKey;
 import org.springframework.stereotype.Service;
 
 import java.text.ParseException;
+import java.time.LocalDateTime;
 import java.util.Date;
 
+import static com.flink.platform.common.constants.Constant.GLOBAL_ZONE_ID;
 import static org.quartz.CronScheduleBuilder.cronSchedule;
 import static org.quartz.JobBuilder.newJob;
 import static org.quartz.TriggerBuilder.newTrigger;
@@ -32,21 +34,6 @@ public class QuartzService {
 
     @Resource(name = "quartzScheduler")
     Scheduler scheduler;
-
-    public void waitForStarted() {
-        try {
-            int retry = 10;
-            while (--retry > 0) {
-                if (scheduler.isStarted()) {
-                    return;
-                } else {
-                    Thread.sleep(10_000);
-                }
-            }
-        } catch (Exception e) {
-            throw new QuartzException("Waiting for quartz start failed", e);
-        }
-    }
 
     public String quartzMetadata() {
         try {
@@ -112,7 +99,20 @@ public class QuartzService {
         }
     }
 
-    public void deleteTrigger(TriggerKey triggerKey) {
+    public LocalDateTime nextTriggerTimeAfter(String cronExpr, LocalDateTime sinceTime) {
+        try {
+            var cronExpression = new CronExpression(cronExpr);
+            var sinceDate = Date.from(sinceTime.atZone(GLOBAL_ZONE_ID).toInstant());
+            var nextTriggerDate = cronExpression.getNextValidTimeAfter(sinceDate);
+            return nextTriggerDate != null
+                    ? nextTriggerDate.toInstant().atZone(GLOBAL_ZONE_ID).toLocalDateTime()
+                    : LocalDateTime.MAX;
+        } catch (Exception e) {
+            throw new IllegalStateException("Get next valid trigger time failed", e);
+        }
+    }
+
+    private void deleteTrigger(TriggerKey triggerKey) {
         try {
             scheduler.pauseTrigger(triggerKey);
             scheduler.unscheduleJob(triggerKey);
@@ -121,7 +121,7 @@ public class QuartzService {
         }
     }
 
-    public void deleteJob(JobKey jobKey) {
+    private void deleteJob(JobKey jobKey) {
         try {
             scheduler.deleteJob(jobKey);
         } catch (Exception e) {

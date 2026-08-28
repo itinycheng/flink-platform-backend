@@ -122,7 +122,7 @@ public class JobInfoController {
         // Add jobRun info.
         if (query.isIncludeJobRuns() && CollectionUtils.isNotEmpty(result.getRecords())) {
             var jobIds = result.getRecords().stream().map(JobInfo::getId).collect(toList());
-            var runningJobsMap = jobRunService.listLastWithoutLargeFields(null, jobIds).stream()
+            var runningJobsMap = jobRunService.listLatestLiteRunPerJob(null, jobIds).stream()
                     .collect(toMap(JobRunInfo::getJobId, jobRun -> jobRun));
             result.getRecords().forEach(job -> {
                 var jobRun = runningJobsMap.get(job.getId());

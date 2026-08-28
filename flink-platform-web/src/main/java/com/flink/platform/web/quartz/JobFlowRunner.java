@@ -19,6 +19,7 @@ import com.flink.platform.dao.service.JobInfoService;
 import com.flink.platform.dao.service.JobRunInfoService;
 import com.flink.platform.web.common.SpringContext;
 import com.flink.platform.web.config.WorkerConfig;
+import com.flink.platform.web.service.DependencyService;
 import lombok.extern.slf4j.Slf4j;
 import org.quartz.Job;
 import org.quartz.JobDataMap;
@@ -32,9 +33,11 @@ import static com.flink.platform.common.constants.JobConstant.CONFIG;
 import static com.flink.platform.common.constants.JobConstant.FLOW_RUN_ID;
 import static com.flink.platform.common.constants.JobConstant.USER_ID;
 import static com.flink.platform.common.enums.ExecutionStatus.SUBMITTED;
+import static com.flink.platform.common.enums.ExecutionStatus.WAITING;
 import static com.flink.platform.common.enums.JobFlowStatus.ONLINE;
 import static com.flink.platform.common.enums.JobFlowStatus.SCHEDULING;
 import static com.flink.platform.common.enums.JobFlowType.JOB_LIST;
+import static com.flink.platform.web.service.DependencyService.DependencyState.SATISFIED;
 
 /** submit job flow. */
 @Slf4j
@@ -53,6 +56,8 @@ public class JobFlowRunner implements Job {
     private final AlertSendingService alertSendingService = SpringContext.getBean(AlertSendingService.class);
 
     private final WorkerConfig workerConfig = SpringContext.getBean(WorkerConfig.class);
+
+    private final DependencyService dependencyService = SpringContext.getBean(DependencyService.class);
 
     // TODO: handle exceptions ?
     @Override
@@ -95,7 +100,7 @@ public class JobFlowRunner implements Job {
                             jobFlow.getName(),
                             runningFlow.getId());
                     alertSendingService.sendErrAlertsDirectly(
-                            jobFlow, "There is already a running jobFlowRun: " + runningFlow.getId());
+                            jobFlow, "There is already a waiting/running jobFlowRun: " + runningFlow.getId());
                     return;
                 }
             }
@@ -123,13 +128,18 @@ public class JobFlowRunner implements Job {
             jobFlowRun.setAlerts(jobFlow.getAlerts());
             jobFlowRun.setTimeout(jobFlow.getTimeout());
             jobFlowRun.setParams(jobFlow.getParams());
-            jobFlowRun.setStatus(SUBMITTED);
+            // dependsOn
+            var dependsOn = jobFlow.getDependsOn();
+            jobFlowRun.setDependsOn(dependsOn);
+            jobFlowRun.setStatus(dependencyService.resolveAndEvaluate(dependsOn) == SATISFIED ? SUBMITTED : WAITING);
+            // scheduleTime
             var scheduledFire = context.getScheduledFireTime();
             jobFlowRun.setScheduleTime(
                     scheduledFire != null ? DateUtil.toLocalDateTime(scheduledFire) : LocalDateTime.now());
-            jobFlowRunService.saveOrUpdate(jobFlowRun);
 
-            // Persisted as non-terminal; FlowRunDispatcher.drainAndExecute picks it up by priority.
+            // Persisted as non-terminal: FlowRunDispatcher.drainAndExecute picks up SUBMITTED runs,
+            // while WAITING ones stay parked until advanceWaitingRuns finds their dependencies satisfied.
+            jobFlowRunService.saveOrUpdate(jobFlowRun);
             log.info(
                     "Job flow run: {} is created, job flow: {}, time: {}",
                     jobFlowRun.getId(),

@@ -6,7 +6,7 @@ Keep the hot tables small by moving aged rows into monthly-partitioned archive t
 operational queries stay fast as execution history grows over years. MySQL-only, no new
 storage dependency.
 
-See design: [docs/execution-log-archival.md](docs/execution-log-archival.md)
+See design: [docs/design/execution-log-archival.md](docs/design/execution-log-archival.md)
 
 - [ ] DDL: `t_job_run_archive` / `t_job_flow_run_archive` with monthly RANGE partitions
 - [ ] Archive job: batched move from hot to archive, transactional, idempotent on restart
@@ -606,3 +606,128 @@ constant and build the array from it so the two can't drift again.
       and most projects never ship a v2. Its only real argument is cost asymmetry: three
       characters now vs a breaking change later. Decide when adding the prefix; not required.
 
+
+---
+
+## Alerting Strategy — Silent Waits, No Throttling, Thin Messages
+
+Flow-level `depends_on` parks runs in `WAITING`, where they stay silent until the deadline
+(`worker.flowWaitTimeout`, or the upstream's next cron fire), so a slow upstream delays the
+downstream's failure signal by hours. Reviewing the surrounding code turned up several more
+issues in the same area — all about *what* the alert says and *how often*, not about runs
+hanging: every `PENDING` path is bounded by `FlowRunDispatcher#waitDeadline`.
+
+See design: [docs/design/alerting-strategy.md](docs/design/alerting-strategy.md)
+
+- [ ] **Context in alert messages** — say which dependency is outstanding, its latest run's
+      status, and how long the run waited. `DependencyService` already back-fills
+      `latest*` onto each `Dependency`; `DependentCommandBuilder` is the precedent. Needs
+      `evaluate` to surface per-item detail instead of only a `Verdict`. Do this first: it's
+      small and takes the edge off the silent-wait problem on its own.
+- [ ] **Throttle the direct channel** — `sendAlertsDirectly` de-duplicates nothing, so
+      `JobFlowRunner`'s duplicate-run guard fires once per cron tick while an upstream stalls.
+      De-dup by `(flowId, alert kind)` inside `dispatch`, never throttling terminal-status
+      notifications. Requires modelling an "alert kind", which is the bulk of the work.
+      Prerequisite for the mid-wait warning below.
+- [ ] **Warn partway through a wait** — one warning past `min(deadline × fraction, cap)`,
+      then quiet until the deadline. Track "already warned" in an in-memory per-worker set
+      (at-least-once across restarts). `TODO` marker is in `FlowRunDispatcher#advanceWaitingRuns`.
+- [ ] **Stop forging `FAILURE` in `sendErrAlertsDirectly`** — the run is synthetic and nothing
+      failed; the trigger was *skipped*. Recipients routing by status see a false failure, and
+      direct mode bypasses `AlertConfig.statuses` too. Schedule separately: it changes existing
+      alert payloads.
+- [ ] **A settled-unmatched group is alerted as a timeout** — once `evaluate` reaches its last
+      line nothing is pending any more: every upstream has given its final answer and none is
+      accepted. Under the default `onUnmatched=WAIT` it still returns `PENDING`, so the run
+      waits out its deadline and then alerts "Waiting timeout, dependencies not satisfied",
+      blaming a slow upstream for what is a settled failure. `DependencyService` knows the
+      difference — that is what `UNSATISFIABLE` vs `PENDING` is for — but drops it at the group
+      level. Fold into the first item above: both need `evaluate` to surface more than one
+      verdict.
+- [ ] **A downstream scheduled denser than its upstream alerts every cycle** — the deadline is
+      the downstream's own next cron fire, so an hourly flow depending on a daily one fails and
+      alerts ~23 times a day, every day. Nothing warns that the dependency's expiry window is
+      longer than the flow's own schedule interval. Cheapest fix is a save-time validation in
+      `JobFlowRequest#verifyDependsOn`; throttling would only mask it.
+
+---
+
+## A Timed-Out WAITING Run Swallows the Cron Tick That Should Replace It
+
+A `WAITING` run's deadline is its flow's next cron fire (`FlowRunDispatcher#calcWaitDeadline`).
+The intent is that the fresh run supersedes the stale one. What happens instead is the reverse:
+the stale one blocks the fresh one, and the tick is lost rather than delayed.
+
+At fire time T, Quartz runs `JobFlowRunner#execute`, which guards against overlap with
+`jobFlowRunService.findRunningFlow(...)` — a query over `getNonTerminals()`, and **WAITING is
+non-terminal**. Meanwhile `advanceWaitingRuns` only polls every 3s, so at T the old run is
+almost always still WAITING. So:
+
+1. T: Quartz sees the old WAITING run → skips the run entirely, alerts "There is already a
+   waiting/running jobFlowRun".
+2. T+0..3s: `advanceWaitingRuns` finds the deadline passed → fails the old run, alerts
+   "Waiting timeout".
+
+Net effect: that cron tick produces no run at all, and two alerts land for one event. Not a
+race that can be tuned away — the deadline *is* T, so the collision is by construction.
+
+- [ ] **Let a WAITING run be superseded** (preferred) — `JobFlowRunner`'s overlap guard should
+      treat WAITING as replaceable: fail the old run, then create the new one. Matches the
+      stated intent of the cron deadline and removes the spurious "already running" alert.
+      Check the `JOB_LIST` branch's `findRunningJob` for the same problem while in there.
+- [ ] Alternative if the above is too invasive: subtract a margin from the cron deadline so the
+      slot frees before Quartz fires. Simpler, but the margin is arbitrary and must exceed
+      `advanceWaitingRuns`' 3s poll interval.
+
+---
+
+## Flow Dependencies (`depends_on`) — Remaining Work
+
+Backend is in place (`DependencyService`, `FlowRunDispatcher#advanceWaitingRuns`, `WAITING`
+status, `t_job_flow(_run).depends_on`). What is left, roughly in the order it blocks use.
+
+See design: [docs/design/flow-dependency-model.md](docs/design/flow-dependency-model.md)
+
+### Validation gaps (`JobFlowRequest#verifyDependsOn`)
+
+- [ ] **Detect dependency cycles across flows** — only self-dependency is rejected today
+      (`flowId.equals(getId())`). A → B → A saves fine, then both flows sit in `WAITING` every
+      cycle until their deadlines and fail, with nothing in the alert pointing at the cycle.
+      Needs a walk over other flows' `depends_on` at save time.
+- [ ] **Bound the serialised size** — the column is `varchar(2048)` and nothing checks the
+      JSON length. Past the limit MySQL either rejects the write (strict mode) or truncates it
+      into unparsable JSON that blows up on the next read.
+- [ ] **Refuse to delete a flow other flows depend on** — `JobFlowService#deleteAllById` drops
+      the flow (and its runs) unconditionally. Downstreams then wait out every deadline with no
+      hint that the upstream is gone: no row comes back, so it looks the same as "never ran".
+
+### Coverage
+
+- [ ] **Test `advanceWaitingRuns`' dispatch** — `FlowRunDispatcherTest` only covers
+      `calcWaitDeadline`. Untested: each of the four verdicts mapping to its action, and that no
+      alert is sent when `updateStatusFromWaiting` loses the race and returns false.
+
+### Cleanups
+
+- [ ] **Rename `ExecutionCondition` → `TriggerRule`** — its own class javadoc carries the TODO.
+      Either do it or drop the note; it is a DAG-wide rename plus the `@JsonAlias` compatibility
+      surface.
+- [ ] **Collapse the Quartz plumbing** — scheduling logic is spread across `QuartzService`,
+      `JobFlowQuartzInfo`, `JobFlowRunner` and `FlowRunDispatcher`; pull it together to cut the
+      coupling.
+- [ ] **`WorkerConfig`: `long` millis → `Duration`** — `flinkSubmitTimeoutMills` and
+      `maxShellExecTimeoutMills` are still raw longs. `flowWaitTimeout` already shows the shape
+      (`@DurationRange` + `Duration`).
+
+### Frontend (low priority — new UI only)
+
+The old UI will not get this feature; it only has to keep working, which it does: it never
+posts `dependsOn`, so `hasDependencies()` is false and runs go straight to `SUBMITTED`, and no
+run of its can reach `WAITING`.
+
+- [ ] **New UI: flow-level dependency editor** — `flowId` / `statuses` / `expiry` / `duration`
+      per item, plus `precondition` and `onUnmatched` per group. `ExecutionCondition` accepts
+      the legacy `AND` / `OR` via `@JsonAlias`, so the existing dependent-job editor is a
+      starting point.
+- [ ] **New UI: `WAITING` is a new `ExecutionStatus` (code 11)** — needs a label, a colour and
+      a filter entry wherever run statuses are rendered.

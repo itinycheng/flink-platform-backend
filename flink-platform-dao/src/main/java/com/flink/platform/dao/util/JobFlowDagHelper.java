@@ -4,13 +4,13 @@ import com.flink.platform.common.enums.ExecutionStatus;
 import com.flink.platform.common.graph.DAG;
 import com.flink.platform.common.model.JobEdge;
 import com.flink.platform.common.model.JobVertex;
-import jakarta.annotation.Nonnull;
 import org.apache.commons.collections4.CollectionUtils;
 
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.Predicate;
 
 import static com.flink.platform.common.enums.ExecutionStatus.ABNORMAL;
 import static com.flink.platform.common.enums.ExecutionStatus.ERROR;
@@ -26,7 +26,6 @@ import static java.util.stream.Collectors.toSet;
 /** Dag helper for job flow. */
 public class JobFlowDagHelper {
 
-    @Nonnull
     public static ExecutionStatus getFinalStatus(DAG<Long, JobVertex, JobEdge> dag) {
         var statusSet = dag.getVertices().stream()
                 .map(JobVertex::getJobRunStatus)
@@ -83,18 +82,10 @@ public class JobFlowDagHelper {
             return true;
         }
 
-        return switch (toVertex.getPrecondition()) {
-            case ALL_MATCHED ->
-                preVertices.stream()
-                        .allMatch(from ->
-                                statusEquals(dag.getEdge(from, toVertex).getExpectStatus(), from.getJobRunStatus()));
-            case ANY_MATCHED ->
-                preVertices.stream()
-                        .anyMatch(from ->
-                                statusEquals(dag.getEdge(from, toVertex).getExpectStatus(), from.getJobRunStatus()));
-            case ALL_DONE -> preVertices.stream().allMatch(JobFlowDagHelper::hasTerminalState);
-            case ANY_DONE -> preVertices.stream().anyMatch(JobFlowDagHelper::hasTerminalState);
-        };
+        Predicate<JobVertex> qualifies = from -> upstreamQualifies(from, dag.getEdge(from, toVertex), toVertex);
+        return toVertex.getPrecondition().requiresAllQualified()
+                ? preVertices.stream().allMatch(qualifies)
+                : preVertices.stream().anyMatch(qualifies);
     }
 
     public static Set<JobVertex> getExecutableVertices(DAG<Long, JobVertex, JobEdge> dag) {
@@ -111,14 +102,18 @@ public class JobFlowDagHelper {
         return getNextExecutableVertices(beginVertices, dag);
     }
 
+    // ====================================================
+    // ====================== private =====================
+    // ====================================================
+
     private static Set<JobVertex> getNextExecutableVertices(
             Collection<JobVertex> fromVertices, DAG<Long, JobVertex, JobEdge> dag) {
 
-        // Outgoing edges whose source (from) vertex already satisfies the edge's trigger condition.
+        // Outgoing edges whose source (from) vertex qualifies under the target's trigger rule.
         var triggeredEdges = fromVertices.stream()
                 .flatMap(from -> dag.getEdgesFromVertex(from).stream()
                         .map(edge -> edge.unwrap(JobEdge.class))
-                        .filter(edge -> edgeCanTrigger(edge, from, dag)))
+                        .filter(edge -> upstreamQualifies(from, edge, dag.getVertex(edge.getToVId()))))
                 .collect(toSet());
 
         // Their target vertices, kept only if the target's full precondition is satisfied.
@@ -155,12 +150,10 @@ public class JobFlowDagHelper {
                 : EXPECTED_FAILURE;
     }
 
-    private static boolean edgeCanTrigger(JobEdge edge, JobVertex from, DAG<Long, JobVertex, JobEdge> dag) {
-        var toVertex = dag.getVertex(edge.getToVId());
-        return switch (toVertex.getPrecondition()) {
-            case ALL_MATCHED, ANY_MATCHED -> statusEquals(edge.getExpectStatus(), from.getJobRunStatus());
-            case ALL_DONE, ANY_DONE -> hasTerminalState(from);
-        };
+    private static boolean upstreamQualifies(JobVertex from, JobEdge edge, JobVertex toVertex) {
+        return toVertex.getPrecondition().requiresStatusMatched()
+                ? statusEquals(edge.getExpectStatus(), from.getJobRunStatus())
+                : hasTerminalState(from);
     }
 
     private static boolean hasTerminalState(JobVertex vertex) {

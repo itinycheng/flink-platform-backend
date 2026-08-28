@@ -8,6 +8,7 @@ import com.flink.platform.web.variable.SetParamVariableResolver;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -17,6 +18,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static com.flink.platform.common.enums.ExecutionStatus.FAILURE;
+import static com.flink.platform.common.enums.ExecutionStatus.SUBMITTED;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.times;
@@ -67,5 +74,31 @@ class JobFlowRunServiceTest {
 
         verify(jobFlowRunMapper, times(1)).queryParamsForUpdate(anyLong());
         verify(jobFlowRunMapper, times(1)).updateById(any(JobFlowRun.class));
+    }
+
+    @Test
+    void waitingRunEndedWithoutExecutingKeepsStartTimeNull() {
+        var captor = ArgumentCaptor.forClass(JobFlowRun.class);
+        when(jobFlowRunMapper.update(captor.capture(), any())).thenReturn(1);
+
+        assertTrue(jobFlowRunService.updateStatusFromWaiting(1L, FAILURE));
+
+        var updated = captor.getValue();
+        assertEquals(FAILURE, updated.getStatus());
+        assertNotNull(updated.getEndTime());
+        // It never ran; a startTime here would report an hours-long wait as a zero-length run.
+        assertNull(updated.getStartTime());
+    }
+
+    @Test
+    void waitingRunAdvancedToSubmittedIsNotTimestamped() {
+        var captor = ArgumentCaptor.forClass(JobFlowRun.class);
+        when(jobFlowRunMapper.update(captor.capture(), any())).thenReturn(1);
+
+        assertTrue(jobFlowRunService.updateStatusFromWaiting(1L, SUBMITTED));
+
+        var updated = captor.getValue();
+        assertNull(updated.getStartTime());
+        assertNull(updated.getEndTime());
     }
 }

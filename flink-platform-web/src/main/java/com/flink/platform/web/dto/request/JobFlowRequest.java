@@ -19,6 +19,9 @@ import java.util.Date;
 import java.util.List;
 import java.util.Set;
 
+import static com.flink.platform.common.enums.ExecutionCondition.ALL_MATCHED;
+import static com.flink.platform.common.enums.ExecutionCondition.ANY_MATCHED;
+import static com.flink.platform.common.enums.ExpiryPolicy.FIXED_DURATION;
 import static com.flink.platform.common.enums.JobFlowType.JOB_FLOW;
 import static com.flink.platform.common.enums.JobFlowType.JOB_LIST;
 
@@ -60,6 +63,11 @@ public class JobFlowRequest {
             return msg;
         }
 
+        msg = verifyDependsOn();
+        if (msg != null) {
+            return msg;
+        }
+
         return verifyCronExpr();
     }
 
@@ -90,6 +98,11 @@ public class JobFlowRequest {
         }
 
         msg = verifyParams();
+        if (msg != null) {
+            return msg;
+        }
+
+        msg = verifyDependsOn();
         if (msg != null) {
             return msg;
         }
@@ -145,6 +158,50 @@ public class JobFlowRequest {
                 return "The alert id is null";
             }
         }
+        return null;
+    }
+
+    @SuppressWarnings("D")
+    public String verifyDependsOn() {
+        var dependsOn = getDependsOn();
+        if (dependsOn == null || !dependsOn.hasDependencies()) {
+            return null;
+        }
+
+        var precondition = dependsOn.getPrecondition();
+        if (precondition == null) {
+            return "The precondition of Job flow dependencies isn't null";
+        }
+
+        var statusesRequired = precondition == ALL_MATCHED || precondition == ANY_MATCHED;
+        for (var item : dependsOn.getDependencies()) {
+            var flowId = item.getFlowId();
+            if (flowId == null) {
+                return "The flowId of a dependent item isn't null";
+            }
+
+            if (flowId.equals(getId())) {
+                return "A workflow can't depend on itself";
+            }
+
+            if (statusesRequired && CollectionUtils.isEmpty(item.getStatuses())) {
+                return "The statuses of a dependent item can't be empty when precondition is " + precondition;
+            }
+
+            var expiry = item.getExpiry();
+            if (expiry == null) {
+                return "The expiry of a dependent item isn't null";
+            }
+
+            if (expiry == FIXED_DURATION) {
+                if (!item.hasValidDuration()) {
+                    return String.format("The duration of %s is invalid", expiry);
+                }
+            } else if (StringUtils.isNotBlank(item.getDuration())) {
+                return String.format("The duration of %s should not be set", expiry);
+            }
+        }
+
         return null;
     }
 

@@ -35,8 +35,11 @@ public enum ExecutionStatus {
     @JsonAlias("KILLABLE")
     KILLING(9, TerminalState.TRANSIENT),
 
-    /** ! Only for jobFlow final status. */
-    EXPECTED_FAILURE(10, TerminalState.TERMINAL);
+    /** ! Only for jobFlowRun: final status. */
+    EXPECTED_FAILURE(10, TerminalState.TERMINAL),
+
+    /** ! Only for jobFlowRun: waiting for prerequisite flow dependencies to be satisfied. */
+    WAITING(11, TerminalState.NON_TERMINAL);
 
     public static final Set<ExecutionStatus> FAILURE_STATUSES =
             Stream.of(FAILURE, KILLED, ABNORMAL, ERROR, NOT_EXIST).collect(toSet());
@@ -44,6 +47,9 @@ public enum ExecutionStatus {
     public static final List<ExecutionStatus> NON_TERMINALS = Arrays.stream(values())
             .filter(executionStatus -> executionStatus.terminalState != TerminalState.TERMINAL)
             .collect(toList());
+
+    public static final List<ExecutionStatus> EXECUTABLE_STATUSES =
+            NON_TERMINALS.stream().filter(status -> status != WAITING).collect(toList());
 
     @Getter
     private final int code;
@@ -59,7 +65,6 @@ public enum ExecutionStatus {
         return terminalState == TerminalState.TERMINAL;
     }
 
-    /** A transitional state that is on its way to a terminal one (e.g. {@link #KILLING} moving toward KILLED). */
     public boolean isTransient() {
         return terminalState == TerminalState.TRANSIENT;
     }

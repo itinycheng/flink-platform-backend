@@ -16,11 +16,14 @@ import com.flink.platform.web.variable.SubflowVariableResolver;
 import com.flink.platform.web.variable.TimeVariableResolver;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.io.TempDir;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -30,6 +33,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @ExtendWith(MockitoExtension.class)
 public class VariableResolverTest {
+
+    @TempDir
+    private Path tempDir;
 
     @Mock
     private JobFlowRunService jobFlowRunService;
@@ -77,25 +83,25 @@ public class VariableResolverTest {
     }
 
     @Test
-    public void resourcePlaceholder() {
+    public void resourcePlaceholder() throws Exception {
         var jobRun = new JobRunInfo();
         jobRun.setId(22L);
         jobRun.setJobId(33L);
 
         try (var mockStatic = Mockito.mockStatic(ResourceUtil.class)) {
             var storagePath = "/storage/path";
-            var localPath = "/local/path";
+            var localPath = Files.createFile(tempDir.resolve("resource"));
             mockStatic
                     .when(() -> ResourceUtil.getAbsoluteStoragePath(Mockito.any()))
                     .then(mock -> storagePath);
             mockStatic
                     .when(() -> ResourceUtil.copyFromStorageToLocal(Mockito.any()))
-                    .then(mock -> localPath);
+                    .then(mock -> localPath.toString());
 
             jobRun.setSubject("${resource:path}, ${resource:original:path}, ${resource:local:path}");
             var result = resourceVariableResolver.resolve(jobRun, jobRun.getSubject());
             result.forEach((s, o) -> jobRun.setSubject(jobRun.getSubject().replace(s, String.valueOf(o))));
-            assertEquals("/storage/path, /storage/path, /local/path", jobRun.getSubject());
+            assertEquals("/storage/path, /storage/path, " + localPath, jobRun.getSubject());
         }
     }
 

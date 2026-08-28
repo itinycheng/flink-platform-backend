@@ -37,8 +37,8 @@ public class JobRunInfoService extends ServiceImpl<JobRunInfoMapper, JobRunInfo>
         }
     };
 
-    public List<JobRunInfo> listLastWithoutLargeFields(Long flowRunId, List<Long> jobIds) {
-        return this.baseMapper.lastJobRunList(flowRunId, jobIds);
+    public List<JobRunInfo> listLatestLiteRunPerJob(Long flowRunId, List<Long> jobIds) {
+        return this.baseMapper.selectLatestLiteRunPerJob(flowRunId, jobIds);
     }
 
     public JobRunInfo findRunningJob(@Nonnull Long jobId) {
