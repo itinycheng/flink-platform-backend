@@ -145,24 +145,28 @@ public class JobFlowService extends ServiceImpl<JobFlowMapper, JobFlow> {
     }
 
     @Transactional(rollbackFor = Exception.class)
-    public JobInfo updateJobAndSyncPrecondition(JobInfo job) {
-        var updated = jobInfoService.updateJob(job);
+    public void updateJobAndSyncPrecondition(JobInfo job) {
+        jobInfoService.updateById(job);
         if (!CONDITION.equals(job.getType())) {
-            return updated;
+            return;
         }
         if (job.getFlowId() == null || job.getConfig() == null) {
-            return updated;
+            return;
         }
 
         var config = job.getConfig().unwrap(ConditionJob.class);
+        if (config == null || config.getCondition() == null) {
+            return;
+        }
+
         var jobFlow = getById(job.getFlowId());
-        if (config == null || config.getCondition() == null || jobFlow == null) {
-            return updated;
+        if (jobFlow == null) {
+            return;
         }
 
         var flow = jobFlow.getFlow();
         if (flow == null) {
-            return updated;
+            return;
         }
 
         flow.getVertices().stream()
@@ -175,7 +179,6 @@ public class JobFlowService extends ServiceImpl<JobFlowMapper, JobFlow> {
                     newJobFlow.setFlow(flow);
                     updateById(newJobFlow);
                 });
-        return updated;
     }
 
     public void updateFlowById(JobFlow origin) {

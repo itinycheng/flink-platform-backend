@@ -173,41 +173,6 @@ the entry points below will call) and `runWithoutTenant(...)` (still to be added
 
 ---
 
-## Record Who Stops / Kills a Run (Audit)
-
-Manual **run** now records the executor: `JobFlowRunner.execute` reads `USER_ID` from the Quartz
-data map and stamps it onto `t_job_flow_run.userId` (falls back to the flow creator for scheduled
-fires and sub-flows). **Stop / kill still records nobody** — the three entry points below capture
-no operator:
-
-- `JobFlowController.stop(flowId)` — stops scheduling.
-- `JobFlowRunController.kill(flowRunId)` — kills a running flow.
-- `JobRunController.kill(runId)` — kills a single running job.
-
-### Chosen approach — reuse the existing audit system (no new run-table columns)
-
-The `@Auditable` annotation can't be reused directly here: it treats the method **return value** as
-the entity snapshot, but these endpoints return `Long` / `Boolean`. So call `AuditLogService.save(...)`
-explicitly from each entry point. `operatorId` is available via `RequestContext.getUserId()` (set by
-`LoginInterceptor` on every HTTP request — no new controller params needed).
-
-- [ ] `OperationType` — add `STOP` (and/or `KILL`). Update the `AuditLog` / annotation Javadoc that
-      currently says "INSERT / UPDATE / DELETE".
-- [ ] `EntityType` — add `JOB_FLOW` / `JOB_FLOW_RUN` / `JOB_RUN` (currently only `JOB`).
-- [ ] In the three entry points: build an `AuditLog` (entityType, STOP, entityId = flow/run id,
-      snapshot = the run entity, operatorId = `RequestContext.getUserId()`) and `auditLogService.save(...)`.
-- [ ] Wrap the save in try/catch + log-warn on failure, mirroring `AuditAspect` (audit must never
-      break the kill/stop action itself).
-- [ ] (Optional) surface these entries in the existing audit-log UI / `AuditLogController`.
-
-### Notes
-
-- No schema migration on `t_job_run` / `t_job_flow_run`; only enum extensions + `t_audit_log` rows.
-- Alternative considered and rejected for now: a plain `log.info("... killed by {}", userId)` line —
-  zero schema cost but not queryable and lost on log rotation. Fine only for pure debugging.
-
----
-
 ## Failover Hardening — Split-Brain Safety for Reassigned Flow Runs
 
 Centerless scheduler; ownership = `t_job_flow_run.host`; failover = `WorkerHeartbeat.reassignOrphans`
@@ -408,4 +373,123 @@ DST always works.
 - [ ] **Named zones only** (`Asia/Shanghai`, `America/New_York`) — reject fixed offsets and
       ambiguous abbreviations (`CST` means both Beijing and US Central). Enforce in the
       `time_zone` field validation.
+
+---
+
+## User-Operation Audit — Method-Annotation Aspect (`@Auditable`)
+
+Record an **operation trail of user actions** (who created / updated / deleted which
+`JobInfo` / `JobFlow`), not a row-level data-change log. System-triggered writes
+(heartbeat, scheduler, gRPC, background jobs) must **not** be audited. Persist a full JSON
+snapshot per operation into `t_audit_log`.
+
+### Chosen approach — Spring AOP aspect on **Controller** methods (not a MyBatis interceptor)
+
+Decided against the SQL-layer `AuditInterceptor` (interceptor sees only SQL, cannot tell a
+user action from a system write, and can't express business intent). An aspect on the
+user-facing HTTP entry points is the right altitude: system paths never hit a Controller,
+so filtering is "annotate-to-audit" by construction.
+
+- [ ] Restore method-level `@Auditable(type, operation)` annotation (`@Target(METHOD)`),
+      carrying `EntityType` + `OperationType` — **both declared explicitly** on each method.
+- [ ] Reinstate `AuditAspect` (`@Around("@annotation(auditable)")`); delete the abandoned
+      SQL-layer `AuditInterceptor` and the class-level `@Auditable` on `JobFlow` / `JobInfo`.
+- [ ] Annotate the **user-entry Controller methods** only. Do **not** annotate scheduler /
+      gRPC / internal service paths. Coverage:
+  - [ ] `JobInfoController` — create / update / delete.
+  - [ ] `JobFlowController` — create / update / updateFlow / purge (purge = cascade, see
+        below) / **stop** (`STOP`).
+  - [ ] `JobFlowRunController.kill(flowRunId)` — `KILL`, `FLOW_RUN`.
+  - [ ] `JobRunController.kill(runId)` — `KILL`, `JOB_RUN`.
+- [ ] Extend enums (currently `EntityType {JOB, FLOW}`, `OperationType {INSERT, UPDATE,
+      DELETE}`):
+  - [ ] `EntityType` — add `FLOW_RUN`, `JOB_RUN`.
+  - [ ] `OperationType` — add `STOP`, `KILL`. Update the `AuditLog` / annotation Javadoc that
+        currently says "INSERT / UPDATE / DELETE".
+
+### Locked-in design decisions (from the design discussion)
+
+- [ ] **Record successful operations only.** Snapshot *after* `proceed()` returns
+      successfully. If the business call throws / the tx rolls back, write nothing — "an
+      audit row exists" ⇒ "the operation really took effect".
+- [ ] **Audit runs outside the business transaction (no shared-fate).** The aspect is the
+      **outer** advice (high precedence / low `@Order`); the business `@Transactional`
+      commits inside `proceed()`, then the audit `save` runs as an independent write. → No
+      need to touch `@EnableTransactionManagement` order, and no need to add
+      `@Transactional` to methods like `updateFlowById`.
+- [ ] **Audit failures never break the business call.** Wrap the whole audit block in
+      try-catch; on failure `log.warn` only, never rethrow.
+- [ ] **Snapshot = re-read the row by id via the entity's own service `getById`** (one
+      indexed PK lookup; negligible for low-QPS manual ops). Uniform for all ops — avoids the
+      "partial updateById returns a half-filled entity" and "DB-generated fields missing"
+      problems of snapshotting the return value / input arg directly.
+  - [ ] **Do NOT use MyBatis-Plus static `Db.getById`.** Re-read through a `EntityType →
+        service::getById` map in the aspect (e.g. `JOB → jobInfoService::getById`). Reasons:
+        (1) service methods carry `@DS("master_platform")` — the dynamic-datasource routing
+        is activated by the `@DS` AOP on the service call, and static `Db.*` bypasses it
+        (a real hazard if platform metadata is ever split across datasources); (2) type-safe
+        (`Function<Long, ? extends Identifiable>`) vs `Db`'s raw return + hand-passed
+        `.class`; (3) the codebase has zero `Db.*` usage — `service.getById` is the
+        established re-read style. Note: audit only re-reads platform metadata tables, so the
+        multi-source used for user SQL-job targets is irrelevant here.
+  - [ ] INSERT / UPDATE → re-read **after** `proceed()` (captures generated id + untouched
+        columns + merged new state).
+  - [ ] DELETE → re-read **before** `proceed()` (row is gone afterwards); write the audit
+        row after `proceed()` succeeds.
+  - [ ] STOP / KILL → same as DELETE: re-read the run **before** `proceed()` to capture the
+        live pre-stop/pre-kill state (e.g. `RUNNING`), since the point is "what was killed",
+        not the resulting `KILLED` status; write the audit row after `proceed()` succeeds.
+        Because the id is a path variable (`/stop/{flowId}`, `/kill/{runId}`) it lands on the
+        entityId precedence chain — **no hand-written `AuditLogService.save` needed**, unlike
+        the earlier design that assumed the `Long`/`Boolean` return value forced hand-writing.
+- [ ] **entityId located by a fixed precedence chain** in the aspect (no SpEL, no per-method
+      config): (1) return value — unwrap `ResultInfo`, take `Identifiable.getId()` (covers
+      create); (2) a `Long` path variable; (3) the id of the request-body entity. Chosen over
+      SpEL: keeps the cross-cutting locate-logic in one place, compile-time-safe,
+      consistent, and immune to a future REST-ification that moves `update`'s id from body to
+      path (aspect code unchanged; stale body branch stays for back-compat).
+  - [ ] If no id can be resolved: `log.warn` (method + sources tried) and **skip** that audit
+        row — business call still returns normally.
+
+### Cascade deletes — hand-written audit inside the service (not the aspect)
+
+`JobFlowController.purge` → `JobFlowService.deleteAllById(flowId)` deletes **1 `JobFlow` +
+N `JobInfo`** (both audited) in one user action. The aspect sits at the Controller (one
+method = at most one audit row) and cannot see the cascaded child ids — they only exist
+inside `deleteAllById`. "Splitting the batch delete into per-row SQL" does **not** help:
+the Controller-level aspect still fires once, and pushing the aspect down to the
+service/mapper layer would reintroduce self-invocation, transaction, and
+user-vs-system-filtering problems, plus N× DB round-trips.
+
+- [ ] Extract a shared `AuditLogWriter.record(type, operation, entity)` used by **both** the
+      aspect and hand-written call sites (single insert path).
+- [ ] In `deleteAllById`, capture the pre-delete snapshots (the `jobInfoList` is already
+      queried there, and the `JobFlow` too) and write **N + 1** audit rows (N × `JOB` DELETE
+      + 1 × `FLOW` DELETE), all with the current `operatorId` and `DELETE` operation.
+  - [ ] Batch delete stays batched (no perf regression); only the audit inserts loop.
+
+### Guardrail
+
+- [ ] **Any `@Auditable` Controller method must resolve an `operatorId`** from
+      `RequestContext.getUserId()`; system paths (no logged-in user) are simply not
+      annotated. Document: audited methods live behind the authenticated HTTP layer.
+
+### Notes
+
+- Field-level change tracking (before/after per-field diff — "who changed the cron from X to
+      Y") is **out of scope**. Full snapshots suffice for the operation-trail goal; adjacent
+      snapshots can be diffed manually if ever needed. Revisit with a before+after
+      double-snapshot only if a real "who changed field Z" requirement appears.
+- A `batchId` to group the N+1 rows of a single `purge` into "one operation" is **not**
+      added now — same `operatorId` + near-identical `operateTime` already reconstructs the
+      scene. Add later only if needed.
+- **stop/kill background:** manual **run** already records its executor
+      (`JobFlowRunner.execute` stamps `USER_ID` from the Quartz data map onto
+      `t_job_flow_run.userId`, falling back to the flow creator for scheduled fires /
+      sub-flows). Only **stop / kill** currently record nobody — that gap is what the
+      annotations on the three run endpoints close. No schema migration on `t_job_run` /
+      `t_job_flow_run`; only the enum extensions above + `t_audit_log` rows.
+- Rejected for stop/kill: a plain `log.info("... killed by {}", userId)` — zero schema cost
+      but not queryable and lost on log rotation. Fine only for pure debugging.
+- (Optional) surface stop/kill entries in the existing audit-log UI / `AuditLogController`.
 

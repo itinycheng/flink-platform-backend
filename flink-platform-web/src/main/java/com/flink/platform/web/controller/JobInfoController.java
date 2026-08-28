@@ -3,6 +3,7 @@ package com.flink.platform.web.controller;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.flink.platform.common.annotation.Auditable;
 import com.flink.platform.common.constants.Constant;
 import com.flink.platform.common.enums.JobFlowStatus;
 import com.flink.platform.common.enums.JobStatus;
@@ -35,7 +36,11 @@ import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
 
+import static com.flink.platform.common.enums.EntityType.JOB;
 import static com.flink.platform.common.enums.JobStatus.ONLINE;
+import static com.flink.platform.common.enums.OperationType.DELETE;
+import static com.flink.platform.common.enums.OperationType.INSERT;
+import static com.flink.platform.common.enums.OperationType.UPDATE;
 import static com.flink.platform.common.enums.Permission.TASK_EDIT;
 import static com.flink.platform.common.enums.Permission.TASK_PURGE;
 import static com.flink.platform.common.enums.Permission.TASK_VIEW;
@@ -63,6 +68,7 @@ public class JobInfoController {
     private final JobFlowService jobFlowService;
 
     @RequirePermission(TASK_EDIT)
+    @Auditable(type = JOB, operation = INSERT)
     @PostMapping(value = "/create")
     public ResultInfo<JobInfo> create(
             @RequestAttribute(value = Constant.SESSION_USER) User loginUser,
@@ -77,10 +83,12 @@ public class JobInfoController {
         job.setStatus(ONLINE);
         job.setUserId(loginUser.getId());
         job.setWorkspaceId(RequestContext.requireWorkspaceId());
-        return success(jobInfoService.saveJob(job));
+        jobInfoService.save(job);
+        return success(job);
     }
 
     @RequirePermission(TASK_EDIT)
+    @Auditable(type = JOB, operation = UPDATE)
     @PostMapping(value = "/update")
     public ResultInfo<JobInfo> update(@RequestBody JobInfoRequest jobInfoRequest) {
         var errorMsg = jobInfoRequest.validateOnUpdate();
@@ -89,8 +97,8 @@ public class JobInfoController {
         }
 
         var job = jobInfoRequest.getJobInfo();
-        var updated = jobFlowService.updateJobAndSyncPrecondition(job);
-        return success(updated);
+        jobFlowService.updateJobAndSyncPrecondition(job);
+        return success(job);
     }
 
     @RequirePermission(TASK_VIEW)
@@ -101,6 +109,7 @@ public class JobInfoController {
     }
 
     @RequirePermission(TASK_EDIT)
+    @Auditable(type = JOB, operation = DELETE)
     @GetMapping(value = "/delete/{jobId}")
     public ResultInfo<Boolean> delete(@PathVariable Long jobId) {
         var bool = jobInfoService.removeById(jobId);
@@ -201,6 +210,7 @@ public class JobInfoController {
     }
 
     @RequirePermission(TASK_PURGE)
+    @Auditable(type = JOB, operation = DELETE)
     @GetMapping(value = "/purge/{jobId}")
     public ResultInfo<Long> purge(@PathVariable long jobId) {
         var jobInfo = jobInfoService.getById(jobId);
