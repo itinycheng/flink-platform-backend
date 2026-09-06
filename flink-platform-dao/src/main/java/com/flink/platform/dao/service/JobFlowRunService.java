@@ -7,7 +7,6 @@ import com.flink.platform.common.enums.ExecutionStatus;
 import com.flink.platform.common.enums.ExecutionStrategy;
 import com.flink.platform.dao.entity.ExecutionConfig;
 import com.flink.platform.dao.entity.JobFlowRun;
-import com.flink.platform.dao.entity.JobRunInfo;
 import com.flink.platform.dao.mapper.JobFlowRunMapper;
 import jakarta.annotation.Nonnull;
 import lombok.RequiredArgsConstructor;
@@ -36,8 +35,6 @@ import static com.flink.platform.common.util.Preconditions.checkNotNull;
 @DS("master_platform")
 @RequiredArgsConstructor(onConstructor_ = @Autowired)
 public class JobFlowRunService extends ServiceImpl<JobFlowRunMapper, JobFlowRun> {
-
-    private final JobRunInfoService jobRunService;
 
     public JobFlowRun getLiteByIdOrNull(Long flowRunId) {
         try {
@@ -77,12 +74,6 @@ public class JobFlowRunService extends ServiceImpl<JobFlowRunMapper, JobFlowRun>
                 .eq(JobFlowRun::getId, flowRunId));
         checkNotNull(flowRun, "No JobFlowRun found for flowRunId=" + flowRunId);
         return flowRun.getResolvedScheduleTime();
-    }
-
-    @Transactional
-    public void deleteAllById(long flowRunId) {
-        jobRunService.remove(new QueryWrapper<JobRunInfo>().lambda().eq(JobRunInfo::getFlowRunId, flowRunId));
-        removeById(flowRunId);
     }
 
     public void updateStatusById(Long flowRunId, ExecutionStatus status) {

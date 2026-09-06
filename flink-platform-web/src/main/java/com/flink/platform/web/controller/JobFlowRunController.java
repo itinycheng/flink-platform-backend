@@ -7,7 +7,6 @@ import com.flink.platform.common.enums.ExecutionStatus;
 import com.flink.platform.dao.entity.JobFlowRun;
 import com.flink.platform.dao.service.JobFlowRunService;
 import com.flink.platform.web.annotation.RequirePermission;
-import com.flink.platform.web.common.RequestContext;
 import com.flink.platform.web.dto.ResultInfo;
 import com.flink.platform.web.dto.request.JobFlowRunRequest;
 import com.flink.platform.web.service.KillJobService;
@@ -28,13 +27,10 @@ import java.time.LocalDateTime;
 
 import static com.flink.platform.common.enums.Permission.TASK_EDIT;
 import static com.flink.platform.common.enums.Permission.TASK_EXEC;
-import static com.flink.platform.common.enums.Permission.TASK_PURGE;
 import static com.flink.platform.common.enums.Permission.TASK_VIEW;
 import static com.flink.platform.common.enums.ResponseStatus.ERROR_PARAMETER;
 import static com.flink.platform.common.enums.ResponseStatus.FLOW_ALREADY_TERMINATED;
-import static com.flink.platform.common.enums.ResponseStatus.FLOW_RUN_NOT_IN_TERMINAL_STATUS;
 import static com.flink.platform.common.enums.ResponseStatus.KILL_FLOW_EXCEPTION_FOUND;
-import static com.flink.platform.common.enums.ResponseStatus.USER_HAVE_NO_PERMISSION;
 import static com.flink.platform.common.util.DateUtil.GLOBAL_DATE_TIME_FORMAT;
 import static com.flink.platform.web.dto.ResultInfo.failure;
 import static com.flink.platform.web.dto.ResultInfo.success;
@@ -119,25 +115,5 @@ public class JobFlowRunController {
 
         var isSuccess = killJobService.killFlowRun(flowRunId);
         return isSuccess ? success(flowRunId) : failure(KILL_FLOW_EXCEPTION_FOUND);
-    }
-
-    @RequirePermission(TASK_PURGE)
-    @GetMapping(value = "/purge/{flowRunId}")
-    public ResultInfo<Long> purge(@PathVariable long flowRunId) {
-        var jobFlowRun = jobFlowRunService.getById(flowRunId);
-        if (jobFlowRun == null) {
-            return failure(ERROR_PARAMETER);
-        }
-
-        if (!RequestContext.requireWorkspaceId().equals(jobFlowRun.getWorkspaceId())) {
-            return failure(USER_HAVE_NO_PERMISSION);
-        }
-
-        if (!jobFlowRun.getStatus().isTerminalState()) {
-            return failure(FLOW_RUN_NOT_IN_TERMINAL_STATUS);
-        }
-
-        jobFlowRunService.deleteAllById(flowRunId);
-        return success(flowRunId);
     }
 }

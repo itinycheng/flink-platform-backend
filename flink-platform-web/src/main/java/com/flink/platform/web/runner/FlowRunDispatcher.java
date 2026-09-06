@@ -103,7 +103,7 @@ public class FlowRunDispatcher {
             log.error("Failed to submit workflow to executor, flowRunId: {}", jobFlowRun.getId(), e);
         } finally {
             if (!submitted) {
-                inFlightFlowRuns.remove(jobFlowRun.getId());
+                releaseInFlight(jobFlowRun.getId());
             }
         }
     }
