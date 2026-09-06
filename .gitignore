@@ -91,3 +91,4 @@ flink-platform-plugin/flink-platform-plugin-apollo/src/main/resources/META-INF/
 !.claude/settings.json
 docs/superpowers/*
 /qodana.yaml
+/.superpowers/

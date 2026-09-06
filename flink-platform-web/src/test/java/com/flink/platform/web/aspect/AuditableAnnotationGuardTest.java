@@ -45,7 +45,7 @@ class AuditableAnnotationGuardTest {
             var operation = method.getAnnotation(Auditable.class).operation();
             long longArgCount = countArgs(method, AuditableAnnotationGuardTest::isLongType);
             long identifiableArgCount = countArgs(method, Identifiable.class::isAssignableFrom);
-            boolean returnIsIdentifiable = returnDataIsIdentifiable(method);
+            boolean returnResolvesId = returnDataResolvesId(method);
 
             String where = method.getDeclaringClass().getSimpleName() + "#" + method.getName();
 
@@ -71,11 +71,12 @@ class AuditableAnnotationGuardTest {
                         longArgCount == 1 || identifiableArgCount == 1,
                         where + " is DELETE but its single arg is neither a Long nor an Identifiable (no id source)");
             } else {
-                // INSERT / UPDATE: return value first, else a single Long arg, else a body id.
+                // INSERT / UPDATE: return value first (ResultInfo<Long> or ResultInfo<Identifiable>),
+                // else a single Long arg, else a single Identifiable arg.
                 assertTrue(
-                        returnIsIdentifiable || longArgCount == 1 || identifiableArgCount == 1,
+                        returnResolvesId || longArgCount == 1 || identifiableArgCount == 1,
                         where + " (" + operation + ") has no resolvable entity id source "
-                                + "(return value is not Identifiable, and no single Long/Identifiable arg)");
+                                + "(return value is not a Long/Identifiable, and no single Long/Identifiable arg)");
             }
         }
     }
@@ -115,8 +116,12 @@ class AuditableAnnotationGuardTest {
         return type == Long.class || type == long.class;
     }
 
-    /** True when the method returns {@code ResultInfo<X>} with X assignable to {@link Identifiable}. */
-    private boolean returnDataIsIdentifiable(Method method) {
+    /**
+     * True when the method returns {@code ResultInfo<X>} where X is a source AuditAspect can resolve
+     * an id from — either a {@link Long} (raw id) or an {@link Identifiable}. Mirrors
+     * {@code AuditAspect.readIdFromReturnValue}.
+     */
+    private boolean returnDataResolvesId(Method method) {
         Type generic = method.getGenericReturnType();
         if (!(generic instanceof ParameterizedType parameterized)) {
             return false;
@@ -125,6 +130,7 @@ class AuditableAnnotationGuardTest {
         if (typeArgs.length != 1) {
             return false;
         }
-        return typeArgs[0] instanceof Class<?> dataType && Identifiable.class.isAssignableFrom(dataType);
+        return typeArgs[0] instanceof Class<?> dataType
+                && (Long.class.isAssignableFrom(dataType) || Identifiable.class.isAssignableFrom(dataType));
     }
 }

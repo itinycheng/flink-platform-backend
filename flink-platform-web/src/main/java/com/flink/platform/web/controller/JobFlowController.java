@@ -2,9 +2,11 @@ package com.flink.platform.web.controller;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.flink.platform.common.annotation.Auditable;
 import com.flink.platform.common.constants.Constant;
 import com.flink.platform.common.enums.JobFlowStatus;
 import com.flink.platform.common.enums.JobFlowType;
+import com.flink.platform.common.enums.OperationType;
 import com.flink.platform.common.util.JsonUtil;
 import com.flink.platform.common.util.UuidGenerator;
 import com.flink.platform.dao.entity.ExecutionConfig;
@@ -43,6 +45,7 @@ import java.util.Map;
 
 import static com.flink.platform.common.constants.JobConstant.CONFIG;
 import static com.flink.platform.common.constants.JobConstant.USER_ID;
+import static com.flink.platform.common.enums.EntityType.FLOW;
 import static com.flink.platform.common.enums.JobFlowStatus.DELETE;
 import static com.flink.platform.common.enums.JobFlowStatus.OFFLINE;
 import static com.flink.platform.common.enums.JobFlowStatus.ONLINE;
@@ -89,6 +92,7 @@ public class JobFlowController {
     private final JobRunInfoService jobRunService;
 
     @RequirePermission(TASK_EDIT)
+    @Auditable(type = FLOW, operation = OperationType.INSERT)
     @PostMapping(value = "/create")
     public ResultInfo<Long> create(
             @RequestAttribute(value = Constant.SESSION_USER) User loginUser,
@@ -113,6 +117,7 @@ public class JobFlowController {
     }
 
     @RequirePermission(TASK_EDIT)
+    @Auditable(type = FLOW, operation = OperationType.UPDATE)
     @PostMapping(value = "/update")
     public ResultInfo<Long> update(@RequestBody JobFlowRequest jobFlowRequest) {
         var errorMsg = jobFlowRequest.validateOnUpdate();
@@ -139,6 +144,7 @@ public class JobFlowController {
     }
 
     @RequirePermission(TASK_EDIT)
+    @Auditable(type = FLOW, operation = OperationType.UPDATE)
     @PostMapping(value = "/updateFlow")
     public ResultInfo<Long> updateFlow(@RequestBody JobFlowRequest jobFlowRequest) {
         var errorMsg = jobFlowRequest.validateOnUpdate();
@@ -166,6 +172,7 @@ public class JobFlowController {
     }
 
     @RequirePermission(TASK_PURGE)
+    @Auditable(type = FLOW, operation = OperationType.DELETE)
     @GetMapping(value = "/purge/{flowId}")
     public ResultInfo<Long> purge(@PathVariable long flowId) {
         var jobFlow = jobFlowService.getById(flowId);
@@ -217,6 +224,7 @@ public class JobFlowController {
     }
 
     @RequirePermission(TASK_EXEC)
+    @Auditable(type = FLOW, operation = OperationType.UPDATE)
     @GetMapping(value = "/schedule/start/{flowId}")
     public ResultInfo<Long> start(@PathVariable Long flowId) {
         var jobFlowRequest = new JobFlowRequest();

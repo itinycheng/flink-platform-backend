@@ -24,7 +24,7 @@ import java.util.Map;
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = false)
 @TableName(value = "t_job_flow", autoResultMap = true)
-public class JobFlow {
+public class JobFlow implements Identifiable {
 
     @TableId(value = "id", type = IdType.AUTO)
     private Long id;

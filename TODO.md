@@ -17,6 +17,10 @@ See design: [docs/execution-log-archival.md](docs/execution-log-archival.md)
 - [ ] Redirect dashboard/analytics queries (`countJobRunGroupByStatus`,
       `countJobFlowRunGroupByStatus`, date-range endpoints) to the archive table
 - [ ] Backfill procedure documented for existing deployments
+- [ ] When archiving run rows, denormalize the parent job/flow name + type into the archive
+      row (run rows only carry `job_id`/`flow_id`, which dangle after a purge). No separate
+      `t_job` / `t_job_flow` archive table — definitions are low-volume, and their deletion
+      trail is already covered by the audit log.
 - [ ] (Later) `JobRunArchiver` SPI for pluggable external targets (ClickHouse, S3, ...)
 
 ---
@@ -396,14 +400,16 @@ so filtering is "annotate-to-audit" by construction.
       SQL-layer `AuditInterceptor` and the class-level `@Auditable` on `JobFlow` / `JobInfo`.
 - [ ] Annotate the **user-entry Controller methods** only. Do **not** annotate scheduler /
       gRPC / internal service paths. Coverage:
-  - [ ] `JobInfoController` — create / update / delete.
-  - [ ] `JobFlowController` — create / update / updateFlow / purge (purge = cascade, see
-        below) / **stop** (`STOP`).
+  - [x] `JobInfoController` — create / update / delete / purge. **DONE** (`EntityType.JOB`).
+  - [x] `JobFlowController` — create / update / updateFlow / purge. **DONE** (`EntityType.FLOW`).
+        purge is a cascade (1 FLOW + N JOB) but only **one FLOW DELETE row** is written for now —
+        child JobInfo rows are not audited (deferred; see cascade note below). `stop` (`STOP`) is
+        deferred to the run/schedule batch.
   - [ ] `JobFlowRunController.kill(flowRunId)` — `KILL`, `FLOW_RUN`.
   - [ ] `JobRunController.kill(runId)` — `KILL`, `JOB_RUN`.
 - [ ] Extend enums (currently `EntityType {JOB, FLOW}`, `OperationType {INSERT, UPDATE,
       DELETE}`):
-  - [ ] `EntityType` — add `FLOW_RUN`, `JOB_RUN`.
+  - [x] `EntityType` — `JOB`, `FLOW` **DONE**. Still to add: `FLOW_RUN`, `JOB_RUN`.
   - [ ] `OperationType` — add `STOP`, `KILL`. Update the `AuditLog` / annotation Javadoc that
         currently says "INSERT / UPDATE / DELETE".
 
@@ -461,12 +467,26 @@ the Controller-level aspect still fires once, and pushing the aspect down to the
 service/mapper layer would reintroduce self-invocation, transaction, and
 user-vs-system-filtering problems, plus N× DB round-trips.
 
-- [ ] Extract a shared `AuditLogWriter.record(type, operation, entity)` used by **both** the
-      aspect and hand-written call sites (single insert path).
-- [ ] In `deleteAllById`, capture the pre-delete snapshots (the `jobInfoList` is already
-      queried there, and the `JobFlow` too) and write **N + 1** audit rows (N × `JOB` DELETE
-      + 1 × `FLOW` DELETE), all with the current `operatorId` and `DELETE` operation.
-  - [ ] Batch delete stays batched (no perf regression); only the audit inserts loop.
+**Current state (shipped):** purge writes only **one `FLOW` DELETE** row via the aspect
+(pre-read of the flow row at the Controller). The cascaded child `JobInfo` rows are **not**
+audited yet. The `AuditLogWriter` below is **deferred** — to be implemented later.
+
+- [ ] Extract a shared `AuditLogWriter` used by **both** the aspect and hand-written call
+      sites (single insert path). Design it to be **future-proof for any "delete/modify many"
+      case**, not just JobFlow purge:
+  - [ ] Keep the API entity-type-agnostic — depend only on `Identifiable` + JSON snapshot, so
+        any future batch op (purge-workspace, bulk offline, bulk resource delete, ...) reuses
+        it unchanged: `record(EntityType, OperationType, Identifiable)` **plus** a
+        `record(EntityType, OperationType, Collection<? extends Identifiable>)` overload.
+  - [ ] `operatorId` resolved centrally from `RequestContext.getUserId()` (same as the aspect).
+  - [ ] **Transaction isolation is the real design point:** `deleteAllById` is
+        `@Transactional`. The writer must keep the aspect's invariants — audit never breaks the
+        business call, and audit is written only after the business op succeeds — so the write
+        must be isolated (prefer a domain event + `@TransactionalEventListener(AFTER_COMMIT)`,
+        or `REQUIRES_NEW`), not an inline same-transaction insert.
+- [ ] Then in the `deleteAllById` path, capture the pre-delete snapshots (`jobInfoList` + the
+      `JobFlow`) and write **N + 1** rows (N × `JOB` DELETE + 1 × `FLOW` DELETE) through the
+      writer. Batch delete stays batched (no perf regression); only the audit inserts loop.
 
 ### Guardrail
 

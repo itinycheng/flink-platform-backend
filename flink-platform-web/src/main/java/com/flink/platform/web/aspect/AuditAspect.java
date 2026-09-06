@@ -6,6 +6,7 @@ import com.flink.platform.common.util.JsonUtil;
 import com.flink.platform.dao.entity.AuditLog;
 import com.flink.platform.dao.entity.Identifiable;
 import com.flink.platform.dao.service.AuditLogService;
+import com.flink.platform.dao.service.JobFlowService;
 import com.flink.platform.dao.service.JobInfoService;
 import com.flink.platform.web.common.RequestContext;
 import com.flink.platform.web.dto.ResultInfo;
@@ -20,12 +21,17 @@ import java.util.EnumMap;
 import java.util.Map;
 import java.util.function.Function;
 
+import static com.flink.platform.common.enums.EntityType.FLOW;
 import static com.flink.platform.common.enums.EntityType.JOB;
 import static com.flink.platform.common.enums.OperationType.DELETE;
 import static com.flink.platform.common.enums.ResponseStatus.SUCCESS;
 
 /**
  * Audits user operations on controller methods annotated with {@link Auditable}.
+ *
+ * <p>Assumes audited methods are NOT themselves {@code @Transactional}: the business
+ * {@code @Transactional} lives in the service layer and commits inside {@code proceed()},
+ * so the audit re-read + save run after commit (audit has no shared fate with the business tx).
  */
 @Slf4j
 @Aspect
@@ -37,10 +43,11 @@ public class AuditAspect {
     private final Map<EntityType, Function<Long, ? extends Identifiable>> reReaders;
 
     @Autowired
-    public AuditAspect(AuditLogService auditLogService, JobInfoService jobInfoService) {
+    public AuditAspect(AuditLogService auditLogService, JobInfoService jobInfoService, JobFlowService jobFlowService) {
         this.auditLogService = auditLogService;
         this.reReaders = new EnumMap<>(EntityType.class);
         this.reReaders.put(JOB, jobInfoService::getById);
+        this.reReaders.put(FLOW, jobFlowService::getById);
     }
 
     @Around("@annotation(auditable)")

@@ -6,6 +6,7 @@ import com.flink.platform.common.enums.OperationType;
 import com.flink.platform.dao.entity.AuditLog;
 import com.flink.platform.dao.entity.JobInfo;
 import com.flink.platform.dao.service.AuditLogService;
+import com.flink.platform.dao.service.JobFlowService;
 import com.flink.platform.dao.service.JobInfoService;
 import com.flink.platform.web.common.RequestContext;
 import com.flink.platform.web.dto.ResultInfo;
@@ -35,6 +36,9 @@ class AuditAspectTest {
 
     @Mock
     private JobInfoService jobInfoService;
+
+    @Mock
+    private JobFlowService jobFlowService;
 
     @InjectMocks
     private AuditAspect auditAspect;
@@ -182,6 +186,51 @@ class AuditAspectTest {
 
         verify(auditLogService, never()).save(org.mockito.ArgumentMatchers.any());
         assertSame(ResultInfo.class, result.getClass());
+    }
+
+    @Test
+    void flowUpdate_resolvesIdFromLongReturn_reReadsFlow() throws Throwable {
+        RequestContext.set(new RequestContext.Context(7L, 100L));
+        var flow = new com.flink.platform.dao.entity.JobFlow();
+        flow.setId(55L);
+        flow.setName("flow-55");
+        when(jobFlowService.getById(55L)).thenReturn(flow);
+
+        var pjp = mock(ProceedingJoinPoint.class);
+        // JobFlowController.update returns ResultInfo<Long> (the flow id), not the entity.
+        when(pjp.proceed()).thenReturn(ResultInfo.success(55L));
+
+        var result = auditAspect.audit(pjp, auditable(EntityType.FLOW, OperationType.UPDATE));
+
+        var captor = ArgumentCaptor.forClass(AuditLog.class);
+        verify(auditLogService).save(captor.capture());
+        var saved = captor.getValue();
+        assertEquals(EntityType.FLOW, saved.getEntityType());
+        assertEquals(OperationType.UPDATE, saved.getOperation());
+        assertEquals(55L, saved.getEntityId());
+        assertEquals(7L, saved.getOperatorId());
+        assertSame(ResultInfo.class, result.getClass());
+    }
+
+    @Test
+    void flowPurge_snapshotsBeforeProceed_idFromLongArg() throws Throwable {
+        RequestContext.set(new RequestContext.Context(7L, 100L));
+        var flow = new com.flink.platform.dao.entity.JobFlow();
+        flow.setId(55L);
+        flow.setName("flow-55");
+        when(jobFlowService.getById(55L)).thenReturn(flow);
+
+        var pjp = mock(ProceedingJoinPoint.class);
+        when(pjp.getArgs()).thenReturn(new Object[] {55L});
+        when(pjp.proceed()).thenReturn(ResultInfo.success(55L));
+
+        auditAspect.audit(pjp, auditable(EntityType.FLOW, OperationType.DELETE));
+
+        var captor = ArgumentCaptor.forClass(AuditLog.class);
+        verify(auditLogService).save(captor.capture());
+        assertEquals(EntityType.FLOW, captor.getValue().getEntityType());
+        assertEquals(55L, captor.getValue().getEntityId());
+        assertEquals(OperationType.DELETE, captor.getValue().getOperation());
     }
 
     @Test
