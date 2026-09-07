@@ -12,7 +12,7 @@ import lombok.Setter;
 
 import java.time.LocalDateTime;
 
-/** Audit log: records full entity snapshots for INSERT / UPDATE / DELETE. */
+/** Audit log: records full entity snapshots for user operations. */
 @Data
 @NoArgsConstructor
 @TableName(value = "t_audit_log", autoResultMap = true)
@@ -24,13 +24,16 @@ public class AuditLog {
     /** primary key of the audited entity. */
     private Long entityId;
 
-    /** logical entity type, e.g. JOB, JOB_FLOW. */
+    /** logical entity type, e.g. JOB, FLOW, FLOW_RUN. */
     private EntityType entityType;
 
-    /** INSERT, UPDATE, or DELETE. */
+    /** INSERT, UPDATE, DELETE, SCHEDULE, UNSCHEDULE, RUN or KILL. */
     private OperationType operation;
 
-    /** full JSON snapshot of the entity state after the operation (or before, for DELETE). */
+    /**
+     * full JSON snapshot of the entity state after the operation, or before it for the operations
+     * listed in {@code AuditAspect.snapshotsBeforeCall} (DELETE / KILL).
+     */
     private String snapshot;
 
     /** user who made the change; null for system-triggered operations. */

@@ -2,12 +2,15 @@ package com.flink.platform.web.aspect;
 
 import com.flink.platform.common.annotation.Auditable;
 import com.flink.platform.common.enums.EntityType;
+import com.flink.platform.common.enums.OperationType;
 import com.flink.platform.common.util.JsonUtil;
 import com.flink.platform.dao.entity.AuditLog;
 import com.flink.platform.dao.entity.Identifiable;
 import com.flink.platform.dao.service.AuditLogService;
+import com.flink.platform.dao.service.JobFlowRunService;
 import com.flink.platform.dao.service.JobFlowService;
 import com.flink.platform.dao.service.JobInfoService;
+import com.flink.platform.dao.service.JobRunInfoService;
 import com.flink.platform.web.common.RequestContext;
 import com.flink.platform.web.dto.ResultInfo;
 import lombok.extern.slf4j.Slf4j;
@@ -22,8 +25,9 @@ import java.util.Map;
 import java.util.function.Function;
 
 import static com.flink.platform.common.enums.EntityType.FLOW;
+import static com.flink.platform.common.enums.EntityType.FLOW_RUN;
 import static com.flink.platform.common.enums.EntityType.JOB;
-import static com.flink.platform.common.enums.OperationType.DELETE;
+import static com.flink.platform.common.enums.EntityType.JOB_RUN;
 import static com.flink.platform.common.enums.ResponseStatus.SUCCESS;
 
 /**
@@ -43,23 +47,30 @@ public class AuditAspect {
     private final Map<EntityType, Function<Long, ? extends Identifiable>> reReaders;
 
     @Autowired
-    public AuditAspect(AuditLogService auditLogService, JobInfoService jobInfoService, JobFlowService jobFlowService) {
+    public AuditAspect(
+            AuditLogService auditLogService,
+            JobInfoService jobInfoService,
+            JobFlowService jobFlowService,
+            JobFlowRunService jobFlowRunService,
+            JobRunInfoService jobRunInfoService) {
         this.auditLogService = auditLogService;
         this.reReaders = new EnumMap<>(EntityType.class);
         this.reReaders.put(JOB, jobInfoService::getById);
         this.reReaders.put(FLOW, jobFlowService::getById);
+        this.reReaders.put(FLOW_RUN, jobFlowRunService::getById);
+        this.reReaders.put(JOB_RUN, jobRunInfoService::getById);
     }
 
     @Around("@annotation(auditable)")
     public Object audit(ProceedingJoinPoint pjp, Auditable auditable) throws Throwable {
         Identifiable snapshot = null;
-        if (DELETE.equals(auditable.operation())) {
+        if (snapshotsBeforeCall(auditable.operation())) {
             try {
                 var id = readIdFromArgs(pjp, auditable.type());
                 snapshot = reRead(auditable.type(), id);
             } catch (Exception e) {
                 log.warn(
-                        "Failed to pre-read entity before delete for entityType={}, operation={}",
+                        "Failed to pre-read entity for entityType={}, operation={}",
                         auditable.type(),
                         auditable.operation(),
                         e);
@@ -67,12 +78,13 @@ public class AuditAspect {
         }
 
         var result = pjp.proceed();
-        if (isBusinessFailure(result)) {
+        var businessFailure = isBusinessFailure(result);
+        if (businessFailure && !auditable.auditOnFailure()) {
             return result;
         }
 
         try {
-            if (!DELETE.equals(auditable.operation())) {
+            if (!snapshotsBeforeCall(auditable.operation())) {
                 var id = readIdFromReturnValue(pjp, result);
                 snapshot = reRead(auditable.type(), id);
             }
@@ -87,6 +99,13 @@ public class AuditAspect {
         }
 
         return result;
+    }
+
+    static boolean snapshotsBeforeCall(OperationType operation) {
+        return switch (operation) {
+            case DELETE, KILL -> true;
+            case INSERT, UPDATE, SCHEDULE, UNSCHEDULE, RUN -> false;
+        };
     }
 
     private boolean isBusinessFailure(Object result) {

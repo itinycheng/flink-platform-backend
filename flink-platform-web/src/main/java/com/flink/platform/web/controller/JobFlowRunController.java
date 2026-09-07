@@ -3,7 +3,9 @@ package com.flink.platform.web.controller;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.flink.platform.common.annotation.Auditable;
 import com.flink.platform.common.enums.ExecutionStatus;
+import com.flink.platform.common.enums.OperationType;
 import com.flink.platform.dao.entity.JobFlowRun;
 import com.flink.platform.dao.service.JobFlowRunService;
 import com.flink.platform.web.annotation.RequirePermission;
@@ -25,6 +27,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.time.LocalDateTime;
 
+import static com.flink.platform.common.enums.EntityType.FLOW_RUN;
 import static com.flink.platform.common.enums.Permission.TASK_EDIT;
 import static com.flink.platform.common.enums.Permission.TASK_EXEC;
 import static com.flink.platform.common.enums.Permission.TASK_VIEW;
@@ -105,6 +108,7 @@ public class JobFlowRunController {
     }
 
     @RequirePermission(TASK_EXEC)
+    @Auditable(type = FLOW_RUN, operation = OperationType.KILL, auditOnFailure = true)
     @GetMapping(value = "/kill/{flowRunId}")
     public ResultInfo<Long> kill(@PathVariable Long flowRunId) {
         var jobFlowRun = jobFlowRunService.getById(flowRunId);

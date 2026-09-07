@@ -36,7 +36,7 @@ public class JobFlowQuartzService {
     }
 
     @Transactional(rollbackFor = Exception.class)
-    public void stopJob(JobFlow jobFlow) {
+    public void unscheduleJob(JobFlow jobFlow) {
         var quartzInfo = new JobFlowQuartzInfo(jobFlow);
         quartzService.removeJob(quartzInfo);
 

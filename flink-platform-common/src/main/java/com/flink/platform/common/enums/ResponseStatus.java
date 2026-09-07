@@ -38,6 +38,7 @@ public enum ResponseStatus {
     SSO_AUTH_FAILED(10033, "SSO authentication failed"),
     FLOW_NOT_IN_DELETED_STATUS(10034, "Workflow is not in deleted status"),
     FLOW_RUN_NOT_IN_TERMINAL_STATUS(10035, "Workflow run is not in terminal status"),
+    KILL_JOB_EXCEPTION_FOUND(10036, "Exception raised when terminating job"),
     ;
 
     private final int code;

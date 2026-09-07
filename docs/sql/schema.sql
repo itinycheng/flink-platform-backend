@@ -545,7 +545,7 @@ CREATE TABLE `t_audit_log` (
   `id` bigint(11) NOT NULL AUTO_INCREMENT COMMENT 'id',
   `entity_id` bigint(11) NOT NULL COMMENT 'entity primary key',
   `entity_type` varchar(64) NOT NULL COMMENT 'entity type: JOB, USER, RESOURCE, etc.',
-  `operation` varchar(16) NOT NULL COMMENT 'INSERT | UPDATE | DELETE',
+  `operation` varchar(16) NOT NULL COMMENT 'INSERT | UPDATE | DELETE | SCHEDULE | UNSCHEDULE | RUN | KILL',
   `snapshot` text NOT NULL COMMENT 'full JSON snapshot of entity state',
   `operator_id` bigint(11) DEFAULT NULL COMMENT 'user id who made the change',
   `operate_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'change time',

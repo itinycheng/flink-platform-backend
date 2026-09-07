@@ -17,7 +17,6 @@ import com.flink.platform.dao.entity.task.BaseJob;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.io.Serializable;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.Map;
@@ -29,7 +28,7 @@ import static org.apache.commons.lang3.StringUtils.defaultString;
 @Data
 @NoArgsConstructor
 @TableName(value = "t_job_run", autoResultMap = true)
-public class JobRunInfo implements Serializable {
+public class JobRunInfo implements Identifiable {
 
     @TableId(value = "id", type = IdType.AUTO)
     private Long id;

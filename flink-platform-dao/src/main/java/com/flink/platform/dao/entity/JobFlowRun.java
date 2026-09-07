@@ -26,7 +26,7 @@ import static com.flink.platform.common.constants.Constant.EMPTY;
 @Data
 @NoArgsConstructor
 @TableName(value = "t_job_flow_run", autoResultMap = true)
-public class JobFlowRun {
+public class JobFlowRun implements Identifiable {
 
     @TableId(value = "id", type = IdType.AUTO)
     private Long id;

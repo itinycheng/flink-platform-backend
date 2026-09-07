@@ -224,7 +224,7 @@ public class JobFlowController {
     }
 
     @RequirePermission(TASK_EXEC)
-    @Auditable(type = FLOW, operation = OperationType.UPDATE)
+    @Auditable(type = FLOW, operation = OperationType.SCHEDULE)
     @GetMapping(value = "/schedule/start/{flowId}")
     public ResultInfo<Long> start(@PathVariable Long flowId) {
         var jobFlowRequest = new JobFlowRequest();
@@ -272,6 +272,7 @@ public class JobFlowController {
     }
 
     @RequirePermission(TASK_EXEC)
+    @Auditable(type = FLOW, operation = OperationType.UNSCHEDULE)
     @GetMapping(value = "/schedule/stop/{flowId}")
     public ResultInfo<Long> stop(@PathVariable Long flowId) {
         var jobFlowRequest = new JobFlowRequest();
@@ -286,11 +287,12 @@ public class JobFlowController {
             return failure(SERVICE_ERROR, "Job flow not found");
         }
 
-        jobFlowQuartzService.stopJob(jobFlow);
+        jobFlowQuartzService.unscheduleJob(jobFlow);
         return success(flowId);
     }
 
     @RequirePermission(TASK_EXEC)
+    @Auditable(type = FLOW, operation = OperationType.RUN)
     @PostMapping(value = "/schedule/runOnce/{flowId}")
     public ResultInfo<Long> runOnce(
             @PathVariable Long flowId,
