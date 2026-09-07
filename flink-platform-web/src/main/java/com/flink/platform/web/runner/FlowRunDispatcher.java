@@ -15,7 +15,9 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -110,6 +112,10 @@ public class FlowRunDispatcher {
 
     public void releaseInFlight(Long flowRunId) {
         inFlightFlowRuns.remove(flowRunId);
+    }
+
+    public List<JobFlowRun> getInFlightFlowRuns() {
+        return new ArrayList<>(inFlightFlowRuns.values());
     }
 
     private void failAndUpdateJobFlowRun(JobFlowRun jobFlowRun) {

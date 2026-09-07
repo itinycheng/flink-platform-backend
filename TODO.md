@@ -513,3 +513,87 @@ audited yet. The `AuditLogWriter` below is **deferred** — to be implemented la
       but not queryable and lost on log rotation. Fine only for pure debugging.
 - (Optional) surface stop/kill entries in the existing audit-log UI / `AuditLogController`.
 
+---
+
+## Global `/api` Path Prefix (BREAKING — deferred)
+
+All 23 controllers currently sit on bare root paths (`/jobInfo`, `/worker`, `/stats`, ...),
+sharing one path namespace with the bundled SPA (frontend build output is copied into
+`flink-platform-web/src/main/resources/static`, served by the same app on port 9104).
+
+**Why it's worth doing** (all true today, independent of any REST-ification):
+
+- **Reverse proxy can't split traffic.** Routing static→CDN / API→backend needs
+  `location /api/`; today nginx must enumerate every controller path and be edited whenever
+  a controller is added.
+- **SPA client-side routes collide** with API paths (a frontend route named `/jobFlowRun` is
+  a natural choice and would clash).
+- **Filters can't be path-scoped** — auth / CORS / rate-limiting have no prefix to hang off.
+
+### Implementation
+
+`AppConfiguration` already implements `WebMvcConfigurer`; all 23 controllers are
+`@RestController` (verified — zero bare `@Controller`), so one method covers everything and
+leaves static resources untouched:
+
+```java
+@Override
+public void configurePathMatch(PathMatchConfigurer configurer) {
+    configurer.addPathPrefix("/api", HandlerTypePredicate.forAnnotation(RestController.class));
+}
+```
+
+- [ ] Add `configurePathMatch` to `AppConfiguration`
+- [ ] **Prefix `protectedPaths` in the same commit** (see trap below)
+- [ ] Frontend: axios `baseURL` (one place)
+
+**Do NOT use `server.servlet.context-path: /api`** — it moves the whole app including the
+SPA (`/api/index.html`), which defeats the purpose of separating API from static assets.
+
+### ⚠️ Trap: adding the prefix silently disables ALL authentication
+
+`AppConfiguration.addInterceptors` uses a **hardcoded path whitelist**:
+
+```java
+String[] protectedPaths = { "/jobInfo/**", "/jobRun/**", "/jobFlow/**", "/jobFlowRun/**", ... };
+registry.addInterceptor(loginInterceptor).addPathPatterns(protectedPaths);
+registry.addInterceptor(permissionInterceptor).addPathPatterns(protectedPaths);
+```
+
+After prefixing, requests arrive as `/api/jobInfo/**` and **none of these patterns match** →
+both interceptors stop running. There is **no spring-security dependency and no servlet
+`Filter`** in the project (verified), so these two interceptors are the *only* auth layer:
+the entire API becomes anonymously accessible, with no error and no failing test unless one
+specifically asserts unauthenticated access is rejected.
+
+`protectedPaths` must be prefixed in the same commit. Better: extract an `API_PREFIX`
+constant and build the array from it so the two can't drift again.
+
+### External contracts that break (need manual coordination, not code)
+
+- [ ] **Grafana webhook** — `GrafanaWebHookController` is `/webhook`; the URL configured on
+      the Grafana side must become `/api/webhook` or alert callbacks fail silently.
+- [ ] **Login / SSO** — `LoginController` has a bare `@RequestMapping` (no base path), so its
+      endpoints live at the root and become `/api/login` etc. Any redirect URI registered
+      with an external IdP must be updated.
+
+### Related deferred items (separate from this one, don't lose them)
+
+- [ ] **GET used for mutations** — `GET /jobFlowRun/kill/{id}`, `/jobInfo/delete/{id}`,
+      `/jobInfo/purge/{id}`, `/worker/delete/{workerId}` etc. violate GET's safe/idempotent
+      contract. Real consequences: trivial CSRF (`<img src=".../kill/123">` needs no JS or
+      form), link prefetch by browsers/chat clients, proxy/CDN caching, crawlers. Should
+      become POST/DELETE. **Higher priority than the prefix — this is a security bug, not
+      style.**
+- [ ] **No OpenAPI spec** — no `springdoc`/`swagger` dependency exists. For an open-source
+      release, generated API docs + clients matter more than URL aesthetics.
+- [ ] **Unprotected controllers** — `/reactive` (contains `POST /execJob`, which executes
+      jobs), `/quartz`, `/stats`, `/auditLog`, `/attr`, `/flink` are absent from
+      `protectedPaths`, so `@RequirePermission` on them is inert (`PermissionInterceptor` is
+      the only enforcement point and never runs there). `/webhook` being open is intentional;
+      the rest look unintended. **Pre-existing, unrelated to the prefix.**
+- [ ] **API versioning (`/api/v1`)** — decided as *optional*. A `/v1` segment provides no
+      compatibility by itself (discipline does: add fields, never remove/rename/re-semantic),
+      and most projects never ship a v2. Its only real argument is cost asymmetry: three
+      characters now vs a breaking change later. Decide when adding the prefix; not required.
+
