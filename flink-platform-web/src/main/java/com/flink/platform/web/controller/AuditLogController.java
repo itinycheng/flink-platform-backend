@@ -26,21 +26,21 @@ import static java.util.Objects.nonNull;
 
 /** Audit log query API. */
 @RestController
-@RequestMapping("/auditLog")
+@RequestMapping("/audit-logs")
 @RequiredArgsConstructor(onConstructor_ = @Autowired)
 public class AuditLogController {
 
     private final AuditLogService auditLogService;
 
     @RequirePermission(WORKSPACE_VIEW)
-    @GetMapping(value = "/get/{id}")
+    @GetMapping(value = "/{id}")
     public ResultInfo<AuditLog> get(@PathVariable Long id) {
         return success(auditLogService.getById(id));
     }
 
     @RequirePermission(WORKSPACE_VIEW)
-    @GetMapping(value = "/page")
-    public ResultInfo<IPage<AuditLog>> page(
+    @GetMapping
+    public ResultInfo<IPage<AuditLog>> list(
             @RequestParam(name = "page", required = false, defaultValue = "1") Integer page,
             @RequestParam(name = "size", required = false, defaultValue = "20") Integer size,
             @RequestParam(name = "entityType", required = false) String entityType,

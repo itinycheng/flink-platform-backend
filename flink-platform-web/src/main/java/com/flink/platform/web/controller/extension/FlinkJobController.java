@@ -6,6 +6,7 @@ import com.flink.platform.dao.service.JobRunInfoService;
 import com.flink.platform.grpc.JobGrpcServiceGrpc.JobGrpcServiceBlockingStub;
 import com.flink.platform.grpc.SavepointReply;
 import com.flink.platform.grpc.SavepointRequest;
+import com.flink.platform.web.annotation.RequirePermission;
 import com.flink.platform.web.dto.ResultInfo;
 import com.flink.platform.web.grpc.JobGrpcClient;
 import lombok.RequiredArgsConstructor;
@@ -19,6 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
 import static com.flink.platform.common.constants.Constant.FLINK;
 import static com.flink.platform.common.enums.ExecutionStatus.RUNNING;
 import static com.flink.platform.common.enums.ExecutionStatus.SUCCESS;
+import static com.flink.platform.common.enums.Permission.TASK_EXEC;
 import static com.flink.platform.common.enums.ResponseStatus.OPERATION_NOT_ALLOWED;
 import static com.flink.platform.web.dto.ResultInfo.failure;
 import static com.flink.platform.web.dto.ResultInfo.success;
@@ -35,6 +37,7 @@ public class FlinkJobController {
 
     private final JobGrpcClient jobGrpcClient;
 
+    @RequirePermission(TASK_EXEC)
     @GetMapping(value = "/savepoint/{jobRunId}")
     public ResultInfo<Long> savepoint(@PathVariable Long jobRunId) {
         JobRunInfo jobRun = jobRunService.getById(jobRunId);

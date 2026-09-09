@@ -405,13 +405,12 @@ so filtering is "annotate-to-audit" by construction.
         purge is a cascade (1 FLOW + N JOB) but only **one FLOW DELETE row** is written for now —
         child JobInfo rows are not audited (deferred; see cascade note below). `stop` (`STOP`) is
         deferred to the run/schedule batch.
-  - [ ] `JobFlowRunController.kill(flowRunId)` — `KILL`, `FLOW_RUN`.
-  - [ ] `JobRunController.kill(runId)` — `KILL`, `JOB_RUN`.
-- [ ] Extend enums (currently `EntityType {JOB, FLOW}`, `OperationType {INSERT, UPDATE,
-      DELETE}`):
-  - [x] `EntityType` — `JOB`, `FLOW` **DONE**. Still to add: `FLOW_RUN`, `JOB_RUN`.
-  - [ ] `OperationType` — add `STOP`, `KILL`. Update the `AuditLog` / annotation Javadoc that
-        currently says "INSERT / UPDATE / DELETE".
+  - [x] `JobFlowRunController.kill(flowRunId)` — `KILL`, `FLOW_RUN`. **DONE**
+  - [x] `JobRunController.kill(runId)` — `KILL`, `JOB_RUN`. **DONE**
+  - [x] `JobFlowController` — `schedule/start` (`SCHEDULE`), `schedule/stop` (`UNSCHEDULE`),
+        `schedule/runOnce` (`RUN`). **DONE**
+- [x] Extend enums — **DONE**: `EntityType {JOB, FLOW, FLOW_RUN, JOB_RUN}`,
+      `OperationType {INSERT, UPDATE, DELETE, SCHEDULE, UNSCHEDULE, RUN, KILL}`; Javadoc updated.
 
 ### Locked-in design decisions (from the design discussion)
 
@@ -494,12 +493,17 @@ audited yet. The `AuditLogWriter` below is **deferred** — to be implemented la
       `RequestContext.getUserId()`; system paths (no logged-in user) are simply not
       annotated. Document: audited methods live behind the authenticated HTTP layer.
 
+### Deferred
+
+- [ ] **Before + after snapshots per operation.** A row currently holds one snapshot (post-op,
+      or pre-op for the `AuditAspect.snapshotsBeforeCall` set). Capture both sides so "who
+      changed the cron from X to Y" is answerable without pairing adjacent rows.
+- [ ] **`workspace_id` on `t_audit_log`** + `@TenantId` on `AuditLog`. The table is global
+      today: `WORKSPACE_VIEW` on any one workspace reads every workspace's snapshots, and
+      snapshots contain job configs / SQL.
+
 ### Notes
 
-- Field-level change tracking (before/after per-field diff — "who changed the cron from X to
-      Y") is **out of scope**. Full snapshots suffice for the operation-trail goal; adjacent
-      snapshots can be diffed manually if ever needed. Revisit with a before+after
-      double-snapshot only if a real "who changed field Z" requirement appears.
 - A `batchId` to group the N+1 rows of a single `purge` into "one operation" is **not**
       added now — same `operatorId` + near-identical `operateTime` already reconstructs the
       scene. Add later only if needed.
@@ -587,11 +591,16 @@ constant and build the array from it so the two can't drift again.
       style.**
 - [ ] **No OpenAPI spec** — no `springdoc`/`swagger` dependency exists. For an open-source
       release, generated API docs + clients matter more than URL aesthetics.
-- [ ] **Unprotected controllers** — `/reactive` (contains `POST /execJob`, which executes
-      jobs), `/quartz`, `/stats`, `/auditLog`, `/attr`, `/flink` are absent from
-      `protectedPaths`, so `@RequirePermission` on them is inert (`PermissionInterceptor` is
-      the only enforcement point and never runs there). `/webhook` being open is intentional;
-      the rest look unintended. **Pre-existing, unrelated to the prefix.**
+- [x] **Unprotected controllers** — **DONE** for `/stats`, `/audit-logs`, `/quartz`, `/flink`
+      (added to `protectedPaths`). `/webhook` stays open (intentional); `/attr` serves static
+      enum metadata and carries no `@RequirePermission`.
+- [ ] **`/reactive/**` is still unprotected — blocked on node-to-node auth.** `POST
+      /reactive/execJob` executes ad-hoc SQL / Flink SQL and is reachable without login; its
+      `@RequirePermission(TASK_EXEC)` / `TASK_VIEW` are inert. Cannot simply be added to
+      `protectedPaths`: `ReactiveController` forwards to a peer via `RestTemplate`
+      (`routeUrl + "/reactive/execJob"` / `execLog`) with **no auth header**, so protecting the
+      path 401s every cross-node forward. Prerequisite: propagate a credential on the forward,
+      or move these two endpoints to gRPC (the class's own TODO). Do both in one commit.
 - [ ] **API versioning (`/api/v1`)** — decided as *optional*. A `/v1` segment provides no
       compatibility by itself (discipline does: add fields, never remove/rename/re-semantic),
       and most projects never ship a v2. Its only real argument is cost asymmetry: three

@@ -2,6 +2,7 @@ package com.flink.platform.web.controller;
 
 import com.flink.platform.dao.entity.JobFlowRun;
 import com.flink.platform.web.annotation.RequirePermission;
+import com.flink.platform.web.annotation.WorkspaceOptional;
 import com.flink.platform.web.dto.ResultInfo;
 import com.flink.platform.web.environment.YarnAppService;
 import com.flink.platform.web.runner.FlowRunDispatcher;
@@ -16,7 +17,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import static com.flink.platform.common.enums.Permission.WORKSPACE_VIEW;
+import static com.flink.platform.common.enums.Permission.SYSTEM_MANAGE;
 import static com.flink.platform.web.dto.ResultInfo.success;
 import static java.util.Comparator.comparing;
 import static java.util.stream.Collectors.toMap;
@@ -31,7 +32,8 @@ public class StatsController {
 
     private final FlowRunDispatcher flowRunDispatcher;
 
-    @RequirePermission(WORKSPACE_VIEW)
+    @WorkspaceOptional
+    @RequirePermission(SYSTEM_MANAGE)
     @GetMapping(value = "/runningYarnJobStatusList")
     public ResultInfo<Map<?, ?>> runningYarnJobStatusList() {
         var runningApplications = yarnAppService.getRunningApplications().entrySet().stream()
@@ -39,7 +41,8 @@ public class StatsController {
         return success(runningApplications);
     }
 
-    @RequirePermission(WORKSPACE_VIEW)
+    @WorkspaceOptional
+    @RequirePermission(SYSTEM_MANAGE)
     @GetMapping(value = "/worker/active-flow-runs")
     public ResultInfo<List<JobFlowRun>> activeFlowRuns() {
         var activeFlowRuns = flowRunDispatcher.getInFlightFlowRuns().stream()
