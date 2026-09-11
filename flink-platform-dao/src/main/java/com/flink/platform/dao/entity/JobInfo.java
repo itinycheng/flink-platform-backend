@@ -9,8 +9,6 @@ import com.baomidou.mybatisplus.extension.handlers.Jackson3TypeHandler;
 import com.flink.platform.common.annotation.TenantId;
 import com.flink.platform.common.enums.DeployMode;
 import com.flink.platform.common.enums.ExecutionMode;
-import com.flink.platform.common.enums.ExecutionStatus;
-import com.flink.platform.common.enums.JobFlowStatus;
 import com.flink.platform.common.enums.JobStatus;
 import com.flink.platform.common.enums.JobType;
 import com.flink.platform.dao.entity.task.BaseJob;
@@ -90,26 +88,4 @@ public class JobInfo implements Identifiable {
     @Setter(AccessLevel.NONE)
     @TableField(update = "now()", updateStrategy = FieldStrategy.ALWAYS)
     private LocalDateTime updateTime;
-
-    /** job run id. */
-    @TableField(exist = false)
-    private Long jobRunId;
-
-    /**
-     * flow run id.
-     */
-    @TableField(exist = false)
-    private Long flowRunId;
-
-    /**
-     * job run status.
-     */
-    @TableField(exist = false)
-    private ExecutionStatus jobRunStatus;
-
-    @TableField(exist = false)
-    private transient Long jobFlowId;
-
-    @TableField(exist = false)
-    private transient JobFlowStatus jobFlowStatus;
 }

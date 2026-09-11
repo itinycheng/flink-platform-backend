@@ -1,14 +1,20 @@
 package com.flink.platform.dao.service;
 
 import com.baomidou.dynamic.datasource.annotation.DS;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.metadata.TableFieldInfo;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.flink.platform.common.enums.JobStatus;
 import com.flink.platform.dao.entity.JobFlowRun;
 import com.flink.platform.dao.entity.JobInfo;
 import com.flink.platform.dao.entity.JobRunInfo;
 import com.flink.platform.dao.entity.task.FlowJob;
 import com.flink.platform.dao.mapper.JobInfoMapper;
+import com.flink.platform.dao.query.JobPageQuery;
+import com.flink.platform.dao.view.JobDetails;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,7 +26,11 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
+import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
 import static java.util.stream.Collectors.toSet;
+import static org.apache.commons.collections4.CollectionUtils.isNotEmpty;
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 /** job config info. */
 @Service
@@ -65,14 +75,25 @@ public class JobInfoService extends ServiceImpl<JobInfoMapper, JobInfo> {
                 .in(JobInfo::getId, jobIds));
     }
 
-    public JobInfo findRunnableJobUsingJobFlow(Long flowId) {
-        var jobs = baseMapper.queryRunnableJobUsingJobFlow(flowId);
-
-        return jobs.stream()
-                .filter(job -> job != null && job.getConfig() instanceof FlowJob)
-                .filter(job -> ((FlowJob) job.getConfig()).getFlowId() == flowId)
+    public JobDetails findRunnableJobUsingJobFlow(Long flowId) {
+        return baseMapper.queryRunnableJobUsingJobFlow(flowId).stream()
+                .filter(job -> job.getConfig() instanceof FlowJob flowJob && flowJob.getFlowId() == flowId)
+                .filter(JobDetails::isStillInUse)
                 .findAny()
                 .orElse(null);
+    }
+
+    public IPage<JobDetails> pageDetails(JobPageQuery query) {
+        var wrapper = new LambdaQueryWrapper<JobInfo>()
+                .eq(nonNull(query.getId()), JobInfo::getId, query.getId())
+                .eq(nonNull(query.getFlowId()), JobInfo::getFlowId, query.getFlowId())
+                .like(isNotBlank(query.getName()), JobInfo::getName, query.getName())
+                .between(query.hasTimeRange(), JobInfo::getCreateTime, query.getStartTime(), query.getEndTime())
+                .eq(nonNull(query.getStatus()), JobInfo::getStatus, query.getStatus())
+                .ne(isNull(query.getStatus()), JobInfo::getStatus, JobStatus.DELETE)
+                .notIn(isNotEmpty(query.getExcludeJobIds()), JobInfo::getId, query.getExcludeJobIds())
+                .orderByDesc(query.isSortByIdDesc(), JobInfo::getId);
+        return baseMapper.selectPageDetails(new Page<>(query.getPage(), query.getSize()), wrapper);
     }
 
     public boolean isNonLargeField(TableFieldInfo field) {

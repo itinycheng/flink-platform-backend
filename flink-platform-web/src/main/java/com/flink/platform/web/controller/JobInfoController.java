@@ -2,18 +2,17 @@ package com.flink.platform.web.controller;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.flink.platform.common.annotation.Auditable;
 import com.flink.platform.common.constants.Constant;
-import com.flink.platform.common.enums.JobFlowStatus;
-import com.flink.platform.common.enums.JobStatus;
 import com.flink.platform.common.model.JobVertex;
 import com.flink.platform.dao.entity.JobInfo;
 import com.flink.platform.dao.entity.JobRunInfo;
 import com.flink.platform.dao.entity.User;
+import com.flink.platform.dao.query.JobPageQuery;
 import com.flink.platform.dao.service.JobFlowService;
 import com.flink.platform.dao.service.JobInfoService;
 import com.flink.platform.dao.service.JobRunInfoService;
+import com.flink.platform.dao.view.JobDetails;
 import com.flink.platform.web.annotation.RequirePermission;
 import com.flink.platform.web.common.RequestContext;
 import com.flink.platform.web.dto.ResultInfo;
@@ -22,7 +21,6 @@ import lombok.RequiredArgsConstructor;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -32,7 +30,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
 
@@ -46,10 +43,8 @@ import static com.flink.platform.common.enums.Permission.TASK_PURGE;
 import static com.flink.platform.common.enums.Permission.TASK_VIEW;
 import static com.flink.platform.common.enums.ResponseStatus.ERROR_PARAMETER;
 import static com.flink.platform.common.enums.ResponseStatus.OPERATION_NOT_ALLOWED;
-import static com.flink.platform.common.util.DateUtil.GLOBAL_DATE_TIME_FORMAT;
 import static com.flink.platform.web.dto.ResultInfo.failure;
 import static com.flink.platform.web.dto.ResultInfo.success;
-import static java.util.Objects.nonNull;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 import static org.apache.commons.collections4.CollectionUtils.isEmpty;
@@ -118,49 +113,14 @@ public class JobInfoController {
 
     @RequirePermission(TASK_VIEW)
     @GetMapping(value = "/page")
-    public ResultInfo<IPage<JobInfo>> page(
-            @RequestParam(name = "page", required = false, defaultValue = "1") Integer page,
-            @RequestParam(name = "size", required = false, defaultValue = "20") Integer size,
-            @RequestParam(name = "id", required = false) Long id,
-            @RequestParam(name = "flowId", required = false) Long flowId,
-            @RequestParam(name = "name", required = false) String name,
-            @RequestParam(name = "status", required = false) JobStatus status,
-            @RequestParam(name = "includeJobRuns", required = false, defaultValue = "false") boolean includeJobRuns,
-            @RequestParam(name = "excludeJobsInFlow", required = false, defaultValue = "false")
-                    boolean excludeJobsInFlow,
-            @DateTimeFormat(pattern = GLOBAL_DATE_TIME_FORMAT) @RequestParam(name = "startTime", required = false)
-                    LocalDateTime startTime,
-            @DateTimeFormat(pattern = GLOBAL_DATE_TIME_FORMAT) @RequestParam(name = "endTime", required = false)
-                    LocalDateTime endTime,
-            @RequestParam(name = "sort", required = false) String sort) {
-        var queryWrapper = new QueryWrapper<JobInfo>()
-                .lambda()
-                .eq(nonNull(id), JobInfo::getId, id)
-                .eq(nonNull(flowId), JobInfo::getFlowId, flowId)
-                .like(nonNull(name), JobInfo::getName, name)
-                .between(nonNull(startTime) && nonNull(endTime), JobInfo::getCreateTime, startTime, endTime);
-
-        if (status != null) {
-            queryWrapper.eq(JobInfo::getStatus, status);
-        } else {
-            queryWrapper.ne(JobInfo::getStatus, JobFlowStatus.DELETE);
+    public ResultInfo<IPage<JobDetails>> page(JobPageQuery query) {
+        if (query.isExcludeJobsInFlow()) {
+            query.setExcludeJobIds(getJobIdsInFlow(query.getFlowId()));
         }
 
-        if ("-id".equals(sort)) {
-            queryWrapper.orderByDesc(JobInfo::getId);
-        }
-
-        // exclude jobs in workflow dag.
-        if (excludeJobsInFlow && flowId != null) {
-            List<Long> jobIds = getJobIdsInFlow(flowId);
-            queryWrapper.notIn(isNotEmpty(jobIds), JobInfo::getId, jobIds);
-        }
-
-        var pager = new Page<JobInfo>(page, size);
-        var result = jobInfoService.page(pager, queryWrapper);
-
+        var result = jobInfoService.pageDetails(query);
         // Add jobRun info.
-        if (includeJobRuns && CollectionUtils.isNotEmpty(result.getRecords())) {
+        if (query.isIncludeJobRuns() && CollectionUtils.isNotEmpty(result.getRecords())) {
             var jobIds = result.getRecords().stream().map(JobInfo::getId).collect(toList());
             var runningJobsMap = jobRunService.listLastWithoutLargeFields(null, jobIds).stream()
                     .collect(toMap(JobRunInfo::getJobId, jobRun -> jobRun));
@@ -240,10 +200,11 @@ public class JobInfoController {
         }
 
         var jobFlow = jobFlowService.getById(flowId);
-        if (jobFlow == null || jobFlow.getFlow() == null) {
+        var flow = jobFlow != null ? jobFlow.getFlow() : null;
+        if (flow == null) {
             return Collections.emptyList();
         }
 
-        return jobFlow.getFlow().getVertices().stream().map(JobVertex::getJobId).collect(toList());
+        return flow.getVertices().stream().map(JobVertex::getJobId).collect(toList());
     }
 }
