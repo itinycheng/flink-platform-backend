@@ -15,7 +15,6 @@ public class JobFlowPageQuery extends BasePageQuery {
     private String name;
     private String tag;
     private JobFlowStatus status;
-    private Long workspaceId;
 
     public boolean isSortByIdDesc() {
         return "-id".equals(getSort());

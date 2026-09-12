@@ -195,7 +195,6 @@ public class JobFlowController {
     @RequirePermission(TASK_VIEW)
     @GetMapping(value = "/page")
     public ResultInfo<IPage<JobFlowDetails>> page(JobFlowPageQuery query) {
-        query.setWorkspaceId(RequestContext.requireWorkspaceId());
         return success(jobFlowService.pageDetails(query));
     }
 

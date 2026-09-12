@@ -1,10 +1,12 @@
 package com.flink.platform.dao.service;
 
 import com.baomidou.dynamic.datasource.annotation.DS;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.flink.platform.common.enums.JobFlowStatus;
 import com.flink.platform.common.model.JobVertex;
 import com.flink.platform.common.util.StringUtil;
 import com.flink.platform.common.util.UuidGenerator;
@@ -31,8 +33,11 @@ import static com.flink.platform.common.enums.JobFlowStatus.OFFLINE;
 import static com.flink.platform.common.enums.JobFlowStatus.ONLINE;
 import static com.flink.platform.common.enums.JobFlowType.JOB_LIST;
 import static com.flink.platform.common.enums.JobType.CONDITION;
+import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
 import static java.util.stream.Collectors.toList;
 import static org.apache.commons.collections4.CollectionUtils.isNotEmpty;
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 /** job config info. */
 @Service
@@ -222,6 +227,14 @@ public class JobFlowService extends ServiceImpl<JobFlowMapper, JobFlow> {
     }
 
     public IPage<JobFlowDetails> pageDetails(JobFlowPageQuery query) {
-        return baseMapper.selectDetailsPage(new Page<>(query.getPage(), query.getSize()), query);
+        var wrapper = new LambdaQueryWrapper<JobFlow>()
+                .eq(nonNull(query.getId()), JobFlow::getId, query.getId())
+                .eq(nonNull(query.getType()), JobFlow::getType, query.getType())
+                .like(isNotBlank(query.getName()), JobFlow::getName, query.getName())
+                .like(isNotBlank(query.getTag()), JobFlow::getTags, query.getTag())
+                .eq(nonNull(query.getStatus()), JobFlow::getStatus, query.getStatus())
+                .ne(isNull(query.getStatus()), JobFlow::getStatus, JobFlowStatus.DELETE)
+                .orderByDesc(query.isSortByIdDesc(), JobFlow::getId);
+        return baseMapper.selectPageDetails(new Page<>(query.getPage(), query.getSize()), wrapper);
     }
 }
