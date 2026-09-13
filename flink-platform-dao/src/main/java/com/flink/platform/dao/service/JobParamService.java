@@ -7,36 +7,28 @@ import com.flink.platform.common.enums.JobParamType;
 import com.flink.platform.common.enums.Status;
 import com.flink.platform.dao.entity.JobParam;
 import com.flink.platform.dao.mapper.JobParamMapper;
-import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
+
+import static java.util.Objects.nonNull;
 
 /** job param service. */
 @Service
 @DS("master_platform")
-@RequiredArgsConstructor(onConstructor_ = @Autowired)
 public class JobParamService extends ServiceImpl<JobParamMapper, JobParam> {
-
-    private final JobFlowService jobFlowService;
 
     /**
      * TODO: only support global params.
      */
-    public List<JobParam> getJobParams(Long jobId) {
-        var flow = jobFlowService.getJobFlowByJobId(jobId);
-        if (flow == null) {
-            return Collections.emptyList();
-        }
-
+    public List<JobParam> getJobParams(Long flowId, Long workspaceId) {
         return this.list(new QueryWrapper<JobParam>()
                 .lambda()
-                .nested(qw -> qw.eq(JobParam::getFlowId, flow.getId()).or().eq(JobParam::getType, JobParamType.GLOBAL))
+                .nested(qw -> qw.eq(JobParam::getType, JobParamType.GLOBAL)
+                        .or(nonNull(flowId), inner -> inner.eq(JobParam::getFlowId, flowId)))
                 .eq(JobParam::getStatus, Status.ENABLE)
-                .eq(JobParam::getWorkspaceId, flow.getWorkspaceId())
+                .eq(JobParam::getWorkspaceId, workspaceId)
                 .orderByAsc(Arrays.asList(JobParam::getType, JobParam::getId)));
     }
 }

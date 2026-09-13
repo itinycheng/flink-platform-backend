@@ -222,10 +222,6 @@ public class JobFlowService extends ServiceImpl<JobFlowMapper, JobFlow> {
                 .ne(JobFlow::getCronExpr, ""));
     }
 
-    public JobFlow getJobFlowByJobId(Long jobId) {
-        return baseMapper.queryJobFlowByJobId(jobId);
-    }
-
     public IPage<JobFlowDetails> pageDetails(JobFlowPageQuery query) {
         var wrapper = new LambdaQueryWrapper<JobFlow>()
                 .eq(nonNull(query.getId()), JobFlow::getId, query.getId())

@@ -1,13 +1,18 @@
 package com.flink.platform.web.service;
 
+import com.flink.platform.common.exception.UnrecoverableException;
 import com.flink.platform.common.util.DateUtil;
 import com.flink.platform.dao.entity.ExecutionConfig;
 import com.flink.platform.dao.entity.JobFlowRun;
+import com.flink.platform.dao.entity.JobParam;
 import com.flink.platform.dao.entity.JobRunInfo;
 import com.flink.platform.dao.service.JobFlowRunService;
+import com.flink.platform.dao.service.JobParamService;
 import com.flink.platform.web.util.ResourceUtil;
 import com.flink.platform.web.variable.JobRunVariableResolver;
+import com.flink.platform.web.variable.ParamVariableResolver;
 import com.flink.platform.web.variable.ResourceVariableResolver;
+import com.flink.platform.web.variable.SubflowVariableResolver;
 import com.flink.platform.web.variable.TimeVariableResolver;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -17,14 +22,23 @@ import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @ExtendWith(MockitoExtension.class)
 public class VariableResolverTest {
 
     @Mock
     private JobFlowRunService jobFlowRunService;
+
+    @Mock
+    private JobParamService jobParamService;
+
+    @Mock
+    private SubflowVariableResolver subflowVariableResolver;
 
     @InjectMocks
     private TimeVariableResolver timeVariableResolver;
@@ -34,6 +48,9 @@ public class VariableResolverTest {
 
     @InjectMocks
     private ResourceVariableResolver resourceVariableResolver;
+
+    @InjectMocks
+    private ParamVariableResolver paramVariableResolver;
 
     @Test
     public void testTimeResolver() {
@@ -191,6 +208,40 @@ public class VariableResolverTest {
 
         timeVariableResolver.resolve(jobRun, jobRun.getSubject());
         Mockito.verifyNoInteractions(jobFlowRunService);
+    }
+
+    @Test
+    public void paramsResolveFromTheFlowRunOfTheJobRun() {
+        var flowRun = new JobFlowRun();
+        flowRun.setFlowId(55L);
+        flowRun.setWorkspaceId(7L);
+
+        var jobParam = new JobParam();
+        jobParam.setParamName("dt");
+        jobParam.setParamValue("20260913");
+
+        var jobRun = new JobRunInfo();
+        jobRun.setFlowRunId(100L);
+        jobRun.setSubject("select * from t where dt = '${param:dt}'");
+        Mockito.when(jobFlowRunService.getById(100L)).thenReturn(flowRun);
+        Mockito.when(jobParamService.getJobParams(55L, 7L)).thenReturn(List.of(jobParam));
+
+        var result = paramVariableResolver.resolve(jobRun, jobRun.getSubject());
+        assertEquals("20260913", result.get("${param:dt}"));
+    }
+
+    @Test
+    public void failsFastWhenTheFlowRunIsGone() {
+        // Every job run has a flow run; a missing one means a purge raced with execution, and
+        // retrying cannot help -> fail loudly instead of NPE-ing on flowRun.getFlowId().
+        var jobRun = new JobRunInfo();
+        jobRun.setFlowRunId(100L);
+        jobRun.setSubject("select * from t where dt = '${param:dt}'");
+        Mockito.when(jobFlowRunService.getById(100L)).thenReturn(null);
+
+        var thrown = assertThrows(
+                UnrecoverableException.class, () -> paramVariableResolver.resolve(jobRun, jobRun.getSubject()));
+        assertTrue(thrown.getMessage().contains("100"));
     }
 
     @Test

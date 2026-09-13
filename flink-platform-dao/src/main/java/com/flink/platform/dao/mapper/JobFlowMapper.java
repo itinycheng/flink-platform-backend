@@ -15,15 +15,6 @@ import org.apache.ibatis.annotations.Select;
 /** job flow info Mapper. */
 public interface JobFlowMapper extends BaseMapper<JobFlow> {
 
-    @Select("""
-            select f.*
-            from t_job j, t_job_flow f
-            where j.flow_id = f.id
-            and j.id = #{jobId}
-            limit 1
-            """)
-    JobFlow queryJobFlowByJobId(@Param("jobId") Long jobId);
-
     @Results({
         @Result(property = "config", column = "config", typeHandler = Jackson3TypeHandler.class),
         @Result(property = "tags", column = "tags", typeHandler = Jackson3TypeHandler.class),

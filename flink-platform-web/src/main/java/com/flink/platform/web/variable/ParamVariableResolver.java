@@ -1,12 +1,12 @@
 package com.flink.platform.web.variable;
 
+import com.flink.platform.common.exception.UnrecoverableException;
 import com.flink.platform.dao.entity.JobRunInfo;
 import com.flink.platform.dao.service.JobFlowRunService;
 import com.flink.platform.dao.service.JobParamService;
 import com.flink.platform.web.util.ObjectUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.annotation.Order;
@@ -41,14 +41,16 @@ public class ParamVariableResolver implements VariableResolver {
     public Map<String, Object> resolve(JobRunInfo jobRun, String content) {
         // priority: global < merge(sub_flow, job_flow) < job
         var paramMap = new HashMap<String, Object>();
-        var globalParams = jobParamService.getJobParams(jobRun.getJobId());
-        if (CollectionUtils.isNotEmpty(globalParams)) {
-            globalParams.forEach(globalParam -> paramMap.put(globalParam.getParamName(), globalParam.getParamValue()));
+        var flowRun = jobFlowRunService.getById(jobRun.getFlowRunId());
+        if (flowRun == null) {
+            throw new UnrecoverableException("The flow run: %s is no longer exists.".formatted(jobRun.getFlowRunId()));
         }
 
+        var globalParams = jobParamService.getJobParams(flowRun.getFlowId(), flowRun.getWorkspaceId());
+        globalParams.forEach(globalParam -> paramMap.put(globalParam.getParamName(), globalParam.getParamValue()));
+
         var subflowParamMap = subflowResolver.collectSubflowParams(jobRun.getFlowRunId());
-        var jobFlowRun = jobFlowRunService.getById(jobRun.getFlowRunId());
-        var jobFlowParamMap = jobFlowRun != null ? jobFlowRun.getParams() : null;
+        var jobFlowParamMap = flowRun.getParams();
         var flowParamMap = ObjectUtil.merge(jobFlowParamMap, subflowParamMap);
         if (MapUtils.isNotEmpty(flowParamMap)) {
             paramMap.putAll(flowParamMap);
