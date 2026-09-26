@@ -31,3 +31,13 @@ management:
       base-path: /actuator
       exposure:
         include: '*'
+
+worker:
+  flowExecThreads: 500
+  perFlowExecThreads: 5
+  maxPerFlowExecThreads: 10
+  errorRetries: 3
+  reactiveExecThreads: 10
+  flinkSubmitTimeoutMills: 300000
+  maxShellExecTimeoutMills: 28800000
+  flowWaitTimeout: 12h
