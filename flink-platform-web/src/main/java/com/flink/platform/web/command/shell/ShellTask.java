@@ -10,6 +10,7 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
+import java.time.Duration;
 import java.util.Map;
 import java.util.function.BiConsumer;
 
@@ -36,7 +37,7 @@ public class ShellTask extends AbstractTask {
 
     protected Map<String, String> envp;
 
-    protected long timeoutMills;
+    protected Duration timeout;
 
     protected BiConsumer<CmdOutType, String> logConsumer;
 
@@ -54,11 +55,11 @@ public class ShellTask extends AbstractTask {
 
     protected final StringBuffer errMsg = new StringBuffer();
 
-    public ShellTask(long id, String command, Map<String, String> envp, long timeoutMills) {
+    public ShellTask(long id, String command, Map<String, String> envp, Duration timeout) {
         super(id);
         this.command = command;
         this.envp = envp;
-        this.timeoutMills = timeoutMills;
+        this.timeout = timeout;
         this.logConsumer = newLogBuffer(null);
     }
 
@@ -86,7 +87,7 @@ public class ShellTask extends AbstractTask {
                 log.error("Start log collection thread failed", e);
             }
 
-            this.exited = process.waitFor(timeoutMills, MILLISECONDS);
+            this.exited = process.waitFor(timeout.toMillis(), MILLISECONDS);
             this.exitValue = exited ? process.exitValue() : EXIT_CODE_FAILURE;
             this.subprocessIds = CommandUtil.getSubprocessIds(process);
 

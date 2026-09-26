@@ -50,7 +50,7 @@ public class FlinkCommandExecutor implements CommandExecutor {
                 flinkCommand.getMode(),
                 flinkCommand.toCommandString(),
                 null,
-                workerConfig.getFlinkSubmitTimeoutMills());
+                workerConfig.getFlinkSubmissionTimeout());
         flinkCommand.setTask(task);
         task.run();
 

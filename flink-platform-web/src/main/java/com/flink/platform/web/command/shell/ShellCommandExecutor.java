@@ -1,6 +1,7 @@
 package com.flink.platform.web.command.shell;
 
 import com.flink.platform.common.enums.JobType;
+import com.flink.platform.common.util.DurationUtil;
 import com.flink.platform.dao.entity.result.JobCallback;
 import com.flink.platform.dao.service.JobRunInfoService;
 import com.flink.platform.web.command.CommandExecutor;
@@ -37,8 +38,8 @@ public class ShellCommandExecutor implements CommandExecutor {
                 shellCommand.getScript(),
                 shellCommand.getEnvp(),
                 timeout != null
-                        ? Math.min(workerConfig.getMaxShellExecTimeoutMills(), timeout.toMillis())
-                        : workerConfig.getMaxShellExecTimeoutMills());
+                        ? DurationUtil.min(workerConfig.getMaxShellExecutionTimeout(), timeout)
+                        : workerConfig.getMaxShellExecutionTimeout());
         shellCommand.setTask(task);
         task.run();
 

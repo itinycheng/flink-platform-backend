@@ -31,6 +31,21 @@ public class DurationUtil {
             })
             .get();
 
+    public static Duration min(Duration... durations) {
+        if (durations == null || durations.length == 0) {
+            throw new IllegalArgumentException("durations must not be empty");
+        }
+
+        Duration min = durations[0];
+        for (int i = 1; i < durations.length; i++) {
+            Duration duration = durations[i];
+            if (duration.compareTo(min) < 0) {
+                min = duration;
+            }
+        }
+        return min;
+    }
+
     /**
      * Format the given {@link Duration} into a compact human-readable string like "1h 43m 20s".
      */

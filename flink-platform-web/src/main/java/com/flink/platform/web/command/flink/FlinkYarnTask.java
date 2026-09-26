@@ -10,6 +10,7 @@ import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
+import java.time.Duration;
 import java.util.Map;
 import java.util.function.BiConsumer;
 
@@ -34,15 +35,15 @@ public class FlinkYarnTask extends ShellTask {
 
     private String jobId;
 
-    public FlinkYarnTask(long jobRunId, DeployMode mode, String command, Map<String, String> envp, long timeoutMills) {
-        super(jobRunId, command, envp, timeoutMills);
+    public FlinkYarnTask(long jobRunId, DeployMode mode, String command, Map<String, String> envp, Duration timeout) {
+        super(jobRunId, command, envp, timeout);
         this.mode = mode;
         setLogConsumer(this.extractAppIdAndJobId());
     }
 
     /** Only for kill job. */
     public FlinkYarnTask(long jobRunId, DeployMode mode) {
-        super(jobRunId, null, null, 0);
+        super(jobRunId, null, null, Duration.ZERO);
         this.mode = mode;
         this.yarnAppService = SpringContext.getBean(YarnAppService.class);
     }

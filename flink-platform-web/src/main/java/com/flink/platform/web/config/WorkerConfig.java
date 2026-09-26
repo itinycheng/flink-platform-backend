@@ -39,12 +39,13 @@ public class WorkerConfig {
     @Min(1)
     private int reactiveExecThreads;
 
-    @Min(20_000)
-    private long flinkSubmitTimeoutMills;
+    @NotNull
+    @DurationRange(min = "20s", message = "Must be at least 20s to allow the Flink submission command to complete")
+    private Duration flinkSubmissionTimeout;
 
-    @Min(1_000)
-    @Max(24 * 60 * 60 * 1000)
-    private long maxShellExecTimeoutMills;
+    @NotNull
+    @DurationRange(min = "1s", max = "24h", message = "Must be between 1s and 24h")
+    private Duration maxShellExecutionTimeout;
 
     @NotNull
     @DurationRange(min = "1s", message = "Must be at least 1s, otherwise every no-cron WAITING flow run fails at once")

@@ -107,8 +107,8 @@ worker:
   reactiveExecThreads: 10
 
   # Timeout for submitting flink job from the command line.
-  flinkSubmitTimeoutMills: 300000
+  flinkSubmitTimeoutMills: 5m
 
   # Timeout for shell job execution.
-  maxShellExecTimeoutMills: 28800000
+  maxShellExecTimeoutMills: 8h
 ```

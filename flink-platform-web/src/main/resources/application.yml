@@ -38,6 +38,6 @@ worker:
   maxPerFlowExecThreads: 10
   errorRetries: 3
   reactiveExecThreads: 10
-  flinkSubmitTimeoutMills: 300000
-  maxShellExecTimeoutMills: 28800000
+  flinkSubmissionTimeout: 5m
+  maxShellExecutionTimeout: 8h
   flowWaitTimeout: 12h

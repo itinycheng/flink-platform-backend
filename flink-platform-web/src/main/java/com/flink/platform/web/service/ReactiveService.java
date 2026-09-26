@@ -73,7 +73,7 @@ public class ReactiveService {
                                 CommandUtil.exec(
                                         command,
                                         envProps,
-                                        workerConfig.getFlinkSubmitTimeoutMills(),
+                                        workerConfig.getFlinkSubmissionTimeout().toMillis(),
                                         collectCmdResult(execId));
                             } catch (Exception e) {
                                 cmdOutputBufferMap.get(execId).add(ExceptionUtil.stackTrace(e));

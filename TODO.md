@@ -715,10 +715,6 @@ See design: [docs/design/flow-dependency-model.md](docs/design/flow-dependency-m
 - [ ] **Collapse the Quartz plumbing** — scheduling logic is spread across `QuartzService`,
       `JobFlowQuartzInfo`, `JobFlowRunner` and `FlowRunDispatcher`; pull it together to cut the
       coupling.
-- [ ] **`WorkerConfig`: `long` millis → `Duration`** — `flinkSubmitTimeoutMills` and
-      `maxShellExecTimeoutMills` are still raw longs. `flowWaitTimeout` already shows the shape
-      (`@DurationRange` + `Duration`).
-
 ### Frontend (low priority — new UI only)
 
 The old UI will not get this feature; it only has to keep working, which it does: it never
