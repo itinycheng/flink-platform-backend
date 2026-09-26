@@ -3,18 +3,17 @@ package com.flink.platform.web.controller;
 import com.flink.platform.common.constants.Constant;
 import com.flink.platform.web.annotation.RequirePermission;
 import com.flink.platform.web.dto.ResultInfo;
-import com.flink.platform.web.service.QuartzService;
+import com.flink.platform.web.quartz.QuartzService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.quartz.CronExpression;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -50,16 +49,20 @@ public class QuartzController {
     @GetMapping(value = "/parseExpr")
     public ResultInfo<List<String>> parseExpr(@RequestParam(name = "cron") String cron) {
         try {
-            var cronExpression = new CronExpression(cron);
-            var fromDate = new Date();
             var num = 5;
-            var validTimeList = new ArrayList<String>(num);
+            var triggerTimes = new ArrayList<String>(num);
+            var fromTime = LocalDateTime.now();
             for (int i = 0; i < num; i++) {
-                var validTime = cronExpression.getNextValidTimeAfter(fromDate);
-                validTimeList.add(format(validTime.getTime(), GLOBAL_DATE_TIME_FORMAT));
-                fromDate = validTime;
+                var optionalNext = quartzService.nextTriggerTimeAfter(cron, fromTime);
+                if (optionalNext.isEmpty()) {
+                    break;
+                }
+
+                var nextTriggerTime = optionalNext.get();
+                triggerTimes.add(format(nextTriggerTime, GLOBAL_DATE_TIME_FORMAT));
+                fromTime = nextTriggerTime;
             }
-            return success(validTimeList);
+            return success(triggerTimes);
         } catch (Exception e) {
             return failure(INVALID_CRONTAB_EXPR);
         }

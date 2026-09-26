@@ -9,17 +9,15 @@ import com.flink.platform.dao.service.JobFlowRunService;
 import com.flink.platform.dao.service.JobRunInfoService;
 import com.flink.platform.web.command.CommandBuilder;
 import com.flink.platform.web.command.JobCommand;
+import com.flink.platform.web.quartz.QuartzService;
 import jakarta.annotation.Nonnull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
-import org.quartz.CronExpression;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.util.Date;
 
 import static com.flink.platform.common.constants.Constant.LINE_SEPARATOR;
 import static com.flink.platform.common.enums.JobType.DEPENDENT;
@@ -34,6 +32,8 @@ public class DependentCommandBuilder implements CommandBuilder {
     private final JobFlowRunService jobFlowRunService;
 
     private final JobRunInfoService jobRunInfoService;
+
+    private final QuartzService quartzService;
 
     @Override
     public boolean isSupported(JobType jobType, String version) {
@@ -91,27 +91,18 @@ public class DependentCommandBuilder implements CommandBuilder {
             case LAST_EXECUTION_AS_EXPECTED:
                 // Get next trigger time from sinceTime.
                 sinceTime = createAt;
-                LocalDateTime nextTriggerTime;
                 try {
                     var jobFlowRun = jobFlowRunService.getOne(new QueryWrapper<JobFlowRun>()
                             .lambda()
                             .select(JobFlowRun::getCronExpr)
                             .eq(JobFlowRun::getId, flowRunId));
-                    var cronExpression = new CronExpression(jobFlowRun.getCronExpr());
-                    var sinceDate =
-                            Date.from(sinceTime.atZone(ZoneId.systemDefault()).toInstant());
-                    var nextTriggerDate = cronExpression.getNextValidTimeAfter(sinceDate);
-                    nextTriggerTime = nextTriggerDate != null
-                            ? nextTriggerDate
-                                    .toInstant()
-                                    .atZone(ZoneId.systemDefault())
-                                    .toLocalDateTime()
-                            : LocalDateTime.MAX;
+                    return quartzService
+                            .nextTriggerTimeAfter(jobFlowRun.getCronExpr(), sinceTime)
+                            .map(nextTriggerTime -> !nextTriggerTime.isBefore(now))
+                            .orElse(true);
                 } catch (Exception e) {
                     throw new RuntimeException("Get next valid trigger time failed", e);
                 }
-
-                return !nextTriggerTime.isBefore(now);
             default:
                 throw new RuntimeException("Invalid dependent strategy: " + dependentItem.getStrategy());
         }

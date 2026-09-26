@@ -2,20 +2,18 @@ package com.flink.platform.web.dto.request;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.flink.platform.common.enums.JobFlowType;
-import com.flink.platform.common.util.DateUtil;
 import com.flink.platform.dao.entity.ExecutionConfig;
 import com.flink.platform.dao.entity.JobFlow;
 import com.flink.platform.dao.entity.alert.AlertConfig;
 import com.flink.platform.web.common.SpringContext;
 import com.flink.platform.web.config.WorkerConfig;
+import com.flink.platform.web.quartz.QuartzUtil;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.experimental.Delegate;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.quartz.CronExpression;
 
-import java.util.Date;
 import java.util.List;
 import java.util.Set;
 
@@ -208,15 +206,9 @@ public class JobFlowRequest {
     public String verifyCronExpr() {
         try {
             var cronExpr = getCronExpr();
-            if (StringUtils.isNotBlank(cronExpr)) {
-                CronExpression cronExpression = new CronExpression(cronExpr);
-                Date validTime1 = cronExpression.getNextValidTimeAfter(new Date());
-                Date validTime2 = cronExpression.getNextValidTimeAfter(validTime1);
-                if (validTime2.getTime() - validTime1.getTime() < DateUtil.MILLIS_PER_MINUTE) {
-                    return "Quartz schedule interval must bigger than 1 minute";
-                }
+            if (StringUtils.isNotBlank(cronExpr) && !QuartzUtil.hasValidScheduleInterval(cronExpr)) {
+                return "Quartz schedule interval must bigger than 1 minute";
             }
-
             return null;
         } catch (Exception e) {
             return "Quartz cron parsing failed";

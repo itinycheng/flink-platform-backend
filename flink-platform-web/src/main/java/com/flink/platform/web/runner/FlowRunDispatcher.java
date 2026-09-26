@@ -6,9 +6,9 @@ import com.flink.platform.dao.entity.JobFlowRun;
 import com.flink.platform.dao.service.JobFlowRunService;
 import com.flink.platform.web.config.WorkerConfig;
 import com.flink.platform.web.lifecycle.AppRunner;
+import com.flink.platform.web.quartz.QuartzService;
 import com.flink.platform.web.service.DependencyService;
 import com.flink.platform.web.service.KillJobService;
-import com.flink.platform.web.service.QuartzService;
 import com.flink.platform.web.util.ThreadUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
@@ -137,10 +137,9 @@ public class FlowRunDispatcher {
     LocalDateTime calcWaitDeadline(JobFlowRun jobFlowRun, LocalDateTime scheduleTime) {
         var cronExpr = jobFlowRun.getCronExpr();
         if (StringUtils.isNotBlank(cronExpr)) {
-            var nextFire = quartzService.nextTriggerTimeAfter(cronExpr, scheduleTime);
-            if (!LocalDateTime.MAX.equals(nextFire)) {
-                return nextFire;
-            }
+            return quartzService
+                    .nextTriggerTimeAfter(cronExpr, scheduleTime)
+                    .orElseGet(() -> scheduleTime.plus(workerConfig.getFlowWaitTimeout()));
         }
         return scheduleTime.plus(workerConfig.getFlowWaitTimeout());
     }

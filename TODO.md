@@ -320,16 +320,14 @@ DST always works.
       fallback + named-zone validation; keep `Constant.GLOBAL_TIME_ZONE` as the last-resort
       default (optionally make the global default a config property instead of pure
       `TimeZone.getDefault()`)
-- [ ] `flink-platform-web/.../quartz/IQuartzInfo.java` — add `TimeZone getTimeZone()`
-- [ ] `flink-platform-web/.../quartz/JobFlowQuartzInfo.java` — return
+- [ ] `flink-platform-web/.../quartz/QuartzSpec.java` — add `TimeZone getTimeZone()`
+- [ ] `flink-platform-web/.../quartz/JobFlowQuartzSpec.java` — snapshot
       `resolveZone(jobFlow)`
-- [ ] `flink-platform-web/.../service/QuartzService.java:149` —
+- [ ] `flink-platform-web/.../quartz/QuartzService.java` — configure the trigger with
       `cronSchedule(cron).inTimeZone(quartzInfo.getTimeZone())`
-- [ ] `flink-platform-web/.../service/QuartzService.java:162`,
-      `controller/QuartzController.java:53`, `dto/request/JobFlowRequest.java:150`,
-      `command/dependent/DependentCommandBuilder.java:100` — the 4 `new CronExpression(...)`:
-      add `cronExpression.setTimeZone(resolveZone(...))` so preview/validation/dependency
-      windows match actual firing
+- [ ] `flink-platform-web/.../quartz/QuartzUtil.java` — make cron calculation and validation
+      accept the resolved zone and call `cronExpression.setTimeZone(...)`; update the preview and
+      dependency callers so their windows match actual firing
 - [ ] `flink-platform-web/.../variable/TimeVariableResolver.java` — `cur*` providers use
       `LocalDate.now(zone)` / `LocalDateTime.now(zone)`; `biz*` anchor (`scheduleTime`)
       converted with the same zone. Zone comes from the job being resolved.
@@ -712,9 +710,6 @@ See design: [docs/design/flow-dependency-model.md](docs/design/flow-dependency-m
 - [ ] **Rename `ExecutionCondition` → `TriggerRule`** — its own class javadoc carries the TODO.
       Either do it or drop the note; it is a DAG-wide rename plus the `@JsonAlias` compatibility
       surface.
-- [ ] **Collapse the Quartz plumbing** — scheduling logic is spread across `QuartzService`,
-      `JobFlowQuartzInfo`, `JobFlowRunner` and `FlowRunDispatcher`; pull it together to cut the
-      coupling.
 ### Frontend (low priority — new UI only)
 
 The old UI will not get this feature; it only has to keep working, which it does: it never

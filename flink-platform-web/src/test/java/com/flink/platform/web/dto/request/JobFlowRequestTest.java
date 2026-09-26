@@ -23,6 +23,24 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 class JobFlowRequestTest {
 
     @Test
+    void validCronExpressionIsAccepted() {
+        var request = new JobFlowRequest();
+        request.setCronExpr("0 0/10 * * * ?");
+
+        assertNull(request.verifyCronExpr());
+    }
+
+    @Test
+    void invalidOrTooFrequentCronExpressionIsRejected() {
+        var request = new JobFlowRequest();
+        request.setCronExpr("invalid");
+        assertNotNull(request.verifyCronExpr());
+
+        request.setCronExpr("0/30 * * * * ?");
+        assertNotNull(request.verifyCronExpr());
+    }
+
+    @Test
     void noDependenciesIsValid() {
         assertNull(request(1L).verifyDependsOn());
         assertNull(request(1L, new DependencyConfig()).verifyDependsOn());

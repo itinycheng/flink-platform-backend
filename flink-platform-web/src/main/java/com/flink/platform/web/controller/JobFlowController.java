@@ -23,9 +23,8 @@ import com.flink.platform.web.annotation.RequirePermission;
 import com.flink.platform.web.common.RequestContext;
 import com.flink.platform.web.dto.ResultInfo;
 import com.flink.platform.web.dto.request.JobFlowRequest;
-import com.flink.platform.web.quartz.JobFlowQuartzInfo;
-import com.flink.platform.web.service.JobFlowQuartzService;
-import com.flink.platform.web.service.QuartzService;
+import com.flink.platform.web.quartz.QuartzService;
+import com.flink.platform.web.service.JobFlowScheduleService;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -83,7 +82,7 @@ public class JobFlowController {
 
     private final JobFlowRunService jobFlowRunService;
 
-    private final JobFlowQuartzService jobFlowQuartzService;
+    private final JobFlowScheduleService jobFlowScheduleService;
 
     private final QuartzService quartzService;
 
@@ -262,7 +261,7 @@ public class JobFlowController {
                 jobFlowService.updateById(newJobFlow);
                 break;
             case JOB_FLOW:
-                jobFlowQuartzService.scheduleJob(jobFlow);
+                jobFlowScheduleService.scheduleJob(jobFlow);
                 break;
             default:
                 return failure(INVALID_WORKFLOW_TYPE);
@@ -286,7 +285,7 @@ public class JobFlowController {
             return failure(SERVICE_ERROR, "Job flow not found");
         }
 
-        jobFlowQuartzService.unscheduleJob(jobFlow);
+        jobFlowScheduleService.unscheduleJob(jobFlow);
         return success(flowId);
     }
 
@@ -321,10 +320,10 @@ public class JobFlowController {
         }
 
         // run once.
-        var quartzInfo = new JobFlowQuartzInfo(jobFlow);
-        quartzInfo.addData(CONFIG, JsonUtil.toJsonString(config));
-        quartzInfo.addData(USER_ID, loginUser.getId());
-        if (quartzService.runOnce(quartzInfo)) {
+        var data = new HashMap<String, Object>();
+        data.put(CONFIG, JsonUtil.toJsonString(config));
+        data.put(USER_ID, loginUser.getId());
+        if (quartzService.runFlowOnce(jobFlow, data)) {
             return success(flowId);
         } else {
             return failure(SERVICE_ERROR);

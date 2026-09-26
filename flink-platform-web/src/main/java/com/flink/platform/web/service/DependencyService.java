@@ -4,12 +4,12 @@ import com.flink.platform.common.enums.ExecutionCondition;
 import com.flink.platform.dao.entity.Dependency;
 import com.flink.platform.dao.entity.DependencyConfig;
 import com.flink.platform.dao.service.JobFlowService;
+import com.flink.platform.web.quartz.QuartzService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
-import org.quartz.CronExpression;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -142,7 +142,7 @@ public class DependencyService {
         return finished ? UNSATISFIABLE : PENDING;
     }
 
-    private static boolean isWellConfigured(Dependency item, ExecutionCondition condition) {
+    private boolean isWellConfigured(Dependency item, ExecutionCondition condition) {
         if (item.getFlowId() == null) {
             return false;
         }
@@ -158,7 +158,7 @@ public class DependencyService {
 
         return switch (expiry) {
             case UPSTREAM_SCHEDULE ->
-                isNotBlank(item.getFlowCronExpr()) && CronExpression.isValidExpression(item.getFlowCronExpr());
+                isNotBlank(item.getFlowCronExpr()) && quartzService.isValidCronExpression(item.getFlowCronExpr());
             case FIXED_DURATION -> item.hasValidDuration();
             case NEVER -> true;
         };
@@ -179,7 +179,8 @@ public class DependencyService {
             case UPSTREAM_SCHEDULE ->
                 quartzService
                         .nextTriggerTimeAfter(item.getFlowCronExpr(), createAt)
-                        .isAfter(now);
+                        .map(nextTriggerTime -> nextTriggerTime.isAfter(now))
+                        .orElse(true);
             case FIXED_DURATION -> createAt.isAfter(now.minus(item.parseDuration()));
             case NEVER -> throw new IllegalStateException("unreachable");
         };

@@ -3,7 +3,7 @@ package com.flink.platform.web.service;
 import com.baomidou.dynamic.datasource.annotation.DS;
 import com.flink.platform.dao.entity.JobFlow;
 import com.flink.platform.dao.service.JobFlowService;
-import com.flink.platform.web.quartz.JobFlowQuartzInfo;
+import com.flink.platform.web.quartz.QuartzService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -16,7 +16,7 @@ import static com.flink.platform.common.enums.JobFlowStatus.SCHEDULING;
 @Service
 @DS("master_platform")
 @RequiredArgsConstructor(onConstructor_ = @Autowired)
-public class JobFlowQuartzService {
+public class JobFlowScheduleService {
 
     private final JobFlowService jobFlowService;
 
@@ -24,8 +24,7 @@ public class JobFlowQuartzService {
 
     @Transactional(rollbackFor = Exception.class)
     public boolean scheduleJob(JobFlow jobFlow) {
-        var jobFlowQuartzInfo = new JobFlowQuartzInfo(jobFlow);
-        var bool = quartzService.addJobToQuartz(jobFlowQuartzInfo);
+        var bool = quartzService.scheduleJobFlow(jobFlow);
 
         var newJobFlow = new JobFlow();
         newJobFlow.setId(jobFlow.getId());
@@ -37,8 +36,7 @@ public class JobFlowQuartzService {
 
     @Transactional(rollbackFor = Exception.class)
     public void unscheduleJob(JobFlow jobFlow) {
-        var quartzInfo = new JobFlowQuartzInfo(jobFlow);
-        quartzService.removeJob(quartzInfo);
+        quartzService.unscheduleJobFlow(jobFlow);
 
         var newJobFlow = new JobFlow();
         newJobFlow.setId(jobFlow.getId());

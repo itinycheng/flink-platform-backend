@@ -16,9 +16,8 @@ import com.flink.platform.web.command.CommandExecutor;
 import com.flink.platform.web.command.JobCommand;
 import com.flink.platform.web.common.SpringContext;
 import com.flink.platform.web.lifecycle.AppRunner;
-import com.flink.platform.web.quartz.JobFlowQuartzInfo;
+import com.flink.platform.web.quartz.QuartzService;
 import com.flink.platform.web.service.KillJobService;
-import com.flink.platform.web.service.QuartzService;
 import com.flink.platform.web.util.ThreadUtil;
 import jakarta.annotation.Nonnull;
 import lombok.RequiredArgsConstructor;
@@ -28,6 +27,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
 
 import static com.flink.platform.common.constants.JobConstant.CONFIG;
 import static com.flink.platform.common.constants.JobConstant.FLOW_RUN_ID;
@@ -114,13 +114,12 @@ public class FlowCommandExecutor implements CommandExecutor {
     @Transactional
     public Long runOnceInTransaction(JobFlow subFlow, LocalDateTime scheduleTime) {
         var flowRunId = newAndSaveDefault(subFlow);
-        var quartzInfo = new JobFlowQuartzInfo(subFlow);
-        quartzInfo.addData(FLOW_RUN_ID, flowRunId);
-
         var config = new ExecutionConfig();
         config.setScheduleTime(scheduleTime);
-        quartzInfo.addData(CONFIG, JsonUtil.toJsonString(config));
-        quartzService.runOnce(quartzInfo);
+        var data = new HashMap<String, Object>();
+        data.put(FLOW_RUN_ID, flowRunId);
+        data.put(CONFIG, JsonUtil.toJsonString(config));
+        quartzService.runFlowOnce(subFlow, data);
         return flowRunId;
     }
 
