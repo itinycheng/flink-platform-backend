@@ -1,13 +1,13 @@
 package com.flink.platform.web.dto.request;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.flink.platform.common.enums.JobFlowType;
+import com.flink.platform.dao.entity.Dependency;
 import com.flink.platform.dao.entity.ExecutionConfig;
 import com.flink.platform.dao.entity.JobFlow;
 import com.flink.platform.dao.entity.alert.AlertConfig;
+import com.flink.platform.dao.service.JobFlowService;
 import com.flink.platform.web.common.SpringContext;
 import com.flink.platform.web.config.WorkerConfig;
-import com.flink.platform.web.quartz.QuartzUtil;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.experimental.Delegate;
@@ -16,12 +16,14 @@ import org.apache.commons.lang3.StringUtils;
 
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
-import static com.flink.platform.common.enums.ExecutionCondition.ALL_MATCHED;
-import static com.flink.platform.common.enums.ExecutionCondition.ANY_MATCHED;
 import static com.flink.platform.common.enums.ExpiryPolicy.FIXED_DURATION;
 import static com.flink.platform.common.enums.JobFlowType.JOB_FLOW;
 import static com.flink.platform.common.enums.JobFlowType.JOB_LIST;
+import static com.flink.platform.web.quartz.QuartzUtil.hasValidScheduleInterval;
+import static org.apache.commons.collections4.CollectionUtils.isEmpty;
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 /** Job flow request info. */
 @Getter
@@ -29,8 +31,6 @@ import static com.flink.platform.common.enums.JobFlowType.JOB_LIST;
 public class JobFlowRequest {
 
     private static final Set<JobFlowType> VALID_TYPE = Set.of(JOB_FLOW, JOB_LIST);
-
-    private static WorkerConfig workerConfig_;
 
     @Delegate
     private final JobFlow jobFlow = new JobFlow();
@@ -147,7 +147,7 @@ public class JobFlowRequest {
 
     public String verifyAlerts() {
         List<AlertConfig> alerts = getAlerts();
-        if (CollectionUtils.isEmpty(alerts)) {
+        if (isEmpty(alerts)) {
             return null;
         }
 
@@ -171,33 +171,46 @@ public class JobFlowRequest {
             return "The precondition of Job flow dependencies isn't null";
         }
 
-        var statusesRequired = precondition == ALL_MATCHED || precondition == ANY_MATCHED;
-        for (var item : dependsOn.getDependencies()) {
-            var flowId = item.getFlowId();
+        var statusesRequired = precondition.requiresStatusMatched();
+        for (var dependency : dependsOn.getDependencies()) {
+            if (dependency == null) {
+                return "A dependency isn't null";
+            }
+
+            var flowId = dependency.getFlowId();
             if (flowId == null) {
-                return "The flowId of a dependent item isn't null";
+                return "The flowId of a dependency isn't null";
             }
 
             if (flowId.equals(getId())) {
                 return "A workflow can't depend on itself";
             }
 
-            if (statusesRequired && CollectionUtils.isEmpty(item.getStatuses())) {
-                return "The statuses of a dependent item can't be empty when precondition is " + precondition;
+            if (statusesRequired && isEmpty(dependency.getStatuses())) {
+                return "The statuses of a dependency can't be empty when precondition is " + precondition;
             }
 
-            var expiry = item.getExpiry();
+            var expiry = dependency.getExpiry();
             if (expiry == null) {
-                return "The expiry of a dependent item isn't null";
+                return "The expiry of a dependency isn't null";
             }
 
             if (expiry == FIXED_DURATION) {
-                if (!item.hasValidDuration()) {
+                if (!dependency.hasValidDuration()) {
                     return String.format("The duration of %s is invalid", expiry);
                 }
-            } else if (StringUtils.isNotBlank(item.getDuration())) {
+            } else if (isNotBlank(dependency.getDuration())) {
                 return String.format("The duration of %s should not be set", expiry);
             }
+        }
+
+        // TODO: Decide whether flow dependencies must be acyclic.
+        var flowIds =
+                dependsOn.getDependencies().stream().map(Dependency::getFlowId).collect(Collectors.toSet());
+        var existing = resolveJobFlowService().listExistingFlowIds(flowIds);
+        var missing = flowIds.stream().filter(id -> !existing.contains(id)).toList();
+        if (CollectionUtils.isNotEmpty(missing)) {
+            return "Dependency workflow not found: " + missing;
         }
 
         return null;
@@ -206,7 +219,7 @@ public class JobFlowRequest {
     public String verifyCronExpr() {
         try {
             var cronExpr = getCronExpr();
-            if (StringUtils.isNotBlank(cronExpr) && !QuartzUtil.hasValidScheduleInterval(cronExpr)) {
+            if (isNotBlank(cronExpr) && !hasValidScheduleInterval(cronExpr)) {
                 return "Quartz schedule interval must bigger than 1 minute";
             }
             return null;
@@ -221,7 +234,7 @@ public class JobFlowRequest {
             return null;
         }
 
-        WorkerConfig workerConfig = getOrInitWorkerConfig();
+        WorkerConfig workerConfig = resolveWorkerConfig();
         int maxThreads = workerConfig.getMaxPerFlowExecThreads();
         int parallelism = config.getParallelism();
         if (parallelism < 1 || parallelism > maxThreads) {
@@ -250,18 +263,17 @@ public class JobFlowRequest {
         }
 
         if (config.getParallelism() < 1) {
-            var workerConfig = getOrInitWorkerConfig();
+            var workerConfig = resolveWorkerConfig();
             config.setParallelism(workerConfig.getPerFlowExecThreads());
         }
         this.getJobFlow().setConfig(config);
     }
 
-    @JsonIgnore
-    public WorkerConfig getOrInitWorkerConfig() {
-        if (workerConfig_ == null) {
-            workerConfig_ = SpringContext.getBean(WorkerConfig.class);
-        }
+    private WorkerConfig resolveWorkerConfig() {
+        return SpringContext.getBean(WorkerConfig.class);
+    }
 
-        return workerConfig_;
+    private JobFlowService resolveJobFlowService() {
+        return SpringContext.getBean(JobFlowService.class);
     }
 }

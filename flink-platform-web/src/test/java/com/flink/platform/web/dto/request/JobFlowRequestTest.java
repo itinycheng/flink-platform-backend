@@ -4,10 +4,20 @@ import com.flink.platform.common.enums.ExpiryPolicy;
 import com.flink.platform.common.util.JsonUtil;
 import com.flink.platform.dao.entity.Dependency;
 import com.flink.platform.dao.entity.DependencyConfig;
+import com.flink.platform.dao.service.JobFlowService;
+import com.flink.platform.web.common.SpringContext;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 
 import static com.flink.platform.common.enums.ExecutionCondition.ALL_DONE;
 import static com.flink.platform.common.enums.ExecutionCondition.ALL_MATCHED;
@@ -18,9 +28,34 @@ import static com.flink.platform.common.enums.ExpiryPolicy.UPSTREAM_SCHEDULE;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.mockito.ArgumentMatchers.anySet;
+import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.when;
 
 /** Verifies prerequisite-dependency validation of {@link JobFlowRequest}. */
+@ExtendWith(MockitoExtension.class)
 class JobFlowRequestTest {
+
+    @Mock
+    private JobFlowService jobFlowService;
+
+    private MockedStatic<SpringContext> springContext;
+
+    @BeforeEach
+    void setUp() {
+        springContext = mockStatic(SpringContext.class);
+        springContext.when(() -> SpringContext.getBean(JobFlowService.class)).thenReturn(jobFlowService);
+        lenient().when(jobFlowService.listExistingFlowIds(anySet())).thenAnswer(invocation -> {
+            Collection<Long> flowIds = invocation.getArgument(0);
+            return Set.copyOf(flowIds);
+        });
+    }
+
+    @AfterEach
+    void tearDown() {
+        springContext.close();
+    }
 
     @Test
     void validCronExpressionIsAccepted() {
@@ -68,6 +103,11 @@ class JobFlowRequestTest {
     @Test
     void nullFlowIdIsRejected() {
         assertNotNull(request(1L, config(item(null, FIXED_DURATION, "1h"))).verifyDependsOn());
+    }
+
+    @Test
+    void nullDependencyIsRejected() {
+        assertNotNull(request(1L, config((Dependency) null)).verifyDependsOn());
     }
 
     @Test
@@ -120,6 +160,15 @@ class JobFlowRequestTest {
     @Test
     void neverWithDurationIsRejected() {
         assertNotNull(request(1L, config(item(2L, NEVER, "1h"))).verifyDependsOn());
+    }
+
+    @Test
+    void missingDependencyIsRejected() {
+        when(jobFlowService.listExistingFlowIds(anySet())).thenReturn(Set.of());
+
+        assertEquals(
+                "Dependency workflow not found: [2]",
+                request(1L, config(item(2L, NEVER, null))).verifyDependsOn());
     }
 
     private JobFlowRequest request(Long id, DependencyConfig... dependsOn) {

@@ -30,6 +30,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static com.flink.platform.common.enums.JobFlowStatus.OFFLINE;
 import static com.flink.platform.common.enums.JobFlowStatus.ONLINE;
@@ -235,6 +236,14 @@ public class JobFlowService extends ServiceImpl<JobFlowMapper, JobFlow> {
                 .ne(isNull(query.getStatus()), JobFlow::getStatus, JobFlowStatus.DELETE)
                 .orderByDesc(query.isSortByIdDesc(), JobFlow::getId);
         return baseMapper.selectPageDetails(new Page<>(query.getPage(), query.getSize()), wrapper);
+    }
+
+    public Set<Long> listExistingFlowIds(Set<Long> flowIds) {
+        if (isEmpty(flowIds)) {
+            return Set.of();
+        }
+
+        return baseMapper.selectExistingFlowIds(flowIds);
     }
 
     public Map<Long, JobFlowLatestRun> mapLatestRunByFlowId(List<Long> flowIds) {

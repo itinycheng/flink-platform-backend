@@ -1,5 +1,6 @@
 package com.flink.platform.dao.mapper;
 
+import com.baomidou.mybatisplus.annotation.InterceptorIgnore;
 import com.baomidou.mybatisplus.core.conditions.Wrapper;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
@@ -13,10 +14,25 @@ import org.apache.ibatis.annotations.Result;
 import org.apache.ibatis.annotations.Results;
 import org.apache.ibatis.annotations.Select;
 
+import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 
 /** job flow info Mapper. */
 public interface JobFlowMapper extends BaseMapper<JobFlow> {
+
+    @InterceptorIgnore(tenantLine = "true")
+    @Select("""
+            <script>
+                SELECT id
+                FROM t_job_flow
+                WHERE id IN
+                <foreach collection="flowIds" item="flowId" open="(" close=")" separator=",">
+                    #{flowId}
+                </foreach>
+            </script>
+            """)
+    Set<Long> selectExistingFlowIds(@Param("flowIds") Collection<Long> flowIds);
 
     @Results({
         @Result(property = "config", column = "config", typeHandler = Jackson3TypeHandler.class),
