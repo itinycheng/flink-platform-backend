@@ -349,13 +349,14 @@ CREATE TABLE `t_job_flow_run` (
   `schedule_time` datetime NOT NULL COMMENT 'logical schedule time; quartz scheduled fire time unless manually overridden or inherited',
   `start_time` datetime DEFAULT NULL,
   `end_time` datetime DEFAULT NULL,
-  `create_time` datetime DEFAULT CURRENT_TIMESTAMP,
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   KEY `t_job_flow_run_flow_id_idx` (`flow_id`) USING BTREE,
   KEY `t_job_flow_run_create_time_idx` (`create_time`) USING BTREE,
   KEY `t_job_flow_run_name_idx` (`name`) USING BTREE,
   KEY `t_job_flow_run_end_time_idx` (`end_time`) USING BTREE,
   KEY `t_job_flow_run_status_idx` (`status`) USING BTREE,
+  KEY `t_job_flow_run_flow_schedule_idx` (`flow_id`,`schedule_time`) USING BTREE,
   KEY `t_job_flow_run_host_status_priority_idx` (`host`,`status`,`priority`) USING BTREE
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4;
 

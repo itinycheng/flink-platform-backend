@@ -1,8 +1,8 @@
 # Schedule-Time-Aware Run Concurrency
 
-> **Status:** Phase 1 implementation. This document separates logical-run identity from
-> overlap and capacity policy. Phase 1 covers `JobFlowRun`; flow-less job runs and distributed
-> atomic admission remain follow-up work.
+> **Status:** Phase 1 is implemented for `JobFlowRun`, including flow-row-locked admission. A
+> DB-backed two-worker test, WAITING-CAS lifecycle handling, and flow-less job runs remain
+> follow-up work.
 
 ## Problem
 
@@ -10,9 +10,9 @@
 of `start_time`: queueing, worker saturation, Quartz misfire recovery, and failover may delay the
 physical start without changing the period being processed.
 
-The existing conflict check only looks for a non-terminal run with the same `flow_id` (or the same
-manual `startJobId`). Consequently, a run for `2026-10-01` blocks a backfill run for `2026-09-01`,
-even though they are different logical runs and may safely process different partitions.
+The original conflict check only looked for a non-terminal run with the same `flow_id` (or the same
+manual `startJobId`). Consequently, a run for `2026-10-01` blocked a backfill run for `2026-09-01`,
+even though they were different logical runs and might safely process different partitions.
 
 ## Separate the Three Concerns
 
@@ -29,12 +29,12 @@ runtime, so stored configuration cannot bypass the platform ceiling.
 
 ## Phase 1 Admission Rules
 
-Given all active runs of the same flow:
+Given the active runs of the same flow:
 
 1. For `ONLY_CUR_JOB`, `ALL_POST_JOBS`, and `ALL_PRE_JOBS`, reject an active run with the same
    `strategy + startJobId` as `DUPLICATE_START_JOB`, regardless of `schedule_time`.
-2. For an ordinary scheduled execution, reject another ordinary scheduled run with the same
-   resolved `schedule_time` as `DUPLICATE_SCHEDULE`.
+2. For an ordinary scheduled execution, reject an active ordinary run with the same resolved
+   `schedule_time` as `DUPLICATE_SCHEDULE`. Terminal runs do not block a user-requested rerun.
 3. Otherwise, if the total active count for the flow is already `maxActiveRuns`, reject it as
    `MAX_ACTIVE_RUNS`.
 4. Otherwise admit the run. Every task in the admitted flow run continues to inherit the same
@@ -45,8 +45,9 @@ the flow has remaining capacity. Different start jobs or different strategies ma
 the admission layer deliberately does not infer overlap from the DAG. Setting `maxActiveRuns`
 above `1` therefore opts into possible overlap between the jobs executed by different flow runs.
 
-The module boundary is deliberate: DAO `JobFlowRunService.listActiveRuns` only loads non-terminal
-rows, while Web `JobFlowRunBizService` owns execution-scope, logical-time, and capacity decisions.
+The module boundary is deliberate: DAO `JobFlowRunService.listActiveRuns` loads non-terminal rows
+for duplicate, overlap, and capacity checks. Terminal history remains available for audit but does
+not participate in admission.
 
 Examples for `maxActiveRuns = 2`:
 
@@ -54,6 +55,7 @@ Examples for `maxActiveRuns = 2`:
 |---|---|---|
 | scheduled `2026-10-01` | scheduled `2026-10-01` | duplicate schedule, reject |
 | scheduled `2026-10-01` | scheduled `2026-10-02` | admit |
+| terminal scheduled `2026-10-01` | scheduled `2026-10-01` | admit as rerun |
 | `ONLY_CUR_JOB(A)` | `ONLY_CUR_JOB(A)` | duplicate start job, reject |
 | `ONLY_CUR_JOB(A)` | `ONLY_CUR_JOB(B)` | admit |
 | two active runs | any third run | capacity reached, reject |
@@ -68,8 +70,17 @@ Examples for `maxActiveRuns = 2`:
   an existing run. `ExecutionConfig` does not contain logical-time state.
 - Effective times are truncated to the database column's second precision before comparison and
   persistence.
-- Dependency-wait deadlines and warnings use the run's physical `create_time`, not its logical
-  `schedule_time`, so historical backfills receive a full wait window.
+- Dependency waiting starts from the run's physical `create_time`. For a normal cron occurrence the
+  deadline is its next scheduled fire; for a historical/delayed occurrence it is the next live fire
+  after creation, with `worker.flowWaitTimeout` as the scheduleless/fallback limit.
+
+## Deployment Compatibility
+
+Removing `ExecutionConfig.scheduleTime` changes the Quartz `JobDataMap` protocol: the new version
+writes the logical-time override under the standalone `SCHEDULE_TIME` key, while older workers
+read it only from serialized `ExecutionConfig`. Do not run these versions together in one Quartz
+cluster during a rolling deployment; use a coordinated restart. If zero-downtime rolling upgrades
+become necessary, first ship one compatibility release that reads and writes both representations.
 
 ## Industry Parallels
 
@@ -92,10 +103,9 @@ The common pattern is to keep logical identity, overlap behavior, and resource l
   current behavior.
 - Give flow-less/ad-hoc job runs their own persisted logical time before applying the same policy at
   `job_id` scope.
-- Make admission atomic across scheduler nodes. The current check plus insert is protected only by
-  the existing process-local flow lock; a database claim/lock is still required for strict cluster
-  enforcement.
-- Add reprocessing policy for a terminal run at the same logical time (`none`, `failed`, or
-  `completed`) and model retries as attempts rather than changing `schedule_time`.
+- Add a DB-backed two-worker test for the flow-row lock and transactional active-run admission.
+- Move WAITING-CAS race outcomes into the lifecycle state machine; admission currently fails fast
+  if the dispatcher changes a WAITING row after the active-run snapshot.
+- Add explicit attempt metadata if the UI needs to link reruns of the same logical time.
 - Complete the timezone work in `TODO.md`; logical-time equality must use a consistently resolved
   schedule zone/instant across the cluster.

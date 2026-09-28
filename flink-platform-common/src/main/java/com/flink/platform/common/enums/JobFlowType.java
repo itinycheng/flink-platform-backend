@@ -6,6 +6,6 @@ import lombok.Getter;
 @Getter
 public enum JobFlowType {
     JOB_FLOW,
-    JOB_LIST,
+    JOB_LIST, // deprecated
     FLINK
 }

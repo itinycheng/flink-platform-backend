@@ -26,8 +26,8 @@ import com.flink.platform.web.dto.ResultInfo;
 import com.flink.platform.web.dto.request.JobFlowExecRequest;
 import com.flink.platform.web.dto.request.JobFlowRequest;
 import com.flink.platform.web.quartz.QuartzService;
+import com.flink.platform.web.service.FlowScheduleService;
 import com.flink.platform.web.service.JobFlowRunBizService;
-import com.flink.platform.web.service.JobFlowScheduleService;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -87,7 +87,7 @@ public class JobFlowController {
 
     private final JobFlowRunBizService flowRunBizService;
 
-    private final JobFlowScheduleService jobFlowScheduleService;
+    private final FlowScheduleService flowScheduleService;
 
     private final QuartzService quartzService;
 
@@ -274,7 +274,7 @@ public class JobFlowController {
                 jobFlowService.updateById(newJobFlow);
                 break;
             case JOB_FLOW:
-                jobFlowScheduleService.scheduleJob(jobFlow);
+                flowScheduleService.scheduleJob(jobFlow);
                 break;
             default:
                 return failure(INVALID_WORKFLOW_TYPE);
@@ -298,7 +298,7 @@ public class JobFlowController {
             return failure(SERVICE_ERROR, "Job flow not found");
         }
 
-        jobFlowScheduleService.unscheduleJob(jobFlow);
+        flowScheduleService.unscheduleJob(jobFlow);
         return success(flowId);
     }
 

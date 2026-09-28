@@ -18,8 +18,9 @@ import com.flink.platform.dao.service.JobInfoService;
 import com.flink.platform.dao.service.JobRunInfoService;
 import com.flink.platform.web.common.SpringContext;
 import com.flink.platform.web.config.WorkerConfig;
+import com.flink.platform.web.model.FlowRunCreationResult;
 import com.flink.platform.web.service.DependencyService;
-import com.flink.platform.web.service.JobFlowRunBizService;
+import com.flink.platform.web.service.FlowScheduleService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ObjectUtils;
 import org.quartz.Job;
@@ -34,13 +35,13 @@ import static com.flink.platform.common.constants.JobConstant.CONFIG;
 import static com.flink.platform.common.constants.JobConstant.FLOW_RUN_ID;
 import static com.flink.platform.common.constants.JobConstant.SCHEDULE_TIME;
 import static com.flink.platform.common.constants.JobConstant.USER_ID;
-import static com.flink.platform.common.enums.ExecutionStatus.CREATED;
 import static com.flink.platform.common.enums.ExecutionStatus.FAILURE;
 import static com.flink.platform.common.enums.ExecutionStatus.SUBMITTED;
 import static com.flink.platform.common.enums.ExecutionStatus.WAITING;
 import static com.flink.platform.common.enums.JobFlowStatus.ONLINE;
 import static com.flink.platform.common.enums.JobFlowStatus.SCHEDULING;
 import static com.flink.platform.common.enums.JobFlowType.JOB_LIST;
+import static com.flink.platform.common.util.Preconditions.checkNotNull;
 import static com.flink.platform.web.service.DependencyService.DependencyState.SATISFIED;
 import static java.time.temporal.ChronoUnit.SECONDS;
 
@@ -54,8 +55,6 @@ public class JobFlowRunner implements Job {
 
     private final JobFlowRunService jobFlowRunService = SpringContext.getBean(JobFlowRunService.class);
 
-    private final JobFlowRunBizService flowRunBizService = SpringContext.getBean(JobFlowRunBizService.class);
-
     private final JobInfoService jobInfoService = SpringContext.getBean(JobInfoService.class);
 
     private final JobRunInfoService jobRunService = SpringContext.getBean(JobRunInfoService.class);
@@ -66,6 +65,8 @@ public class JobFlowRunner implements Job {
 
     private final DependencyService dependencyService = SpringContext.getBean(DependencyService.class);
 
+    private final FlowScheduleService flowScheduleService = SpringContext.getBean(FlowScheduleService.class);
+
     // TODO: handle exceptions ?
     @Override
     public void execute(JobExecutionContext context) {
@@ -74,7 +75,6 @@ public class JobFlowRunner implements Job {
         var code = key.getName();
         var dataMap = detail.getJobDataMap();
 
-        // TODO: Make flow admission atomic across cluster nodes.
         synchronized (getProcessLock(code)) {
             // Get job flow info.
             var jobFlow = jobFlowService.getOne(new QueryWrapper<JobFlow>()
@@ -94,51 +94,13 @@ public class JobFlowRunner implements Job {
                             LocalDateTime.now())
                     .truncatedTo(SECONDS);
 
-            if (JOB_LIST.equals(jobFlow.getType())) {
-                var activeRun = jobRunService.findActiveRunByJobId(executionConfig.getStartJobId());
-                if (activeRun != null) {
-                    log.warn(
-                            "The job: {} is in non-terminal status, job run id: {}",
-                            activeRun.getName(),
-                            activeRun.getId());
-                    alertSendingService.sendErrAlertsDirectly(
-                            jobFlow, "There is already an active run: " + activeRun.getId());
-                    return;
-                }
-            } else {
-                var conflict =
-                        flowRunBizService.findRunConflict(jobFlow.getId(), executionConfig, scheduleTime, flowRunId);
-                if (conflict != null) {
-                    if (flowRunId != null) {
-                        jobFlowRunService.updateStatusFromTo(flowRunId, CREATED, FAILURE);
-                    }
-                    var activeRun = conflict.activeRun();
-                    log.warn(
-                            "Job flow {} rejected by {}, active run id: {}",
-                            jobFlow.getId(),
-                            conflict.type(),
-                            activeRun.getId());
-                    alertSendingService.sendErrAlertsDirectly(
-                            jobFlow,
-                            "Flow run rejected: "
-                                    + conflict.type().getDescription()
-                                    + ", active run: "
-                                    + activeRun.getId());
-                    return;
-                }
-            }
-
             // Create job flow run instance.
             var jobFlowRun = new JobFlowRun();
             jobFlowRun.setId(flowRunId);
             jobFlowRun.setFlowId(jobFlow.getId());
             jobFlowRun.setName(
                     String.join("-", jobFlow.getName(), jobFlow.getCode(), String.valueOf(System.currentTimeMillis())));
-            if (JOB_LIST.equals(jobFlow.getType())) {
-                jobFlowRun.setFlow(createFlowFromConfig(executionConfig));
-            } else {
-                jobFlowRun.setFlow(jobFlow.getFlow());
-            }
+            jobFlowRun.setFlow(jobFlow.getFlow());
             var triggerUserId = NumberUtil.toLong(dataMap.get(USER_ID));
             jobFlowRun.setUserId(triggerUserId != null ? triggerUserId : jobFlow.getUserId());
             jobFlowRun.setWorkspaceId(jobFlow.getWorkspaceId());
@@ -157,18 +119,41 @@ public class JobFlowRunner implements Job {
             jobFlowRun.setDependsOn(dependsOn);
             jobFlowRun.setStatus(dependencyService.resolveAndEvaluate(dependsOn) == SATISFIED ? SUBMITTED : WAITING);
 
-            // Persisted as non-terminal: FlowRunDispatcher.drainAndExecute picks up SUBMITTED runs,
-            // while WAITING ones stay parked until advanceWaitingRuns finds their dependencies satisfied.
-            jobFlowRunService.saveOrUpdate(jobFlowRun);
-            log.info(
-                    "Job flow run: {} is created, job flow: {}, time: {}",
-                    jobFlowRun.getId(),
-                    code,
-                    System.currentTimeMillis());
+            // TODO: legacy, Remove in the future.
+            if (JOB_LIST.equals(jobFlowRun.getType())) {
+                handleJobListRun(jobFlowRun, executionConfig);
+                return;
+            }
+
+            // FLOW / FLINK / SPARK / etc.
+            var result = flowScheduleService.tryCreateFlowRun(jobFlowRun);
+            handleFlowRunCreationResult(result, jobFlow, jobFlowRun);
         }
     }
 
-    private JobFlowDag createFlowFromConfig(ExecutionConfig executionConfig) {
+    private void handleFlowRunCreationResult(FlowRunCreationResult result, JobFlow jobFlow, JobFlowRun jobFlowRun) {
+        result.timeouts().forEach(timeout -> {
+            log.warn(
+                    "{}, failed waiting flow run: {}",
+                    timeout.reason(),
+                    timeout.run().getId());
+            alertSendingService.sendAlerts(timeout.run(), timeout.reason());
+        });
+
+        switch (result.state()) {
+            case BLOCKED -> {
+                var blockOn = checkNotNull(result.blockOn());
+                var reason = result.blockReason();
+                log.warn("Job flow {} rejected: {}, conflicting run id: {}", jobFlow.getId(), reason, blockOn.getId());
+                alertSendingService.sendErrAlerts(
+                        jobFlow, "Flow run rejected: " + reason + ", block on: " + blockOn.getId());
+            }
+            case CREATED ->
+                log.info("Job flow run: {} is created, time: {}", jobFlowRun.getId(), System.currentTimeMillis());
+        }
+    }
+
+    private JobFlowDag createJobListFlow(ExecutionConfig executionConfig) {
         var flow = new JobFlowDag();
         var startJobId = executionConfig.getStartJobId();
         flow.addVertex(new JobVertex(startJobId));
@@ -189,6 +174,28 @@ public class JobFlowRunner implements Job {
         executionConfig.setMaxJobsPerRun(
                 Math.min(executionConfig.getMaxJobsPerRun(), workerConfig.getMaxPerFlowExecThreads()));
         return executionConfig;
+    }
+
+    private void handleJobListRun(JobFlowRun jobFlowRun, ExecutionConfig executionConfig) {
+        if (!JOB_LIST.equals(jobFlowRun.getType())) {
+            return;
+        }
+
+        var activeRun = jobRunService.findActiveRunByJobId(executionConfig.getStartJobId());
+        if (activeRun != null) {
+            log.warn("The job: {} is in non-terminal status, job run id: {}", activeRun.getName(), activeRun.getId());
+            jobFlowRun.setStatus(FAILURE);
+            alertSendingService.sendAlertsDirectly(jobFlowRun, "There is already an active run: " + activeRun.getId());
+            return;
+        }
+
+        // update flow for jobs of JOB_LIST type.
+        jobFlowRun.setFlow(createJobListFlow(executionConfig));
+        jobFlowRunService.saveOrUpdate(jobFlowRun);
+        log.info(
+                "The job flow of type JOB_LIST: {} is created, time: {}",
+                jobFlowRun.getId(),
+                System.currentTimeMillis());
     }
 
     private Object getProcessLock(String code) {

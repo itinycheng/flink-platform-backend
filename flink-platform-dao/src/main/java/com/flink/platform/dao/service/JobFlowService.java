@@ -55,6 +55,12 @@ public class JobFlowService extends ServiceImpl<JobFlowMapper, JobFlow> {
 
     private final JobRunInfoService jobRunInfoService;
 
+    public void lockForUpdate(Long flowId) {
+        if (baseMapper.selectForUpdate(flowId) == null) {
+            throw new IllegalStateException("Job flow not found: " + flowId);
+        }
+    }
+
     @Transactional
     public JobFlow cloneJobFlow(long flowId, Long userId) {
         // clone jobFlow.

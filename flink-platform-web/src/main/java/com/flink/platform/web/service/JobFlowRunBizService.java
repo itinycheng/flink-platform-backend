@@ -13,6 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Objects;
 
 import static com.flink.platform.web.service.JobFlowRunBizService.ConflictType.DUPLICATE_SCHEDULE;
@@ -38,20 +39,30 @@ public class JobFlowRunBizService {
     public @Nullable RunConflict findRunConflict(
             Long flowId, ExecutionConfig config, @Nullable LocalDateTime scheduleTime, @Nullable Long excludedRunId) {
         var activeRuns = flowRunService.listActiveRuns(flowId, excludedRunId);
+        return findRunConflict(config, scheduleTime, activeRuns);
+    }
+
+    /** Evaluates an already-locked active-run snapshot without issuing another database query. */
+    public @Nullable RunConflict findRunConflict(
+            ExecutionConfig config, @Nullable LocalDateTime scheduleTime, List<JobFlowRun> activeRuns) {
         var strategy = config.getStrategy();
         var startJobId = config.getStartJobId();
-
         if (scheduleTime != null) {
             scheduleTime = scheduleTime.truncatedTo(SECONDS);
         }
 
         for (var activeRun : activeRuns) {
             var activeConfig = activeRun.getConfig();
-            var activeStrategy = activeConfig.getStrategy();
+            ExecutionStrategy activeStrategy = null;
+            Long activeStartJobId = null;
+            if (activeConfig != null) {
+                activeStrategy = activeConfig.getStrategy();
+                activeStartJobId = activeConfig.getStartJobId();
+            }
 
             if (ExecutionStrategy.needsStartJob(strategy)
                     && Objects.equals(strategy, activeStrategy)
-                    && Objects.equals(startJobId, activeConfig.getStartJobId())) {
+                    && Objects.equals(startJobId, activeStartJobId)) {
                 return new RunConflict(activeRun, DUPLICATE_START_JOB);
             }
 

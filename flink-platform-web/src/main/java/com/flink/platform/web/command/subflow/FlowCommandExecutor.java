@@ -66,30 +66,16 @@ public class FlowCommandExecutor implements CommandExecutor {
     public JobCallback execCommand(@Nonnull JobCommand command) {
         var flowId = ((FlowCommand) command).getFlowId();
         var subFlow = jobFlowService.getById(flowId);
+
         // Inherit parent flow's scheduleTime so the whole workflow tree shares one biz* anchor.
         var scheduleTime = jobFlowRunService.getScheduleTimeOrNow(command.getFlowRunId());
-
         var executionConfig = new ExecutionConfig();
         executionConfig.mergeFrom(subFlow.getConfig());
-        var conflict = flowRunBizService.findRunConflict(flowId, executionConfig, scheduleTime);
-        if (conflict != null) {
-            log.info(
-                    "Subflow run rejected by {}, flowId: {}, active flowRunId: {}, scheduleTime: {}",
-                    conflict.type(),
-                    flowId,
-                    conflict.activeRun().getId(),
-                    scheduleTime);
-            return new JobCallback(
-                    "Subflow run rejected by " + conflict.type() + ", active flowRunId: "
-                            + conflict.activeRun().getId(),
-                    FAILURE);
-        }
-
-        // Use proxy to enable @Transactional.
-        var self = SpringContext.getBean(FlowCommandExecutor.class);
 
         Long flowRunId;
         try {
+            // Use the Spring proxy so @Transactional is applied to the public method below.
+            var self = SpringContext.getBean(FlowCommandExecutor.class);
             flowRunId = self.runOnceInTransaction(subFlow, executionConfig, scheduleTime);
         } catch (Exception e) {
             log.error("Subflow run once time failed, flowId: {}", subFlow.getId(), e);
@@ -126,10 +112,22 @@ public class FlowCommandExecutor implements CommandExecutor {
         service.killFlowRun(backInfo.getFlowRunId());
     }
 
-    // Don't use this method outside this class.
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public Long runOnceInTransaction(JobFlow subFlow, ExecutionConfig config, LocalDateTime scheduleTime) {
+        jobFlowService.lockForUpdate(subFlow.getId());
+        var conflict = flowRunBizService.findRunConflict(subFlow.getId(), config, scheduleTime);
+        if (conflict != null) {
+            throw new IllegalStateException(
+                    "Flow run rejected: " + conflict.type().getDescription()
+                            + ", conflicting flowRunId: "
+                            + conflict.activeRun().getId());
+        }
+
         var flowRunId = newAndSaveDefault(subFlow, config, scheduleTime);
+        if (flowRunId == null) {
+            throw new IllegalStateException("Failed to reserve subflow run: " + subFlow.getId());
+        }
+
         var data = new HashMap<String, Object>();
         data.put(FLOW_RUN_ID, flowRunId);
         data.put(CONFIG, JsonUtil.toJsonString(config));
@@ -138,19 +136,19 @@ public class FlowCommandExecutor implements CommandExecutor {
         return flowRunId;
     }
 
-    private Long newAndSaveDefault(JobFlow jobFlow, ExecutionConfig config, LocalDateTime scheduleTime) {
-        var jobflowRun = new JobFlowRun();
-        jobflowRun.setName(DEFAULT_NAME);
-        jobflowRun.setUserId(jobFlow.getUserId());
-        jobflowRun.setWorkspaceId(jobFlow.getWorkspaceId());
-        jobflowRun.setFlowId(jobFlow.getId());
-        jobflowRun.setType(JOB_FLOW);
-        jobflowRun.setHost("");
-        jobflowRun.setFlow(new JobFlowDag());
-        jobflowRun.setStatus(CREATED);
-        jobflowRun.setConfig(config);
-        jobflowRun.setScheduleTime(scheduleTime);
-        jobFlowRunService.save(jobflowRun);
-        return jobflowRun.getId();
+    private Long newAndSaveDefault(JobFlow subFlow, ExecutionConfig config, LocalDateTime scheduleTime) {
+        var jobFlowRun = new JobFlowRun();
+        jobFlowRun.setName(DEFAULT_NAME);
+        jobFlowRun.setUserId(subFlow.getUserId());
+        jobFlowRun.setWorkspaceId(subFlow.getWorkspaceId());
+        jobFlowRun.setFlowId(subFlow.getId());
+        jobFlowRun.setType(JOB_FLOW);
+        jobFlowRun.setHost("");
+        jobFlowRun.setFlow(new JobFlowDag());
+        jobFlowRun.setStatus(CREATED);
+        jobFlowRun.setConfig(config);
+        jobFlowRun.setScheduleTime(scheduleTime);
+        jobFlowRunService.save(jobFlowRun);
+        return jobFlowRun.getId();
     }
 }

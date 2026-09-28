@@ -172,3 +172,15 @@ UPDATE platform.t_job_flow SET config = '{}' WHERE config IS NULL;
 UPDATE platform.t_job_flow_run SET config = '{}' WHERE config IS NULL;
 ALTER TABLE platform.t_job_flow MODIFY COLUMN config varchar(255) NOT NULL COMMENT 'execution config';
 ALTER TABLE platform.t_job_flow_run MODIFY COLUMN config varchar(255) NOT NULL COMMENT 'execution config';
+
+-- 2026-10-09
+CREATE INDEX t_job_flow_run_flow_schedule_idx USING BTREE
+    ON platform.t_job_flow_run (flow_id, schedule_time);
+
+-- 2026-10-14
+UPDATE platform.t_job_flow_run
+SET create_time = CURRENT_TIMESTAMP
+WHERE create_time IS NULL;
+
+ALTER TABLE platform.t_job_flow_run
+    MODIFY COLUMN create_time datetime NOT NULL DEFAULT CURRENT_TIMESTAMP;

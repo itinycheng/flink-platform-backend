@@ -21,6 +21,9 @@ import java.util.Set;
 /** job flow info Mapper. */
 public interface JobFlowMapper extends BaseMapper<JobFlow> {
 
+    @Select("SELECT id FROM t_job_flow WHERE id = #{id} FOR UPDATE")
+    Long selectForUpdate(@Param("id") Long id);
+
     @InterceptorIgnore(tenantLine = "true")
     @Select("""
             <script>

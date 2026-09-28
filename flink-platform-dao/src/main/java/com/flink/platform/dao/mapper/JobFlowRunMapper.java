@@ -15,17 +15,11 @@ import java.util.Map;
 /** job flow run instance Mapper. */
 public interface JobFlowRunMapper extends BaseMapper<JobFlowRun> {
 
-    @Results(
-            id = "queryParamsForUpdate",
-            value = {
-                @Result(
-                        property = "params",
-                        column = "params",
-                        typeHandler = Jackson3TypeHandler.class,
-                        javaType = Map.class)
-            })
+    @Results({
+        @Result(property = "params", column = "params", typeHandler = Jackson3TypeHandler.class, javaType = Map.class)
+    })
     @Select("SELECT id, params FROM t_job_flow_run WHERE id = #{id} FOR UPDATE")
-    JobFlowRun queryParamsForUpdate(@Param("id") Long id);
+    JobFlowRun selectParamsForUpdate(@Param("id") Long id);
 
     @Select("""
             <script>

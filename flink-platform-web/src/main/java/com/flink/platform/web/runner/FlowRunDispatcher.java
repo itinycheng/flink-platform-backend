@@ -6,13 +6,12 @@ import com.flink.platform.dao.entity.JobFlowRun;
 import com.flink.platform.dao.service.JobFlowRunService;
 import com.flink.platform.web.config.WorkerConfig;
 import com.flink.platform.web.lifecycle.AppRunner;
-import com.flink.platform.web.quartz.QuartzService;
 import com.flink.platform.web.service.DependencyService;
+import com.flink.platform.web.service.FlowScheduleService;
 import com.flink.platform.web.service.KillJobService;
 import com.flink.platform.web.util.ThreadUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
@@ -52,7 +51,7 @@ public class FlowRunDispatcher {
 
     private final DependencyService dependencyService;
 
-    private final QuartzService quartzService;
+    private final FlowScheduleService flowScheduleService;
 
     private final ThreadPoolExecutor flowExecService;
 
@@ -67,13 +66,13 @@ public class FlowRunDispatcher {
             AlertSendingService alertSendingService,
             KillJobService killJobService,
             DependencyService dependencyService,
-            QuartzService quartzService) {
+            FlowScheduleService flowScheduleService) {
         this.workerConfig = workerConfig;
         this.jobFlowRunService = jobFlowRunService;
         this.alertSendingService = alertSendingService;
         this.killJobService = killJobService;
         this.dependencyService = dependencyService;
-        this.quartzService = quartzService;
+        this.flowScheduleService = flowScheduleService;
         this.flowExecService =
                 ThreadUtil.newFixedVirtualThreadExecutor("FlowExecThread", workerConfig.getFlowExecThreads());
     }
@@ -121,11 +120,16 @@ public class FlowRunDispatcher {
         var warnings = new ArrayList<WaitingWarning>();
         for (var waiting : waitingRuns) {
             try {
+                var deadline = flowScheduleService.resolveWaitDeadline(waiting);
+                if (collectTimeoutFailure(waiting, deadline, failures)) {
+                    continue;
+                }
+
                 switch (dependencyService.evaluate(waiting.getDependsOn())) {
                     case SATISFIED -> readyIds.add(waiting.getId());
                     case UNSATISFIABLE -> failures.add(new WaitingFailure(waiting, "Upstream status not accepted"));
                     case MISCONFIGURED -> failures.add(new WaitingFailure(waiting, "Invalid dependency configuration"));
-                    case PENDING -> collectPendingActions(waiting, failures, warnings);
+                    case PENDING -> collectPendingActions(waiting, deadline, failures, warnings);
                 }
             } catch (Exception e) {
                 // TODO: persist exception to explain failed reason ?
@@ -147,37 +151,31 @@ public class FlowRunDispatcher {
         return new ArrayList<>(inFlightFlowRuns.values());
     }
 
-    LocalDateTime calcWaitDeadline(JobFlowRun jobFlowRun, LocalDateTime scheduleTime) {
-        var cronExpr = jobFlowRun.getCronExpr();
-        if (StringUtils.isNotBlank(cronExpr)) {
-            return quartzService
-                    .nextTriggerTimeAfter(cronExpr, scheduleTime)
-                    .map(nextTriggerTime -> nextTriggerTime.minusSeconds(10))
-                    .orElseGet(() -> scheduleTime.plus(workerConfig.getFlowWaitTimeout()));
-        }
-        return scheduleTime.plus(workerConfig.getFlowWaitTimeout());
-    }
-
     // ====================================================
     // ====================== private =====================
     // ====================================================
 
     private void collectPendingActions(
-            JobFlowRun waiting, List<WaitingFailure> failures, List<WaitingWarning> warnings) {
-        // scheduleTime is a logical business-period identity and can intentionally be months in
-        // the past for a backfill. Waiting SLAs must start when this run was actually admitted.
-        var waitStartedAt = waiting.getCreateTime() != null ? waiting.getCreateTime() : waiting.getScheduleTime();
-        var deadline = calcWaitDeadline(waiting, waitStartedAt);
-        var now = LocalDateTime.now();
-        if (now.isAfter(deadline)) {
-            failures.add(new WaitingFailure(waiting, "Waiting timeout, dependencies not satisfied by " + deadline));
+            JobFlowRun waiting, LocalDateTime deadline, List<WaitingFailure> failures, List<WaitingWarning> warnings) {
+        if (collectTimeoutFailure(waiting, deadline, failures)) {
             return;
         }
 
-        var warningAt = waitStartedAt.plus(workerConfig.getFlowWaitWarningAfter());
+        var now = LocalDateTime.now();
+        var createTime = waiting.getCreateTime();
+        var warningAt = createTime.plus(workerConfig.getFlowWaitWarningAfter());
         if (warningAt.isBefore(deadline) && !now.isBefore(warningAt) && warnedWaitingRuns.add(waiting.getId())) {
-            warnings.add(new WaitingWarning(waiting, waitStartedAt, now, deadline));
+            warnings.add(new WaitingWarning(waiting, createTime, now, deadline));
         }
+    }
+
+    private boolean collectTimeoutFailure(JobFlowRun waiting, LocalDateTime deadline, List<WaitingFailure> failures) {
+        if (!LocalDateTime.now().isAfter(deadline)) {
+            return false;
+        }
+
+        failures.add(new WaitingFailure(waiting, "Waiting timeout, dependencies not satisfied by " + deadline));
+        return true;
     }
 
     private void sendWaitingWarnings(List<WaitingWarning> warnings) {
@@ -191,7 +189,7 @@ public class FlowRunDispatcher {
                                         dependency.getLatestFlowRunId(),
                                         dependency.getLatestStatus()))
                         .collect(joining(SEMICOLON));
-                var waited = humanizeDuration(Duration.between(warning.waitStartedAt(), warning.now()));
+                var waited = humanizeDuration(Duration.between(warning.startedAt(), warning.now()));
                 var message = "Dependencies still pending after %s; deadline: %s; %s"
                         .formatted(waited, warning.deadline(), dependencies);
                 alertSendingService.sendAlertsDirectly(waiting, message);
@@ -208,7 +206,7 @@ public class FlowRunDispatcher {
         }
 
         try {
-            var updated = jobFlowRunService.updateStatusFromWaiting(flowRunIds, SUBMITTED);
+            var updated = jobFlowRunService.updateStatusFromTo(flowRunIds, WAITING, SUBMITTED);
             if (updated > 0) {
                 log.info(
                         "All dependencies satisfied, advancing {} of {} flow runs WAITING -> SUBMITTED",
@@ -293,6 +291,5 @@ public class FlowRunDispatcher {
 
     private record WaitingFailure(JobFlowRun run, String reason) {}
 
-    private record WaitingWarning(
-            JobFlowRun run, LocalDateTime waitStartedAt, LocalDateTime now, LocalDateTime deadline) {}
+    private record WaitingWarning(JobFlowRun run, LocalDateTime startedAt, LocalDateTime now, LocalDateTime deadline) {}
 }

@@ -1,19 +1,13 @@
 # TODO
 
-## Schedule-Time-Aware Run Concurrency
+## Ad-hoc Job Logical Time
 
-Phase 1 is described in
-[docs/design/schedule-time-concurrency.md](docs/design/schedule-time-concurrency.md): different
-logical schedule times may overlap up to `ExecutionConfig.maxActiveRuns`; the same logical time is
-still treated as a duplicate. `maxJobsPerRun` remains the number of jobs within one flow run.
+Flow-run schedule-time and concurrency semantics are documented in
+[docs/design/schedule-time-concurrency.md](docs/design/schedule-time-concurrency.md). The remaining
+gap outside that model is flow-less execution:
 
-- [x] Separate same-schedule duplicate detection from active-run capacity.
-- [x] Keep the default at one active flow run for backward compatibility.
-- [x] Apply the logical-time check to cron, manual flow, and subflow entry points.
-- [ ] Extend the model to flow-less/ad-hoc job runs after they have a persisted logical-time field.
-- [ ] Make admission atomic across scheduler nodes (database claim/lock).
-- [ ] Add queue/discard overlap policies and terminal-run reprocessing policy.
-- [ ] Add a date-range backfill API with its own concurrency limit and progress tracking.
+- [ ] Give ad-hoc job runs a persisted logical-time field, then define duplicate and concurrency
+      rules at `job_id` scope.
 
 ---
 
@@ -339,7 +333,7 @@ DST always works.
 - [ ] `flink-platform-web/.../variable/TimeVariableResolver.java` — `cur*` providers use
       `LocalDate.now(zone)` / `LocalDateTime.now(zone)`; `biz*` anchor (`scheduleTime`)
       converted with the same zone. Zone comes from the job being resolved.
-- [ ] `JobFlowRunner.java:127-129` — ensure `scheduleTime` (anchor of `biz*` vars) is stored
+- [ ] `JobFlowRunner` — ensure `scheduleTime` (anchor of `biz*` vars) is stored
       consistently with the job's zone
 - [ ] Frontend — one optional "timezone" dropdown on the flow edit page (blank = default).
       No per-user timezone UI.
@@ -486,37 +480,29 @@ constant and build the array from it so the two can't drift again.
       and most projects never ship a v2. Its only real argument is cost asymmetry: three
       characters now vs a breaking change later. Decide when adding the prefix; not required.
 
-
 ---
 
 ## Alerting Strategy — Remaining Work
 
+Flow-level `depends_on` parks runs in `WAITING`. Waiting is bounded by
+`FlowScheduleService#resolveWaitDeadline`, and a minimal delayed warning is implemented; the
+remaining work is about richer diagnostics, user-defined policy and delivery governance.
+
 See design: [docs/design/alerting-strategy.md](docs/design/alerting-strategy.md)
 
 - [ ] **Structured dependency diagnostics** — distinguish no upstream run, still running,
-      expired result, and settled-but-unmatched status. `DependencyService#evaluate` currently
-      returns only one group verdict, so timeout alerts cannot state the exact cause.
+      expired result, and settled-but-unmatched status. The last case currently collapses back to
+      `PENDING` under the default `onUnmatched=WAIT`, so a settled failure is later reported as a
+      timeout. `DependencyService#evaluate` returns only one group verdict; preserve the reason and
+      evaluated items so warnings and terminal alerts can state the exact cause.
 - [ ] **Throttle the direct channel** — `sendAlertsDirectly` de-duplicates nothing, so
-      `JobFlowRunner`'s duplicate-run guard fires once per cron tick while an upstream stalls.
+      `JOB_LIST`'s duplicate-run guard fires once per cron tick while its start job remains active.
       De-dup by `(flowId, alert kind)` inside `dispatch`, never throttling terminal-status
       notifications. Requires modelling an "alert kind", which is the bulk of the work.
-- [ ] **Stop forging `FAILURE` in `sendErrAlertsDirectly`** — the run is synthetic and nothing
-      failed; the trigger was *skipped*. Recipients routing by status see a false failure, and
-      direct mode bypasses `AlertConfig.statuses` too. Schedule separately: it changes existing
-      alert payloads.
-- [ ] **A settled-unmatched group is alerted as a timeout** — once `evaluate` reaches its last
-      line nothing is pending any more: every upstream has given its final answer and none is
-      accepted. Under the default `onUnmatched=WAIT` it still returns `PENDING`, so the run
-      waits out its deadline and then alerts "Waiting timeout, dependencies not satisfied",
-      blaming a slow upstream for what is a settled failure. `DependencyService` knows the
-      difference — that is what `UNSATISFIABLE` vs `PENDING` is for — but drops it at the group
-      level. Fold into the first item above: both need `evaluate` to surface more than one
-      verdict.
-- [ ] **A downstream scheduled denser than its upstream alerts every cycle** — the deadline is
-      the downstream's own next cron fire, so an hourly flow depending on a daily one fails and
-      alerts ~23 times a day, every day. Nothing warns that the dependency's expiry window is
-      longer than the flow's own schedule interval. Cheapest fix is a save-time validation in
-      `JobFlowRequest#verifyDependsOn`; throttling would only mask it.
+- [ ] **Stop forging `FAILURE` in the `sendErrAlerts*` helpers** — the run is synthetic and nothing
+      failed; the trigger was *skipped*. Recipients routing by status see a false failure;
+      `sendErrAlertsDirectly` also bypasses `AlertConfig.statuses`. Schedule separately: it changes
+      existing alert payloads.
 
 ### Long-term: user-defined, event-driven alert policies
 
@@ -554,12 +540,86 @@ configuration should continue to work throughout the migration.
 
 ---
 
-## Replace the WAITING Cron-Deadline Workaround
+## Logical Flow Runs, Retry, and Dependency Matching
 
-- [ ] `calcWaitDeadline` currently expires a WAITING run ten seconds before the next cron fire
-      to reduce collisions with `JobFlowRunner`'s non-terminal-run guard. If this heuristic proves
-      unreliable, replace it with explicit supersession: atomically fail the previous WAITING run
-      before creating the next scheduled run. Check the `JOB_LIST` branch at the same time.
+`schedule_time` is a stable schedule anchor, but it is not a universal dependency key: retries
+belong to the original logical work, incremental flows depend on data periods, and full/snapshot
+flows normally ask whether the most recent attempt qualifies. Keep overlap control separate from
+both.
+
+See design:
+[docs/design/logical-flow-runs-and-dependencies.md](docs/design/logical-flow-runs-and-dependencies.md)
+
+### Admission and state-machine follow-ups
+
+Flow-run admission now takes a flow-row lock and atomically replaces an expired `WAITING` run when
+its `WAITING → FAILURE` CAS succeeds. If the dispatcher changes that run after the admission
+snapshot but before the CAS, admission deliberately fails fast and does not create the candidate.
+Resolving that race requires an explicit lifecycle state-machine decision rather than an ad-hoc
+retry inside the current service.
+
+- [ ] **Handle WAITING CAS loss in the lifecycle state machine.** Distinguish dispatcher advance,
+      dispatcher failure and user kill, then decide whether the candidate should be blocked,
+      created or cancelled. Preserve single-winner timeout alerting.
+- [ ] **Add a DB-backed two-worker admission test.** Unit tests verify that every admission takes
+      the flow-row lock, but a real MySQL concurrency test is still needed to prove the lock and
+      transaction boundary together. Do not rely on `JobFlowRunner`'s JVM-local `synchronized` map.
+- [ ] **Define the MySQL/PostgreSQL transaction policy before PostgreSQL support.** MySQL defaults
+      to `REPEATABLE READ`, while PostgreSQL defaults to `READ COMMITTED`; keep isolation explicit
+      where correctness depends on it, then decide whether Hikari should enforce a project-wide
+      `READ_COMMITTED` baseline. Audit snapshot-sensitive operations such as `cloneJobFlow`, add a
+      MySQL/PostgreSQL concurrency-test matrix, and separately address Quartz side effects that
+      cannot be rolled back with the surrounding database transaction.
+
+`JOB_LIST` keeps only its existing running-Job compatibility guard. Retry, logical attempts,
+period matching and backfill below target `JOB_FLOW` only.
+
+### Phase 2 — make retry a first-class logical scope
+
+The following work targets `JOB_FLOW`; `JOB_LIST` receives compatibility fixes only.
+
+- [ ] **Persist attempt lineage.** Keep one row per attempt and group retries with
+      `retry_root_id` / `retry_of_id` / `attempt_no` (or an equivalent representation); do not
+      overwrite execution history.
+- [ ] **Add Retry failed as a domain operation.** It inherits the original `schedule_time`, flow
+      and dependency snapshots, inputs and business-time anchor. Only one attempt in a logical
+      run may be active.
+- [ ] **Keep Run now distinct.** It creates a new logical run with a new anchor and must not be
+      presented as repairing a historical period. Sub-flows continue inheriting the parent's
+      anchor.
+- [ ] **Keep concurrency flow-scoped.** Different schedule times do not imply that two attempts
+      may safely overlap. Preserve today's effective SKIP policy; model `QUEUE` / `PARALLEL`
+      separately only when needed.
+- [ ] **Group attempts in history/API responses.** Show planned schedule time separately from
+      attempt number and actual start/end times.
+
+### Phase 3 — clarify the dependency product
+
+- [ ] **Ship the existing mode as “most recent upstream run matches”.** Preserve the conservative
+      latest-attempt rule and the three expiry policies; do not label it as “some successful run
+      within N hours”. This is the default for full loads and snapshots.
+- [ ] **Surface the matched/outstanding attempt.** Persist or return enough evaluation detail for
+      the UI and alert to name the upstream run, status, freshness and wait duration.
+- [ ] **Validate incompatible scheduling windows.** A downstream scheduled denser than its
+      upstream currently fails and alerts every cycle. Reject or clearly warn on configurations
+      whose dependency window cannot normally fit inside the downstream wait deadline.
+- [ ] **Allow an optional per-flow dependency wait timeout.** When unset, cron runs use their
+      actual next occurrence and scheduleless runs use the platform default; avoid exposing a
+      separate deadline-policy concept to users.
+
+### Phase 4 — period-aware dependency and backfill (deferred)
+
+- [ ] **Model the data period, not timestamp equality.** Add a partition key or
+      `[data_interval_start, data_interval_end)` only when the product exposes incremental
+      dependencies. `schedule_time` remains the derivation anchor and is not itself the match.
+- [ ] **Add opt-in “same data period” matching.** Same partitions map directly; different
+      granularities map by intersecting periods (for example, one daily downstream to 24 hourly
+      upstream periods); previous-period/custom mappings stay advanced.
+- [ ] **Add Backfill as a date/range operation.** It creates one logical run per business period;
+      retries stay in that period. Users select business dates, not raw logical timestamps.
+- [ ] **Freeze dependency targets per logical run.** Newer unrelated upstream periods must not
+      change what an older downstream is waiting for; record the attempt that ultimately
+      satisfied each dependency.
 
 ---
 
@@ -568,7 +628,10 @@ configuration should continue to work throughout the migration.
 Backend is in place (`DependencyService`, `FlowRunDispatcher#advanceWaitingRuns`, `WAITING`
 status, `t_job_flow(_run).depends_on`). What is left, roughly in the order it blocks use.
 
-See design: [docs/design/flow-dependency-model.md](docs/design/flow-dependency-model.md)
+See current evaluator design:
+[docs/design/flow-dependency-model.md](docs/design/flow-dependency-model.md). Retry and future
+period-aware semantics are tracked in
+[docs/design/logical-flow-runs-and-dependencies.md](docs/design/logical-flow-runs-and-dependencies.md).
 
 ### Validation gaps (`JobFlowRequest#verifyDependsOn`)
 
@@ -588,6 +651,7 @@ See design: [docs/design/flow-dependency-model.md](docs/design/flow-dependency-m
 - [ ] **Rename `ExecutionCondition` → `TriggerRule`** — its own class javadoc carries the TODO.
       Either do it or drop the note; it is a DAG-wide rename plus the `@JsonAlias` compatibility
       surface.
+
 ### Frontend (low priority — new UI only)
 
 The old UI will not get this feature; it only has to keep working, which it does: it never

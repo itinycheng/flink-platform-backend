@@ -23,6 +23,7 @@ import static com.flink.platform.common.enums.ExecutionStatus.FAILURE;
 import static com.flink.platform.common.enums.ExecutionStatus.SUBMITTED;
 import static com.flink.platform.common.enums.ExecutionStatus.WAITING;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -61,7 +62,7 @@ class JobFlowRunServiceTest {
     void testUpdateParamsInJobFlowRun_WithSetParamVariables() {
         var mockJobFlowRun = new JobFlowRun();
         mockJobFlowRun.setParams(Map.of("result", "failure", "count", List.of("1", "2")));
-        when(jobFlowRunMapper.queryParamsForUpdate(anyLong())).thenReturn(mockJobFlowRun);
+        when(jobFlowRunMapper.selectParamsForUpdate(anyLong())).thenReturn(mockJobFlowRun);
         when(jobFlowRunMapper.updateById(any(JobFlowRun.class))).thenReturn(1);
 
         var jobRun = new JobRunInfo();
@@ -74,7 +75,7 @@ class JobFlowRunServiceTest {
         jobRun.setFlowRunId(1L);
         processJobService.updateParamsInJobFlowRun(jobRun);
 
-        verify(jobFlowRunMapper, times(1)).queryParamsForUpdate(anyLong());
+        verify(jobFlowRunMapper, times(1)).selectParamsForUpdate(anyLong());
         verify(jobFlowRunMapper, times(1)).updateById(any(JobFlowRun.class));
     }
 
@@ -113,8 +114,16 @@ class JobFlowRunServiceTest {
         assertTrue(jobFlowRunService.updateStatusFromTo(1L, WAITING, SUBMITTED));
 
         var updated = captor.getValue();
+        assertNull(updated.getId());
         assertNull(updated.getStartTime());
         assertNull(updated.getEndTime());
+    }
+
+    @Test
+    void updateStatusWithNullIdReturnsFalse() {
+        when(jobFlowRunMapper.update(any(JobFlowRun.class), any())).thenReturn(0);
+
+        assertFalse(jobFlowRunService.updateStatusFromTo((Long) null, WAITING, SUBMITTED));
     }
 
     @Test
@@ -122,12 +131,25 @@ class JobFlowRunServiceTest {
         var captor = ArgumentCaptor.forClass(JobFlowRun.class);
         when(jobFlowRunMapper.update(captor.capture(), any())).thenReturn(2);
 
-        assertEquals(2, jobFlowRunService.updateStatusFromWaiting(List.of(1L, 2L), SUBMITTED));
+        assertEquals(2, jobFlowRunService.updateStatusFromTo(List.of(1L, 2L), WAITING, SUBMITTED));
 
         var updated = captor.getValue();
         assertEquals(SUBMITTED, updated.getStatus());
         assertNull(updated.getStartTime());
         assertNull(updated.getEndTime());
         verify(jobFlowRunMapper).update(any(JobFlowRun.class), any());
+    }
+
+    @Test
+    void blockedPrecreatedRunIsFailedAndTimestamped() {
+        var captor = ArgumentCaptor.forClass(JobFlowRun.class);
+        when(jobFlowRunMapper.update(captor.capture(), any())).thenReturn(1);
+
+        assertTrue(jobFlowRunService.updateStatusFromTo(1L, CREATED, FAILURE));
+
+        var updated = captor.getValue();
+        assertEquals(FAILURE, updated.getStatus());
+        assertNotNull(updated.getEndTime());
+        assertNull(updated.getStartTime());
     }
 }

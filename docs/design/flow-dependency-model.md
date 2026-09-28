@@ -1,11 +1,14 @@
 # Flow Dependency Model
 
-> **Status:** Partly implemented on `feature/flow-depends-on`. Decisions 1–6 are in the code;
-> the open items at the end are not.
+> **Status:** Implemented on `feature/flow-depends-on`; the open items at the end remain.
 >
 > This records why flow-level `depends_on` ended up the shape it did. The feature has never
 > reached `main`, so every decision below was taken with zero production data and zero frontend
 > to stay compatible with — that freedom is not available again once it ships.
+>
+> This document describes the current latest-attempt evaluator. The proposed lifecycle, retry,
+> user-operation, and future data-period model is in
+> [logical-flow-runs-and-dependencies.md](logical-flow-runs-and-dependencies.md).
 
 ## Context
 
@@ -68,22 +71,21 @@ honours any more:
 |---|---|---|
 | daily → hourly | Last run carries `daily`; downstream treats it as current for up to 24h — **silently accepts stale data** | Next fire already due → PENDING, correctly waits for the hourly run |
 | hourly → daily | Last run carries `hourly`; next fire long past → PENDING for a whole new period, often past the downstream's own deadline | Next fire not due → SATISFIED |
-| cron cleared | `new CronExpression(null)` throws, swallowed by `FlowRunDispatcher`, retried every tick until timeout | Detected → `MISCONFIGURED` (decision 4) |
+| cron cleared | Cron parsing throws and obscures the configuration error | Detected → `MISCONFIGURED` (decision 4) |
 
 `Dependency.latestCronExpr` was renamed to `flowCronExpr` because it is no longer part of the
 `latest*` group resolved from the run.
 
-**`FlowRunDispatcher.calcWaitDeadline` deliberately keeps reading the run's snapshot.** A deadline is
-a contract fixed when the run was created; editing the downstream's own cron should not make a
-run that is already waiting time out early. The asymmetry is intentional.
+**`FlowScheduleService.resolveWaitDeadline` deliberately reads the run's snapshotted cron and
+schedule time.** A deadline is a contract fixed when the run was created; editing the downstream's
+own cron should not make a run that is already waiting time out early. The asymmetry is intentional.
 
 ### 4. An item no outcome could satisfy fails immediately
 
 `DependencyState.MISCONFIGURED`, raised when the item as configured could not be satisfied by any
 upstream outcome. `DependencyService.isWellConfigured` holds every such case, so none reaches
-`isLatestRunWithinWindow` and escapes as the NPE / `IllegalStateException` `FlowRunDispatcher`
-would swallow every tick. The dispatcher fails the run with a message naming the real cause; the
-offending item goes to `log.warn`.
+`isLatestRunWithinWindow` and escapes as an NPE or `IllegalStateException`. The dispatcher fails
+the run as invalid dependency configuration; the offending item goes to `log.warn`.
 
 Two sources:
 
@@ -264,9 +266,10 @@ dependencies are for. Two things follow that are easy to trip over:
   `true` when `RequestContext.getWorkspaceId()` is null, and evaluation runs on the `@Scheduled`
   thread, where it always is. Give the scheduler a workspace context and cross-team chaining breaks
   silently. Anyone touching that handler needs to know this read is meant to be unscoped.
-- **Configuration-time validation is still owed.** `verifyDependsOn` never checks that the target
-  flow exists at all, so a typo'd id is accepted and the run waits until its deadline. Whether a
-  cross-workspace dependency needs the target team's consent is an open product question.
+- **Target existence is validated cross-workspace.** `verifyDependsOn` resolves every referenced
+  flow id through an explicitly tenant-unscoped lookup, so a typo is rejected before the run can
+  wait. Whether a cross-workspace dependency needs the target team's consent remains an open
+  product question.
 
 ## Open items
 
@@ -284,9 +287,10 @@ dependencies are for. Two things follow that are easy to trip over:
    `max(id)` per flow regardless of status, so `FIXED_DURATION = 6h` + `statuses = [SUCCESS]` means
    "the most recent attempt was within 6h **and** succeeded", not "succeeded at some point in the
    last 6h". An upstream that succeeded at 10:00 and failed at 11:00 does **not** satisfy it. That
-   is deliberate and matches the re-run story — a manual re-run gets a higher id and becomes the
-   latest, unblocking the downstream — but a label reading "succeeded within 6 hours" would be a
-   lie. Say "most recent run succeeded".
+   is deliberate. Under the current implementation a manual run gets a higher id and becomes the
+   latest, unblocking the downstream. The forward design separates **Retry failed** (same logical
+   work) from **Run now** (new logical work), but this latest-attempt mode remains conservative:
+   a label reading "succeeded within 6 hours" would be a lie. Say "most recent run succeeded".
 3. **Configuration-time cron check.** When `UPSTREAM_SCHEDULE` is selected, the UI should verify
    the chosen upstream has a cron and say so immediately, rather than leaving decision 4 to catch
    it at runtime.

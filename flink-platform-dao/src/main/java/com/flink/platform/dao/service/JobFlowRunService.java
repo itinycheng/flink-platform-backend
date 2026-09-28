@@ -17,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -25,6 +26,7 @@ import static com.flink.platform.common.constants.Constant.HOST_IP;
 import static com.flink.platform.common.enums.ExecutionStatus.EXECUTABLE_STATUSES;
 import static com.flink.platform.common.enums.ExecutionStatus.WAITING;
 import static com.flink.platform.common.enums.ExecutionStatus.getNonTerminals;
+import static org.apache.commons.collections4.CollectionUtils.isNotEmpty;
 
 /** job config info. */
 @Slf4j
@@ -71,7 +73,7 @@ public class JobFlowRunService extends ServiceImpl<JobFlowRunMapper, JobFlowRun>
                 .lambda()
                 .eq(JobFlowRun::getHost, HOST_IP)
                 .in(JobFlowRun::getStatus, EXECUTABLE_STATUSES)
-                .notIn(CollectionUtils.isNotEmpty(excludeRunIds), JobFlowRun::getId, excludeRunIds)
+                .notIn(isNotEmpty(excludeRunIds), JobFlowRun::getId, excludeRunIds)
                 .orderByDesc(JobFlowRun::getPriority)
                 .orderByAsc(JobFlowRun::getId)
                 .last("LIMIT " + limit));
@@ -97,34 +99,17 @@ public class JobFlowRunService extends ServiceImpl<JobFlowRunMapper, JobFlowRun>
     }
 
     public boolean updateStatusFromTo(Long flowRunId, ExecutionStatus fromStatus, ExecutionStatus toStatus) {
-        var newFlowRun = new JobFlowRun();
-        newFlowRun.setId(flowRunId);
-        newFlowRun.setStatus(toStatus);
-        if (toStatus.isTerminalState()) {
-            newFlowRun.setEndTime(LocalDateTime.now());
-        }
-
-        return baseMapper.update(
-                        newFlowRun,
-                        new QueryWrapper<JobFlowRun>()
-                                .lambda()
-                                .eq(JobFlowRun::getId, flowRunId)
-                                .eq(JobFlowRun::getStatus, fromStatus))
-                == 1;
+        return updateStatusFromTo(Collections.singletonList(flowRunId), fromStatus, toStatus) == 1;
     }
 
-    /**
-     * Advances all still-WAITING runs in one conditional update. The returned count can be smaller
-     * than {@code flowRunIds.size()} when another worker or a kill operation wins the race.
-     */
-    public int updateStatusFromWaiting(List<Long> flowRunIds, ExecutionStatus status) {
+    public int updateStatusFromTo(List<Long> flowRunIds, ExecutionStatus fromStatus, ExecutionStatus toStatus) {
         if (CollectionUtils.isEmpty(flowRunIds)) {
             return 0;
         }
 
         var newFlowRun = new JobFlowRun();
-        newFlowRun.setStatus(status);
-        if (status.isTerminalState()) {
+        newFlowRun.setStatus(toStatus);
+        if (toStatus.isTerminalState()) {
             newFlowRun.setEndTime(LocalDateTime.now());
         }
 
@@ -133,7 +118,7 @@ public class JobFlowRunService extends ServiceImpl<JobFlowRunMapper, JobFlowRun>
                 new QueryWrapper<JobFlowRun>()
                         .lambda()
                         .in(JobFlowRun::getId, flowRunIds)
-                        .eq(JobFlowRun::getStatus, WAITING));
+                        .eq(JobFlowRun::getStatus, fromStatus));
     }
 
     public List<JobFlowRun> listActiveRuns(Long flowId, Long excludedRunId) {
@@ -150,7 +135,7 @@ public class JobFlowRunService extends ServiceImpl<JobFlowRunMapper, JobFlowRun>
             return;
         }
 
-        var jobFlowRun = baseMapper.queryParamsForUpdate(flowRunId);
+        var jobFlowRun = baseMapper.selectParamsForUpdate(flowRunId);
         var existedParams = jobFlowRun.getParams();
         var sharedParams = existedParams != null ? new HashMap<>(existedParams) : new HashMap<String, Object>();
         if (MapUtils.isEmpty(sharedParams)) {

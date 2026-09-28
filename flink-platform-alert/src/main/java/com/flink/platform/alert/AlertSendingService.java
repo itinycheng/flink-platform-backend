@@ -34,6 +34,12 @@ public class AlertSendingService {
         dispatch(jobFlowRun, alertMsg, true);
     }
 
+    public void sendErrAlerts(JobFlow jobFlow, String alertMsg) {
+        var jobFlowRun = jobFlowService.copyToJobFlowRun(jobFlow);
+        jobFlowRun.setStatus(FAILURE);
+        sendAlerts(jobFlowRun, alertMsg);
+    }
+
     public void sendErrAlertsDirectly(JobFlow jobFlow, String alertMsg) {
         var jobFlowRun = jobFlowService.copyToJobFlowRun(jobFlow);
         jobFlowRun.setStatus(FAILURE);

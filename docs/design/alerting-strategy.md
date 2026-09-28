@@ -7,14 +7,18 @@
 > Raised while implementing flow-level `depends_on`. The new `WAITING` status exposed a
 > delayed-visibility gap, and reviewing the surrounding code turned up three pre-existing
 > issues worth fixing at the same time.
+>
+> Transactional replacement of an expired `WAITING` run, including the remaining CAS-loss
+> limitation, is specified separately in
+> [logical-flow-runs-and-dependencies.md](logical-flow-runs-and-dependencies.md).
 
 ## Context
 
 Flow-level prerequisite dependencies park a run in `WAITING` until its upstreams are
-satisfied. Waiting is bounded by the downstream flow's next cron fire (currently with a ten-second
-lead), or `worker.flowWaitTimeout` (12h in the shipped profile) when the flow has no cron. The
-basic warning prevents that entire window from passing silently; richer user-defined policy is
-still deferred.
+satisfied. Waiting is bounded by the downstream flow's next cron fire, or
+`worker.flowWaitTimeout` (12h in the shipped profiles) when the flow has no cron. The basic
+warning prevents that entire window from passing silently; richer user-defined policy is still
+deferred.
 
 That is the trigger for this document, but problems 2–4 below predate `depends_on` and affect
 every alert the platform sends.
@@ -46,6 +50,7 @@ Two modes:
 |---|---|---|
 | `sendAlerts(run[, msg])` | `false` | Honours each `AlertConfig.statuses`; an empty list means "all statuses" |
 | `sendAlertsDirectly(run, msg)` | `true` | Unconditional — the user's status filter does not apply |
+| `sendErrAlerts(flow, msg)` | `false` | Builds a throwaway `FAILURE` run, then honours the status filter |
 | `sendErrAlertsDirectly(flow, msg)` | `true` | Builds a throwaway run from the flow definition, forces `status = FAILURE`, then sends directly |
 
 The filtered/direct split came from `feat(alert): terminal-only trigger statuses; split filtered
@@ -61,12 +66,13 @@ vs direct sending` on master.
 | `FlowRunDispatcher#sendWaitingWarnings` | direct | A `WAITING` run passed the configured warning delay |
 | `FlowRunDispatcher#submitToExecutor` | filtered | Flow has no job vertex |
 | `WorkerHeartbeat` | direct | Failover with no active worker |
-| `JobFlowRunner` ×2 | `sendErrAlertsDirectly` | A previous run is still non-terminal, so this trigger is skipped |
+| `JobFlowRunner` (`JOB_FLOW`) | `sendErrAlerts` | A conflicting occurrence or active run causes this trigger to be skipped |
+| `JobFlowRunner` (`JOB_LIST`) | `sendErrAlertsDirectly` | The start job is still active, so this trigger is skipped |
 | `JobsInJobListStatusChecker` | filtered | Cron health check |
 | `UnscheduledJobFlowChecker` | `sendErrAlertsDirectly` | Cron health check |
 
-Note that the direct mode dominates. Only terminal-status notifications and two cron checkers
-respect the user's `AlertConfig.statuses`.
+Direct mode still dominates operational alerts. Terminal-status notifications and the normal
+`JOB_FLOW` conflict path respect the user's `AlertConfig.statuses`.
 
 ## Problems
 
@@ -81,10 +87,10 @@ should eventually be expressed as per-flow event rules rather than more schedule
 
 ### 2. Direct alerts have no throttling
 
-`sendAlertsDirectly` sends on every call with no de-duplication. The clearest case is
-`JobFlowRunner`'s duplicate-run guard: when an upstream stalls, **every cron tick** produces
-another "There is already a waiting/running jobFlowRun" alert. An hourly flow sends one an
-hour; a 5-minute flow sends twelve an hour. These bury the alerts that matter.
+`sendAlertsDirectly` sends on every call with no de-duplication. The clearest remaining case is the
+legacy `JOB_LIST` guard: while its start job remains active, **every cron tick** produces another
+"There is already an active run" alert. An hourly flow sends one an hour; a 5-minute flow sends
+twelve an hour. These bury the alerts that matter.
 
 The minimal mid-wait warning has its own run-level one-shot guard, but other direct alerts still
 need event-aware throttling.
@@ -94,19 +100,18 @@ need event-aware throttling.
 The wait-timeout alert reads:
 
 ```
-Waiting timeout, dependencies not satisfied before next schedule
+Waiting timeout, dependencies not satisfied by 2026-10-16T11:00
 ```
 
 It does not say **which** dependency is outstanding, **what status** that upstream is in, or
 **how long** the run waited. The recipient has to go look all of it up.
 
-The data is already in hand: `DependencyService#populateLatestExecutionInfo` fills
-`latestFlowRunId` / `latestJobRunId` / `latestStatus` / `latestCreateTime` onto each
-`Dependency` during evaluation. `DependentCommandBuilder` (the job-level DEPENDENT path) already
-does exactly this and builds a per-item message from those fields — the flow-level path just
-throws the detail away.
+The data is already in hand: `DependencyService#populateLatestExecutions` fills
+`latestFlowRunId` / `latestStatus` / `latestCreateTime` onto each `Dependency` during evaluation.
+`DependentCommandBuilder` (the job-level DEPENDENT path) already builds a per-item message from its
+equivalent fields — the flow-level path just throws the detail away.
 
-**Implementation note:** `DependencyService#evaluate` currently returns only a `Verdict`, so
+**Implementation note:** `DependencyService#evaluate` currently returns only a `DependencyState`, so
 the per-item detail is discarded at the boundary. Exposing it needs either a richer return type
 (verdict + the evaluated items) or a second method the caller invokes when composing the alert.
 
@@ -151,8 +156,7 @@ Follow `DependentCommandBuilder`'s shape, per unsatisfied item:
 flowId: 100, jobId: -, latest run: 12345, status: RUNNING, waited: 2h13m
 ```
 
-Cheapest of the four and it takes the edge off problem 1 even before the mid-wait warning
-exists — when the timeout alert finally arrives, it at least says what to go look at.
+Cheapest of the four: both the mid-wait warning and final timeout can say what to investigate.
 
 ### For 4 — stop forging a status
 
@@ -178,7 +182,8 @@ The minimal fixed-delay warning is implemented. Remaining work should proceed as
 | What | Where |
 |---|---|
 | Alert dispatch + the two modes | `flink-platform-alert/.../AlertSendingService.java` |
-| Waiting poller, warning and deadline | `flink-platform-web/.../runner/FlowRunDispatcher.java` (`advanceWaitingRuns`, `collectWaitingOutcome`, `sendWaitingWarnings`, `calcWaitDeadline`) |
+| Waiting poller and warning | `flink-platform-web/.../runner/FlowRunDispatcher.java` (`advanceWaitingRuns`, `collectPendingActions`, `sendWaitingWarnings`) |
+| Wait-deadline calculation | `flink-platform-web/.../service/FlowScheduleService.java` (`resolveWaitDeadline`) |
 | Dependency evaluation + `latest*` back-fill | `flink-platform-web/.../service/DependencyService.java` |
 | Per-item message precedent (job-level DEPENDENT) | `flink-platform-web/.../command/dependent/DependentCommandBuilder.java` |
 | Duplicate-run guard that floods | `flink-platform-web/.../quartz/JobFlowRunner.java` |

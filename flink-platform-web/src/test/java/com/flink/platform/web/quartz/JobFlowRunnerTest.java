@@ -8,14 +8,16 @@ import com.flink.platform.dao.entity.ExecutionConfig;
 import com.flink.platform.dao.entity.JobFlow;
 import com.flink.platform.dao.entity.JobFlowDag;
 import com.flink.platform.dao.entity.JobFlowRun;
+import com.flink.platform.dao.entity.JobRunInfo;
 import com.flink.platform.dao.service.JobFlowRunService;
 import com.flink.platform.dao.service.JobFlowService;
 import com.flink.platform.dao.service.JobInfoService;
 import com.flink.platform.dao.service.JobRunInfoService;
 import com.flink.platform.web.common.SpringContext;
 import com.flink.platform.web.config.WorkerConfig;
+import com.flink.platform.web.model.FlowRunCreationResult;
 import com.flink.platform.web.service.DependencyService;
-import com.flink.platform.web.service.JobFlowRunBizService;
+import com.flink.platform.web.service.FlowScheduleService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -35,11 +37,14 @@ import java.util.Date;
 
 import static com.flink.platform.common.constants.JobConstant.CONFIG;
 import static com.flink.platform.common.constants.JobConstant.SCHEDULE_TIME;
+import static com.flink.platform.common.enums.ExecutionStatus.FAILURE;
 import static com.flink.platform.common.enums.JobFlowType.JOB_FLOW;
+import static com.flink.platform.common.enums.JobFlowType.JOB_LIST;
 import static com.flink.platform.web.service.DependencyService.DependencyState.SATISFIED;
 import static java.time.temporal.ChronoUnit.SECONDS;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
@@ -57,7 +62,7 @@ class JobFlowRunnerTest {
     private JobFlowRunService jobFlowRunService;
 
     @Mock
-    private JobFlowRunBizService flowRunBizService;
+    private FlowScheduleService flowScheduleService;
 
     @Mock
     private JobInfoService jobInfoService;
@@ -86,8 +91,8 @@ class JobFlowRunnerTest {
         springContext.when(() -> SpringContext.getBean(JobFlowService.class)).thenReturn(jobFlowService);
         springContext.when(() -> SpringContext.getBean(JobFlowRunService.class)).thenReturn(jobFlowRunService);
         springContext
-                .when(() -> SpringContext.getBean(JobFlowRunBizService.class))
-                .thenReturn(flowRunBizService);
+                .when(() -> SpringContext.getBean(FlowScheduleService.class))
+                .thenReturn(flowScheduleService);
         springContext.when(() -> SpringContext.getBean(JobInfoService.class)).thenReturn(jobInfoService);
         springContext.when(() -> SpringContext.getBean(JobRunInfoService.class)).thenReturn(jobRunService);
         springContext
@@ -108,6 +113,7 @@ class JobFlowRunnerTest {
         when(jobFlowService.getOne(any())).thenReturn(jobFlow);
         when(dependencyService.resolveAndEvaluate(nullable(DependencyConfig.class)))
                 .thenReturn(SATISFIED);
+        lenient().when(flowScheduleService.tryCreateFlowRun(any())).thenReturn(FlowRunCreationResult.created());
 
         runner = new JobFlowRunner();
     }
@@ -169,6 +175,41 @@ class JobFlowRunnerTest {
         assertEquals(10, captureAdmittedRun().getConfig().getMaxJobsPerRun());
     }
 
+    @Test
+    void activeJobListRunIsRejectedWhenJobMetadataIsMissing() {
+        var config = new ExecutionConfig();
+        config.setStartJobId(42L);
+        jobFlow.setType(JOB_LIST);
+        jobFlow.setConfig(config);
+        var activeRun = new JobRunInfo();
+        activeRun.setId(100L);
+        activeRun.setName("active-job");
+        when(jobRunService.findActiveRunByJobId(42L)).thenReturn(activeRun);
+
+        runner.execute(context(null, new Date()));
+
+        verify(alertSendingService)
+                .sendAlertsDirectly(any(JobFlowRun.class), eq("There is already an active run: 100"));
+    }
+
+    @Test
+    void rejectedJobListRunIsReportedAsFailure() {
+        var config = new ExecutionConfig();
+        config.setStartJobId(42L);
+        jobFlow.setType(JOB_LIST);
+        jobFlow.setConfig(config);
+        var activeRun = new JobRunInfo();
+        activeRun.setId(100L);
+        activeRun.setName("active-job");
+        when(jobRunService.findActiveRunByJobId(42L)).thenReturn(activeRun);
+
+        runner.execute(context(null, new Date()));
+
+        var captor = ArgumentCaptor.forClass(JobFlowRun.class);
+        verify(alertSendingService).sendAlertsDirectly(captor.capture(), eq("There is already an active run: 100"));
+        assertEquals(FAILURE, captor.getValue().getStatus());
+    }
+
     private JobExecutionContext context(ExecutionConfig config, Date scheduledFireTime) {
         return context(config, null, scheduledFireTime);
     }
@@ -194,7 +235,7 @@ class JobFlowRunnerTest {
 
     private JobFlowRun captureAdmittedRun() {
         var captor = ArgumentCaptor.forClass(JobFlowRun.class);
-        verify(jobFlowRunService).saveOrUpdate(captor.capture());
+        verify(flowScheduleService).tryCreateFlowRun(captor.capture());
         return captor.getValue();
     }
 }
