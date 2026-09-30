@@ -12,7 +12,6 @@ import com.flink.platform.dao.entity.JobFlow;
 import com.flink.platform.dao.entity.JobFlowDag;
 import com.flink.platform.dao.entity.JobFlowDag.NodeLayout;
 import com.flink.platform.dao.entity.JobFlowRun;
-import com.flink.platform.dao.entity.JobInfo;
 import com.flink.platform.dao.service.JobFlowRunService;
 import com.flink.platform.dao.service.JobFlowService;
 import com.flink.platform.dao.service.JobInfoService;
@@ -149,25 +148,25 @@ public class JobFlowRunner implements Job {
     }
 
     private JobFlowDag createFlowFromConfig(ExecutionConfig executionConfig) {
-        JobFlowDag flow = new JobFlowDag();
-        Long startJobId = executionConfig.getStartJobId();
+        var flow = new JobFlowDag();
+        var startJobId = executionConfig.getStartJobId();
         flow.addVertex(new JobVertex(startJobId));
         // node layouts.
-        JobInfo jobInfo = jobInfoService.getById(startJobId);
-        String classification = jobInfo.getType().getClassification();
-        Map<Long, NodeLayout> nodeLayouts = flow.getNodeLayouts();
+        var jobInfo = jobInfoService.getById(startJobId);
+        var classification = jobInfo.getType().getClassification();
+        var nodeLayouts = flow.getNodeLayouts();
         nodeLayouts.put(startJobId, new NodeLayout(null, classification, 0, 0));
         return flow;
     }
 
     private ExecutionConfig getOrMergeExecutionConfig(JobDataMap dataMap, JobFlow jobFlow) {
-        ExecutionConfig baseConfig = JsonUtil.toBean(dataMap.getString(CONFIG), ExecutionConfig.class);
+        var baseConfig = JsonUtil.toBean(dataMap.getString(CONFIG), ExecutionConfig.class);
         if (baseConfig == null) {
             baseConfig = new ExecutionConfig();
         }
 
-        ExecutionConfig templateConfig = jobFlow.getConfig();
-        int parallelism = templateConfig != null && templateConfig.getParallelism() > 0
+        var templateConfig = jobFlow.getConfig();
+        var parallelism = templateConfig != null && templateConfig.getParallelism() > 0
                 ? templateConfig.getParallelism()
                 : workerConfig.getPerFlowExecThreads();
         baseConfig.setParallelism(parallelism);
@@ -175,8 +174,8 @@ public class JobFlowRunner implements Job {
     }
 
     private Object getProcessLock(String code) {
-        Object newLock = new Object();
-        Object lock = PARALLEL_LOCK_MAP.putIfAbsent(code, newLock);
+        var newLock = new Object();
+        var lock = PARALLEL_LOCK_MAP.putIfAbsent(code, newLock);
         if (lock == null) {
             lock = newLock;
         }

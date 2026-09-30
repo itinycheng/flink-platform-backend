@@ -57,6 +57,13 @@ public class JobFlowRunService extends ServiceImpl<JobFlowRunMapper, JobFlowRun>
     public List<JobFlowRun> listWaitingRunsOnHost() {
         return list(new QueryWrapper<JobFlowRun>()
                 .lambda()
+                .select(
+                        JobFlowRun::getId,
+                        JobFlowRun::getName,
+                        JobFlowRun::getCronExpr,
+                        JobFlowRun::getDependsOn,
+                        JobFlowRun::getAlerts,
+                        JobFlowRun::getScheduleTime)
                 .eq(JobFlowRun::getHost, HOST_IP)
                 .eq(JobFlowRun::getStatus, WAITING));
     }
@@ -109,6 +116,29 @@ public class JobFlowRunService extends ServiceImpl<JobFlowRunMapper, JobFlowRun>
                         .eq(JobFlowRun::getId, flowRunId)
                         .eq(JobFlowRun::getStatus, WAITING));
         return update == 1;
+    }
+
+    /**
+     * Advances all still-WAITING runs in one conditional update. The returned count can be smaller
+     * than {@code flowRunIds.size()} when another worker or a kill operation wins the race.
+     */
+    public int updateStatusFromWaiting(Collection<Long> flowRunIds, ExecutionStatus status) {
+        if (CollectionUtils.isEmpty(flowRunIds)) {
+            return 0;
+        }
+
+        var newFlowRun = new JobFlowRun();
+        newFlowRun.setStatus(status);
+        if (status.isTerminalState()) {
+            newFlowRun.setEndTime(LocalDateTime.now());
+        }
+
+        return baseMapper.update(
+                newFlowRun,
+                new QueryWrapper<JobFlowRun>()
+                        .lambda()
+                        .in(JobFlowRun::getId, flowRunIds)
+                        .eq(JobFlowRun::getStatus, WAITING));
     }
 
     public JobFlowRun findRunningFlow(@Nonnull Long flowId, ExecutionConfig config) {

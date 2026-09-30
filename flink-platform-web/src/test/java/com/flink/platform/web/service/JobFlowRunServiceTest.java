@@ -101,4 +101,18 @@ class JobFlowRunServiceTest {
         assertNull(updated.getStartTime());
         assertNull(updated.getEndTime());
     }
+
+    @Test
+    void waitingRunsAreAdvancedToSubmittedInOneBatch() {
+        var captor = ArgumentCaptor.forClass(JobFlowRun.class);
+        when(jobFlowRunMapper.update(captor.capture(), any())).thenReturn(2);
+
+        assertEquals(2, jobFlowRunService.updateStatusFromWaiting(List.of(1L, 2L), SUBMITTED));
+
+        var updated = captor.getValue();
+        assertEquals(SUBMITTED, updated.getStatus());
+        assertNull(updated.getStartTime());
+        assertNull(updated.getEndTime());
+        verify(jobFlowRunMapper).update(any(JobFlowRun.class), any());
+    }
 }

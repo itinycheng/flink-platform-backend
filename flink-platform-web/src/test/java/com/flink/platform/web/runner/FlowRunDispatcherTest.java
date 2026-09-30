@@ -20,6 +20,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import static com.flink.platform.common.enums.ExecutionStatus.FAILURE;
+import static com.flink.platform.common.enums.ExecutionStatus.SUBMITTED;
 import static com.flink.platform.common.enums.ExecutionStatus.WAITING;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -28,6 +29,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -84,8 +86,8 @@ class FlowRunDispatcherTest {
     void waitNotTimedOutBeforeNextCronFire() {
         var run = waitingRun();
         run.setCronExpr("0 * * * * ?"); // every minute
-        run.setScheduleTime(LocalDateTime.now());
-        // next fire is strictly after scheduleTime (>= now), so not timed out yet
+        run.setScheduleTime(LocalDateTime.now().plusMinutes(1));
+        // The adjusted deadline remains in the future.
         assertFalse(hasWaitTimedOut(run));
     }
 
@@ -96,6 +98,15 @@ class FlowRunDispatcherTest {
         run.setScheduleTime(LocalDateTime.now().minusMinutes(5));
         // next fire after (now-5min) is ~4min in the past → timed out
         assertTrue(hasWaitTimedOut(run));
+    }
+
+    @Test
+    void cronScheduleUsesTenSecondLeadTime() {
+        var run = waitingRun();
+        run.setCronExpr("0 * * * * ?");
+        var scheduleTime = LocalDateTime.of(2026, 1, 1, 10, 0);
+
+        assertEquals(scheduleTime.plusSeconds(50), dispatcher.calcWaitDeadline(run, scheduleTime));
     }
 
     /**
@@ -132,6 +143,57 @@ class FlowRunDispatcherTest {
         dispatcher.advanceWaitingRuns();
 
         verify(jobFlowRunService, never()).updateStatusFromWaiting(anyLong(), any());
+    }
+
+    @Test
+    void satisfiedRunsAreAdvancedInOneConditionalBatch() {
+        var first = waitingRun();
+        var second = waitingRun();
+        second.setId(2L);
+        when(jobFlowRunService.listWaitingRunsOnHost()).thenReturn(List.of(first, second));
+        when(dependencyService.evaluate(any())).thenReturn(DependencyState.SATISFIED);
+        when(jobFlowRunService.updateStatusFromWaiting(List.of(1L, 2L), SUBMITTED))
+                .thenReturn(2);
+
+        dispatcher.advanceWaitingRuns();
+
+        verify(jobFlowRunService).updateStatusFromWaiting(List.of(1L, 2L), SUBMITTED);
+        verify(jobFlowRunService, never()).updateStatusFromWaiting(anyLong(), eq(SUBMITTED));
+    }
+
+    @Test
+    void satisfiedRunsAdvanceBeforeFailuresAreProcessed() {
+        var satisfied = waitingRun();
+        var failed = waitingRun();
+        failed.setId(2L);
+        when(jobFlowRunService.listWaitingRunsOnHost()).thenReturn(List.of(satisfied, failed));
+        when(dependencyService.evaluate(any())).thenReturn(DependencyState.SATISFIED, DependencyState.UNSATISFIABLE);
+        when(jobFlowRunService.updateStatusFromWaiting(List.of(1L), SUBMITTED)).thenReturn(1);
+        when(jobFlowRunService.updateStatusFromWaiting(2L, FAILURE)).thenReturn(true);
+
+        dispatcher.advanceWaitingRuns();
+
+        var ordered = inOrder(jobFlowRunService);
+        ordered.verify(jobFlowRunService).updateStatusFromWaiting(List.of(1L), SUBMITTED);
+        ordered.verify(jobFlowRunService).updateStatusFromWaiting(2L, FAILURE);
+        verify(alertSendingService).sendAlerts(eq(failed), any());
+    }
+
+    @Test
+    void concurrentUpdateOfOneFailureDoesNotSkipRemainingFailures() {
+        var concurrentlyUpdated = waitingRun();
+        var failed = waitingRun();
+        failed.setId(2L);
+        when(jobFlowRunService.listWaitingRunsOnHost()).thenReturn(List.of(concurrentlyUpdated, failed));
+        when(dependencyService.evaluate(any())).thenReturn(DependencyState.UNSATISFIABLE);
+        when(jobFlowRunService.updateStatusFromWaiting(1L, FAILURE)).thenReturn(false);
+        when(jobFlowRunService.updateStatusFromWaiting(2L, FAILURE)).thenReturn(true);
+
+        dispatcher.advanceWaitingRuns();
+
+        verify(jobFlowRunService).updateStatusFromWaiting(1L, FAILURE);
+        verify(jobFlowRunService).updateStatusFromWaiting(2L, FAILURE);
+        verify(alertSendingService).sendAlerts(eq(failed), any());
     }
 
     /** The deadline check the PENDING branch of advanceWaitingRuns performs inline. */

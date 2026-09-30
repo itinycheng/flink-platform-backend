@@ -106,31 +106,34 @@ public class FlowRunDispatcher {
                 .toList();
         dependencyService.populateLatestExecutions(depConfigs);
 
-        for (var waitingRun : waitingRuns) {
+        var readyIds = new ArrayList<Long>();
+        var failures = new ArrayList<WaitingFailure>();
+        for (var waiting : waitingRuns) {
             try {
-                switch (dependencyService.evaluate(waitingRun.getDependsOn())) {
-                    case SATISFIED -> advanceWaitingFlowRun(waitingRun);
-                    case UNSATISFIABLE ->
-                        failWaitingFlowRun(waitingRun, "Upstream settled on a status this flowRun doesn't accept");
-                    case MISCONFIGURED ->
-                        failWaitingFlowRun(waitingRun, "A dependency configuration is missing or invalid. ");
-                    case PENDING -> failIfWaitTimedOut(waitingRun);
+                switch (dependencyService.evaluate(waiting.getDependsOn())) {
+                    case SATISFIED -> readyIds.add(waiting.getId());
+                    case UNSATISFIABLE -> failures.add(new WaitingFailure(waiting, "Upstream status not accepted"));
+                    case MISCONFIGURED -> failures.add(new WaitingFailure(waiting, "Invalid dependency configuration"));
+                    case PENDING -> collectIfWaitTimedOut(waiting, failures);
                 }
             } catch (Exception e) {
                 // TODO: persist exception to explain failed reason ?
-                failWaitingFlowRun(waitingRun, "Failed to evaluate dependency config");
-                log.error("Failed to advance waiting flow run: {}", waitingRun.getId(), e);
+                failures.add(new WaitingFailure(waiting, "Failed to evaluate dependency config"));
+                log.error("Failed to advance waiting flow run: {}", waiting.getId(), e);
             }
         }
+
+        advanceWaitingFlowRuns(readyIds);
+        failWaitingFlowRuns(failures);
     }
 
-    private void failIfWaitTimedOut(JobFlowRun waitingRun) {
+    private void collectIfWaitTimedOut(JobFlowRun waiting, List<WaitingFailure> failures) {
         // TODO: a WAITING run stays silent until the deadline, so a slow upstream can delay the
         //  alert by the whole window (flowWaitTimeout, or the next cron fire). Warn once partway
         //  through the wait instead, and say which dependency is still outstanding.
-        var deadline = calcWaitDeadline(waitingRun, waitingRun.getScheduleTime());
+        var deadline = calcWaitDeadline(waiting, waiting.getScheduleTime());
         if (LocalDateTime.now().isAfter(deadline)) {
-            failWaitingFlowRun(waitingRun, "Waiting timeout, dependencies not satisfied by " + deadline);
+            failures.add(new WaitingFailure(waiting, "Waiting timeout, dependencies not satisfied by " + deadline));
         }
     }
 
@@ -139,27 +142,48 @@ public class FlowRunDispatcher {
         if (StringUtils.isNotBlank(cronExpr)) {
             return quartzService
                     .nextTriggerTimeAfter(cronExpr, scheduleTime)
+                    .map(nextTriggerTime -> nextTriggerTime.minusSeconds(10))
                     .orElseGet(() -> scheduleTime.plus(workerConfig.getFlowWaitTimeout()));
         }
         return scheduleTime.plus(workerConfig.getFlowWaitTimeout());
     }
 
-    private void advanceWaitingFlowRun(JobFlowRun jobFlowRun) {
-        if (jobFlowRunService.updateStatusFromWaiting(jobFlowRun.getId(), SUBMITTED)) {
-            log.info("All dependencies satisfied, advancing flow run {} WAITING -> SUBMITTED", jobFlowRun.getId());
-        }
-    }
-
-    private void failWaitingFlowRun(JobFlowRun waitingRun, String reason) {
-        // Conditional on WAITING: a concurrent kill must not be overwritten with FAILURE.
-        if (!jobFlowRunService.updateStatusFromWaiting(waitingRun.getId(), FAILURE)) {
+    private void advanceWaitingFlowRuns(List<Long> flowRunIds) {
+        if (flowRunIds.isEmpty()) {
             return;
         }
 
-        waitingRun.setStatus(FAILURE);
-        waitingRun.setEndTime(LocalDateTime.now());
-        log.warn("{}, failed waiting flow run: {}", reason, waitingRun.getId());
-        alertSendingService.sendAlerts(waitingRun, reason);
+        try {
+            var updated = jobFlowRunService.updateStatusFromWaiting(flowRunIds, SUBMITTED);
+            if (updated > 0) {
+                log.info(
+                        "All dependencies satisfied, advancing {} of {} flow runs WAITING -> SUBMITTED",
+                        updated,
+                        flowRunIds.size());
+            }
+        } catch (Exception e) {
+            log.error("Failed to advance waiting flow runs", e);
+        }
+    }
+
+    private void failWaitingFlowRuns(List<WaitingFailure> failures) {
+        for (var failure : failures) {
+            try {
+                var waiting = failure.run();
+                var reason = failure.reason();
+                // Conditional on WAITING: a concurrent kill must not be overwritten with FAILURE.
+                if (!jobFlowRunService.updateStatusFromWaiting(waiting.getId(), FAILURE)) {
+                    continue;
+                }
+
+                waiting.setStatus(FAILURE);
+                waiting.setEndTime(LocalDateTime.now());
+                log.warn("{}, failed waiting flow run: {}", reason, waiting.getId());
+                alertSendingService.sendAlerts(waiting, reason);
+            } catch (Exception e) {
+                log.error("Failed to fail waiting flow run: {}", failure.run().getId(), e);
+            }
+        }
     }
 
     private void submitToExecutor(JobFlowRun jobFlowRun) {
@@ -220,4 +244,6 @@ public class FlowRunDispatcher {
         jobFlowRun.setStartTime(currentTime);
         jobFlowRun.setEndTime(currentTime);
     }
+
+    private record WaitingFailure(JobFlowRun run, String reason) {}
 }

@@ -13,8 +13,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
+
+import static com.flink.platform.alert.AlertConfig.ALERT_EXECUTOR;
 
 /** Alert sender. */
 @Slf4j
@@ -28,37 +31,37 @@ public class AlertSender {
 
     private final RestTemplate restTemplate;
 
-    public void sendAlert(Long alertId, JobFlowRun jobFlowRun, String alertMsg) {
-        var alertInfo = alertService.getById(alertId);
-        if (alertInfo == null) {
-            return;
-        }
+    // TODO: Async rendering may observe a later flowRun status; snapshot it if this matters.
+    @Async(ALERT_EXECUTOR)
+    public void sendAlert(Long alertId, JobFlowRun flowRun, String alertMsg) {
+        try {
+            var alert = alertService.getById(alertId);
+            if (alert == null) {
+                return;
+            }
 
-        switch (alertInfo.getType()) {
-            case FEI_SHU -> sendToFeiShu((FeiShuAlert) alertInfo.getConfig(), jobFlowRun, alertMsg);
-            default -> log.error("Alert type: {} not supported", alertInfo.getType());
+            switch (alert.getType()) {
+                case FEI_SHU -> sendToFeiShu((FeiShuAlert) alert.getConfig(), flowRun, alertMsg);
+                case SMS -> log.error("SMS alert type is not supported, flow run id: {}", flowRun.getId());
+                default -> log.error("Alert type: {} not supported", alert.getType());
+            }
+        } catch (Exception e) {
+            log.error("Failed to dispatch alert. alertId: {}, flowRunId: {}", alertId, flowRun.getId(), e);
         }
     }
 
     public void sendToFeiShu(FeiShuAlert alert, JobFlowRun jobFlowRun, String alertMsg) {
-        try {
-            var content = JsonUtil.toJsonString(alert.getContent())
-                    .replace("${id}", String.valueOf(jobFlowRun.getId()))
-                    .replace("${name}", jobFlowRun.getName())
-                    .replace("${status}", jobFlowRun.getStatus().name())
-                    .replace("${alertMsg}", alertMsg);
-            if (content.contains("${jobRunDetails}")) {
-                content = content.replace("${jobRunDetails}", getJobRunDetails(jobFlowRun.getId()));
-            }
-            var feiShuAlert = new FeiShuAlert(alert.getWebhook(), JsonUtil.toMap(content));
-            var message = sendToFeiShu(feiShuAlert);
-            log.info(
-                    "send notify message to feiShu complete. flowRunId: {}, response: {} ",
-                    jobFlowRun.getId(),
-                    message);
-        } catch (Exception e) {
-            log.error("send alert info to feiShu failed.", e);
+        var content = JsonUtil.toJsonString(alert.getContent())
+                .replace("${id}", String.valueOf(jobFlowRun.getId()))
+                .replace("${name}", jobFlowRun.getName())
+                .replace("${status}", jobFlowRun.getStatus().name())
+                .replace("${alertMsg}", alertMsg);
+        if (content.contains("${jobRunDetails}")) {
+            content = content.replace("${jobRunDetails}", getJobRunDetails(jobFlowRun.getId()));
         }
+        var feiShuAlert = new FeiShuAlert(alert.getWebhook(), JsonUtil.toMap(content));
+        var message = sendToFeiShu(feiShuAlert);
+        log.info("send notify message to feiShu complete. flowRunId: {}, response: {} ", jobFlowRun.getId(), message);
     }
 
     private String getJobRunDetails(Long flowRunId) {

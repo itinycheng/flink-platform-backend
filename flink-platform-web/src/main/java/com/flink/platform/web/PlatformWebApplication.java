@@ -10,11 +10,13 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.event.ContextClosedEvent;
 import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.resilience.annotation.EnableResilientMethods;
+import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 
 /** starter. */
 @EnableResilientMethods
+@EnableAsync
 @EnableScheduling
 @EnableSchedulerLock(defaultLockAtMostFor = "PT1H")
 @EnableTransactionManagement
