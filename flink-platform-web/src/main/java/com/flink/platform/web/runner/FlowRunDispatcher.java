@@ -17,19 +17,24 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadPoolExecutor;
 
+import static com.flink.platform.common.constants.Constant.SEMICOLON;
 import static com.flink.platform.common.enums.ExecutionStatus.FAILURE;
 import static com.flink.platform.common.enums.ExecutionStatus.KILLING;
 import static com.flink.platform.common.enums.ExecutionStatus.SUBMITTED;
+import static com.flink.platform.common.util.DurationUtil.humanizeDuration;
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static java.util.stream.Collectors.joining;
 
 /** Schedule job flow. */
 @Slf4j
@@ -51,6 +56,8 @@ public class FlowRunDispatcher {
     private final ThreadPoolExecutor flowExecService;
 
     private final Map<Long, JobFlowRun> inFlightFlowRuns = new ConcurrentHashMap<>();
+
+    private final Set<Long> warnedWaitingRuns = ConcurrentHashMap.newKeySet();
 
     @Autowired
     public FlowRunDispatcher(
@@ -97,8 +104,10 @@ public class FlowRunDispatcher {
         // TODO: Add a batch size, prevent too many results ?
         var waitingRuns = jobFlowRunService.listWaitingRunsOnHost();
         if (CollectionUtils.isEmpty(waitingRuns)) {
+            warnedWaitingRuns.clear();
             return;
         }
+        warnedWaitingRuns.retainAll(waitingRuns.stream().map(JobFlowRun::getId).toList());
 
         var depConfigs = waitingRuns.stream()
                 .map(JobFlowRun::getDependsOn)
@@ -108,13 +117,14 @@ public class FlowRunDispatcher {
 
         var readyIds = new ArrayList<Long>();
         var failures = new ArrayList<WaitingFailure>();
+        var warnings = new ArrayList<WaitingWarning>();
         for (var waiting : waitingRuns) {
             try {
                 switch (dependencyService.evaluate(waiting.getDependsOn())) {
                     case SATISFIED -> readyIds.add(waiting.getId());
                     case UNSATISFIABLE -> failures.add(new WaitingFailure(waiting, "Upstream status not accepted"));
                     case MISCONFIGURED -> failures.add(new WaitingFailure(waiting, "Invalid dependency configuration"));
-                    case PENDING -> collectIfWaitTimedOut(waiting, failures);
+                    case PENDING -> collectPendingActions(waiting, failures, warnings);
                 }
             } catch (Exception e) {
                 // TODO: persist exception to explain failed reason ?
@@ -125,16 +135,15 @@ public class FlowRunDispatcher {
 
         advanceWaitingFlowRuns(readyIds);
         failWaitingFlowRuns(failures);
+        sendWaitingWarnings(warnings);
     }
 
-    private void collectIfWaitTimedOut(JobFlowRun waiting, List<WaitingFailure> failures) {
-        // TODO: a WAITING run stays silent until the deadline, so a slow upstream can delay the
-        //  alert by the whole window (flowWaitTimeout, or the next cron fire). Warn once partway
-        //  through the wait instead, and say which dependency is still outstanding.
-        var deadline = calcWaitDeadline(waiting, waiting.getScheduleTime());
-        if (LocalDateTime.now().isAfter(deadline)) {
-            failures.add(new WaitingFailure(waiting, "Waiting timeout, dependencies not satisfied by " + deadline));
-        }
+    public void releaseInFlight(Long flowRunId) {
+        inFlightFlowRuns.remove(flowRunId);
+    }
+
+    public List<JobFlowRun> getInFlightFlowRuns() {
+        return new ArrayList<>(inFlightFlowRuns.values());
     }
 
     LocalDateTime calcWaitDeadline(JobFlowRun jobFlowRun, LocalDateTime scheduleTime) {
@@ -146,6 +155,47 @@ public class FlowRunDispatcher {
                     .orElseGet(() -> scheduleTime.plus(workerConfig.getFlowWaitTimeout()));
         }
         return scheduleTime.plus(workerConfig.getFlowWaitTimeout());
+    }
+
+    // ====================================================
+    // ====================== private =====================
+    // ====================================================
+
+    private void collectPendingActions(
+            JobFlowRun waiting, List<WaitingFailure> failures, List<WaitingWarning> warnings) {
+        var deadline = calcWaitDeadline(waiting, waiting.getScheduleTime());
+        var now = LocalDateTime.now();
+        if (now.isAfter(deadline)) {
+            failures.add(new WaitingFailure(waiting, "Waiting timeout, dependencies not satisfied by " + deadline));
+            return;
+        }
+
+        var warningAt = waiting.getScheduleTime().plus(workerConfig.getFlowWaitWarningAfter());
+        if (warningAt.isBefore(deadline) && !now.isBefore(warningAt) && warnedWaitingRuns.add(waiting.getId())) {
+            warnings.add(new WaitingWarning(waiting, now, deadline));
+        }
+    }
+
+    private void sendWaitingWarnings(List<WaitingWarning> warnings) {
+        for (var warning : warnings) {
+            var waiting = warning.run();
+            try {
+                var dependencies = waiting.getDependsOn().getDependencies().stream()
+                        .map(dependency -> "flowId=%s, latestRunId=%s, status=%s"
+                                .formatted(
+                                        dependency.getFlowId(),
+                                        dependency.getLatestFlowRunId(),
+                                        dependency.getLatestStatus()))
+                        .collect(joining(SEMICOLON));
+                var waited = humanizeDuration(Duration.between(waiting.getScheduleTime(), warning.now()));
+                var message = "Dependencies still pending after %s; deadline: %s; %s"
+                        .formatted(waited, warning.deadline(), dependencies);
+                alertSendingService.sendAlertsDirectly(waiting, message);
+            } catch (Exception e) {
+                warnedWaitingRuns.remove(waiting.getId());
+                log.error("Failed to warn delayed waiting flow run: {}", waiting.getId(), e);
+            }
+        }
     }
 
     private void advanceWaitingFlowRuns(List<Long> flowRunIds) {
@@ -221,14 +271,6 @@ public class FlowRunDispatcher {
         }
     }
 
-    public void releaseInFlight(Long flowRunId) {
-        inFlightFlowRuns.remove(flowRunId);
-    }
-
-    public List<JobFlowRun> getInFlightFlowRuns() {
-        return new ArrayList<>(inFlightFlowRuns.values());
-    }
-
     private void failAndUpdateJobFlowRun(JobFlowRun jobFlowRun) {
         var currentTime = LocalDateTime.now();
         var newJobFlowRun = new JobFlowRun();
@@ -246,4 +288,6 @@ public class FlowRunDispatcher {
     }
 
     private record WaitingFailure(JobFlowRun run, String reason) {}
+
+    private record WaitingWarning(JobFlowRun run, LocalDateTime now, LocalDateTime deadline) {}
 }

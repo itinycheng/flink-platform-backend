@@ -1,5 +1,23 @@
 # TODO
 
+## Schedule-Time-Aware Run Concurrency
+
+Phase 1 is described in
+[docs/design/schedule-time-concurrency.md](docs/design/schedule-time-concurrency.md): different
+logical schedule times may overlap up to `ExecutionConfig.maxActiveRuns`; the same logical time is
+still treated as a duplicate. `maxJobsPerRun` remains the number of jobs within one flow run, with
+the legacy JSON/API name `parallelism` retained for compatibility.
+
+- [x] Separate same-schedule duplicate detection from active-run capacity.
+- [x] Keep the default at one active flow run for backward compatibility.
+- [x] Apply the logical-time check to cron, manual flow, and subflow entry points.
+- [ ] Extend the model to flow-less/ad-hoc job runs after they have a persisted logical-time field.
+- [ ] Make admission atomic across scheduler nodes (database claim/lock).
+- [ ] Add queue/discard overlap policies and terminal-run reprocessing policy.
+- [ ] Add a date-range backfill API with its own concurrency limit and progress tracking.
+
+---
+
 ## Execution Log Archival (`t_job_run` / `t_job_flow_run`)
 
 Keep the hot tables small by moving aged rows into monthly-partitioned archive tables, so
@@ -186,15 +204,6 @@ mirrors what Airflow (job-heartbeat + zombie reaper + `LocalTaskJob` self-kill +
 "adopt orphaned tasks") and DolphinScheduler (registry heartbeat + `host`-column ownership +
 fault-tolerance re-dispatch) do, but stays MySQL-only / no ZooKeeper / no new scheduled loops.
 
-### Already done (shipped, commit `e1b7fb20`)
-
-- `FlowExecuteThread.ownedByAnotherWorker()` in the wait loop → `releaseInFlight` + abandon orchestration.
-- `JobExecuteThread.ownedByAnotherWorker()` also stops when `t_job_flow_run.host != HOST_IP`
-  (finished/killing is a separate check, `isFlowRunFinishedOrKilling()`).
-- **Guarantee: once a flow is reassigned away, the old node stops launching not-yet-started vertices and
-  stops submitting not-yet-submitted jobs.** Covers the *DB-reachable-but-unhealthy* case only. Does NOT
-  kill already-running local processes; does NOT cover DB-partition zombies.
-
 ### Guiding split by job type (decides how much each layer matters)
 
 - **A-class — externalized execution (Flink/Spark on YARN/K8s):** once the app_id is persisted, any node
@@ -378,142 +387,19 @@ DST always works.
 
 ---
 
-## User-Operation Audit — Method-Annotation Aspect (`@Auditable`)
+## User-Operation Audit — Remaining Work
 
-Record an **operation trail of user actions** (who created / updated / deleted which
-`JobInfo` / `JobFlow`), not a row-level data-change log. System-triggered writes
-(heartbeat, scheduler, gRPC, background jobs) must **not** be audited. Persist a full JSON
-snapshot per operation into `t_audit_log`.
-
-### Chosen approach — Spring AOP aspect on **Controller** methods (not a MyBatis interceptor)
-
-Decided against the SQL-layer `AuditInterceptor` (interceptor sees only SQL, cannot tell a
-user action from a system write, and can't express business intent). An aspect on the
-user-facing HTTP entry points is the right altitude: system paths never hit a Controller,
-so filtering is "annotate-to-audit" by construction.
-
-- [ ] Restore method-level `@Auditable(type, operation)` annotation (`@Target(METHOD)`),
-      carrying `EntityType` + `OperationType` — **both declared explicitly** on each method.
-- [ ] Reinstate `AuditAspect` (`@Around("@annotation(auditable)")`); delete the abandoned
-      SQL-layer `AuditInterceptor` and the class-level `@Auditable` on `JobFlow` / `JobInfo`.
-- [ ] Annotate the **user-entry Controller methods** only. Do **not** annotate scheduler /
-      gRPC / internal service paths. Coverage:
-  - [x] `JobInfoController` — create / update / delete / purge. **DONE** (`EntityType.JOB`).
-  - [x] `JobFlowController` — create / update / updateFlow / purge. **DONE** (`EntityType.FLOW`).
-        purge is a cascade (1 FLOW + N JOB) but only **one FLOW DELETE row** is written for now —
-        child JobInfo rows are not audited (deferred; see cascade note below). `stop` (`STOP`) is
-        deferred to the run/schedule batch.
-  - [x] `JobFlowRunController.kill(flowRunId)` — `KILL`, `FLOW_RUN`. **DONE**
-  - [x] `JobRunController.kill(runId)` — `KILL`, `JOB_RUN`. **DONE**
-  - [x] `JobFlowController` — `schedule/start` (`SCHEDULE`), `schedule/stop` (`UNSCHEDULE`),
-        `schedule/runOnce` (`RUN`). **DONE**
-- [x] Extend enums — **DONE**: `EntityType {JOB, FLOW, FLOW_RUN, JOB_RUN}`,
-      `OperationType {INSERT, UPDATE, DELETE, SCHEDULE, UNSCHEDULE, RUN, KILL}`; Javadoc updated.
-
-### Locked-in design decisions (from the design discussion)
-
-- [ ] **Record successful operations only.** Snapshot *after* `proceed()` returns
-      successfully. If the business call throws / the tx rolls back, write nothing — "an
-      audit row exists" ⇒ "the operation really took effect".
-- [ ] **Audit runs outside the business transaction (no shared-fate).** The aspect is the
-      **outer** advice (high precedence / low `@Order`); the business `@Transactional`
-      commits inside `proceed()`, then the audit `save` runs as an independent write. → No
-      need to touch `@EnableTransactionManagement` order, and no need to add
-      `@Transactional` to methods like `updateFlowById`.
-- [ ] **Audit failures never break the business call.** Wrap the whole audit block in
-      try-catch; on failure `log.warn` only, never rethrow.
-- [ ] **Snapshot = re-read the row by id via the entity's own service `getById`** (one
-      indexed PK lookup; negligible for low-QPS manual ops). Uniform for all ops — avoids the
-      "partial updateById returns a half-filled entity" and "DB-generated fields missing"
-      problems of snapshotting the return value / input arg directly.
-  - [ ] **Do NOT use MyBatis-Plus static `Db.getById`.** Re-read through a `EntityType →
-        service::getById` map in the aspect (e.g. `JOB → jobInfoService::getById`). Reasons:
-        (1) service methods carry `@DS("master_platform")` — the dynamic-datasource routing
-        is activated by the `@DS` AOP on the service call, and static `Db.*` bypasses it
-        (a real hazard if platform metadata is ever split across datasources); (2) type-safe
-        (`Function<Long, ? extends Identifiable>`) vs `Db`'s raw return + hand-passed
-        `.class`; (3) the codebase has zero `Db.*` usage — `service.getById` is the
-        established re-read style. Note: audit only re-reads platform metadata tables, so the
-        multi-source used for user SQL-job targets is irrelevant here.
-  - [ ] INSERT / UPDATE → re-read **after** `proceed()` (captures generated id + untouched
-        columns + merged new state).
-  - [ ] DELETE → re-read **before** `proceed()` (row is gone afterwards); write the audit
-        row after `proceed()` succeeds.
-  - [ ] STOP / KILL → same as DELETE: re-read the run **before** `proceed()` to capture the
-        live pre-stop/pre-kill state (e.g. `RUNNING`), since the point is "what was killed",
-        not the resulting `KILLED` status; write the audit row after `proceed()` succeeds.
-        Because the id is a path variable (`/stop/{flowId}`, `/kill/{runId}`) it lands on the
-        entityId precedence chain — **no hand-written `AuditLogService.save` needed**, unlike
-        the earlier design that assumed the `Long`/`Boolean` return value forced hand-writing.
-- [ ] **entityId located by a fixed precedence chain** in the aspect (no SpEL, no per-method
-      config): (1) return value — unwrap `ResultInfo`, take `Identifiable.getId()` (covers
-      create); (2) a `Long` path variable; (3) the id of the request-body entity. Chosen over
-      SpEL: keeps the cross-cutting locate-logic in one place, compile-time-safe,
-      consistent, and immune to a future REST-ification that moves `update`'s id from body to
-      path (aspect code unchanged; stale body branch stays for back-compat).
-  - [ ] If no id can be resolved: `log.warn` (method + sources tried) and **skip** that audit
-        row — business call still returns normally.
-
-### Cascade deletes — hand-written audit inside the service (not the aspect)
-
-`JobFlowController.purge` → `JobFlowService.deleteAllById(flowId)` deletes **1 `JobFlow` +
-N `JobInfo`** (both audited) in one user action. The aspect sits at the Controller (one
-method = at most one audit row) and cannot see the cascaded child ids — they only exist
-inside `deleteAllById`. "Splitting the batch delete into per-row SQL" does **not** help:
-the Controller-level aspect still fires once, and pushing the aspect down to the
-service/mapper layer would reintroduce self-invocation, transaction, and
-user-vs-system-filtering problems, plus N× DB round-trips.
-
-**Current state (shipped):** purge writes only **one `FLOW` DELETE** row via the aspect
-(pre-read of the flow row at the Controller). The cascaded child `JobInfo` rows are **not**
-audited yet. The `AuditLogWriter` below is **deferred** — to be implemented later.
-
-- [ ] Extract a shared `AuditLogWriter` used by **both** the aspect and hand-written call
-      sites (single insert path). Design it to be **future-proof for any "delete/modify many"
-      case**, not just JobFlow purge:
-  - [ ] Keep the API entity-type-agnostic — depend only on `Identifiable` + JSON snapshot, so
-        any future batch op (purge-workspace, bulk offline, bulk resource delete, ...) reuses
-        it unchanged: `record(EntityType, OperationType, Identifiable)` **plus** a
-        `record(EntityType, OperationType, Collection<? extends Identifiable>)` overload.
-  - [ ] `operatorId` resolved centrally from `RequestContext.getUserId()` (same as the aspect).
-  - [ ] **Transaction isolation is the real design point:** `deleteAllById` is
-        `@Transactional`. The writer must keep the aspect's invariants — audit never breaks the
-        business call, and audit is written only after the business op succeeds — so the write
-        must be isolated (prefer a domain event + `@TransactionalEventListener(AFTER_COMMIT)`,
-        or `REQUIRES_NEW`), not an inline same-transaction insert.
-- [ ] Then in the `deleteAllById` path, capture the pre-delete snapshots (`jobInfoList` + the
-      `JobFlow`) and write **N + 1** rows (N × `JOB` DELETE + 1 × `FLOW` DELETE) through the
-      writer. Batch delete stays batched (no perf regression); only the audit inserts loop.
-
-### Guardrail
-
-- [ ] **Any `@Auditable` Controller method must resolve an `operatorId`** from
-      `RequestContext.getUserId()`; system paths (no logged-in user) are simply not
-      annotated. Document: audited methods live behind the authenticated HTTP layer.
-
-### Deferred
-
-- [ ] **Before + after snapshots per operation.** A row currently holds one snapshot (post-op,
-      or pre-op for the `AuditAspect.snapshotsBeforeCall` set). Capture both sides so "who
-      changed the cron from X to Y" is answerable without pairing adjacent rows.
-- [ ] **`workspace_id` on `t_audit_log`** + `@TenantId` on `AuditLog`. The table is global
-      today: `WORKSPACE_VIEW` on any one workspace reads every workspace's snapshots, and
-      snapshots contain job configs / SQL.
-
-### Notes
-
-- A `batchId` to group the N+1 rows of a single `purge` into "one operation" is **not**
-      added now — same `operatorId` + near-identical `operateTime` already reconstructs the
-      scene. Add later only if needed.
-- **stop/kill background:** manual **run** already records its executor
-      (`JobFlowRunner.execute` stamps `USER_ID` from the Quartz data map onto
-      `t_job_flow_run.userId`, falling back to the flow creator for scheduled fires /
-      sub-flows). Only **stop / kill** currently record nobody — that gap is what the
-      annotations on the three run endpoints close. No schema migration on `t_job_run` /
-      `t_job_flow_run`; only the enum extensions above + `t_audit_log` rows.
-- Rejected for stop/kill: a plain `log.info("... killed by {}", userId)` — zero schema cost
-      but not queryable and lost on log rotation. Fine only for pure debugging.
-- (Optional) surface stop/kill entries in the existing audit-log UI / `AuditLogController`.
+- [ ] **Audit cascade deletes** — extract a shared `AuditLogWriter`, then have
+      `JobFlowService.deleteAllById` capture the deleted flow and child jobs and write N + 1
+      audit rows after the business transaction commits. Audit failure must not fail the
+      business operation.
+- [ ] **Require an operator for audited entry points** — every `@Auditable` controller method
+      must resolve `RequestContext.getUserId()`; system paths remain unannotated.
+- [ ] **Store before and after snapshots** so changes can be understood without correlating
+      adjacent audit rows.
+- [ ] **Tenant-scope audit logs** — add `workspace_id` to `t_audit_log` and `@TenantId` to
+      `AuditLog`; the table is global today and can expose snapshots across workspaces.
+- [ ] (Optional) Surface schedule/run/kill entries in the existing audit-log UI.
 
 ---
 
@@ -589,9 +475,6 @@ constant and build the array from it so the two can't drift again.
       style.**
 - [ ] **No OpenAPI spec** — no `springdoc`/`swagger` dependency exists. For an open-source
       release, generated API docs + clients matter more than URL aesthetics.
-- [x] **Unprotected controllers** — **DONE** for `/stats`, `/audit-logs`, `/quartz`, `/flink`
-      (added to `protectedPaths`). `/webhook` stays open (intentional); `/attr` serves static
-      enum metadata and carries no `@RequirePermission`.
 - [ ] **`/reactive/**` is still unprotected — blocked on node-to-node auth.** `POST
       /reactive/execJob` executes ad-hoc SQL / Flink SQL and is reachable without login; its
       `@RequirePermission(TASK_EXEC)` / `TASK_VIEW` are inert. Cannot simply be added to
@@ -607,29 +490,17 @@ constant and build the array from it so the two can't drift again.
 
 ---
 
-## Alerting Strategy — Silent Waits, No Throttling, Thin Messages
-
-Flow-level `depends_on` parks runs in `WAITING`, where they stay silent until the deadline
-(`worker.flowWaitTimeout`, or the upstream's next cron fire), so a slow upstream delays the
-downstream's failure signal by hours. Reviewing the surrounding code turned up several more
-issues in the same area — all about *what* the alert says and *how often*, not about runs
-hanging: every `PENDING` path is bounded by `FlowRunDispatcher#waitDeadline`.
+## Alerting Strategy — Remaining Work
 
 See design: [docs/design/alerting-strategy.md](docs/design/alerting-strategy.md)
 
-- [ ] **Context in alert messages** — say which dependency is outstanding, its latest run's
-      status, and how long the run waited. `DependencyService` already back-fills
-      `latest*` onto each `Dependency`; `DependentCommandBuilder` is the precedent. Needs
-      `evaluate` to surface per-item detail instead of only a `Verdict`. Do this first: it's
-      small and takes the edge off the silent-wait problem on its own.
+- [ ] **Structured dependency diagnostics** — distinguish no upstream run, still running,
+      expired result, and settled-but-unmatched status. `DependencyService#evaluate` currently
+      returns only one group verdict, so timeout alerts cannot state the exact cause.
 - [ ] **Throttle the direct channel** — `sendAlertsDirectly` de-duplicates nothing, so
       `JobFlowRunner`'s duplicate-run guard fires once per cron tick while an upstream stalls.
       De-dup by `(flowId, alert kind)` inside `dispatch`, never throttling terminal-status
       notifications. Requires modelling an "alert kind", which is the bulk of the work.
-      Prerequisite for the mid-wait warning below.
-- [ ] **Warn partway through a wait** — one warning past `min(deadline × fraction, cap)`,
-      then quiet until the deadline. Track "already warned" in an in-memory per-worker set
-      (at-least-once across restarts). `TODO` marker is in `FlowRunDispatcher#advanceWaitingRuns`.
 - [ ] **Stop forging `FAILURE` in `sendErrAlertsDirectly`** — the run is synthetic and nothing
       failed; the trigger was *skipped*. Recipients routing by status see a false failure, and
       direct mode bypasses `AlertConfig.statuses` too. Schedule separately: it changes existing
@@ -648,34 +519,48 @@ See design: [docs/design/alerting-strategy.md](docs/design/alerting-strategy.md)
       longer than the flow's own schedule interval. Cheapest fix is a save-time validation in
       `JobFlowRequest#verifyDependsOn`; throttling would only mask it.
 
+### Long-term: user-defined, event-driven alert policies
+
+The fixed WAITING warning is a compatibility-sized fix, not the final alert model. Do not
+keep adding timing branches to `FlowRunDispatcher` or boolean variants to `AlertSendingService`.
+The target is for a flow owner to configure alert rules by event, independently from the runtime
+rule that decides when a run changes status.
+
+- [ ] **Define stable alert event types** — initially `WAITING_TOO_LONG`, `WAITING_TIMEOUT`,
+      `EXECUTION_TIMEOUT`, `RUN_STATUS_CHANGED`, and `TRIGGER_SKIPPED`. Event producers report
+      facts; they do not decide recipients, repetition, or escalation.
+- [ ] **Keep alert payloads structured until channel rendering** — event producers provide typed
+      fields plus `List` / `Map` data (for example dependency details), rather than pre-formatting
+      one display string. Each channel adapter owns formatting, escaping, field limits and line
+      breaks for its target representation: HTML/email, SMS/plain text, Feishu cards, and future
+      channels. Do not inject raw rendered text into an already-serialized JSON template.
+- [ ] **Add per-flow alert rules** — each rule selects an event and alert channel(s), with optional
+      event-specific conditions such as `after`, terminal statuses, severity, and repeat/escalation
+      policy. Preserve existing `AlertConfig.statuses` as the backwards-compatible implicit
+      `RUN_STATUS_CHANGED` rule.
+- [ ] **Separate lifecycle deadlines from notification timing** — for example, dependency wait
+      timeout determines when `WAITING -> FAILURE`, while a `WAITING_TOO_LONG.after` rule only
+      determines when the user is notified. Changing an alert rule must not change scheduling.
+- [ ] **Resolve policy by scope** — platform defaults, then workspace defaults, then flow
+      overrides. Administrators provide safe defaults and limits; flow owners choose the useful
+      signals and destinations within those limits.
+- [ ] **Centralise noise and delivery governance** — idempotency by event/rule/run, throttling,
+      silence and maintenance windows, escalation, delivery retry, and an auditable delivery
+      history. Terminal run notifications must not be lost to throttling. Persistent idempotency
+      should eventually replace the minimal WAITING warning's in-memory set.
+
+The next migration step is to introduce an internal `AlertEventType` when per-flow rules begin,
+then add central policy evaluation and persistent delivery state. Existing status-based alert
+configuration should continue to work throughout the migration.
+
 ---
 
-## A Timed-Out WAITING Run Swallows the Cron Tick That Should Replace It
+## Replace the WAITING Cron-Deadline Workaround
 
-A `WAITING` run's deadline is its flow's next cron fire (`FlowRunDispatcher#calcWaitDeadline`).
-The intent is that the fresh run supersedes the stale one. What happens instead is the reverse:
-the stale one blocks the fresh one, and the tick is lost rather than delayed.
-
-At fire time T, Quartz runs `JobFlowRunner#execute`, which guards against overlap with
-`jobFlowRunService.findRunningFlow(...)` — a query over `getNonTerminals()`, and **WAITING is
-non-terminal**. Meanwhile `advanceWaitingRuns` only polls every 3s, so at T the old run is
-almost always still WAITING. So:
-
-1. T: Quartz sees the old WAITING run → skips the run entirely, alerts "There is already a
-   waiting/running jobFlowRun".
-2. T+0..3s: `advanceWaitingRuns` finds the deadline passed → fails the old run, alerts
-   "Waiting timeout".
-
-Net effect: that cron tick produces no run at all, and two alerts land for one event. Not a
-race that can be tuned away — the deadline *is* T, so the collision is by construction.
-
-- [ ] **Let a WAITING run be superseded** (preferred) — `JobFlowRunner`'s overlap guard should
-      treat WAITING as replaceable: fail the old run, then create the new one. Matches the
-      stated intent of the cron deadline and removes the spurious "already running" alert.
-      Check the `JOB_LIST` branch's `findRunningJob` for the same problem while in there.
-- [ ] Alternative if the above is too invasive: subtract a margin from the cron deadline so the
-      slot frees before Quartz fires. Simpler, but the margin is arbitrary and must exceed
-      `advanceWaitingRuns`' 3s poll interval.
+- [ ] `calcWaitDeadline` currently expires a WAITING run ten seconds before the next cron fire
+      to reduce collisions with `JobFlowRunner`'s non-terminal-run guard. If this heuristic proves
+      unreliable, replace it with explicit supersession: atomically fail the previous WAITING run
+      before creating the next scheduled run. Check the `JOB_LIST` branch at the same time.
 
 ---
 
@@ -698,12 +583,6 @@ See design: [docs/design/flow-dependency-model.md](docs/design/flow-dependency-m
 - [ ] **Refuse to delete a flow other flows depend on** — `JobFlowService#deleteAllById` drops
       the flow (and its runs) unconditionally. Downstreams then wait out every deadline with no
       hint that the upstream is gone: no row comes back, so it looks the same as "never ran".
-
-### Coverage
-
-- [ ] **Test `advanceWaitingRuns`' dispatch** — `FlowRunDispatcherTest` only covers
-      `calcWaitDeadline`. Untested: each of the four verdicts mapping to its action, and that no
-      alert is sent when `updateStatusFromWaiting` loses the race and returns false.
 
 ### Cleanups
 

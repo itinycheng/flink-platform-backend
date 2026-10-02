@@ -60,10 +60,12 @@ public class JobFlowRunService extends ServiceImpl<JobFlowRunMapper, JobFlowRun>
                 .select(
                         JobFlowRun::getId,
                         JobFlowRun::getName,
+                        JobFlowRun::getFlowId,
                         JobFlowRun::getCronExpr,
                         JobFlowRun::getDependsOn,
                         JobFlowRun::getAlerts,
-                        JobFlowRun::getScheduleTime)
+                        JobFlowRun::getScheduleTime,
+                        JobFlowRun::getStatus)
                 .eq(JobFlowRun::getHost, HOST_IP)
                 .eq(JobFlowRun::getStatus, WAITING));
     }

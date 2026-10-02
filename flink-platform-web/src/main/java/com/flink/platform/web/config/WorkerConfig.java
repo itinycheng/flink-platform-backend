@@ -50,4 +50,8 @@ public class WorkerConfig {
     @NotNull
     @DurationRange(min = "1s", message = "Must be at least 1s, otherwise every no-cron WAITING flow run fails at once")
     private Duration flowWaitTimeout;
+
+    @NotNull
+    @DurationRange(min = "1s", message = "Must be at least 1s")
+    private Duration flowWaitWarningAfter;
 }

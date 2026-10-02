@@ -1,6 +1,8 @@
 package com.flink.platform.web.runner;
 
 import com.flink.platform.alert.AlertSendingService;
+import com.flink.platform.dao.entity.Dependency;
+import com.flink.platform.dao.entity.DependencyConfig;
 import com.flink.platform.dao.entity.JobFlowRun;
 import com.flink.platform.dao.service.JobFlowRunService;
 import com.flink.platform.web.config.WorkerConfig;
@@ -20,6 +22,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import static com.flink.platform.common.enums.ExecutionStatus.FAILURE;
+import static com.flink.platform.common.enums.ExecutionStatus.RUNNING;
 import static com.flink.platform.common.enums.ExecutionStatus.SUBMITTED;
 import static com.flink.platform.common.enums.ExecutionStatus.WAITING;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -32,6 +35,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -62,6 +66,7 @@ class FlowRunDispatcherTest {
     @BeforeEach
     void setUp() {
         lenient().when(workerConfig.getFlowExecThreads()).thenReturn(4);
+        lenient().when(workerConfig.getFlowWaitWarningAfter()).thenReturn(Duration.ofHours(1));
         dispatcher = new FlowRunDispatcher(
                 workerConfig, jobFlowRunService, alertSendingService, killJobService, dependencyService, quartzService);
     }
@@ -136,13 +141,61 @@ class FlowRunDispatcherTest {
     void pendingRunBeforeDeadlineIsLeftAlone() {
         lenient().when(workerConfig.getFlowWaitTimeout()).thenReturn(Duration.ofHours(24));
         var run = waitingRun();
-        run.setScheduleTime(LocalDateTime.now().minusHours(1));
+        run.setScheduleTime(LocalDateTime.now().minusMinutes(30));
         when(jobFlowRunService.listWaitingRunsOnHost()).thenReturn(List.of(run));
         when(dependencyService.evaluate(any())).thenReturn(DependencyState.PENDING);
 
         dispatcher.advanceWaitingRuns();
 
         verify(jobFlowRunService, never()).updateStatusFromWaiting(anyLong(), any());
+        verify(alertSendingService, never()).sendAlertsDirectly(any(), any());
+    }
+
+    @Test
+    void delayedPendingRunWarnsOnlyOnce() {
+        lenient().when(workerConfig.getFlowWaitTimeout()).thenReturn(Duration.ofHours(24));
+        var run = waitingRunWithDependency();
+        run.setScheduleTime(LocalDateTime.now().minusHours(2));
+        when(jobFlowRunService.listWaitingRunsOnHost()).thenReturn(List.of(run));
+        when(dependencyService.evaluate(any())).thenReturn(DependencyState.PENDING);
+
+        dispatcher.advanceWaitingRuns();
+        dispatcher.advanceWaitingRuns();
+
+        var message = ArgumentCaptor.forClass(String.class);
+        verify(alertSendingService, times(1)).sendAlertsDirectly(eq(run), message.capture());
+        assertTrue(message.getValue().contains("flowId=100"), message.getValue());
+        assertTrue(message.getValue().contains("latestRunId=200"), message.getValue());
+        assertTrue(message.getValue().contains("status=RUNNING"), message.getValue());
+        assertFalse(message.getValue().contains("\n"), message.getValue());
+    }
+
+    @Test
+    void waitWindowShorterThanWarningDelayDoesNotWarn() {
+        lenient().when(workerConfig.getFlowWaitTimeout()).thenReturn(Duration.ofMinutes(30));
+        var run = waitingRunWithDependency();
+        run.setScheduleTime(LocalDateTime.now().minusMinutes(10));
+        when(jobFlowRunService.listWaitingRunsOnHost()).thenReturn(List.of(run));
+        when(dependencyService.evaluate(any())).thenReturn(DependencyState.PENDING);
+
+        dispatcher.advanceWaitingRuns();
+
+        verify(alertSendingService, never()).sendAlertsDirectly(any(), any());
+    }
+
+    @Test
+    void timedOutRunFailsWithoutDelayedWarning() {
+        lenient().when(workerConfig.getFlowWaitTimeout()).thenReturn(Duration.ofHours(24));
+        var run = waitingRunWithDependency();
+        run.setScheduleTime(LocalDateTime.now().minusHours(25));
+        when(jobFlowRunService.listWaitingRunsOnHost()).thenReturn(List.of(run));
+        when(dependencyService.evaluate(any())).thenReturn(DependencyState.PENDING);
+        when(jobFlowRunService.updateStatusFromWaiting(1L, FAILURE)).thenReturn(true);
+
+        dispatcher.advanceWaitingRuns();
+
+        verify(alertSendingService).sendAlerts(eq(run), any());
+        verify(alertSendingService, never()).sendAlertsDirectly(any(), any());
     }
 
     @Test
@@ -205,6 +258,19 @@ class FlowRunDispatcherTest {
         var run = new JobFlowRun();
         run.setId(1L);
         run.setStatus(WAITING);
+        return run;
+    }
+
+    private JobFlowRun waitingRunWithDependency() {
+        var dependency = new Dependency();
+        dependency.setFlowId(100L);
+        dependency.setLatestFlowRunId(200L);
+        dependency.setLatestStatus(RUNNING);
+        var config = new DependencyConfig();
+        config.setDependencies(List.of(dependency));
+
+        var run = waitingRun();
+        run.setDependsOn(config);
         return run;
     }
 }

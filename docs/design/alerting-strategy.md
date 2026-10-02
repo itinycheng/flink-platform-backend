@@ -1,18 +1,20 @@
 # Alerting Strategy
 
-> **Status:** Design — not yet implemented. Tracked in [TODO.md](../../TODO.md).
+> **Status:** Partially implemented. WAITING runs now emit one warning after
+> `worker.flowWaitWarningAfter` (default 1h) when the deadline is later than that threshold.
+> Remaining alert-governance work is tracked in [TODO.md](../../TODO.md).
 >
-> Raised while implementing flow-level `depends_on`. The new `WAITING` status made one gap
-> acute (a run can now stay silent for hours by design), and reviewing the surrounding code
-> turned up three pre-existing issues worth fixing at the same time.
+> Raised while implementing flow-level `depends_on`. The new `WAITING` status exposed a
+> delayed-visibility gap, and reviewing the surrounding code turned up three pre-existing
+> issues worth fixing at the same time.
 
 ## Context
 
 Flow-level prerequisite dependencies park a run in `WAITING` until its upstreams are
-satisfied. Waiting is bounded — the upstream flow's next cron fire, or `worker.flowWaitTimeout`
-(12h in the shipped profiles) when the flow has no cron — but *within* that window the run
-produces no alert at all. A slow upstream therefore delays the downstream's failure signal by
-up to the whole window.
+satisfied. Waiting is bounded by the downstream flow's next cron fire (currently with a ten-second
+lead), or `worker.flowWaitTimeout` (12h in the shipped profile) when the flow has no cron. The
+basic warning prevents that entire window from passing silently; richer user-defined policy is
+still deferred.
 
 That is the trigger for this document, but problems 2–4 below predate `depends_on` and affect
 every alert the platform sends.
@@ -55,8 +57,9 @@ vs direct sending` on master.
 |---|---|---|
 | `FlowExecuteThread#completeAndNotify` | filtered | Flow reached a terminal status |
 | `FlowExecuteThread#handleTimeout` | direct | Execution timeout, `ALARM` strategy |
-| `FlowRunDispatcher#failWaitingFlowRun` | direct | A `WAITING` run gave up (dependency hopeless, or wait timed out) |
-| `FlowRunDispatcher#submitToExecutor` | direct | Flow has no job vertex |
+| `FlowRunDispatcher#failWaitingFlowRuns` | filtered | A `WAITING` run gave up (dependency hopeless, or wait timed out) |
+| `FlowRunDispatcher#sendWaitingWarnings` | direct | A `WAITING` run passed the configured warning delay |
+| `FlowRunDispatcher#submitToExecutor` | filtered | Flow has no job vertex |
 | `WorkerHeartbeat` | direct | Failover with no active worker |
 | `JobFlowRunner` ×2 | `sendErrAlertsDirectly` | A previous run is still non-terminal, so this trigger is skipped |
 | `JobsInJobListStatusChecker` | filtered | Cron health check |
@@ -67,26 +70,14 @@ respect the user's `AlertConfig.statuses`.
 
 ## Problems
 
-### 1. A waiting run is silent until its deadline
+### 1. A waiting run needs configurable alerting
 
-A `WAITING` run emits nothing between creation and the moment it either advances or times out.
-With `flowWaitTimeout` at 12h — or a daily upstream whose next fire is 24h away — an operator
-learns that a downstream flow could not run only after the delay has already been absorbed.
+A minimal safeguard is implemented: a `WAITING` run emits one warning after
+`worker.flowWaitWarningAfter`, provided its deadline is later than that threshold. The warning is
+deduplicated by run id in worker memory, so it can be repeated after a worker restart.
 
-There is a `TODO` at the exact spot, in `FlowRunDispatcher#advanceWaitingRuns`:
-
-```java
-case PENDING -> {
-    // TODO: a WAITING run stays silent until the deadline, so a slow upstream can delay the
-    //  alert by the whole window (flowWaitTimeout, or the next cron fire). Warn once partway
-    //  through the wait instead, and say which dependency is still outstanding.
-    if (waitTimedOut(waitingRun)) { ... }
-}
-```
-
-**Why it matters more than it looks:** the run is not stuck or broken, so nothing else in the
-system will notice it either. There is no failed status for a monitoring system to pick up, and
-the flow list shows `WAITING`, which looks healthy.
+The remaining problem is user control: the threshold, destinations, repetition and escalation
+should eventually be expressed as per-flow event rules rather than more scheduler-level settings.
 
 ### 2. Direct alerts have no throttling
 
@@ -95,8 +86,8 @@ the flow list shows `WAITING`, which looks healthy.
 another "There is already a waiting/running jobFlowRun" alert. An hourly flow sends one an
 hour; a 5-minute flow sends twelve an hour. These bury the alerts that matter.
 
-This also blocks problem 1: adding a mid-wait warning without throttling would just create a
-second flood.
+The minimal mid-wait warning has its own run-level one-shot guard, but other direct alerts still
+need event-aware throttling.
 
 ### 3. Alerts carry no diagnostic context
 
@@ -135,26 +126,12 @@ out in direct mode, `AlertConfig.statuses` cannot filter it either.
 
 ## Proposed solutions
 
-### For 1 — warn partway through the wait
+### For 1 — move the basic warning into user policy
 
-Emit one warning when a run has been waiting past a threshold, then stay quiet until the
-deadline.
-
-Threshold options:
-
-- **Fraction of the deadline** (e.g. 50%) — adapts to both hourly and daily flows, but for a
-  5-minute flow the warning fires 2.5 minutes in, which is noise.
-- **Fixed duration** (e.g. 1h) — sensible for daily flows, never fires for short-cycle ones
-  whose deadline is shorter than the threshold.
-- **`min(deadline × fraction, cap)`, configurable** — recommended; behaves for both ends.
-
-Tracking "already warned" (the poller runs every 3s, so this is required):
-
-- **In-memory `Set<Long>` per worker** — simplest; a worker restart re-sends one warning per
-  waiting run. Acceptable, and failover already moves runs between workers.
-- **A column on `t_job_flow_run`** — survives restarts, costs a migration and a write.
-
-Recommend the in-memory set, documented as "at-least-once".
+The fixed-delay warning is intentionally a small first step. Future per-flow rules can replace it
+with event-specific thresholds, routing, repetition and escalation without changing the lifecycle
+deadline that transitions a run to `FAILURE`. Persistent event/rule/run idempotency can then
+replace the current in-memory, at-least-once guard.
 
 ### For 2 — throttle the direct channel
 
@@ -188,21 +165,21 @@ Either way this changes what existing recipients see, so it wants its own rollou
 
 ## Sequencing
 
-1. **3 (context in messages)** — small, self-contained, immediately useful.
-2. **2 (throttling)** — needs the "alert kind" concept; is a prerequisite for 1.
-3. **1 (mid-wait warning)** — the actual fix for the delayed-discovery concern.
+The minimal fixed-delay warning is implemented. Remaining work should proceed as:
+
+1. **3 (structured context)** — distinguish the actual reason each dependency blocks.
+2. **2 (event-aware throttling)** — introduce event kinds and central noise control.
+3. **Per-flow rules** — move timing, routing and escalation to user configuration.
 4. **4 (fabricated status)** — semantic fix; schedule separately since it alters existing
    alert payloads.
-
-1–3 belong together in one branch. 4 should be its own change with a compatibility note.
 
 ## Code pointers
 
 | What | Where |
 |---|---|
 | Alert dispatch + the two modes | `flink-platform-alert/.../AlertSendingService.java` |
-| Waiting poller, deadline, the `TODO` | `flink-platform-web/.../runner/FlowRunDispatcher.java` (`advanceWaitingRuns`, `hasWaitTimedOut`, `waitDeadline`, `failWaitingFlowRun`) |
+| Waiting poller, warning and deadline | `flink-platform-web/.../runner/FlowRunDispatcher.java` (`advanceWaitingRuns`, `collectWaitingOutcome`, `sendWaitingWarnings`, `calcWaitDeadline`) |
 | Dependency evaluation + `latest*` back-fill | `flink-platform-web/.../service/DependencyService.java` |
 | Per-item message precedent (job-level DEPENDENT) | `flink-platform-web/.../command/dependent/DependentCommandBuilder.java` |
 | Duplicate-run guard that floods | `flink-platform-web/.../quartz/JobFlowRunner.java` |
-| Wait ceiling config | `WorkerConfig#flowWaitTimeout`, `application-{dev,docker}.yml` |
+| Wait timing config | `WorkerConfig#flowWaitTimeout`, `WorkerConfig#flowWaitWarningAfter`, `application.yml` |

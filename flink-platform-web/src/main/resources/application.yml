@@ -41,3 +41,4 @@ worker:
   flinkSubmissionTimeout: 5m
   maxShellExecutionTimeout: 8h
   flowWaitTimeout: 12h
+  flowWaitWarningAfter: 1h
