@@ -52,7 +52,7 @@ public class FlowExecuteThread implements Runnable {
     public FlowExecuteThread(JobFlowRun jobFlowRun, WorkerConfig workerConfig) {
         this.jobFlowRun = jobFlowRun;
         this.workerConfig = workerConfig;
-        this.semaphore = new Semaphore(getParallelism());
+        this.semaphore = new Semaphore(getMaxJobsPerRun());
     }
 
     @Override
@@ -182,9 +182,9 @@ public class FlowExecuteThread implements Runnable {
         return host != null && !HOST_IP.equals(host);
     }
 
-    private int getParallelism() {
+    private int getMaxJobsPerRun() {
         var config = jobFlowRun.getConfig();
-        var parallelism = config != null ? config.getParallelism() : 0;
-        return parallelism > 0 ? parallelism : workerConfig.getPerFlowExecThreads();
+        var max = config.getMaxJobsPerRun();
+        return max > 0 ? max : workerConfig.getPerFlowExecThreads();
     }
 }

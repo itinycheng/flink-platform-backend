@@ -14,7 +14,6 @@ import com.flink.platform.dao.entity.JobFlow;
 import com.flink.platform.dao.entity.JobFlowDag;
 import com.flink.platform.dao.entity.User;
 import com.flink.platform.dao.query.JobFlowPageQuery;
-import com.flink.platform.dao.service.JobFlowRunService;
 import com.flink.platform.dao.service.JobFlowService;
 import com.flink.platform.dao.service.JobInfoService;
 import com.flink.platform.dao.service.JobRunInfoService;
@@ -25,6 +24,7 @@ import com.flink.platform.web.config.WorkerConfig;
 import com.flink.platform.web.dto.ResultInfo;
 import com.flink.platform.web.dto.request.JobFlowRequest;
 import com.flink.platform.web.quartz.QuartzService;
+import com.flink.platform.web.service.JobFlowRunBizService;
 import com.flink.platform.web.service.JobFlowScheduleService;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.collections4.CollectionUtils;
@@ -81,7 +81,7 @@ public class JobFlowController {
 
     private final JobFlowService jobFlowService;
 
-    private final JobFlowRunService jobFlowRunService;
+    private final JobFlowRunBizService flowRunBizService;
 
     private final JobFlowScheduleService jobFlowScheduleService;
 
@@ -154,17 +154,14 @@ public class JobFlowController {
     @Auditable(type = FLOW, operation = OperationType.UPDATE)
     @PostMapping(value = "/updateFlow")
     public ResultInfo<Long> updateFlow(@RequestBody JobFlowRequest jobFlowRequest) {
-        if (jobFlowRequest.getConfig() != null) {
-            setDefaultConfig(jobFlowRequest);
-        }
-
         var errorMsg = jobFlowRequest.validateOnUpdate();
         if (StringUtils.isNotBlank(errorMsg)) {
             return failure(ERROR_PARAMETER, errorMsg);
         }
 
-        jobFlowService.updateFlowById(jobFlowRequest.getJobFlow());
-        return success(jobFlowRequest.getId());
+        var jobFlow = jobFlowRequest.getJobFlow();
+        jobFlowService.updateFlowById(jobFlow);
+        return success(jobFlow.getId());
     }
 
     @RequirePermission(TASK_VIEW)
@@ -322,11 +319,14 @@ public class JobFlowController {
             }
 
             // check if the start job is finished.
-            if (jobRunService.findRunningJob(config.getStartJobId()) != null) {
+            if (jobRunService.findActiveRunByJobId(config.getStartJobId()) != null) {
                 return failure(EXIST_UNFINISHED_PROCESS);
             }
         } else {
-            if (jobFlowRunService.findRunningFlow(flowId, config) != null) {
+            var executionConfig = new ExecutionConfig();
+            executionConfig.mergeFrom(jobFlow.getConfig());
+            executionConfig.mergeFrom(config);
+            if (flowRunBizService.findRunConflict(flowId, executionConfig, null) != null) {
                 return failure(EXIST_UNFINISHED_PROCESS);
             }
         }
@@ -347,13 +347,10 @@ public class JobFlowController {
     // ====================================================
 
     private void setDefaultConfig(JobFlowRequest request) {
-        var config = request.getConfig();
-        if (config == null) {
-            config = new ExecutionConfig();
-            request.setConfig(config);
-        }
-        if (config.getParallelism() < 1) {
-            config.setParallelism(workerConfig.getPerFlowExecThreads());
-        }
+        var config = new ExecutionConfig();
+        config.setMaxJobsPerRun(workerConfig.getPerFlowExecThreads());
+        config.setMaxActiveRuns(1);
+        config.mergeFrom(request.getConfig());
+        request.setConfig(config);
     }
 }

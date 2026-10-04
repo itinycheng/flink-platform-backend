@@ -56,7 +56,7 @@ Two independent retention knobs:
 
 ### Why this works
 
-- Hot table stays small (~3 months of rows). Every operational query (`getById`, `findRunningJob`,
+- Hot table stays small (~3 months of rows). Every operational query (`getById`, `findActiveRunByJobId`,
   `selectLatestLiteRunPerJob`) runs against a compact unpartitioned table — same semantics as today, faster
   than today.
 - Archive queries are **always** time-ranged (dashboard "last N months", audit by date window), so
@@ -232,7 +232,7 @@ in the query). Candidates:
 - `countJobFlowRunGroupByStatus` — filters by `end_time BETWEEN ...`
 - Any controller endpoint that accepts a date range spanning beyond `hot-retention-days`.
 
-Operational endpoints (`findRunningJob`, `selectLatestLiteRunPerJob`, `getLiteById`, etc.) continue to
+Operational endpoints (`findActiveRunByJobId`, `selectLatestLiteRunPerJob`, `getLiteById`, etc.) continue to
 read from the hot table only. They are the hot path and must stay fast.
 
 ## Migration Strategy

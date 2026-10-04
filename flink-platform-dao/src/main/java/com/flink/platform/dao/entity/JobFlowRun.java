@@ -71,7 +71,7 @@ public class JobFlowRun implements Identifiable {
 
     private ExecutionStatus status;
 
-    /** Quartz scheduledFireTime. */
+    /** Effective logical schedule time, mirrored in config.scheduleTime. */
     private LocalDateTime scheduleTime;
 
     private LocalDateTime startTime;
@@ -92,7 +92,7 @@ public class JobFlowRun implements Identifiable {
 
     @JsonIgnore
     public LocalDateTime getResolvedScheduleTime() {
-        if (config != null && config.getScheduleTime() != null) {
+        if (config.getScheduleTime() != null) {
             return config.getScheduleTime();
         }
         return scheduleTime;

@@ -36,6 +36,7 @@ worker:
   flowExecThreads: 500
   perFlowExecThreads: 5
   maxPerFlowExecThreads: 10
+  maxActiveRunsPerFlow: 10
   errorRetries: 3
   reactiveExecThreads: 10
   flinkSubmissionTimeout: 5m

@@ -346,7 +346,7 @@ CREATE TABLE `t_job_flow_run` (
   `timeout` varchar(255) DEFAULT NULL,
   `params` TEXT DEFAULT NULL,
   `status` varchar(32) NOT NULL,
-  `schedule_time` datetime NOT NULL,
+  `schedule_time` datetime NOT NULL COMMENT 'logical schedule time; quartz scheduled fire time unless manually overridden or inherited',
   `start_time` datetime DEFAULT NULL,
   `end_time` datetime DEFAULT NULL,
   `create_time` datetime DEFAULT CURRENT_TIMESTAMP,

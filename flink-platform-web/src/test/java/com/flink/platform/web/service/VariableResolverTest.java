@@ -169,7 +169,7 @@ public class VariableResolverTest {
         assertEquals(LocalDateTime.of(2024, 1, 2, 3, 4, 5), flowRun.getResolvedScheduleTime());
 
         // no override -> falls back to the flow run's scheduleTime
-        flowRun.setConfig(null);
+        flowRun.setConfig(new ExecutionConfig());
         assertEquals(LocalDateTime.of(2026, 6, 21, 0, 0, 0), flowRun.getResolvedScheduleTime());
     }
 

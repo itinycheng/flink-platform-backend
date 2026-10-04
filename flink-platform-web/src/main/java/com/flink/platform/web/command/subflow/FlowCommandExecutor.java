@@ -17,6 +17,7 @@ import com.flink.platform.web.command.JobCommand;
 import com.flink.platform.web.common.SpringContext;
 import com.flink.platform.web.lifecycle.AppRunner;
 import com.flink.platform.web.quartz.QuartzService;
+import com.flink.platform.web.service.JobFlowRunBizService;
 import com.flink.platform.web.service.KillJobService;
 import com.flink.platform.web.util.ThreadUtil;
 import jakarta.annotation.Nonnull;
@@ -26,7 +27,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
 import java.util.HashMap;
 
 import static com.flink.platform.common.constants.JobConstant.CONFIG;
@@ -49,6 +49,8 @@ public class FlowCommandExecutor implements CommandExecutor {
 
     private final JobFlowRunService jobFlowRunService;
 
+    private final JobFlowRunBizService flowRunBizService;
+
     private final JobRunInfoService jobRunService;
 
     @Override
@@ -61,20 +63,32 @@ public class FlowCommandExecutor implements CommandExecutor {
     public JobCallback execCommand(@Nonnull JobCommand command) {
         var flowId = ((FlowCommand) command).getFlowId();
         var subFlow = jobFlowService.getById(flowId);
-        var running = jobFlowRunService.findRunningFlow(flowId, subFlow.getConfig());
-        if (running != null) {
-            log.info("Job flow is already running, flowId: {}, flowRunId: {}", flowId, running.getId());
-            return new JobCallback("A running jobFlow already exists, flowRunId: " + running.getId(), FAILURE);
+        // Inherit parent flow's scheduleTime so the whole workflow tree shares one biz* anchor.
+        var scheduleTime = jobFlowRunService.resolveScheduleTimeOrNow(command.getFlowRunId());
+
+        var executionConfig = new ExecutionConfig();
+        executionConfig.mergeFrom(subFlow.getConfig());
+        executionConfig.setScheduleTime(scheduleTime);
+        var conflict = flowRunBizService.findRunConflict(flowId, executionConfig, null);
+        if (conflict != null) {
+            log.info(
+                    "Subflow run rejected by {}, flowId: {}, active flowRunId: {}, scheduleTime: {}",
+                    conflict.type(),
+                    flowId,
+                    conflict.activeRun().getId(),
+                    scheduleTime);
+            return new JobCallback(
+                    "Subflow run rejected by " + conflict.type() + ", active flowRunId: "
+                            + conflict.activeRun().getId(),
+                    FAILURE);
         }
 
         // Use proxy to enable @Transactional.
         var self = SpringContext.getBean(FlowCommandExecutor.class);
-        // Inherit parent flow's scheduleTime so the whole workflow tree shares one biz* anchor.
-        var scheduleTime = jobFlowRunService.resolveScheduleTimeOrNow(command.getFlowRunId());
 
         Long flowRunId;
         try {
-            flowRunId = self.runOnceInTransaction(subFlow, scheduleTime);
+            flowRunId = self.runOnceInTransaction(subFlow, executionConfig);
         } catch (Exception e) {
             log.error("Subflow run once time failed, flowId: {}", subFlow.getId(), e);
             return new JobCallback(ExceptionUtil.stackTrace(e), FAILURE);
@@ -112,9 +126,7 @@ public class FlowCommandExecutor implements CommandExecutor {
 
     // Don't use this method outside this class.
     @Transactional
-    public Long runOnceInTransaction(JobFlow subFlow, LocalDateTime scheduleTime) {
-        var config = new ExecutionConfig();
-        config.setScheduleTime(scheduleTime);
+    public Long runOnceInTransaction(JobFlow subFlow, ExecutionConfig config) {
         var flowRunId = newAndSaveDefault(subFlow, config);
         var data = new HashMap<String, Object>();
         data.put(FLOW_RUN_ID, flowRunId);
@@ -134,8 +146,7 @@ public class FlowCommandExecutor implements CommandExecutor {
         jobflowRun.setFlow(new JobFlowDag());
         jobflowRun.setStatus(CREATED);
         jobflowRun.setConfig(config);
-        // Will be overwritten by JobFlowRunner.execute when the runOnce trigger fires.
-        jobflowRun.setScheduleTime(LocalDateTime.now());
+        jobflowRun.setScheduleTime(config.getScheduleTime());
         jobFlowRunService.save(jobflowRun);
         return jobflowRun.getId();
     }

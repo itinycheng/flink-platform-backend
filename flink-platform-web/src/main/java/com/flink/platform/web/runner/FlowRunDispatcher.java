@@ -32,6 +32,7 @@ import static com.flink.platform.common.constants.Constant.SEMICOLON;
 import static com.flink.platform.common.enums.ExecutionStatus.FAILURE;
 import static com.flink.platform.common.enums.ExecutionStatus.KILLING;
 import static com.flink.platform.common.enums.ExecutionStatus.SUBMITTED;
+import static com.flink.platform.common.enums.ExecutionStatus.WAITING;
 import static com.flink.platform.common.util.DurationUtil.humanizeDuration;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static java.util.stream.Collectors.joining;
@@ -163,16 +164,19 @@ public class FlowRunDispatcher {
 
     private void collectPendingActions(
             JobFlowRun waiting, List<WaitingFailure> failures, List<WaitingWarning> warnings) {
-        var deadline = calcWaitDeadline(waiting, waiting.getScheduleTime());
+        // scheduleTime is a logical business-period identity and can intentionally be months in
+        // the past for a backfill. Waiting SLAs must start when this run was actually admitted.
+        var waitStartedAt = waiting.getCreateTime() != null ? waiting.getCreateTime() : waiting.getScheduleTime();
+        var deadline = calcWaitDeadline(waiting, waitStartedAt);
         var now = LocalDateTime.now();
         if (now.isAfter(deadline)) {
             failures.add(new WaitingFailure(waiting, "Waiting timeout, dependencies not satisfied by " + deadline));
             return;
         }
 
-        var warningAt = waiting.getScheduleTime().plus(workerConfig.getFlowWaitWarningAfter());
+        var warningAt = waitStartedAt.plus(workerConfig.getFlowWaitWarningAfter());
         if (warningAt.isBefore(deadline) && !now.isBefore(warningAt) && warnedWaitingRuns.add(waiting.getId())) {
-            warnings.add(new WaitingWarning(waiting, now, deadline));
+            warnings.add(new WaitingWarning(waiting, waitStartedAt, now, deadline));
         }
     }
 
@@ -187,7 +191,7 @@ public class FlowRunDispatcher {
                                         dependency.getLatestFlowRunId(),
                                         dependency.getLatestStatus()))
                         .collect(joining(SEMICOLON));
-                var waited = humanizeDuration(Duration.between(waiting.getScheduleTime(), warning.now()));
+                var waited = humanizeDuration(Duration.between(warning.waitStartedAt(), warning.now()));
                 var message = "Dependencies still pending after %s; deadline: %s; %s"
                         .formatted(waited, warning.deadline(), dependencies);
                 alertSendingService.sendAlertsDirectly(waiting, message);
@@ -222,7 +226,7 @@ public class FlowRunDispatcher {
                 var waiting = failure.run();
                 var reason = failure.reason();
                 // Conditional on WAITING: a concurrent kill must not be overwritten with FAILURE.
-                if (!jobFlowRunService.updateStatusFromWaiting(waiting.getId(), FAILURE)) {
+                if (!jobFlowRunService.updateStatusFromTo(waiting.getId(), WAITING, FAILURE)) {
                     continue;
                 }
 
@@ -289,5 +293,6 @@ public class FlowRunDispatcher {
 
     private record WaitingFailure(JobFlowRun run, String reason) {}
 
-    private record WaitingWarning(JobFlowRun run, LocalDateTime now, LocalDateTime deadline) {}
+    private record WaitingWarning(
+            JobFlowRun run, LocalDateTime waitStartedAt, LocalDateTime now, LocalDateTime deadline) {}
 }

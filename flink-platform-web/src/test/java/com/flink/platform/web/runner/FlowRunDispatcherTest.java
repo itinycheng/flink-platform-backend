@@ -16,6 +16,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -125,7 +126,7 @@ class FlowRunDispatcherTest {
         run.setScheduleTime(LocalDateTime.now());
         when(jobFlowRunService.listWaitingRunsOnHost()).thenReturn(List.of(run));
         when(dependencyService.evaluate(any())).thenReturn(DependencyState.PENDING);
-        when(jobFlowRunService.updateStatusFromWaiting(1L, FAILURE)).thenReturn(true);
+        when(jobFlowRunService.updateStatusFromTo(1L, WAITING, FAILURE)).thenReturn(true);
 
         dispatcher.advanceWaitingRuns();
 
@@ -147,8 +148,22 @@ class FlowRunDispatcherTest {
 
         dispatcher.advanceWaitingRuns();
 
-        verify(jobFlowRunService, never()).updateStatusFromWaiting(anyLong(), any());
+        verify(jobFlowRunService, never()).updateStatusFromTo(anyLong(), any(), any());
         verify(alertSendingService, never()).sendAlertsDirectly(any(), any());
+    }
+
+    @Test
+    void backfillWaitDeadlineStartsAtCreationRatherThanLogicalScheduleTime() {
+        lenient().when(workerConfig.getFlowWaitTimeout()).thenReturn(Duration.ofHours(24));
+        var run = waitingRun();
+        run.setScheduleTime(LocalDateTime.now().minusDays(30));
+        ReflectionTestUtils.setField(run, "createTime", LocalDateTime.now().minusMinutes(5));
+        when(jobFlowRunService.listWaitingRunsOnHost()).thenReturn(List.of(run));
+        when(dependencyService.evaluate(any())).thenReturn(DependencyState.PENDING);
+
+        dispatcher.advanceWaitingRuns();
+
+        verify(jobFlowRunService, never()).updateStatusFromTo(anyLong(), any(), any());
     }
 
     @Test
@@ -190,7 +205,7 @@ class FlowRunDispatcherTest {
         run.setScheduleTime(LocalDateTime.now().minusHours(25));
         when(jobFlowRunService.listWaitingRunsOnHost()).thenReturn(List.of(run));
         when(dependencyService.evaluate(any())).thenReturn(DependencyState.PENDING);
-        when(jobFlowRunService.updateStatusFromWaiting(1L, FAILURE)).thenReturn(true);
+        when(jobFlowRunService.updateStatusFromTo(1L, WAITING, FAILURE)).thenReturn(true);
 
         dispatcher.advanceWaitingRuns();
 
@@ -211,7 +226,7 @@ class FlowRunDispatcherTest {
         dispatcher.advanceWaitingRuns();
 
         verify(jobFlowRunService).updateStatusFromWaiting(List.of(1L, 2L), SUBMITTED);
-        verify(jobFlowRunService, never()).updateStatusFromWaiting(anyLong(), eq(SUBMITTED));
+        verify(jobFlowRunService, never()).updateStatusFromTo(anyLong(), eq(WAITING), eq(SUBMITTED));
     }
 
     @Test
@@ -222,13 +237,13 @@ class FlowRunDispatcherTest {
         when(jobFlowRunService.listWaitingRunsOnHost()).thenReturn(List.of(satisfied, failed));
         when(dependencyService.evaluate(any())).thenReturn(DependencyState.SATISFIED, DependencyState.UNSATISFIABLE);
         when(jobFlowRunService.updateStatusFromWaiting(List.of(1L), SUBMITTED)).thenReturn(1);
-        when(jobFlowRunService.updateStatusFromWaiting(2L, FAILURE)).thenReturn(true);
+        when(jobFlowRunService.updateStatusFromTo(2L, WAITING, FAILURE)).thenReturn(true);
 
         dispatcher.advanceWaitingRuns();
 
         var ordered = inOrder(jobFlowRunService);
         ordered.verify(jobFlowRunService).updateStatusFromWaiting(List.of(1L), SUBMITTED);
-        ordered.verify(jobFlowRunService).updateStatusFromWaiting(2L, FAILURE);
+        ordered.verify(jobFlowRunService).updateStatusFromTo(2L, WAITING, FAILURE);
         verify(alertSendingService).sendAlerts(eq(failed), any());
     }
 
@@ -239,13 +254,13 @@ class FlowRunDispatcherTest {
         failed.setId(2L);
         when(jobFlowRunService.listWaitingRunsOnHost()).thenReturn(List.of(concurrentlyUpdated, failed));
         when(dependencyService.evaluate(any())).thenReturn(DependencyState.UNSATISFIABLE);
-        when(jobFlowRunService.updateStatusFromWaiting(1L, FAILURE)).thenReturn(false);
-        when(jobFlowRunService.updateStatusFromWaiting(2L, FAILURE)).thenReturn(true);
+        when(jobFlowRunService.updateStatusFromTo(1L, WAITING, FAILURE)).thenReturn(false);
+        when(jobFlowRunService.updateStatusFromTo(2L, WAITING, FAILURE)).thenReturn(true);
 
         dispatcher.advanceWaitingRuns();
 
-        verify(jobFlowRunService).updateStatusFromWaiting(1L, FAILURE);
-        verify(jobFlowRunService).updateStatusFromWaiting(2L, FAILURE);
+        verify(jobFlowRunService).updateStatusFromTo(1L, WAITING, FAILURE);
+        verify(jobFlowRunService).updateStatusFromTo(2L, WAITING, FAILURE);
         verify(alertSendingService).sendAlerts(eq(failed), any());
     }
 

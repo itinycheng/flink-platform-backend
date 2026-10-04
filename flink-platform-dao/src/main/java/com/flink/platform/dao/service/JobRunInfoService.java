@@ -41,7 +41,7 @@ public class JobRunInfoService extends ServiceImpl<JobRunInfoMapper, JobRunInfo>
         return this.baseMapper.selectLatestLiteRunPerJob(flowRunId, jobIds);
     }
 
-    public JobRunInfo findRunningJob(@Nonnull Long jobId) {
+    public JobRunInfo findActiveRunByJobId(Long jobId) {
         return getOne(new QueryWrapper<JobRunInfo>()
                 .lambda()
                 .eq(JobRunInfo::getJobId, jobId)

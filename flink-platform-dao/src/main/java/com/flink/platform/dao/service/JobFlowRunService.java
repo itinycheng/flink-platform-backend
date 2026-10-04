@@ -4,11 +4,8 @@ import com.baomidou.dynamic.datasource.annotation.DS;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.flink.platform.common.enums.ExecutionStatus;
-import com.flink.platform.common.enums.ExecutionStrategy;
-import com.flink.platform.dao.entity.ExecutionConfig;
 import com.flink.platform.dao.entity.JobFlowRun;
 import com.flink.platform.dao.mapper.JobFlowRunMapper;
-import jakarta.annotation.Nonnull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
@@ -28,7 +25,6 @@ import static com.flink.platform.common.constants.Constant.HOST_IP;
 import static com.flink.platform.common.enums.ExecutionStatus.EXECUTABLE_STATUSES;
 import static com.flink.platform.common.enums.ExecutionStatus.WAITING;
 import static com.flink.platform.common.enums.ExecutionStatus.getNonTerminals;
-import static com.flink.platform.common.enums.ExecutionStrategy.ONLY_CUR_JOB;
 import static com.flink.platform.common.util.Preconditions.checkNotNull;
 
 /** job config info. */
@@ -65,6 +61,7 @@ public class JobFlowRunService extends ServiceImpl<JobFlowRunMapper, JobFlowRun>
                         JobFlowRun::getDependsOn,
                         JobFlowRun::getAlerts,
                         JobFlowRun::getScheduleTime,
+                        JobFlowRun::getCreateTime,
                         JobFlowRun::getStatus)
                 .eq(JobFlowRun::getHost, HOST_IP)
                 .eq(JobFlowRun::getStatus, WAITING));
@@ -101,30 +98,28 @@ public class JobFlowRunService extends ServiceImpl<JobFlowRunMapper, JobFlowRun>
         updateById(newJobFlowRun);
     }
 
-    public boolean updateStatusFromWaiting(Long flowRunId, ExecutionStatus status) {
+    public boolean updateStatusFromTo(Long flowRunId, ExecutionStatus fromStatus, ExecutionStatus toStatus) {
         var newFlowRun = new JobFlowRun();
         newFlowRun.setId(flowRunId);
-        newFlowRun.setStatus(status);
-        if (status.isTerminalState()) {
-            // startTime stays null: the run never executed, and stamping it here would report a run that
-            // waited for hours as having taken zero time. The wait itself is scheduleTime -> endTime.
+        newFlowRun.setStatus(toStatus);
+        if (toStatus.isTerminalState()) {
             newFlowRun.setEndTime(LocalDateTime.now());
         }
 
-        var update = baseMapper.update(
-                newFlowRun,
-                new QueryWrapper<JobFlowRun>()
-                        .lambda()
-                        .eq(JobFlowRun::getId, flowRunId)
-                        .eq(JobFlowRun::getStatus, WAITING));
-        return update == 1;
+        return baseMapper.update(
+                        newFlowRun,
+                        new QueryWrapper<JobFlowRun>()
+                                .lambda()
+                                .eq(JobFlowRun::getId, flowRunId)
+                                .eq(JobFlowRun::getStatus, fromStatus))
+                == 1;
     }
 
     /**
      * Advances all still-WAITING runs in one conditional update. The returned count can be smaller
      * than {@code flowRunIds.size()} when another worker or a kill operation wins the race.
      */
-    public int updateStatusFromWaiting(Collection<Long> flowRunIds, ExecutionStatus status) {
+    public int updateStatusFromWaiting(List<Long> flowRunIds, ExecutionStatus status) {
         if (CollectionUtils.isEmpty(flowRunIds)) {
             return 0;
         }
@@ -143,40 +138,16 @@ public class JobFlowRunService extends ServiceImpl<JobFlowRunMapper, JobFlowRun>
                         .eq(JobFlowRun::getStatus, WAITING));
     }
 
-    public JobFlowRun findRunningFlow(@Nonnull Long flowId, ExecutionConfig config) {
-        Long startJobId;
-        ExecutionStrategy strategy;
-        if (config != null) {
-            startJobId = config.getStartJobId();
-            strategy = config.getStrategy();
-        } else {
-            startJobId = null;
-            strategy = null;
-        }
-
+    public List<JobFlowRun> listActiveRuns(Long flowId, Long excludedRunId) {
         return list(new QueryWrapper<JobFlowRun>()
-                        .lambda()
-                        .eq(JobFlowRun::getFlowId, flowId)
-                        .in(JobFlowRun::getStatus, getNonTerminals()))
-                .stream()
-                .filter(jobFlowRun -> {
-                    if (!ONLY_CUR_JOB.equals(strategy)) {
-                        return true;
-                    }
-
-                    if (startJobId == null) {
-                        return true;
-                    }
-
-                    var conf = jobFlowRun.getConfig();
-                    return startJobId.equals(conf.getStartJobId());
-                })
-                .findAny()
-                .orElse(null);
+                .lambda()
+                .eq(JobFlowRun::getFlowId, flowId)
+                .in(JobFlowRun::getStatus, getNonTerminals())
+                .ne(excludedRunId != null, JobFlowRun::getId, excludedRunId));
     }
 
     @Transactional
-    public void lockAndUpdateParams(Long flowRunId, @Nonnull Map<String, Object> inputParams) {
+    public void lockAndUpdateParams(Long flowRunId, Map<String, Object> inputParams) {
         if (MapUtils.isEmpty(inputParams)) {
             return;
         }

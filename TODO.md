@@ -5,8 +5,7 @@
 Phase 1 is described in
 [docs/design/schedule-time-concurrency.md](docs/design/schedule-time-concurrency.md): different
 logical schedule times may overlap up to `ExecutionConfig.maxActiveRuns`; the same logical time is
-still treated as a duplicate. `maxJobsPerRun` remains the number of jobs within one flow run, with
-the legacy JSON/API name `parallelism` retained for compatibility.
+still treated as a duplicate. `maxJobsPerRun` remains the number of jobs within one flow run.
 
 - [x] Separate same-schedule duplicate detection from active-run capacity.
 - [x] Keep the default at one active flow run for backward compatibility.

@@ -4,8 +4,10 @@ import com.flink.platform.common.enums.ExpiryPolicy;
 import com.flink.platform.common.util.JsonUtil;
 import com.flink.platform.dao.entity.Dependency;
 import com.flink.platform.dao.entity.DependencyConfig;
+import com.flink.platform.dao.entity.ExecutionConfig;
 import com.flink.platform.dao.service.JobFlowService;
 import com.flink.platform.web.common.SpringContext;
+import com.flink.platform.web.config.WorkerConfig;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -40,12 +42,17 @@ class JobFlowRequestTest {
     @Mock
     private JobFlowService jobFlowService;
 
+    @Mock
+    private WorkerConfig workerConfig;
+
     private MockedStatic<SpringContext> springContext;
 
     @BeforeEach
     void setUp() {
         springContext = mockStatic(SpringContext.class);
         springContext.when(() -> SpringContext.getBean(JobFlowService.class)).thenReturn(jobFlowService);
+        springContext.when(() -> SpringContext.getBean(WorkerConfig.class)).thenReturn(workerConfig);
+        lenient().when(workerConfig.getMaxActiveRunsPerFlow()).thenReturn(10);
         lenient().when(jobFlowService.listExistingFlowIds(anySet())).thenAnswer(invocation -> {
             Collection<Long> flowIds = invocation.getArgument(0);
             return Set.copyOf(flowIds);
@@ -169,6 +176,17 @@ class JobFlowRequestTest {
         assertEquals(
                 "Dependency workflow not found: [2]",
                 request(1L, config(item(2L, NEVER, null))).verifyDependsOn());
+    }
+
+    @Test
+    void maxActiveRunsCannotExceedPlatformLimit() {
+        var request = new JobFlowRequest();
+        var executionConfig = new ExecutionConfig();
+        executionConfig.setMaxJobsPerRun(1);
+        executionConfig.setMaxActiveRuns(11);
+        request.setConfig(executionConfig);
+
+        assertEquals("The range of maxActiveRuns is 1 ~ 10", request.verifyMaxActiveRuns());
     }
 
     private JobFlowRequest request(Long id, DependencyConfig... dependsOn) {

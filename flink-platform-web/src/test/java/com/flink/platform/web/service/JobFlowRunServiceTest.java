@@ -18,8 +18,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static com.flink.platform.common.enums.ExecutionStatus.CREATED;
 import static com.flink.platform.common.enums.ExecutionStatus.FAILURE;
 import static com.flink.platform.common.enums.ExecutionStatus.SUBMITTED;
+import static com.flink.platform.common.enums.ExecutionStatus.WAITING;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -81,7 +83,7 @@ class JobFlowRunServiceTest {
         var captor = ArgumentCaptor.forClass(JobFlowRun.class);
         when(jobFlowRunMapper.update(captor.capture(), any())).thenReturn(1);
 
-        assertTrue(jobFlowRunService.updateStatusFromWaiting(1L, FAILURE));
+        assertTrue(jobFlowRunService.updateStatusFromTo(1L, WAITING, FAILURE));
 
         var updated = captor.getValue();
         assertEquals(FAILURE, updated.getStatus());
@@ -91,11 +93,24 @@ class JobFlowRunServiceTest {
     }
 
     @Test
+    void rejectedCreatedRunIsFinished() {
+        var captor = ArgumentCaptor.forClass(JobFlowRun.class);
+        when(jobFlowRunMapper.update(captor.capture(), any())).thenReturn(1);
+
+        assertTrue(jobFlowRunService.updateStatusFromTo(1L, CREATED, FAILURE));
+
+        var updated = captor.getValue();
+        assertEquals(FAILURE, updated.getStatus());
+        assertNotNull(updated.getEndTime());
+        assertNull(updated.getStartTime());
+    }
+
+    @Test
     void waitingRunAdvancedToSubmittedIsNotTimestamped() {
         var captor = ArgumentCaptor.forClass(JobFlowRun.class);
         when(jobFlowRunMapper.update(captor.capture(), any())).thenReturn(1);
 
-        assertTrue(jobFlowRunService.updateStatusFromWaiting(1L, SUBMITTED));
+        assertTrue(jobFlowRunService.updateStatusFromTo(1L, WAITING, SUBMITTED));
 
         var updated = captor.getValue();
         assertNull(updated.getStartTime());

@@ -30,6 +30,10 @@ public class DateUtil {
     }
 
     public static LocalDateTime toLocalDateTime(Date date) {
+        if (date == null) {
+            return null;
+        }
+
         return LocalDateTime.ofInstant(date.toInstant(), GLOBAL_ZONE_ID);
     }
 

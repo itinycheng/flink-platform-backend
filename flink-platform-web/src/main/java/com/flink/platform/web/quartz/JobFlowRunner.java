@@ -19,7 +19,9 @@ import com.flink.platform.dao.service.JobRunInfoService;
 import com.flink.platform.web.common.SpringContext;
 import com.flink.platform.web.config.WorkerConfig;
 import com.flink.platform.web.service.DependencyService;
+import com.flink.platform.web.service.JobFlowRunBizService;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.ObjectUtils;
 import org.quartz.Job;
 import org.quartz.JobDataMap;
 import org.quartz.JobExecutionContext;
@@ -31,12 +33,15 @@ import java.util.concurrent.ConcurrentHashMap;
 import static com.flink.platform.common.constants.JobConstant.CONFIG;
 import static com.flink.platform.common.constants.JobConstant.FLOW_RUN_ID;
 import static com.flink.platform.common.constants.JobConstant.USER_ID;
+import static com.flink.platform.common.enums.ExecutionStatus.CREATED;
+import static com.flink.platform.common.enums.ExecutionStatus.FAILURE;
 import static com.flink.platform.common.enums.ExecutionStatus.SUBMITTED;
 import static com.flink.platform.common.enums.ExecutionStatus.WAITING;
 import static com.flink.platform.common.enums.JobFlowStatus.ONLINE;
 import static com.flink.platform.common.enums.JobFlowStatus.SCHEDULING;
 import static com.flink.platform.common.enums.JobFlowType.JOB_LIST;
 import static com.flink.platform.web.service.DependencyService.DependencyState.SATISFIED;
+import static java.time.temporal.ChronoUnit.SECONDS;
 
 /** submit job flow. */
 @Slf4j
@@ -47,6 +52,8 @@ public class JobFlowRunner implements Job {
     private final JobFlowService jobFlowService = SpringContext.getBean(JobFlowService.class);
 
     private final JobFlowRunService jobFlowRunService = SpringContext.getBean(JobFlowRunService.class);
+
+    private final JobFlowRunBizService flowRunBizService = SpringContext.getBean(JobFlowRunBizService.class);
 
     private final JobInfoService jobInfoService = SpringContext.getBean(JobInfoService.class);
 
@@ -66,6 +73,7 @@ public class JobFlowRunner implements Job {
         var code = key.getName();
         var dataMap = detail.getJobDataMap();
 
+        // TODO: Make flow admission atomic across cluster nodes.
         synchronized (getProcessLock(code)) {
             // Get job flow info.
             var jobFlow = jobFlowService.getOne(new QueryWrapper<JobFlow>()
@@ -79,27 +87,42 @@ public class JobFlowRunner implements Job {
 
             var flowRunId = NumberUtil.toLong(dataMap.get(FLOW_RUN_ID));
             var executionConfig = getOrMergeExecutionConfig(dataMap, jobFlow);
+            var scheduleTime = ObjectUtils.firstNonNull(
+                            executionConfig.getScheduleTime(),
+                            DateUtil.toLocalDateTime(context.getScheduledFireTime()),
+                            LocalDateTime.now())
+                    .truncatedTo(SECONDS);
+            executionConfig.setScheduleTime(scheduleTime);
 
             if (JOB_LIST.equals(jobFlow.getType())) {
-                var runningJob = jobRunService.findRunningJob(executionConfig.getStartJobId());
-                if (runningJob != null) {
+                var activeRun = jobRunService.findActiveRunByJobId(executionConfig.getStartJobId());
+                if (activeRun != null) {
                     log.warn(
                             "The job: {} is in non-terminal status, job run id: {}",
-                            runningJob.getName(),
-                            runningJob.getId());
+                            activeRun.getName(),
+                            activeRun.getId());
                     alertSendingService.sendErrAlertsDirectly(
-                            jobFlow, "There is already a running job: " + runningJob.getId());
+                            jobFlow, "There is already an active run: " + activeRun.getId());
                     return;
                 }
             } else {
-                var runningFlow = jobFlowRunService.findRunningFlow(jobFlow.getId(), executionConfig);
-                if (runningFlow != null && !runningFlow.getId().equals(flowRunId)) {
+                var conflict = flowRunBizService.findRunConflict(jobFlow.getId(), executionConfig, flowRunId);
+                if (conflict != null) {
+                    if (flowRunId != null) {
+                        jobFlowRunService.updateStatusFromTo(flowRunId, CREATED, FAILURE);
+                    }
+                    var activeRun = conflict.activeRun();
                     log.warn(
-                            "The job flow: {} is in non-terminal status, run id: {}",
-                            jobFlow.getName(),
-                            runningFlow.getId());
+                            "Job flow {} rejected by {}, active run id: {}",
+                            jobFlow.getId(),
+                            conflict.type(),
+                            activeRun.getId());
                     alertSendingService.sendErrAlertsDirectly(
-                            jobFlow, "There is already a waiting/running jobFlowRun: " + runningFlow.getId());
+                            jobFlow,
+                            "Flow run rejected: "
+                                    + conflict.type().getDescription()
+                                    + ", active run: "
+                                    + activeRun.getId());
                     return;
                 }
             }
@@ -127,14 +150,11 @@ public class JobFlowRunner implements Job {
             jobFlowRun.setAlerts(jobFlow.getAlerts());
             jobFlowRun.setTimeout(jobFlow.getTimeout());
             jobFlowRun.setParams(jobFlow.getParams());
+            jobFlowRun.setScheduleTime(scheduleTime);
             // dependsOn
             var dependsOn = jobFlow.getDependsOn();
             jobFlowRun.setDependsOn(dependsOn);
             jobFlowRun.setStatus(dependencyService.resolveAndEvaluate(dependsOn) == SATISFIED ? SUBMITTED : WAITING);
-            // scheduleTime
-            var scheduledFire = context.getScheduledFireTime();
-            jobFlowRun.setScheduleTime(
-                    scheduledFire != null ? DateUtil.toLocalDateTime(scheduledFire) : LocalDateTime.now());
 
             // Persisted as non-terminal: FlowRunDispatcher.drainAndExecute picks up SUBMITTED runs,
             // while WAITING ones stay parked until advanceWaitingRuns finds their dependencies satisfied.
@@ -160,17 +180,14 @@ public class JobFlowRunner implements Job {
     }
 
     private ExecutionConfig getOrMergeExecutionConfig(JobDataMap dataMap, JobFlow jobFlow) {
-        var baseConfig = JsonUtil.toBean(dataMap.getString(CONFIG), ExecutionConfig.class);
-        if (baseConfig == null) {
-            baseConfig = new ExecutionConfig();
-        }
-
-        var templateConfig = jobFlow.getConfig();
-        var parallelism = templateConfig != null && templateConfig.getParallelism() > 0
-                ? templateConfig.getParallelism()
-                : workerConfig.getPerFlowExecThreads();
-        baseConfig.setParallelism(parallelism);
-        return baseConfig;
+        var executionConfig = new ExecutionConfig();
+        executionConfig.setMaxJobsPerRun(workerConfig.getPerFlowExecThreads());
+        executionConfig.setMaxActiveRuns(1);
+        executionConfig.mergeFrom(jobFlow.getConfig());
+        executionConfig.mergeFrom(JsonUtil.toBean(dataMap.getString(CONFIG), ExecutionConfig.class));
+        executionConfig.setMaxJobsPerRun(
+                Math.min(executionConfig.getMaxJobsPerRun(), workerConfig.getMaxPerFlowExecThreads()));
+        return executionConfig;
     }
 
     private Object getProcessLock(String code) {

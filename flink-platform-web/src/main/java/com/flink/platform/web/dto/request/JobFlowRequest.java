@@ -3,7 +3,6 @@ package com.flink.platform.web.dto.request;
 import com.flink.platform.common.enums.JobFlowType;
 import com.flink.platform.dao.entity.Dependency;
 import com.flink.platform.dao.entity.JobFlow;
-import com.flink.platform.dao.entity.alert.AlertConfig;
 import com.flink.platform.dao.service.JobFlowService;
 import com.flink.platform.web.common.SpringContext;
 import com.flink.platform.web.config.WorkerConfig;
@@ -13,7 +12,6 @@ import lombok.experimental.Delegate;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 
-import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -45,7 +43,12 @@ public class JobFlowRequest {
             return msg;
         }
 
-        msg = verifyParallelism();
+        msg = verifyMaxJobsPerRun();
+        if (msg != null) {
+            return msg;
+        }
+
+        msg = verifyMaxActiveRuns();
         if (msg != null) {
             return msg;
         }
@@ -89,7 +92,12 @@ public class JobFlowRequest {
             return msg;
         }
 
-        msg = verifyParallelism();
+        msg = verifyMaxJobsPerRun();
+        if (msg != null) {
+            return msg;
+        }
+
+        msg = verifyMaxActiveRuns();
         if (msg != null) {
             return msg;
         }
@@ -145,12 +153,12 @@ public class JobFlowRequest {
     }
 
     public String verifyAlerts() {
-        List<AlertConfig> alerts = getAlerts();
+        var alerts = getAlerts();
         if (isEmpty(alerts)) {
             return null;
         }
 
-        for (AlertConfig alert : getAlerts()) {
+        for (var alert : getAlerts()) {
             if (alert.getAlertId() == null) {
                 return "The alert id is null";
             }
@@ -227,19 +235,31 @@ public class JobFlowRequest {
         }
     }
 
-    public String verifyParallelism() {
+    public String verifyMaxJobsPerRun() {
         var config = getConfig();
         if (config == null) {
             return null;
         }
 
-        WorkerConfig workerConfig = resolveWorkerConfig();
-        int maxThreads = workerConfig.getMaxPerFlowExecThreads();
-        int parallelism = config.getParallelism();
-        if (parallelism < 1 || parallelism > maxThreads) {
-            return "The range of parallelism is 1 ~ " + maxThreads;
+        var maxThreads = resolveWorkerConfig().getMaxPerFlowExecThreads();
+        var max = config.getMaxJobsPerRun();
+        if (max < 1 || max > maxThreads) {
+            return "The range of maxJobsPerRun is 1 ~ " + maxThreads;
+        }
+        return null;
+    }
+
+    public String verifyMaxActiveRuns() {
+        var config = getConfig();
+        if (config == null) {
+            return null;
         }
 
+        var maxActiveRuns = config.getMaxActiveRuns();
+        var maxActiveRunsPerFlow = resolveWorkerConfig().getMaxActiveRunsPerFlow();
+        if (maxActiveRuns < 1 || maxActiveRuns > maxActiveRunsPerFlow) {
+            return "The range of maxActiveRuns is 1 ~ " + maxActiveRunsPerFlow;
+        }
         return null;
     }
 
