@@ -165,3 +165,9 @@ UPDATE platform.t_job_flow_run SET status = 'KILLING' WHERE status = 'KILLABLE';
 -- 2026-08-30
 ALTER TABLE platform.t_job_flow     ADD COLUMN depends_on varchar(2048) DEFAULT NULL COMMENT 'flow dependencies' AFTER flow;
 ALTER TABLE platform.t_job_flow_run ADD COLUMN depends_on varchar(2048) DEFAULT NULL COMMENT 'flow dependencies' AFTER flow;
+
+-- 2026-10-07
+UPDATE platform.t_job_flow SET config = '{}' WHERE config IS NULL;
+UPDATE platform.t_job_flow_run SET config = '{}' WHERE config IS NULL;
+ALTER TABLE platform.t_job_flow MODIFY COLUMN config varchar(255) NOT NULL COMMENT 'execution config';
+ALTER TABLE platform.t_job_flow_run MODIFY COLUMN config varchar(255) NOT NULL COMMENT 'execution config';

@@ -113,9 +113,9 @@ public class FlowCommandExecutor implements CommandExecutor {
     // Don't use this method outside this class.
     @Transactional
     public Long runOnceInTransaction(JobFlow subFlow, LocalDateTime scheduleTime) {
-        var flowRunId = newAndSaveDefault(subFlow);
         var config = new ExecutionConfig();
         config.setScheduleTime(scheduleTime);
+        var flowRunId = newAndSaveDefault(subFlow, config);
         var data = new HashMap<String, Object>();
         data.put(FLOW_RUN_ID, flowRunId);
         data.put(CONFIG, JsonUtil.toJsonString(config));
@@ -123,7 +123,7 @@ public class FlowCommandExecutor implements CommandExecutor {
         return flowRunId;
     }
 
-    private Long newAndSaveDefault(JobFlow jobFlow) {
+    private Long newAndSaveDefault(JobFlow jobFlow, ExecutionConfig config) {
         var jobflowRun = new JobFlowRun();
         jobflowRun.setName(DEFAULT_NAME);
         jobflowRun.setUserId(jobFlow.getUserId());
@@ -133,6 +133,7 @@ public class FlowCommandExecutor implements CommandExecutor {
         jobflowRun.setHost("");
         jobflowRun.setFlow(new JobFlowDag());
         jobflowRun.setStatus(CREATED);
+        jobflowRun.setConfig(config);
         // Will be overwritten by JobFlowRunner.execute when the runOnce trigger fires.
         jobflowRun.setScheduleTime(LocalDateTime.now());
         jobFlowRunService.save(jobflowRun);

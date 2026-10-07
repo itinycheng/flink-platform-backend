@@ -2,7 +2,6 @@ package com.flink.platform.web.dto.request;
 
 import com.flink.platform.common.enums.JobFlowType;
 import com.flink.platform.dao.entity.Dependency;
-import com.flink.platform.dao.entity.ExecutionConfig;
 import com.flink.platform.dao.entity.JobFlow;
 import com.flink.platform.dao.entity.alert.AlertConfig;
 import com.flink.platform.dao.service.JobFlowService;
@@ -255,18 +254,6 @@ public class JobFlowRequest {
         }
 
         return null;
-    }
-
-    public void setConfig(ExecutionConfig config) {
-        if (config == null) {
-            config = new ExecutionConfig();
-        }
-
-        if (config.getParallelism() < 1) {
-            var workerConfig = resolveWorkerConfig();
-            config.setParallelism(workerConfig.getPerFlowExecThreads());
-        }
-        this.getJobFlow().setConfig(config);
     }
 
     private WorkerConfig resolveWorkerConfig() {

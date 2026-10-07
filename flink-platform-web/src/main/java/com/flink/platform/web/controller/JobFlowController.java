@@ -21,6 +21,7 @@ import com.flink.platform.dao.service.JobRunInfoService;
 import com.flink.platform.dao.view.JobFlowDetails;
 import com.flink.platform.web.annotation.RequirePermission;
 import com.flink.platform.web.common.RequestContext;
+import com.flink.platform.web.config.WorkerConfig;
 import com.flink.platform.web.dto.ResultInfo;
 import com.flink.platform.web.dto.request.JobFlowRequest;
 import com.flink.platform.web.quartz.QuartzService;
@@ -90,12 +91,15 @@ public class JobFlowController {
 
     private final JobRunInfoService jobRunService;
 
+    private final WorkerConfig workerConfig;
+
     @RequirePermission(TASK_EDIT)
     @Auditable(type = FLOW, operation = OperationType.INSERT)
     @PostMapping(value = "/create")
     public ResultInfo<Long> create(
             @RequestAttribute(value = Constant.SESSION_USER) User loginUser,
             @RequestBody JobFlowRequest jobFlowRequest) {
+        setDefaultConfig(jobFlowRequest);
         var errorMsg = jobFlowRequest.validateOnCreate();
         if (StringUtils.isNotBlank(errorMsg)) {
             return failure(ERROR_PARAMETER, errorMsg);
@@ -119,6 +123,10 @@ public class JobFlowController {
     @Auditable(type = FLOW, operation = OperationType.UPDATE)
     @PostMapping(value = "/update")
     public ResultInfo<Long> update(@RequestBody JobFlowRequest jobFlowRequest) {
+        if (jobFlowRequest.getConfig() != null) {
+            setDefaultConfig(jobFlowRequest);
+        }
+
         var errorMsg = jobFlowRequest.validateOnUpdate();
         if (StringUtils.isNotBlank(errorMsg)) {
             return failure(ERROR_PARAMETER, errorMsg);
@@ -146,6 +154,10 @@ public class JobFlowController {
     @Auditable(type = FLOW, operation = OperationType.UPDATE)
     @PostMapping(value = "/updateFlow")
     public ResultInfo<Long> updateFlow(@RequestBody JobFlowRequest jobFlowRequest) {
+        if (jobFlowRequest.getConfig() != null) {
+            setDefaultConfig(jobFlowRequest);
+        }
+
         var errorMsg = jobFlowRequest.validateOnUpdate();
         if (StringUtils.isNotBlank(errorMsg)) {
             return failure(ERROR_PARAMETER, errorMsg);
@@ -327,6 +339,21 @@ public class JobFlowController {
             return success(flowId);
         } else {
             return failure(SERVICE_ERROR);
+        }
+    }
+
+    // ====================================================
+    // ====================== private =====================
+    // ====================================================
+
+    private void setDefaultConfig(JobFlowRequest request) {
+        var config = request.getConfig();
+        if (config == null) {
+            config = new ExecutionConfig();
+            request.setConfig(config);
+        }
+        if (config.getParallelism() < 1) {
+            config.setParallelism(workerConfig.getPerFlowExecThreads());
         }
     }
 }
