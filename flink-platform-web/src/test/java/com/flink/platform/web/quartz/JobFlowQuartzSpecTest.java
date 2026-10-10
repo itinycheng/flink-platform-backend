@@ -4,7 +4,9 @@ import com.flink.platform.dao.entity.JobFlow;
 import org.junit.jupiter.api.Test;
 
 import java.util.HashMap;
+import java.util.Map;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -28,5 +30,17 @@ class JobFlowQuartzSpecTest {
         assertEquals("JOB_FLOW", spec.getTriggerKey().getGroup());
         assertEquals("value", spec.getData().get("key"));
         assertThrows(UnsupportedOperationException.class, () -> spec.getData().put("another", "value"));
+    }
+
+    @Test
+    void ignoresNullDataValues() {
+        var jobFlow = new JobFlow();
+        var data = new HashMap<String, Object>();
+        data.put("required", "value");
+        data.put("optional", null);
+
+        var spec = assertDoesNotThrow(() -> new JobFlowQuartzSpec(jobFlow, data));
+
+        assertEquals(Map.of("required", "value"), spec.getData());
     }
 }

@@ -2,7 +2,6 @@ package com.flink.platform.web.service;
 
 import com.flink.platform.common.exception.UnrecoverableException;
 import com.flink.platform.common.util.DateUtil;
-import com.flink.platform.dao.entity.ExecutionConfig;
 import com.flink.platform.dao.entity.JobFlowRun;
 import com.flink.platform.dao.entity.JobParam;
 import com.flink.platform.dao.entity.JobRunInfo;
@@ -107,7 +106,7 @@ public class VariableResolverTest {
 
     @Test
     public void bizDayResolvesToFlowScheduleTime() {
-        Mockito.when(jobFlowRunService.resolveScheduleTimeOrNow(100L))
+        Mockito.when(jobFlowRunService.getScheduleTimeOrNow(100L))
                 .thenReturn(LocalDateTime.of(2026, 6, 21, 23, 59, 59));
 
         var time1 = "${time:yyyy-MM-dd HH:mm:ss[bizYear]}";
@@ -140,13 +139,13 @@ public class VariableResolverTest {
         assertEquals("2026-06-20 23:59:00", result.get(time10));
         assertEquals("2026-06-20 23:00:00", result.get(time11));
         assertEquals("2026-06-20 00:00:00", result.get(time12));
-        Mockito.verify(jobFlowRunService, Mockito.times(1)).resolveScheduleTimeOrNow(100L);
+        Mockito.verify(jobFlowRunService, Mockito.times(1)).getScheduleTimeOrNow(100L);
     }
 
     @Test
     public void bizFallsBackToNowWhenJobRunHasNoFlowRun() {
         // Flow-less runs (e.g. reactive) have no schedule anchor, so biz* falls back to now().
-        Mockito.when(jobFlowRunService.resolveScheduleTimeOrNow(null))
+        Mockito.when(jobFlowRunService.getScheduleTimeOrNow(null))
                 .thenReturn(LocalDateTime.of(2026, 6, 21, 23, 59, 59));
 
         var jobRun = new JobRunInfo();
@@ -155,22 +154,6 @@ public class VariableResolverTest {
 
         var result = timeVariableResolver.resolve(jobRun, jobRun.getSubject());
         assertEquals("20260621", result.get("${time:yyyyMMdd[bizDay]}"));
-    }
-
-    @Test
-    public void effectiveScheduleTimePrefersConfigOverride() {
-        var flowRun = new JobFlowRun();
-        flowRun.setScheduleTime(LocalDateTime.of(2026, 6, 21, 0, 0, 0));
-
-        // user/parent override carried in config wins over the flow run's own scheduleTime
-        var config = new ExecutionConfig();
-        config.setScheduleTime(LocalDateTime.of(2024, 1, 2, 3, 4, 5));
-        flowRun.setConfig(config);
-        assertEquals(LocalDateTime.of(2024, 1, 2, 3, 4, 5), flowRun.getResolvedScheduleTime());
-
-        // no override -> falls back to the flow run's scheduleTime
-        flowRun.setConfig(new ExecutionConfig());
-        assertEquals(LocalDateTime.of(2026, 6, 21, 0, 0, 0), flowRun.getResolvedScheduleTime());
     }
 
     @Test
@@ -252,7 +235,7 @@ public class VariableResolverTest {
 
     @Test
     public void mixedBracketAndNoBracketInSameContent() {
-        Mockito.when(jobFlowRunService.resolveScheduleTimeOrNow(100L))
+        Mockito.when(jobFlowRunService.getScheduleTimeOrNow(100L))
                 .thenReturn(LocalDateTime.of(2026, 6, 21, 23, 59, 59));
 
         var jobRun = new JobRunInfo();

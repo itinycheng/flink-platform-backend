@@ -32,6 +32,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import static com.flink.platform.common.constants.JobConstant.CONFIG;
 import static com.flink.platform.common.constants.JobConstant.FLOW_RUN_ID;
+import static com.flink.platform.common.constants.JobConstant.SCHEDULE_TIME;
 import static com.flink.platform.common.constants.JobConstant.USER_ID;
 import static com.flink.platform.common.enums.ExecutionStatus.CREATED;
 import static com.flink.platform.common.enums.ExecutionStatus.FAILURE;
@@ -88,11 +89,10 @@ public class JobFlowRunner implements Job {
             var flowRunId = NumberUtil.toLong(dataMap.get(FLOW_RUN_ID));
             var executionConfig = getOrMergeExecutionConfig(dataMap, jobFlow);
             var scheduleTime = ObjectUtils.firstNonNull(
-                            executionConfig.getScheduleTime(),
+                            DateUtil.parseNullable(dataMap.getString(SCHEDULE_TIME)),
                             DateUtil.toLocalDateTime(context.getScheduledFireTime()),
                             LocalDateTime.now())
                     .truncatedTo(SECONDS);
-            executionConfig.setScheduleTime(scheduleTime);
 
             if (JOB_LIST.equals(jobFlow.getType())) {
                 var activeRun = jobRunService.findActiveRunByJobId(executionConfig.getStartJobId());
@@ -106,7 +106,8 @@ public class JobFlowRunner implements Job {
                     return;
                 }
             } else {
-                var conflict = flowRunBizService.findRunConflict(jobFlow.getId(), executionConfig, flowRunId);
+                var conflict =
+                        flowRunBizService.findRunConflict(jobFlow.getId(), executionConfig, scheduleTime, flowRunId);
                 if (conflict != null) {
                     if (flowRunId != null) {
                         jobFlowRunService.updateStatusFromTo(flowRunId, CREATED, FAILURE);

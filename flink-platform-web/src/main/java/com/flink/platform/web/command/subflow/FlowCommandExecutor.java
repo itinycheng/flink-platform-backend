@@ -2,6 +2,7 @@ package com.flink.platform.web.command.subflow;
 
 import com.flink.platform.common.enums.ExecutionStatus;
 import com.flink.platform.common.enums.JobType;
+import com.flink.platform.common.util.DateUtil;
 import com.flink.platform.common.util.ExceptionUtil;
 import com.flink.platform.common.util.JsonUtil;
 import com.flink.platform.dao.entity.ExecutionConfig;
@@ -27,10 +28,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.HashMap;
 
 import static com.flink.platform.common.constants.JobConstant.CONFIG;
 import static com.flink.platform.common.constants.JobConstant.FLOW_RUN_ID;
+import static com.flink.platform.common.constants.JobConstant.SCHEDULE_TIME;
 import static com.flink.platform.common.enums.ExecutionStatus.CREATED;
 import static com.flink.platform.common.enums.ExecutionStatus.FAILURE;
 import static com.flink.platform.common.enums.JobFlowType.JOB_FLOW;
@@ -64,12 +67,11 @@ public class FlowCommandExecutor implements CommandExecutor {
         var flowId = ((FlowCommand) command).getFlowId();
         var subFlow = jobFlowService.getById(flowId);
         // Inherit parent flow's scheduleTime so the whole workflow tree shares one biz* anchor.
-        var scheduleTime = jobFlowRunService.resolveScheduleTimeOrNow(command.getFlowRunId());
+        var scheduleTime = jobFlowRunService.getScheduleTimeOrNow(command.getFlowRunId());
 
         var executionConfig = new ExecutionConfig();
         executionConfig.mergeFrom(subFlow.getConfig());
-        executionConfig.setScheduleTime(scheduleTime);
-        var conflict = flowRunBizService.findRunConflict(flowId, executionConfig, null);
+        var conflict = flowRunBizService.findRunConflict(flowId, executionConfig, scheduleTime);
         if (conflict != null) {
             log.info(
                     "Subflow run rejected by {}, flowId: {}, active flowRunId: {}, scheduleTime: {}",
@@ -88,7 +90,7 @@ public class FlowCommandExecutor implements CommandExecutor {
 
         Long flowRunId;
         try {
-            flowRunId = self.runOnceInTransaction(subFlow, executionConfig);
+            flowRunId = self.runOnceInTransaction(subFlow, executionConfig, scheduleTime);
         } catch (Exception e) {
             log.error("Subflow run once time failed, flowId: {}", subFlow.getId(), e);
             return new JobCallback(ExceptionUtil.stackTrace(e), FAILURE);
@@ -126,16 +128,17 @@ public class FlowCommandExecutor implements CommandExecutor {
 
     // Don't use this method outside this class.
     @Transactional
-    public Long runOnceInTransaction(JobFlow subFlow, ExecutionConfig config) {
-        var flowRunId = newAndSaveDefault(subFlow, config);
+    public Long runOnceInTransaction(JobFlow subFlow, ExecutionConfig config, LocalDateTime scheduleTime) {
+        var flowRunId = newAndSaveDefault(subFlow, config, scheduleTime);
         var data = new HashMap<String, Object>();
         data.put(FLOW_RUN_ID, flowRunId);
         data.put(CONFIG, JsonUtil.toJsonString(config));
+        data.put(SCHEDULE_TIME, DateUtil.format(scheduleTime));
         quartzService.runFlowOnce(subFlow, data);
         return flowRunId;
     }
 
-    private Long newAndSaveDefault(JobFlow jobFlow, ExecutionConfig config) {
+    private Long newAndSaveDefault(JobFlow jobFlow, ExecutionConfig config, LocalDateTime scheduleTime) {
         var jobflowRun = new JobFlowRun();
         jobflowRun.setName(DEFAULT_NAME);
         jobflowRun.setUserId(jobFlow.getUserId());
@@ -146,7 +149,7 @@ public class FlowCommandExecutor implements CommandExecutor {
         jobflowRun.setFlow(new JobFlowDag());
         jobflowRun.setStatus(CREATED);
         jobflowRun.setConfig(config);
-        jobflowRun.setScheduleTime(config.getScheduleTime());
+        jobflowRun.setScheduleTime(scheduleTime);
         jobFlowRunService.save(jobflowRun);
         return jobflowRun.getId();
     }

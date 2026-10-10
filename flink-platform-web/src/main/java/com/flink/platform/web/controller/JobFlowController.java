@@ -7,6 +7,7 @@ import com.flink.platform.common.constants.Constant;
 import com.flink.platform.common.enums.JobFlowStatus;
 import com.flink.platform.common.enums.JobFlowType;
 import com.flink.platform.common.enums.OperationType;
+import com.flink.platform.common.util.DateUtil;
 import com.flink.platform.common.util.JsonUtil;
 import com.flink.platform.common.util.UuidGenerator;
 import com.flink.platform.dao.entity.ExecutionConfig;
@@ -22,6 +23,7 @@ import com.flink.platform.web.annotation.RequirePermission;
 import com.flink.platform.web.common.RequestContext;
 import com.flink.platform.web.config.WorkerConfig;
 import com.flink.platform.web.dto.ResultInfo;
+import com.flink.platform.web.dto.request.JobFlowExecRequest;
 import com.flink.platform.web.dto.request.JobFlowRequest;
 import com.flink.platform.web.quartz.QuartzService;
 import com.flink.platform.web.service.JobFlowRunBizService;
@@ -39,11 +41,13 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import static com.flink.platform.common.constants.JobConstant.CONFIG;
+import static com.flink.platform.common.constants.JobConstant.SCHEDULE_TIME;
 import static com.flink.platform.common.constants.JobConstant.USER_ID;
 import static com.flink.platform.common.enums.EntityType.FLOW;
 import static com.flink.platform.common.enums.JobFlowStatus.DELETE;
@@ -304,11 +308,18 @@ public class JobFlowController {
     public ResultInfo<Long> runOnce(
             @PathVariable Long flowId,
             @RequestAttribute(value = Constant.SESSION_USER) User loginUser,
-            @RequestBody(required = false) ExecutionConfig config) {
+            @RequestBody(required = false) JobFlowExecRequest request) {
         var jobFlow = jobFlowService.getById(flowId);
         var status = jobFlow.getStatus();
         if (status == null || !status.isRunnable()) {
             return failure(NOT_RUNNABLE_STATUS);
+        }
+
+        ExecutionConfig config = null;
+        LocalDateTime scheduleTime = null;
+        if (request != null) {
+            config = request.getConfig();
+            scheduleTime = request.getScheduleTime();
         }
 
         // TODO: better in sync lock.
@@ -326,7 +337,7 @@ public class JobFlowController {
             var executionConfig = new ExecutionConfig();
             executionConfig.mergeFrom(jobFlow.getConfig());
             executionConfig.mergeFrom(config);
-            if (flowRunBizService.findRunConflict(flowId, executionConfig, null) != null) {
+            if (flowRunBizService.findRunConflict(flowId, executionConfig, scheduleTime) != null) {
                 return failure(EXIST_UNFINISHED_PROCESS);
             }
         }
@@ -334,6 +345,7 @@ public class JobFlowController {
         // run once.
         var data = new HashMap<String, Object>();
         data.put(CONFIG, JsonUtil.toJsonString(config));
+        data.put(SCHEDULE_TIME, DateUtil.formatNullable(scheduleTime));
         data.put(USER_ID, loginUser.getId());
         if (quartzService.runFlowOnce(jobFlow, data)) {
             return success(flowId);

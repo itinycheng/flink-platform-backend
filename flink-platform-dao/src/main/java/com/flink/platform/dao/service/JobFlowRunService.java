@@ -25,7 +25,6 @@ import static com.flink.platform.common.constants.Constant.HOST_IP;
 import static com.flink.platform.common.enums.ExecutionStatus.EXECUTABLE_STATUSES;
 import static com.flink.platform.common.enums.ExecutionStatus.WAITING;
 import static com.flink.platform.common.enums.ExecutionStatus.getNonTerminals;
-import static com.flink.platform.common.util.Preconditions.checkNotNull;
 
 /** job config info. */
 @Slf4j
@@ -78,17 +77,16 @@ public class JobFlowRunService extends ServiceImpl<JobFlowRunMapper, JobFlowRun>
                 .last("LIMIT " + limit));
     }
 
-    public LocalDateTime resolveScheduleTimeOrNow(Long flowRunId) {
+    public LocalDateTime getScheduleTimeOrNow(Long flowRunId) {
         if (flowRunId == null) {
             return LocalDateTime.now();
         }
 
-        var flowRun = getOne(new QueryWrapper<JobFlowRun>()
-                .lambda()
-                .select(JobFlowRun::getScheduleTime, JobFlowRun::getConfig)
-                .eq(JobFlowRun::getId, flowRunId));
-        checkNotNull(flowRun, "No JobFlowRun found for flowRunId=" + flowRunId);
-        return flowRun.getResolvedScheduleTime();
+        return getOne(new QueryWrapper<JobFlowRun>()
+                        .lambda()
+                        .select(JobFlowRun::getScheduleTime)
+                        .eq(JobFlowRun::getId, flowRunId))
+                .getScheduleTime();
     }
 
     public void updateStatusById(Long flowRunId, ExecutionStatus status) {

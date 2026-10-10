@@ -86,7 +86,7 @@ public class TimeVariableResolver implements VariableResolver {
 
         public LocalDateTime scheduleTime() {
             if (scheduleTime == null) {
-                scheduleTime = jobFlowRunService.resolveScheduleTimeOrNow(jobRun.getFlowRunId());
+                scheduleTime = jobFlowRunService.getScheduleTimeOrNow(jobRun.getFlowRunId());
             }
             return scheduleTime;
         }

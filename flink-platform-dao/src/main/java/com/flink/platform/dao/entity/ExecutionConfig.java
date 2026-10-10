@@ -5,8 +5,6 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.flink.platform.common.enums.ExecutionStrategy;
 import lombok.Data;
 
-import java.time.LocalDateTime;
-
 /**
  * JobFlow execution config.
  */
@@ -17,9 +15,6 @@ public class ExecutionConfig {
     private ExecutionStrategy strategy;
 
     private Long startJobId;
-
-    /** Effective logical schedule time; an input value overrides the trigger time. */
-    private LocalDateTime scheduleTime;
 
     /**
      * Maximum active flow runs for different logical schedule times.
@@ -48,9 +43,6 @@ public class ExecutionConfig {
         }
         if (other.startJobId != null) {
             startJobId = other.startJobId;
-        }
-        if (other.scheduleTime != null) {
-            scheduleTime = other.scheduleTime;
         }
         if (other.maxActiveRuns > 0) {
             maxActiveRuns = other.maxActiveRuns;

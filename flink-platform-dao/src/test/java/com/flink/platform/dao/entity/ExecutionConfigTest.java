@@ -3,8 +3,6 @@ package com.flink.platform.dao.entity;
 import com.flink.platform.common.util.JsonUtil;
 import org.junit.jupiter.api.Test;
 
-import java.time.LocalDateTime;
-
 import static com.flink.platform.common.enums.ExecutionStrategy.ALL_POST_JOBS;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -46,11 +44,18 @@ class ExecutionConfigTest {
     }
 
     @Test
+    void ignoresLegacyScheduleTimeFromStoredJson() {
+        var config = JsonUtil.toBean(
+                "{\"scheduleTime\":\"2026-10-05 10:00:00\",\"maxActiveRuns\":3}", ExecutionConfig.class);
+
+        assertEquals(3, config.getMaxActiveRuns());
+        assertFalse(JsonUtil.toJsonString(config).contains("scheduleTime"));
+    }
+
+    @Test
     void mergeFromOverridesOnlyExplicitlyConfiguredValues() {
-        var scheduleTime = LocalDateTime.of(2026, 10, 5, 10, 0);
         var config = new ExecutionConfig();
         config.setStartJobId(10L);
-        config.setScheduleTime(scheduleTime);
         config.setMaxActiveRuns(3);
         config.setMaxJobsPerRun(5);
 
@@ -63,7 +68,6 @@ class ExecutionConfigTest {
 
         assertEquals(ALL_POST_JOBS, config.getStrategy());
         assertEquals(20L, config.getStartJobId());
-        assertEquals(scheduleTime, config.getScheduleTime());
         assertEquals(4, config.getMaxActiveRuns());
         assertEquals(5, config.getMaxJobsPerRun());
     }

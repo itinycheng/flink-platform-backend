@@ -49,6 +49,24 @@ public class DateUtil {
         return dateTime.format(getFormatter(GLOBAL_DATE_TIME_FORMAT));
     }
 
+    public static String formatNullable(LocalDateTime dateTime) {
+        if (dateTime == null) {
+            return null;
+        }
+        return format(dateTime);
+    }
+
+    public static LocalDateTime parse(String dateTime) {
+        return LocalDateTime.parse(dateTime, getFormatter(GLOBAL_DATE_TIME_FORMAT));
+    }
+
+    public static LocalDateTime parseNullable(String dateTime) {
+        if (dateTime == null) {
+            return null;
+        }
+        return parse(dateTime);
+    }
+
     public static String format(Long timestamp, String format) {
         DateTimeFormatter formatter = getFormatter(format);
         return formatter.format(Instant.ofEpochMilli(timestamp));

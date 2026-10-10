@@ -61,12 +61,13 @@ Examples for `maxActiveRuns = 2`:
 ## Trigger Semantics
 
 - Cron: candidate time is Quartz `scheduledFireTime`, not actual fire time.
-- Manual run: an explicit `ExecutionConfig.scheduleTime` wins; otherwise the Quartz one-shot fire
-  time is used.
+- Manual run: an explicit request `scheduleTime` wins; otherwise the Quartz one-shot fire time is
+  used. The override is request-only and is not part of `ExecutionConfig` or persisted `JobFlow`.
 - Subflow: candidate time is inherited from the parent flow run.
-- The effective value is persisted identically in `JobFlowRun.scheduleTime` and
-  `ExecutionConfig.scheduleTime`.
-- Times are truncated to the database column's second precision before comparison and persistence.
+- The effective value is persisted in `JobFlowRun.scheduleTime`, which is the canonical source for
+  an existing run. `ExecutionConfig` does not contain logical-time state.
+- Effective times are truncated to the database column's second precision before comparison and
+  persistence.
 - Dependency-wait deadlines and warnings use the run's physical `create_time`, not its logical
   `schedule_time`, so historical backfills receive a full wait window.
 

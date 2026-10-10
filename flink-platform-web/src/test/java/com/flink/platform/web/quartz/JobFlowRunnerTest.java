@@ -34,6 +34,7 @@ import java.time.LocalDateTime;
 import java.util.Date;
 
 import static com.flink.platform.common.constants.JobConstant.CONFIG;
+import static com.flink.platform.common.constants.JobConstant.SCHEDULE_TIME;
 import static com.flink.platform.common.enums.JobFlowType.JOB_FLOW;
 import static com.flink.platform.web.service.DependencyService.DependencyState.SATISFIED;
 import static java.time.temporal.ChronoUnit.SECONDS;
@@ -117,14 +118,14 @@ class JobFlowRunnerTest {
     }
 
     @Test
-    void explicitScheduleTimeWinsAndIsPersistedAtSecondPrecision() {
+    void transportedScheduleTimeOverrideWins() {
         var explicitTime = LocalDateTime.of(2026, 10, 5, 10, 0, 0, 123_000_000);
         var config = new ExecutionConfig();
-        config.setScheduleTime(explicitTime);
 
-        runner.execute(context(config, Date.from(Instant.parse("2026-10-06T10:00:00Z"))));
+        runner.execute(context(config, explicitTime, Date.from(Instant.parse("2026-10-06T10:00:00Z"))));
 
-        assertSavedScheduleTime(explicitTime.truncatedTo(SECONDS));
+        var saved = captureAdmittedRun();
+        assertEquals(explicitTime.truncatedTo(SECONDS), saved.getScheduleTime());
     }
 
     @Test
@@ -133,7 +134,8 @@ class JobFlowRunnerTest {
 
         runner.execute(context(null, scheduledFireTime));
 
-        assertSavedScheduleTime(DateUtil.toLocalDateTime(scheduledFireTime).truncatedTo(SECONDS));
+        var saved = captureAdmittedRun();
+        assertEquals(DateUtil.toLocalDateTime(scheduledFireTime).truncatedTo(SECONDS), saved.getScheduleTime());
     }
 
     @Test
@@ -168,9 +170,16 @@ class JobFlowRunnerTest {
     }
 
     private JobExecutionContext context(ExecutionConfig config, Date scheduledFireTime) {
+        return context(config, null, scheduledFireTime);
+    }
+
+    private JobExecutionContext context(ExecutionConfig config, LocalDateTime scheduleTime, Date scheduledFireTime) {
         var dataMap = new JobDataMap();
         if (config != null) {
             dataMap.put(CONFIG, JsonUtil.toJsonString(config));
+        }
+        if (scheduleTime != null) {
+            dataMap.put(SCHEDULE_TIME, DateUtil.format(scheduleTime));
         }
 
         var detail = mock(JobDetail.class);
@@ -181,12 +190,6 @@ class JobFlowRunnerTest {
         when(context.getJobDetail()).thenReturn(detail);
         when(context.getScheduledFireTime()).thenReturn(scheduledFireTime);
         return context;
-    }
-
-    private void assertSavedScheduleTime(LocalDateTime expected) {
-        var saved = captureAdmittedRun();
-        assertEquals(expected, saved.getScheduleTime());
-        assertEquals(expected, saved.getConfig().getScheduleTime());
     }
 
     private JobFlowRun captureAdmittedRun() {

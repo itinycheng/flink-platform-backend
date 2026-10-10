@@ -4,7 +4,9 @@ import com.flink.platform.dao.entity.JobFlow;
 import lombok.Getter;
 import org.quartz.Job;
 
+import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 /** Immutable Quartz scheduling specification for a job flow. */
 @Getter
@@ -25,7 +27,10 @@ final class JobFlowQuartzSpec implements QuartzSpec {
     JobFlowQuartzSpec(JobFlow jobFlow, Map<String, Object> data) {
         this.name = jobFlow.getCode();
         this.cron = jobFlow.getCronExpr();
-        this.data = Map.copyOf(data);
+        // remove null values.
+        var copied = new HashMap<>(data);
+        copied.values().removeIf(Objects::isNull);
+        this.data = Map.copyOf(copied);
     }
 
     @Override

@@ -43,10 +43,10 @@ class JobFlowRunBizServiceTest {
     @Test
     void startJobStrategiesRejectSameStrategyAndStartJobRegardlessOfSchedule() {
         for (var strategy : List.of(ONLY_CUR_JOB, ALL_POST_JOBS, ALL_PRE_JOBS)) {
-            var activeRun = run(11L, manualConfig(strategy, 100L, SCHEDULE_TIME.minusDays(1), 10));
+            var activeRun = run(11L, manualConfig(strategy, 100L, 10), SCHEDULE_TIME.minusDays(1));
             flowRunService.activeRuns = List.of(activeRun);
 
-            var conflict = service.findRunConflict(FLOW_ID, manualConfig(strategy, 100L, SCHEDULE_TIME, 10), null);
+            var conflict = service.findRunConflict(FLOW_ID, manualConfig(strategy, 100L, 10), SCHEDULE_TIME, null);
 
             assertEquals(DUPLICATE_START_JOB, conflict.type(), strategy.name());
             assertSame(activeRun, conflict.activeRun(), strategy.name());
@@ -55,28 +55,28 @@ class JobFlowRunBizServiceTest {
 
     @Test
     void startJobStrategyAllowsAnotherStartJobWhenCapacityIsAvailable() {
-        flowRunService.activeRuns = List.of(run(11L, manualConfig(ONLY_CUR_JOB, 200L, SCHEDULE_TIME, 2)));
+        flowRunService.activeRuns = List.of(run(11L, manualConfig(ONLY_CUR_JOB, 200L, 2), SCHEDULE_TIME));
 
-        var conflict = service.findRunConflict(FLOW_ID, manualConfig(ONLY_CUR_JOB, 100L, SCHEDULE_TIME, 2), null);
+        var conflict = service.findRunConflict(FLOW_ID, manualConfig(ONLY_CUR_JOB, 100L, 2), SCHEDULE_TIME, null);
 
         assertNull(conflict);
     }
 
     @Test
     void startJobStrategyAllowsAnotherStrategyWhenCapacityIsAvailable() {
-        flowRunService.activeRuns = List.of(run(11L, manualConfig(ALL_POST_JOBS, 100L, SCHEDULE_TIME, 2)));
+        flowRunService.activeRuns = List.of(run(11L, manualConfig(ALL_POST_JOBS, 100L, 2), SCHEDULE_TIME));
 
-        var conflict = service.findRunConflict(FLOW_ID, manualConfig(ONLY_CUR_JOB, 100L, SCHEDULE_TIME, 2), null);
+        var conflict = service.findRunConflict(FLOW_ID, manualConfig(ONLY_CUR_JOB, 100L, 2), SCHEDULE_TIME, null);
 
         assertNull(conflict);
     }
 
     @Test
     void scheduledRunRejectsSameScheduleAtSecondPrecision() {
-        var activeRun = run(11L, scheduledConfig(SCHEDULE_TIME.plusNanos(999_000_000), 2));
+        var activeRun = run(11L, scheduledConfig(2), SCHEDULE_TIME.plusNanos(999_000_000));
         flowRunService.activeRuns = List.of(activeRun);
 
-        var conflict = service.findRunConflict(FLOW_ID, scheduledConfig(SCHEDULE_TIME, 2), null);
+        var conflict = service.findRunConflict(FLOW_ID, scheduledConfig(2), SCHEDULE_TIME, null);
 
         assertEquals(DUPLICATE_SCHEDULE, conflict.type());
         assertSame(activeRun, conflict.activeRun());
@@ -84,21 +84,29 @@ class JobFlowRunBizServiceTest {
 
     @Test
     void manualAndScheduledRunsUseSeparateDuplicateRules() {
-        flowRunService.activeRuns = List.of(run(11L, manualConfig(ONLY_CUR_JOB, 100L, SCHEDULE_TIME, 2)));
+        flowRunService.activeRuns = List.of(run(11L, manualConfig(ONLY_CUR_JOB, 100L, 2), SCHEDULE_TIME));
 
-        assertNull(service.findRunConflict(FLOW_ID, scheduledConfig(SCHEDULE_TIME, 2), null));
+        assertNull(service.findRunConflict(FLOW_ID, scheduledConfig(2), SCHEDULE_TIME, null));
 
-        flowRunService.activeRuns = List.of(run(12L, scheduledConfig(SCHEDULE_TIME, 2)));
+        flowRunService.activeRuns = List.of(run(12L, scheduledConfig(2), SCHEDULE_TIME));
 
-        assertNull(service.findRunConflict(FLOW_ID, manualConfig(ONLY_CUR_JOB, 100L, SCHEDULE_TIME, 2), null));
+        assertNull(service.findRunConflict(FLOW_ID, manualConfig(ONLY_CUR_JOB, 100L, 2), SCHEDULE_TIME, null));
+    }
+
+    @Test
+    void scheduledRunUsesJobFlowRunScheduleTimeAsCanonicalSource() {
+        var activeRun = run(11L, scheduledConfig(2), SCHEDULE_TIME.minusDays(1));
+        flowRunService.activeRuns = List.of(activeRun);
+
+        assertNull(service.findRunConflict(FLOW_ID, scheduledConfig(2), SCHEDULE_TIME, null));
     }
 
     @Test
     void maxActiveRunsCountsAllRunsInTheFlow() {
-        var activeRun = run(11L, manualConfig(ONLY_CUR_JOB, 200L, SCHEDULE_TIME, 1));
+        var activeRun = run(11L, manualConfig(ONLY_CUR_JOB, 200L, 1), SCHEDULE_TIME);
         flowRunService.activeRuns = List.of(activeRun);
 
-        var conflict = service.findRunConflict(FLOW_ID, manualConfig(ONLY_CUR_JOB, 100L, SCHEDULE_TIME, 1), null);
+        var conflict = service.findRunConflict(FLOW_ID, manualConfig(ONLY_CUR_JOB, 100L, 1), SCHEDULE_TIME, null);
 
         assertEquals(MAX_ACTIVE_RUNS, conflict.type());
         assertSame(activeRun, conflict.activeRun());
@@ -108,17 +116,17 @@ class JobFlowRunBizServiceTest {
     void platformLimitCapsMaxActiveRunsAtRuntime() {
         workerConfig.setMaxActiveRunsPerFlow(2);
         flowRunService.activeRuns = List.of(
-                run(11L, scheduledConfig(SCHEDULE_TIME.minusDays(1), 10)),
-                run(12L, scheduledConfig(SCHEDULE_TIME.minusDays(2), 10)));
+                run(11L, scheduledConfig(10), SCHEDULE_TIME.minusDays(1)),
+                run(12L, scheduledConfig(10), SCHEDULE_TIME.minusDays(2)));
 
-        var conflict = service.findRunConflict(FLOW_ID, scheduledConfig(SCHEDULE_TIME, 10), null);
+        var conflict = service.findRunConflict(FLOW_ID, scheduledConfig(10), SCHEDULE_TIME, null);
 
         assertEquals(MAX_ACTIVE_RUNS, conflict.type());
     }
 
     @Test
     void forwardsExcludedRunIdToActiveRunQuery() {
-        assertNull(service.findRunConflict(FLOW_ID, scheduledConfig(SCHEDULE_TIME, 1), 99L));
+        assertNull(service.findRunConflict(FLOW_ID, scheduledConfig(1), SCHEDULE_TIME, 99L));
         assertEquals(FLOW_ID, flowRunService.queriedFlowId);
         assertEquals(99L, flowRunService.excludedRunId);
     }
@@ -130,25 +138,23 @@ class JobFlowRunBizServiceTest {
         assertEquals("Maximum active runs reached", MAX_ACTIVE_RUNS.getDescription());
     }
 
-    private static ExecutionConfig scheduledConfig(LocalDateTime scheduleTime, int maxActiveRuns) {
+    private static ExecutionConfig scheduledConfig(int maxActiveRuns) {
         var config = new ExecutionConfig();
-        config.setScheduleTime(scheduleTime);
         config.setMaxActiveRuns(maxActiveRuns);
         return config;
     }
 
-    private static ExecutionConfig manualConfig(
-            ExecutionStrategy strategy, Long startJobId, LocalDateTime scheduleTime, int maxActiveRuns) {
-        var config = scheduledConfig(scheduleTime, maxActiveRuns);
+    private static ExecutionConfig manualConfig(ExecutionStrategy strategy, Long startJobId, int maxActiveRuns) {
+        var config = scheduledConfig(maxActiveRuns);
         config.setStrategy(strategy);
         config.setStartJobId(startJobId);
         return config;
     }
 
-    private static JobFlowRun run(Long id, ExecutionConfig config) {
+    private static JobFlowRun run(Long id, ExecutionConfig config, LocalDateTime scheduleTime) {
         var run = new JobFlowRun();
         run.setId(id);
-        run.setScheduleTime(config.getScheduleTime());
+        run.setScheduleTime(scheduleTime);
         run.setConfig(config);
         return run;
     }

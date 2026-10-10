@@ -5,7 +5,6 @@ import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.baomidou.mybatisplus.extension.handlers.Jackson3TypeHandler;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.flink.platform.common.annotation.TenantId;
 import com.flink.platform.common.enums.ExecutionStatus;
 import com.flink.platform.common.enums.JobFlowType;
@@ -71,7 +70,6 @@ public class JobFlowRun implements Identifiable {
 
     private ExecutionStatus status;
 
-    /** Effective logical schedule time, mirrored in config.scheduleTime. */
     private LocalDateTime scheduleTime;
 
     private LocalDateTime startTime;
@@ -88,13 +86,5 @@ public class JobFlowRun implements Identifiable {
 
         var duration = Duration.between(startTime, endTime);
         return DurationUtil.humanizeDuration(duration);
-    }
-
-    @JsonIgnore
-    public LocalDateTime getResolvedScheduleTime() {
-        if (config.getScheduleTime() != null) {
-            return config.getScheduleTime();
-        }
-        return scheduleTime;
     }
 }

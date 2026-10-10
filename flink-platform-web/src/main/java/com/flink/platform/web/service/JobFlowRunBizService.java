@@ -12,6 +12,7 @@ import org.jspecify.annotations.Nullable;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.Objects;
 
 import static com.flink.platform.web.service.JobFlowRunBizService.ConflictType.DUPLICATE_SCHEDULE;
@@ -29,12 +30,17 @@ public class JobFlowRunBizService {
 
     private final WorkerConfig workerConfig;
 
-    public @Nullable RunConflict findRunConflict(Long flowId, ExecutionConfig config, @Nullable Long excludedRunId) {
+    public @Nullable RunConflict findRunConflict(
+            Long flowId, ExecutionConfig config, @Nullable LocalDateTime scheduleTime) {
+        return this.findRunConflict(flowId, config, scheduleTime, null);
+    }
+
+    public @Nullable RunConflict findRunConflict(
+            Long flowId, ExecutionConfig config, @Nullable LocalDateTime scheduleTime, @Nullable Long excludedRunId) {
         var activeRuns = flowRunService.listActiveRuns(flowId, excludedRunId);
         var strategy = config.getStrategy();
         var startJobId = config.getStartJobId();
 
-        var scheduleTime = config.getScheduleTime();
         if (scheduleTime != null) {
             scheduleTime = scheduleTime.truncatedTo(SECONDS);
         }
@@ -49,7 +55,7 @@ public class JobFlowRunBizService {
                 return new RunConflict(activeRun, DUPLICATE_START_JOB);
             }
 
-            var activeScheduleTime = activeRun.getResolvedScheduleTime();
+            var activeScheduleTime = activeRun.getScheduleTime();
             if (!ExecutionStrategy.needsStartJob(strategy)
                     && !ExecutionStrategy.needsStartJob(activeStrategy)
                     && scheduleTime != null
