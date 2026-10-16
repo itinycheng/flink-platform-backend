@@ -18,22 +18,21 @@ dispatches each to a `FlowExecuteThread` for execution.
 
 ## Data storage
 
-MySQL holds all info about jobs, users, resources, schedules, etc.  
-HDFS holds resource files uploaded by users, in the future I will also store job logs to hdfs.
+MySQL stores job definitions, users, schedules, execution state, and other metadata. Uploaded
+resources use the configured local, HDFS, or S3 storage backend.
 
 ### Fault Tolerance
 
-In order to keep the system simple, I'm not using components like zookeeper to guarantee system
-fault tolerance. All instances of `flink-platform-web` communicate with MySQL, so I want to use
-MySQL to complete system fault tolerance. Currently, You can restart/add `flink-platform-web`
-instances arbitrarily, this won't affect the execution of workflows. The unfinished workflows owned
-by a node are re-picked and resumed automatically after it restarts — `FlowRunDispatcher.drainAndExecute`
-simply queries the non-terminal runs whose `host` is this node, so no dedicated reload step is needed.
+The scheduler uses MySQL rather than a separate coordination service such as ZooKeeper. Persisted
+non-terminal runs are recovered by polling: after a worker restarts,
+`FlowRunDispatcher.drainAndExecute` queries the rows whose `host` points to that worker, so no
+dedicated in-memory reload step is needed.
 
 When a node dies, its unfinished workflows are migrated automatically:
 `com.flink.platform.web.lifecycle.WorkerHeartbeat.reassignOrphans` (guarded by ShedLock) detects
 workers whose heartbeat has gone stale and rewrites the `host` of their non-terminal `t_job_flow_run`
 rows to a healthy worker in the same workspace; that worker's `drainAndExecute` then picks the runs
-up. If the old node is still alive, it notices the `host` no longer matches and abandons its local
-orchestration, avoiding a double run. You can still migrate manually by changing `host`
-in `t_job_flow_run`.
+up. If the old node is still alive, its orchestration loop notices the `host` change and abandons
+the flow. This is not full execution fencing: an already-submitted external application or local
+process may overlap with the new owner during a partition. Submit idempotency, executor self-fencing,
+and stronger lease semantics remain tracked under **Failover Hardening** in `TODO.md`.

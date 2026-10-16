@@ -38,10 +38,10 @@
 
    ```bash
    cd flink-platform-backend
-   mvn clean package -DskipTests
+   ./mvnw clean package -DskipTests
 
    cd flink-platform-web/target
-   nohup java -Xms4g -Xmx4g -jar -Dspring.profiles.active=dev flink-platform-web-0.0.1.jar >/dev/null 2>&1 &
+   nohup java -Xms4g -Xmx4g -Dspring.profiles.active=dev -jar flink-platform-web-0.0.1.jar >/dev/null 2>&1 &
    ```
 
 5. Now, both frontend and backend are started.  
@@ -50,6 +50,5 @@
    ![login](img/login.png)
    ![login](img/dashboard.png)
 
-End：These steps only described how to start the project, you can currently define a workflow, but if
-you want to schedule it you also need to set up extra configurations, such as hadoop environment,
-datasource, etc.
+These steps only start the project. Scheduling a workflow also requires a usable execution
+environment, storage backend, and datasource configuration.

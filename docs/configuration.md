@@ -1,114 +1,108 @@
-# Configuration Details
+# Configuration
 
-> The core configuration file of the current project
-> is `flink-platform-web/src/main/resources/application-dev.yml`, we
-> will explain the main content of this file with the following words.
-
-- gRPC configuration, the project use gRPC to perform jobs on specified project instances.
+The backend uses Spring profiles. `flink-platform-web/src/main/resources/application.yml` selects
+`dev` by default and imports the matching storage and Apollo files:
 
 ```yaml
-# Each project instance is both server and client.
-grpc:
-  server:
-    port: 9898  # gRPC server port.
-  client: # gRPC client port.
-    local-grpc-server:
-      address: static://127.0.0.1:9898
-      enableKeepAlive: true
-      keepAliveWithoutCalls: true
-      negotiationType: plaintext
+spring:
+  profiles:
+    active: dev
+  config:
+    import:
+      - classpath:storage-${spring.profiles.active}.yml
+      - classpath:apollo-${spring.profiles.active}.properties
 ```
 
-- The environment configuration for flink job submit.
+Use `-Dspring.profiles.active=docker` (before `-jar`) or the equivalent Spring environment
+variable to select another profile.
+
+## Profile-specific application settings
+
+`application-dev.yml` and `application-docker.yml` configure:
+
+- HTTP server port and Tomcat threads;
+- authentication (`local`, `cas`, or `oidc`);
+- the `master_platform` datasource;
+- clustered Quartz backed by that datasource;
+- the gRPC server and default client channel.
+
+The gRPC properties live under `spring.grpc`, for example:
 
 ```yaml
-flink:
-  local:
-
-    # File dir under the project root path, used to store sql files generated during flink sql submission.
-    sql-dir: sql_file
-
-    # File dir under the project root path, store the resource files required for the job to run, download the latest resources from HDFS.
-    jar-dir: job_jar
-
-  # Flink env configuration, the corresponding class is `com.flink.platform.web.config.FlinkConfig`.
-  sql112:
-
-    # Flink version.
-    version: 1.12.0
-
-    # Flink command path in local disk.
-    command-path: /data0/app/flink-1.12.0/bin/flink
-
-    # Absolute jar path, used to submit flink sql to cluster, must be a hdfs path.
-    jar-file: hdfs:///flink/jars/job_jar/flink-platform-core.jar
-
-    # Main class for submitting flink sql.
-    class-name: com.flink.platform.core.Sql112Application
-
-    # Equal to configuration `yarn.provided.lib.dirs`.
-    lib-dirs: hdfs:///flink/jars/flink_1.12.0/lib/
-
-  # Flink multi-version configuration.
-  sql113:
-    version: 1.13.2
-    command-path: /data0/app/flink-1.13.2/bin/flink
-    jar-file: hdfs:///flink/jars/job_jar/flink-platform-core.jar
-    class-name: com.flink.platform.core.Sql113Application
-    lib-dirs: hdfs:///flink/jars/flink_1.13.2/lib/
+spring:
+  grpc:
+    server:
+      port: 9898
+    client:
+      default-channel:
+        address: static://0.0.0.0:9898
+        negotiationType: plaintext
 ```
 
-- HDFS configuration, the extrnal file system that the project depends on, all user-uploaded
-  resources
-  and `flink-platform-core.jar` are stored in this HDFS.
+Do not commit production database or identity-provider credentials. The Docker profile already
+reads database credentials from `DB_HOST`, `DB_USER`, and `DB_PASSWORD`; use the same externalized
+configuration pattern for other secrets.
 
-```yaml
-hadoop:
-  # The username for submit job to hadoop cluster.
-  username: admin
+## Worker settings
 
-  # The HDFS root path for storing resource files(refer to: t_resource), such as: user jar, etc.
-  hdfsFilePath: hdfs:///flink-platform/
-
-  # The directory under the project root path on local disk, currently only used for tmp file storage during resource upload.  
-  localDirName: data_dir
-
-  # HDFS configuration, All uploaded resources and `flink-platform-core.jar` are saved in this HDFS.
-  # Be careful: maybe different from the hadoop cluster where the job runs.
-  properties:
-    fs.hdfs.impl: org.apache.hadoop.hdfs.DistributedFileSystem
-    fs.defaultFS: hdfs://nameservice1
-    ha.zookeeper.quorum: 0.0.0.0:2181,0.0.0.0:2181,0.0.0.0:2181
-    dfs.client.failover.proxy.provider.nameservice1: org.apache.hadoop.hdfs.server.namenode.ha.ConfiguredFailoverProxyProvider
-    dfs.ha.automatic-failover.enabled.nameservice1: true
-    dfs.nameservices: nameservice1
-    dfs.ha.namenodes.nameservice1: namenode39,namenode127
-    dfs.namenode.rpc-address.nameservice1.namenode39: 0.0.0.0:8020
-    dfs.namenode.rpc-address.nameservice1.namenode127: 0.0.0.0:8020
-    dfs.namenode.servicerpc-address.nameservice1.namenode39: 0.0.0.0:8022
-    dfs.namenode.servicerpc-address.nameservice1.namenode127: 0.0.0.0:8022
-```
-
-- Worker configuration, workflow execution related configuration, the corresponding class
-  is `com.flink.platform.web.config.WorkerConfig`.
+The shared defaults are in `application.yml` and bind to `WorkerConfig`:
 
 ```yaml
 worker:
-  # Set the thread pool size for executing job flow. 
-  flowExecThreads: 100
-
-  # The number of jobs that one job flow can execute in parallel.
+  flowExecThreads: 500
   perFlowExecThreads: 5
-
-  # Retry times when submitting job or getting job status fails.
+  maxPerFlowExecThreads: 10
+  maxActiveRunsPerFlow: 10
   errorRetries: 3
-
-  # Set the thread pool size for reactive mode.
   reactiveExecThreads: 10
-
-  # Timeout for submitting flink job from the command line.
-  flinkSubmitTimeoutMills: 5m
-
-  # Timeout for shell job execution.
-  maxShellExecTimeoutMills: 8h
+  flinkSubmissionTimeout: 5m
+  maxShellExecutionTimeout: 8h
+  flowWaitTimeout: 12h
+  flowWaitWarningAfter: 1h
 ```
+
+- `flowExecThreads`: maximum flow runs this worker executes concurrently.
+- `perFlowExecThreads`: default parallel job limit inside one flow run.
+- `maxPerFlowExecThreads`: platform ceiling for the per-run job limit.
+- `maxActiveRunsPerFlow`: platform ceiling for concurrently active runs of one flow.
+- `flowWaitTimeout`: fallback dependency-wait deadline for scheduleless runs or cron expressions
+  with no next fire.
+- `flowWaitWarningAfter`: delay before the in-memory, one-shot WAITING warning. The warning is
+  skipped when the run's deadline occurs sooner.
+
+Spring duration syntax such as `20s`, `5m`, and `12h` is accepted. `WorkerConfig` validates the
+minimums and limits during startup.
+
+## Storage
+
+`storage-dev.yml` and `storage-docker.yml` bind to `StorageProperties`:
+
+```yaml
+storage:
+  type: hdfs
+  basePath: flink-platform
+  backends:
+    local:
+      workDir: /app/data
+    hdfs:
+      "[hadoop.username]": hdfs
+      "[fs.defaultFS]": hdfs://namenode:8020
+    s3:
+      bucket: datacenter
+      region: us-east-1
+      endpoint: http://minio:9000
+      path-style-access: true
+      access-key: ${AWS_ACCESS_KEY_ID:}
+      secret-key: ${AWS_SECRET_ACCESS_KEY:}
+```
+
+`storage.type` selects one active backend. All backend blocks may coexist; only the selected block
+is loaded. `storage.basePath` is relative to that backend's namespace root. HDFS map keys containing
+dots must use bracket notation so Spring treats each one as a single key.
+
+## Apollo
+
+`apollo-dev.properties` and `apollo-docker.properties` contain the client metadata. Apollo
+bootstrap is disabled in the shipped files. To enable it, configure the correct metadata endpoint
+and salt, then enable the bootstrap properties for the required namespaces. Do not reuse the
+development salt in production.
