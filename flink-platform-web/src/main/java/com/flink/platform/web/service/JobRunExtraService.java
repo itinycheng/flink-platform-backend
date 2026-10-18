@@ -4,6 +4,7 @@ import com.flink.platform.common.util.DateUtil;
 import com.flink.platform.common.util.JsonUtil;
 import com.flink.platform.dao.entity.JobInfo;
 import com.flink.platform.dao.entity.JobRunInfo;
+import com.flink.platform.dao.entity.result.JobCallback;
 import com.flink.platform.dao.service.JobRunInfoService;
 import com.flink.platform.web.enums.Variable;
 import com.flink.platform.web.variable.VariableResolver;
@@ -13,6 +14,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -22,6 +24,7 @@ import static com.flink.platform.common.constants.JobConstant.JOB_DIR_FORMAT;
 import static com.flink.platform.common.constants.JobConstant.JOB_RUN_DIR;
 import static com.flink.platform.common.constants.JobConstant.USER_DIR_FORMAT;
 import static com.flink.platform.common.enums.ExecutionStatus.CREATED;
+import static com.flink.platform.common.enums.ExecutionStatus.ERROR;
 import static com.flink.platform.common.util.DateUtil.DATE_FORMAT;
 import static com.flink.platform.common.util.DateUtil.READABLE_TIMESTAMP_FORMAT;
 import static java.util.Locale.ROOT;
@@ -41,11 +44,14 @@ public class JobRunExtraService {
 
     public Long createJobRun(JobInfo jobInfo, Long flowRunId) {
         var worker = workerSelectService.randomWorker(jobInfo.getRouteUrl());
-        if (worker == null || StringUtils.isEmpty(worker.getIp())) {
-            throw new IllegalStateException("No available worker found for job: " + jobInfo.getName());
+        var host = worker == null ? null : worker.getIp();
+        var jobRun = createFrom(jobInfo, flowRunId, host);
+        if (StringUtils.isEmpty(host)) {
+            jobRun.setStatus(ERROR);
+            jobRun.setEndTime(LocalDateTime.now());
+            jobRun.setBackInfo(new JobCallback("No available worker found for job: " + jobInfo.getName(), ERROR));
         }
 
-        var jobRun = createFrom(jobInfo, flowRunId, worker.getIp());
         jobRunService.save(jobRun);
         return jobRun.getId();
     }

@@ -19,7 +19,7 @@ import java.time.Duration;
 @Setter
 @Getter
 @Validated
-@Configuration
+@Configuration(proxyBeanMethods = false)
 @ConfigurationProperties(prefix = "worker")
 public class WorkerConfig {
 

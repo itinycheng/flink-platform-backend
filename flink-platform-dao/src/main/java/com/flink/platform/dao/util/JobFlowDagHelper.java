@@ -151,9 +151,10 @@ public class JobFlowDagHelper {
     }
 
     private static boolean upstreamQualifies(JobVertex from, JobEdge edge, JobVertex toVertex) {
-        return toVertex.getPrecondition().requiresStatusMatched()
-                ? statusEquals(edge.getExpectStatus(), from.getJobRunStatus())
-                : hasTerminalState(from);
+        return switch (toVertex.getPrecondition()) {
+            case ALL_MATCHED, ANY_MATCHED -> statusEquals(edge.getExpectStatus(), from.getJobRunStatus());
+            case ALL_DONE, ANY_DONE -> hasTerminalState(from);
+        };
     }
 
     private static boolean hasTerminalState(JobVertex vertex) {

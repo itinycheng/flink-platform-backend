@@ -162,6 +162,9 @@ public class JobExecuteThread implements Supplier<JobResponse> {
             // Update jobRunId and jobRunStatus in memory.
             jobRunId = jobRun.getId();
             jobRunStatus = jobRun.getStatus();
+            if (jobRunStatus.isTerminalState()) {
+                return;
+            }
 
             // Get a grpc client.
             var stub = jobGrpcClient.grpcClient(jobRun.getHost());
