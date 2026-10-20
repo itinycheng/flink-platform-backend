@@ -96,6 +96,14 @@ The common pattern is to keep logical identity, overlap behavior, and resource l
 
 ## Follow-ups
 
+- Add a configurable maximum dependency wait. An explicit future `scheduleTime` currently makes
+  `resolveWaitDeadline` use the next cron fire after that future anchor, so a pending run can remain
+  `WAITING` for much longer than its physical creation time suggests. This is an accepted limit for
+  now; decide how the maximum interacts with cron-based deadlines before changing it.
+- Revisit rapid consecutive manual runs if they must both be accepted. Quartz run-once jobs use the
+  same job and trigger keys for a flow, so a second request made before the first trigger is
+  consumed can fail in Quartz even when `maxActiveRuns` has remaining capacity. This is an
+  accepted limit of the current one-shot trigger mechanism.
 - Rename `worker.perFlowExecThreads` and `worker.maxPerFlowExecThreads` to
   `worker.defaultConcurrentJobsPerRun` and `worker.maxConcurrentJobsPerRun`; update the bundled
   configuration, environment-variable overrides, and documentation together.

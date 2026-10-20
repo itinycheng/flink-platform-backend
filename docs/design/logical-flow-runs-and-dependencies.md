@@ -9,6 +9,8 @@
 > and its compatibility decisions remain documented in
 > [flow-dependency-model.md](flow-dependency-model.md); alert delivery remains in
 > [alerting-strategy.md](alerting-strategy.md).
+> The period-aware mode below is a future design. This document does not change the current
+> latest-upstream-run behavior or the existing `DEPENDENT` job type.
 
 ## Why this design exists
 
@@ -118,6 +120,16 @@ both data period:       2026-09-27
 Period metadata is required only for period-aware dependency matching and backfill. The existing
 latest-attempt dependency mode does not need it.
 
+### Boundary between admission and dependency matching
+
+Admission compares `scheduleTime` only among active runs of the **same flow** to reject a duplicate
+ordinary occurrence; `maxActiveRuns` separately limits overlap. Terminal history may be run again.
+This does not choose which run of **another flow** satisfies a dependency. The current `depends_on`
+lookup chooses that upstream flow's latest attempt, regardless of the downstream's `scheduleTime`.
+That is intentional for snapshots, but an older incremental waiter can otherwise be released by a
+newer, unrelated upstream period. The future period mode addresses that case without changing
+same-flow admission or overloading raw timestamp equality with business meaning.
+
 ## User operations
 
 The UI and API should expose business operations, not logical-date mechanics.
@@ -205,23 +217,59 @@ presented as repairing a historical dependency.
 
 ### Matching data period — opt in later
 
-User label: **同一数据周期**.
+User label: **对应业务周期** (the simple same-period mapping can be labelled **同一数据周期**).
 
 This is for incremental data. A downstream logical run targets one or more upstream logical data
 periods, not an equal clock timestamp. Attempts inside the targeted upstream logical run are
 eligible; unrelated newer periods are ignored.
 
-Defaults can cover most cases without exposing timestamps:
+#### Period definition and mapping
 
-- equal partition definitions: same partition key;
-- downstream daily, upstream hourly: all upstream periods intersecting the downstream day;
-- previous-period dependency: one labelled offset such as **上一周期**;
-- custom mapping: advanced configuration only.
+An opt-in `JOB_FLOW` period definition must specify a schedule zone, granularity (initially day or
+hour), and an explicit calendar offset from `scheduleTime`. Resolve and persist the period on each
+logical run at creation; preserve it across retries. For example, if both flows process yesterday,
+the 02:00 producer and 04:00 consumer on 2026-09-28 each resolve to the business-day interval
+`[2026-09-27, 2026-09-28)` in the configured zone. `scheduleTime` is the input to this rule, not
+the cross-flow join key. A flow without a period definition cannot be used as a target of this
+mode; do not infer its data period by inspecting arbitrary task parameters or SQL.
 
-At downstream creation, resolve and persist the target logical period(s). If an upstream run does
-not exist yet, wait for that period to appear. Once an attempt satisfies the dependency, persist
-the matched attempt ID for auditability; do not let a later unrelated run change the completed
-decision.
+Map a downstream period to a **fixed set of target upstream period keys** when the downstream
+logical run is created. A target key identifies the upstream flow and one resolved interval
+`(flowId, intervalStart, intervalEnd)`. The first version supports:
+
+- equal granularity: the same interval key;
+- downstream daily, upstream hourly: every upstream hourly interval intersecting the downstream
+  day (a calendar day can have 23 or 25 hours across a daylight-saving transition);
+- an explicit previous-period offset, such as **上一周期**, applied before resolving targets.
+
+Other granularity combinations and custom mappings require an explicit mapping rule; they must
+fail validation rather than silently fall back to the upstream's latest run. Normalize persisted
+interval boundaries to instants while retaining the schedule zone and period definition needed to
+explain them to users.
+
+#### Evaluation and history
+
+Persist the resolved target keys on the downstream logical run even when no upstream run exists.
+For each target key, evaluate the latest eligible attempt **within that key**, including a later
+retry or an explicit backfill of the same period. Keep the current status condition and
+`onUnmatched` policy; a newer failed attempt must not fall back to an older success for the same
+target. If several upstream logical runs claim one key, the newest eligible attempt is decisive;
+never use an attempt from another key. One dependency item mapped to several hourly targets
+qualifies only when **every** target qualifies; `precondition` then combines the results of the
+configured dependency items. A missing target remains pending until the configured wait deadline;
+an upstream with an unacceptable terminal status follows `onUnmatched`, while malformed period
+configuration fails validation or evaluation as misconfigured. The latest-attempt mode's `expiry`
+controls freshness; it is not a second age limit on an explicitly selected historical period.
+Period-aware waits still have a deadline.
+
+When the whole dependency group becomes satisfied and the downstream advances, persist each
+qualifying upstream attempt ID alongside its period key in the same state transition. Do not pin
+individual successes while the downstream is still waiting for other targets: a newer failure for
+that period must still be seen. A completed downstream decision is immutable for audit; a later
+upstream run does not rewrite its match. A retry of the downstream retains its original target
+keys and configuration snapshot, then re-evaluates against the eligible attempts in those same
+periods. `Run now` starts new work with a new anchor and cannot repair a historical target by
+accident; historical work uses Retry or Backfill with an explicit period.
 
 Do not implement period matching until the system can represent the period and retry it. Adding
 only `upstream.schedule_time <= downstream.schedule_time` creates ambiguous behaviour for manual
@@ -275,8 +323,9 @@ The dependency editor should start with two cards, not enum names:
 
 1. **Use the upstream's most recent run** — status selector plus freshness; recommended for full
    loads and snapshots.
-2. **Use the same data period** — recommended for incremental jobs; hidden until period support is
-   implemented.
+2. **Use the corresponding business period** — recommended for incremental jobs; hidden until
+   period support is implemented. Show the derived upstream period(s) in a preview, including the
+   02:00 producer / 04:00 consumer case and any previous-period offset.
 
 Every selection must show a concrete preview, for example:
 
@@ -303,7 +352,7 @@ This keeps deterministic internals without requiring users to understand `logica
 - [Airflow ExternalTaskSensor](https://airflow.apache.org/docs/apache-airflow-providers-standard/stable/_api/airflow/providers/standard/sensors/external_task/index.html)
   defaults to the same logical date and permits `execution_delta` or a mapping function. It is
   deterministic but exposes significant scheduling vocabulary.
-- [DolphinScheduler Dependent](https://dolphinscheduler.apache.org/en-us/docs/3.0.0/guide/task/dependent)
+- [DolphinScheduler Dependent](https://github.com/apache/dolphinscheduler/blob/3.2.2/docs/docs/en/guide/task/dependent.md)
   presents relative business windows such as yesterday/last week plus wait/fail policy. This is
   easier to explain but less precise than a first-class period model.
 - [Prefect manual retry](https://docs.prefect.io/v3/how-to-guides/workflows/retry-flow-runs)
@@ -345,10 +394,10 @@ incremental dependencies should ultimately match data partitions rather than clo
 
 ### Phase 4 — period-aware dependency and backfill (deferred)
 
-- Add data-period/partition metadata and mapping rules.
-- Add the opt-in **同一数据周期** dependency mode.
+- Add persisted period definition, resolved run period, target keys and mapping rules.
+- Add the opt-in **对应业务周期** dependency mode; keep latest-attempt matching as the default.
 - Add Retry/Run now/Backfill operations described above.
-- Resolve and persist logical dependency targets and the satisfying attempt.
+- Resolve and persist dependency target keys and the satisfying attempt for each key.
 - Add previews and period-based history views before exposing the mode broadly.
 
 ## Required tests
@@ -381,6 +430,8 @@ Still required after the state-machine decision:
 - same-period retry satisfies a waiter even when executed much later;
 - a newer unrelated period does not satisfy an older waiter;
 - daily-to-hourly mapping requires every intersecting hour;
+- producer and consumer with different fire times can match the same business day;
+- same-flow duplicate admission still uses `scheduleTime`, independent of dependency mode;
 - full-snapshot latest matching remains independent of partitions;
 - cron edits do not re-key existing logical runs;
 - manual runs without a period cannot accidentally satisfy a historical period.

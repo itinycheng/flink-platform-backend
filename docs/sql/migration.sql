@@ -171,7 +171,9 @@ ALTER TABLE platform.t_job_flow_run ADD COLUMN depends_on varchar(2048) DEFAULT 
 UPDATE platform.t_job_flow SET config = '{}' WHERE config IS NULL;
 UPDATE platform.t_job_flow_run SET config = '{}' WHERE config IS NULL;
 ALTER TABLE platform.t_job_flow MODIFY COLUMN config varchar(255) NOT NULL COMMENT 'execution config';
-ALTER TABLE platform.t_job_flow_run MODIFY COLUMN config varchar(255) NOT NULL COMMENT 'execution config';
+ALTER TABLE platform.t_job_flow_run MODIFY COLUMN config varchar(255) NOT NULL DEFAULT '{}' COMMENT 'execution config';
+-- alter release ,drop default value
+ALTER TABLE platform.t_job_flow_run ALTER COLUMN config DROP DEFAULT;
 
 -- 2026-10-09
 CREATE INDEX t_job_flow_run_flow_schedule_idx USING BTREE
