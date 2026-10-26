@@ -4,24 +4,53 @@
 
 ![architecture](img/architecture.png)
 
-## Architecture Description
+## Code entry points
 
-### Scheduling Component
+| Change area                             | Start in source                                                                                                                                                  | Follow through                                                                                                                     |
+|-----------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------|
+| Workflow definitions and manual runs    | [JobFlowController](../flink-platform-web/src/main/java/com/flink/platform/web/controller/JobFlowController.java)                                                | `JobFlowService`, `FlowScheduleService`, `QuartzService`                                                                           |
+| Workflow graph model                    | [JobFlowDag](../flink-platform-dao/src/main/java/com/flink/platform/dao/entity/JobFlowDag.java)                                                                  | [DAG](../flink-platform-common/src/main/java/com/flink/platform/common/graph/DAG.java), `JobVertex`, `JobEdge`, `JobFlowDagHelper` |
+| Scheduled run creation                  | [JobFlowRunner](../flink-platform-web/src/main/java/com/flink/platform/web/quartz/JobFlowRunner.java)                                                            | `DependencyService`, `FlowScheduleService.tryCreateFlowRun`, `JobFlowRunService`                                                   |
+| Waiting and DAG execution               | [FlowRunDispatcher](../flink-platform-web/src/main/java/com/flink/platform/web/runner/FlowRunDispatcher.java)                                                    | `FlowExecuteThread`, `JobExecuteThread`, `JobGrpcClient`                                                                           |
+| Job submission                          | [JobGrpcServer](../flink-platform-web/src/main/java/com/flink/platform/web/grpc/JobGrpcServer.java)                                                              | `ProcessJobService`, `CommandBuilder` and `CommandExecutor` implementations                                                        |
+| Worker ownership and recovery           | [WorkerHeartbeat](../flink-platform-web/src/main/java/com/flink/platform/web/lifecycle/WorkerHeartbeat.java)                                                     | `JobFlowRunService`, `FlowRunDispatcher`                                                                                           |
+| API authentication and workspace access | [LoginInterceptor](../flink-platform-web/src/main/java/com/flink/platform/web/config/interceptor/LoginInterceptor.java)                                          | `PermissionInterceptor`, `RequestContext`, `WorkspaceTenantLineHandler`                                                            |
+| Persistence contract                    | [entities](../flink-platform-dao/src/main/java/com/flink/platform/dao/entity/) and [mappers](../flink-platform-dao/src/main/java/com/flink/platform/dao/mapper/) | DAO services, [schema](sql/schema.sql), [migrations](sql/migration.sql)                                                            |
 
-The entire scheduling component is based on Quartz(job-store = MySQL). Users set the scheduling cron
-for workflows through the UI. When a trigger fires, `com.flink.platform.web.quartz.JobFlowRunner`
-creates a `JobFlowRun` row (assigned to a worker via its `host` column) and persists it in a
-non-terminal state — it is not handed to any in-memory queue. Each node's
-`com.flink.platform.web.runner.FlowRunDispatcher.drainAndExecute` then polls MySQL every few seconds
-for the non-terminal runs it owns (ordered by priority, bounded by free executor slots) and
-dispatches each to a `FlowExecuteThread` for execution.
+These are navigation pointers, not an exhaustive call graph. Trace the relevant caller and current
+source before changing a contract.
+
+## Scheduling and execution
+
+`JobFlowController` starts and stops workflow schedules and accepts one-off runs.
+`FlowScheduleService` manages Quartz registration and run admission. Quartz stores its jobs in
+MySQL. When a trigger fires, `JobFlowRunner` snapshots the workflow definition and execution
+configuration into a `JobFlowRun`, evaluates dependencies, and persists the run with a worker in
+its `host` column. There is no in-memory handoff queue.
+
+Each worker's `FlowRunDispatcher.drainAndExecute` polls for its non-terminal runs, ordered by
+priority and bounded by available executor slots. It advances waiting runs and dispatches
+eligible ones to `FlowExecuteThread`. That thread drives the DAG and starts `JobExecuteThread`
+for each runnable job. `JobExecuteThread` calls the selected worker through `JobGrpcClient` and
+`JobGrpcServer`. `ProcessJobService` selects the `CommandBuilder` and `CommandExecutor` for the
+job type. State is stored in `t_job_flow_run` and `t_job_run`.
+
+### API and workspace boundary
+
+The web module serves REST controllers and a gRPC server. For normal authenticated API requests,
+`LoginInterceptor` authenticates the user and reads `X-Workspace-Id` into `RequestContext`;
+`PermissionInterceptor` evaluates `@RequirePermission`. MyBatis-Plus uses
+`WorkspaceTenantLineHandler` to add `workspace_id` filtering to entities marked with `@TenantId`
+while a workspace is present in the request context. Background scheduling and execution do not
+inherit an HTTP request context; follow their explicit workspace identifiers when changing data
+access. An API or schema change must account for both request-driven and background paths.
 
 ## Data storage
 
 MySQL stores job definitions, users, schedules, execution state, and other metadata. Uploaded
 resources use the configured local, HDFS, or S3 storage backend.
 
-### Fault Tolerance
+## Fault tolerance
 
 The scheduler uses MySQL rather than a separate coordination service such as ZooKeeper. Persisted
 non-terminal runs are recovered by polling: after a worker restarts,
@@ -35,4 +64,4 @@ rows to a healthy worker in the same workspace; that worker's `drainAndExecute` 
 up. If the old node is still alive, its orchestration loop notices the `host` change and abandons
 the flow. This is not full execution fencing: an already-submitted external application or local
 process may overlap with the new owner during a partition. Submit idempotency, executor self-fencing,
-and stronger lease semantics remain tracked under **Failover Hardening** in `TODO.md`.
+and stronger lease semantics remain tracked under **Failover Hardening** in [TODO.md](../TODO.md).

@@ -1,54 +1,31 @@
-# Quick Start
+# Local backend startup
 
-1. Clone [frontend](https://github.com/itinycheng/flink-platform-frontend)
-   , [backend](https://github.com/itinycheng/flink-platform-backend) projects and start frontend
-   pages.
+The backend runs with JDK 21 and MySQL. Running a workflow also requires storage and the external
+services for its job type.
 
-   ```bash
-   # clone projects
-   git clone https://github.com/itinycheng/flink-platform-backend.git
-   git clone https://github.com/itinycheng/flink-platform-frontend.git
-
-   # enter the frontend project directory
-   cd flink-platform-frontend
-
-   # install dependency
-   npm install
-
-   # start
-   npm run dev
-   ```
-
-2. Install the mysql server and create the database and tables required for the project.  
-   SQL file: [schema.sql](sql/schema.sql)
-
-3. Modify the mysql info in the configuration
-   file `flink-platform-web/src/main/resources/application-dev.yml`, the
-   following mysql config should be modified to your actual configuration.
-
-   ```yaml
-   url: jdbc:mysql://0.0.0.0:3306/platform?allowMultiQueries=true&useUnicode=true&characterEncoding=UTF-8
-   username: root
-   password: 123456
-   ```
-
-4. Compile and start the backend project.
-   You can start the project directly in your `IntelliJ IDEA` by running the main method
-   of `PlatformWebApplication` or from the command line with command as shown bellow:
+1. Create a **new development database** and inspect [schema.sql](sql/schema.sql) before importing
+   it. The file contains Quartz tables, platform tables, and seed data, and it drops existing
+   tables. For an existing database, review [migration.sql](sql/migration.sql) and the current
+   schema instead of replaying the full schema file.
+2. Configure the `dev` profile for your machine in
+   `flink-platform-web/src/main/resources/application-dev.yml`. Check the `master_platform` MySQL
+   datasource, authentication, HTTP and gRPC ports. Configure the selected storage backend in
+   `flink-platform-storage/flink-platform-storage-base/src/main/resources/storage-dev.yml`. Keep
+   machine-specific credentials out of commits. See [configuration](configuration.md) for settings.
+3. Select JDK 21 (`mise.toml` requests it), then compile the backend and its reactor dependencies:
 
    ```bash
-   cd flink-platform-backend
-   ./mvnw clean package -DskipTests
-
-   cd flink-platform-web/target
-   nohup java -Xms4g -Xmx4g -Dspring.profiles.active=dev -jar flink-platform-web-0.0.1.jar >/dev/null 2>&1 &
+   ./mvnw -pl flink-platform-web -am compile
    ```
 
-5. Now, both frontend and backend are started.  
-   Address link: [http://localhost:9528/#/dashboard](http://localhost:9528/#/dashboard)  
-   Username and password: admin/111111
-   ![login](img/login.png)
-   ![login](img/dashboard.png)
+   The embedded legacy frontend is outside this reactor subset. The web module still copies any
+   existing `flink-platform-ui/frontend/dist` assets. This command does not build the separate
+   Runnelo UI project.
 
-These steps only start the project. Scheduling a workflow also requires a usable execution
-environment, storage backend, and datasource configuration.
+4. Start `com.flink.platform.web.PlatformWebApplication` from the IDE with the `dev` profile. The
+   checked-in dev settings use HTTP port `9104` and gRPC port `9898`. MySQL must be reachable;
+   verify storage and execution services before running workflows.
+
+The separate [Runnelo UI](https://github.com/itinycheng/runnelo-ui) has its own
+[development instructions](https://github.com/itinycheng/runnelo-ui#quick-start). Its default
+development mode uses mocks; running it does not verify backend integration.

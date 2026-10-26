@@ -1,80 +1,47 @@
-# flink-platform-web
+# Flink Platform Backend
 
-> This project is a job scheduling framework with center less structure, easy to scale up.
-> We can customize the workflow DAG and schedule it.
+A distributed platform for defining and running data workflows. It schedules DAGs through Quartz, persists definitions
+and run state in MySQL, and dispatches work across peer nodes. Supported execution paths include Flink SQL/JAR, Shell,
+and SQL tasks.
 
-[preview video](https://user-images.githubusercontent.com/14097070/181010270-af6209f5-3c77-4743-bda0-672469524e7e.mov)
+## Repository layout
 
-## Overview
+| Area                                                       | Responsibility                                                       |
+|------------------------------------------------------------|----------------------------------------------------------------------|
+| `flink-platform-web`                                       | Spring Boot API, workflow scheduling and execution, worker lifecycle |
+| `flink-platform-common`, `flink-platform-dao`              | Shared workflow models and database access                           |
+| `flink-platform-grpc`                                      | Cross-node execution contract                                        |
+| `flink-platform-storage-*`, `flink-platform-environment-*` | Storage and execution environment adapters                           |
+| `flink-sql-submit-*`, `flink-platform-udf`                 | Flink-specific submission and UDF code                               |
+| `flink-platform-ui/frontend`                               | Embedded legacy frontend                                             |
 
-1. [Quick Start](docs/startup.md)
-2. [Configuration Details](docs/configuration.md)
-3. [Architecture Design](docs/architecture.md)
+The separate [Runnelo UI](https://github.com/itinycheng/runnelo-ui) project is the current frontend development
+reference. It uses mocks while its new backend contract is being defined; its existing API shapes should not be assumed
+to match this backend.
 
-![arch](docs/img/arch_overview.png)
+## Compile
 
-- WebUI: Frontend files are in a separate project written in vue, please
-  visit [flink-platform-frontend](https://github.com/itinycheng/flink-platform-frontend).
-- Platform Instance: The instance for manage, configuration and scheduling workflow, easy to scale.
-- HDFS: Used to store resource files, such as jar, udf, etc.
-- Mysql: Holds all info about jobs, users, resources, schedules, etc. To keep the system simple, I
-  plan to use mysql to guarantee fault-tolerance.
-
-## Task Support
-
-- Flink sql/jar, deployment mode: YARN-Per-Job(tested), Other(untested).
-- Shell (tested).
-- SQL(ClickHouse/Mysql/Hive/TiDB tested).
-- Condition(tested, support: AND, OR).
-- Dependent(tested).
-
-- More: I don't have enough time to develop multi type task support, but implementing a new task
-  type is easy, sometimes you can do it yourself or tell me your needs.
-
-## Metadata
-
-| Table Name     | Description                                                    |
-|:---------------|:---------------------------------------------------------------|
-| t_alert        | Alert configuration                                            |
-| t_catalog_info | Flink catalog configuration for FlinkSQL, modify in the future |
-| t_job          | Job info                                                       |
-| t_job_flow     | Job flow info, workflow definition                             |
-| t_job_flow_run | Job flow execution instance                                    |
-| t_job_run      | Job execution instance                                         |
-| t_resource     | Resources info, such as: jar, file, etc.                       |
-| t_user         | login user info                                                |
-| t_user_session | login user session info.                                       |
-| t_worker       | Worker node instance info.                                     |
-| t_datasource   | Store datasource info, such as: clickhouse, mysql, etc.        |
-
-Refer to: [create table statements](docs/sql/schema.sql)
-
-## Build and Run
+Use JDK 21 and the Maven wrapper; `mise.toml` selects Java 21, but an existing `JAVA_HOME` may still point to another
+JDK. For a backend-only change:
 
 ```bash
-# clone the project
-git clone git@github.com:itinycheng/flink-platform-backend.git
-
-# enter the project directory
-cd flink-platform-backend
-
-# compile
-./mvnw clean package -DskipTests
-
-# start within docker
-docker-compose up -d --build
+./mvnw -pl flink-platform-web -am compile
 ```
 
-```bash
-#!/bin/sh
+This builds the web module and required reactor modules, including the configured formatting, Checkstyle, and NullAway
+checks. The embedded frontend is outside this reactor subset. For a full-reactor Java-only build, pass
+`-Dskip.frontend=true`.
 
-# hadoop conf dir of the cluster where the job running on
-export HADOOP_CONF_DIR=/data0/app/dw_hadoop/yarn-conf
+`flink-platform-common`, `flink-platform-udf`, and `flink-sql-submit-*` compile to Java 8 bytecode;
+check their POMs before using newer Java APIs.
 
-# start project
-nohup java -Xms4g -Xmx4g -jar -Dspring.profiles.active=dev flink-platform-web-0.0.1.jar >/dev/null 2>&1 &
-```
+For local setup, see [startup](docs/startup.md). The [architecture](docs/architecture.md) includes a source map for
+the main runtime paths; [configuration](docs/configuration.md) explains profiles and infrastructure settings.
+
+## AI-assisted development
+
+[AGENTS.md](AGENTS.md) defines the daily agent workflow and links the relevant coding rules and project context.
 
 ## License
 
-[Apache-2.0](LICENSE) license.
+[Apache 2.0](LICENSE)

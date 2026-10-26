@@ -1,10 +1,7 @@
 # Flow Dependency Model
 
-> **Status:** Implemented on `feature/flow-depends-on`; the open items at the end remain.
->
-> This records why flow-level `depends_on` ended up the shape it did. The feature has never
-> reached `main`, so every decision below was taken with zero production data and zero frontend
-> to stay compatible with — that freedom is not available again once it ships.
+> **Status:** Implemented on `master`; the open items at the end remain. This records the design
+> decisions made before the feature merged. Verify current behavior against `DependencyService`.
 >
 > This document describes the current latest-attempt evaluator. The proposed lifecycle, retry,
 > user-operation, and future data-period model is in
@@ -13,8 +10,8 @@
 ## Context
 
 `DependencyService` parks a job flow run in `WAITING` until its upstream flows are satisfied.
-It was written alongside, but separate from, the pre-existing `DEPENDENT` job type
-(`DependentCommandBuilder` + `DependentJob.DependentItem`), which stays untouched for backward
+It was written alongside, but separate from, the pre-existing `DEPENDENT` job type (`DependentCommandBuilder` +
+`DependentJob.DependentItem`), which stays untouched for backward
 compatibility. The two look alike and are diverging; see [Two implementations](#two-implementations).
 
 The decisions below also anticipate a stated direction for the platform: **weaken the workflow
@@ -29,13 +26,13 @@ which is what made decision 1 safe.
 `Dependency.jobId` is removed. A dependency names a `flowId` and nothing finer.
 
 Airflow (`ExternalTaskSensor` with `external_task_id`) and DolphinScheduler (`DEPENDENT_ON_TASK`)
-both support task-level dependency, so this is not an industry default — it was dropped because
-*this* implementation of it was unsound:
+both support task-level dependency, so this is not an industry default — it was dropped because *this* implementation of
+it was unsound:
 
 - The lookup was `selectLatestRunPerJob(null, jobIds)` — the job's globally latest run, across
   all flow runs. Airflow anchors to `logical_date` + `execution_delta`; DolphinScheduler to a
-  date window. There was no anchor here, so with an upstream that runs several times a day,
-  *which* flow run the matched job run belonged to was undefined.
+  date window. There was no anchor here, so with an upstream that runs several times a day, *which* flow run the matched
+  job run belonged to was undefined.
 - A job run carries no cron, so the schedule window needed a second round trip to fetch the
   containing flow run's cron. All of `UPSTREAM_SCHEDULE`'s complexity came from this.
 - It punched through the flow's encapsulation: splitting or renaming an upstream job silently
@@ -67,11 +64,11 @@ Judging against the cron snapshotted onto the run (`JobFlowRunner` copies it at 
 schedule change leaves a transition window where the decision is based on a schedule nobody
 honours any more:
 
-| Change | Snapshot behaviour | Live behaviour |
-|---|---|---|
-| daily → hourly | Last run carries `daily`; downstream treats it as current for up to 24h — **silently accepts stale data** | Next fire already due → PENDING, correctly waits for the hourly run |
-| hourly → daily | Last run carries `hourly`; next fire long past → PENDING for a whole new period, often past the downstream's own deadline | Next fire not due → SATISFIED |
-| cron cleared | Cron parsing throws and obscures the configuration error | Detected → `MISCONFIGURED` (decision 4) |
+| Change         | Snapshot behaviour                                                                                                        | Live behaviour                                                      |
+|----------------|---------------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------|
+| daily → hourly | Last run carries `daily`; downstream treats it as current for up to 24h — **silently accepts stale data**                 | Next fire already due → PENDING, correctly waits for the hourly run |
+| hourly → daily | Last run carries `hourly`; next fire long past → PENDING for a whole new period, often past the downstream's own deadline | Next fire not due → SATISFIED                                       |
+| cron cleared   | Cron parsing throws and obscures the configuration error                                                                  | Detected → `MISCONFIGURED` (decision 4)                             |
 
 `Dependency.latestCronExpr` was renamed to `flowCronExpr` because it is no longer part of the
 `latest*` group resolved from the run.
@@ -89,10 +86,10 @@ the run as invalid dependency configuration; the offending item goes to `log.war
 
 Two sources:
 
-| Source | Cases |
-|---|---|
-| **Expiry unusable** | no policy at all; `UPSTREAM_SCHEDULE` whose upstream cron is missing or unparsable; `FIXED_DURATION` whose `duration` is missing or unparsable |
-| **No accepted status** | a `*_MATCHED` condition with an empty `statuses` — it accepts nothing, so no run could ever match |
+| Source                 | Cases                                                                                                                                          |
+|------------------------|------------------------------------------------------------------------------------------------------------------------------------------------|
+| **Expiry unusable**    | no policy at all; `UPSTREAM_SCHEDULE` whose upstream cron is missing or unparsable; `FIXED_DURATION` whose `duration` is missing or unparsable |
+| **No accepted status** | a `*_MATCHED` condition with an empty `statuses` — it accepts nothing, so no run could ever match                                              |
 
 The second was added later. It had been handled as "simply never met", which is *true* but lands
 in the wrong outcome: with the default `onUnmatched = WAIT` the group stays PENDING until its
@@ -101,11 +98,11 @@ Note `*_DONE` ignores `statuses` entirely, so an empty list is legitimate there.
 
 Three situations were previously collapsed into one outcome:
 
-| Situation | Nature | Outcome |
-|---|---|---|
-| Upstream still running | runtime wait | PENDING |
-| Upstream settled on a rejected status | result mismatch | per `onUnmatched` |
-| **Item that no outcome could satisfy** | **broken configuration** | **fail at once** |
+| Situation                              | Nature                   | Outcome           |
+|----------------------------------------|--------------------------|-------------------|
+| Upstream still running                 | runtime wait             | PENDING           |
+| Upstream settled on a rejected status  | result mismatch          | per `onUnmatched` |
+| **Item that no outcome could satisfy** | **broken configuration** | **fail at once**  |
 
 Waiting on the third is pure waste — no further run is coming — and it surfaced as
 "Waiting timeout, dependencies not satisfied", pointing the investigation at the upstream's speed
@@ -118,13 +115,13 @@ that produced no result is not one. Locked by
 turns out to be wanted: drop the short-circuit and let a `MISCONFIGURED` item count as one that
 simply never meets the precondition.
 
-Note this is a *runtime* backstop. The frontend should also check at configuration time
-(see [Open items](#open-items)), but that cannot stop an upstream dropping its cron afterwards.
+Note this is a *runtime* backstop. The frontend should also check at configuration time (see [Open items](#open-items)),
+but that cannot stop an upstream dropping its cron afterwards.
 
 ### 5. A new `ExpiryPolicy` enum, not a rename of `DependentStrategy`
 
 ```java
-public enum ExpiryPolicy { UPSTREAM_SCHEDULE, FIXED_DURATION, NEVER }
+public enum ExpiryPolicy {UPSTREAM_SCHEDULE, FIXED_DURATION, NEVER}
 ```
 
 `Dependency.strategy` → `Dependency.expiry`; `DependentStrategy` is left alone for the
@@ -184,12 +181,12 @@ an exhaustive set of enum constants, so a null there is an NPE, not a fallthroug
 
 A field initialiser alone only covers the *absent* key. Three other writers exist:
 
-| Writer | Covered by field initialiser? |
-|---|---|
-| key absent (rows written before the field existed) | yes — the setter is never called |
-| `{"precondition": null}` on the wire | no — Jackson calls the setter with null |
-| `config.setPrecondition(null)` from Java | no |
-| a `@JsonCreator` constructor, if one is ever added | no, and silently so |
+| Writer                                             | Covered by field initialiser?           |
+|----------------------------------------------------|-----------------------------------------|
+| key absent (rows written before the field existed) | yes — the setter is never called        |
+| `{"precondition": null}` on the wire               | no — Jackson calls the setter with null |
+| `config.setPrecondition(null)` from Java           | no                                      |
+| a `@JsonCreator` constructor, if one is ever added | no, and silently so                     |
 
 `@JsonSetter(nulls = Nulls.SKIP)` buys the second row only. It is also the wrong layer: it makes
 a Jackson annotation the load-bearing part of an invariant that non-wire callers must hold too,
@@ -224,8 +221,8 @@ validation branch was therefore removed rather than kept alongside.
 
 ### 8. Naming
 
-Mapper methods mirror SQL (`select*`); service methods state their contract
-(`get*` non-null, `find*` nullable, `list*`, `map*` with the key in the name). Written up in
+Mapper methods mirror SQL (`select*`); service methods state their contract (`get*` non-null, `find*` nullable, `list*`,
+`map*` with the key in the name). Written up in
 CLAUDE.md under *DAO Naming Conventions*, and applied here: `selectLatestRunPerFlow`,
 `mapLatestRunByFlowId`, `listLatestLiteRunPerJob`.
 
@@ -241,16 +238,16 @@ genuinely belongs there — `JobVertex` and `ConditionJob` share it.
 
 ## Two implementations
 
-| | `DEPENDENT` job type (shipped) | Flow-level `depends_on` (this work) |
-|---|---|---|
-| Config | `DependentJob.DependentItem` | `Dependency` |
-| Evaluation | `DependentCommandBuilder` | `DependencyService` |
-| Strategy enum | `DependentStrategy` | `ExpiryPolicy` |
-| Cron source | run snapshot | **flow definition, live** |
-| Combination | AND / OR | four-way `ExecutionCondition` |
-| Result | boolean | four-valued `DependencyState` |
-| Target granularity | flow *or* job | flow only |
-| No cron | `RuntimeException` | `MISCONFIGURED` → fail + alert |
+|                    | `DEPENDENT` job type (shipped) | Flow-level `depends_on` (this work) |
+|--------------------|--------------------------------|-------------------------------------|
+| Config             | `DependentJob.DependentItem`   | `Dependency`                        |
+| Evaluation         | `DependentCommandBuilder`      | `DependencyService`                 |
+| Strategy enum      | `DependentStrategy`            | `ExpiryPolicy`                      |
+| Cron source        | run snapshot                   | **flow definition, live**           |
+| Combination        | AND / OR                       | four-way `ExecutionCondition`       |
+| Result             | boolean                        | four-valued `DependencyState`       |
+| Target granularity | flow *or* job                  | flow only                           |
+| No cron            | `RuntimeException`             | `MISCONFIGURED` → fail + alert      |
 
 The duplication is real. It is left in place because the old path is shipped and the new one is
 not, and because the old one is expected to be retired by the new one under the "job as
