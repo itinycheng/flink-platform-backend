@@ -80,8 +80,7 @@ class FlowRunDispatcherTest {
         lenient().when(workerConfig.getFlowExecThreads()).thenReturn(4);
         lenient().when(workerConfig.getFlowWaitTimeout()).thenReturn(Duration.ofHours(24));
         lenient().when(workerConfig.getFlowWaitWarningAfter()).thenReturn(Duration.ofHours(1));
-        flowScheduleService = new FlowScheduleService(
-                jobFlowService, jobFlowRunService, flowRunBizService, quartzService, workerConfig);
+        flowScheduleService = new FlowScheduleService(jobFlowService, quartzService, workerConfig);
         dispatcher = new FlowRunDispatcher(
                 workerConfig,
                 jobFlowRunService,

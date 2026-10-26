@@ -10,7 +10,7 @@
 |-----------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------|
 | Workflow definitions and manual runs    | [JobFlowController](../flink-platform-web/src/main/java/com/flink/platform/web/controller/JobFlowController.java)                                                | `JobFlowService`, `FlowScheduleService`, `QuartzService`                                                                           |
 | Workflow graph model                    | [JobFlowDag](../flink-platform-dao/src/main/java/com/flink/platform/dao/entity/JobFlowDag.java)                                                                  | [DAG](../flink-platform-common/src/main/java/com/flink/platform/common/graph/DAG.java), `JobVertex`, `JobEdge`, `JobFlowDagHelper` |
-| Scheduled run creation                  | [JobFlowRunner](../flink-platform-web/src/main/java/com/flink/platform/web/quartz/JobFlowRunner.java)                                                            | `DependencyService`, `FlowScheduleService.tryCreateFlowRun`, `JobFlowRunService`                                                   |
+| Scheduled run creation                  | [JobFlowRunner](../flink-platform-web/src/main/java/com/flink/platform/web/quartz/JobFlowRunner.java)                                                            | `FlowRunTriggerService`, `FlowRunCreationService`, `LegacyJobListService`                                                          |
 | Waiting and DAG execution               | [FlowRunDispatcher](../flink-platform-web/src/main/java/com/flink/platform/web/runner/FlowRunDispatcher.java)                                                    | `FlowExecuteThread`, `JobExecuteThread`, `JobGrpcClient`                                                                           |
 | Job submission                          | [JobGrpcServer](../flink-platform-web/src/main/java/com/flink/platform/web/grpc/JobGrpcServer.java)                                                              | `ProcessJobService`, `CommandBuilder` and `CommandExecutor` implementations                                                        |
 | Worker ownership and recovery           | [WorkerHeartbeat](../flink-platform-web/src/main/java/com/flink/platform/web/lifecycle/WorkerHeartbeat.java)                                                     | `JobFlowRunService`, `FlowRunDispatcher`                                                                                           |
@@ -23,10 +23,12 @@ source before changing a contract.
 ## Scheduling and execution
 
 `JobFlowController` starts and stops workflow schedules and accepts one-off runs.
-`FlowScheduleService` manages Quartz registration and run admission. Quartz stores its jobs in
-MySQL. When a trigger fires, `JobFlowRunner` snapshots the workflow definition and execution
-configuration into a `JobFlowRun`, evaluates dependencies, and persists the run with a worker in
-its `host` column. There is no in-memory handoff queue.
+`FlowScheduleService` manages Quartz registration and wait deadlines. `FlowRunCreationService`
+owns run creation: it snapshots the definition and execution configuration into a `JobFlowRun`,
+locks the definition, evaluates conflicts and expired waits, and inserts the run. Quartz stores its
+jobs in MySQL; when a trigger fires, `JobFlowRunner` and sub-flow commands (`FlowCommandExecutor`)
+call `FlowRunTriggerService`, which creates the run and then publishes its timeout and blocked
+alerts. There is no in-memory handoff queue.
 
 Each worker's `FlowRunDispatcher.drainAndExecute` polls for its non-terminal runs, ordered by
 priority and bounded by available executor slots. It advances waiting runs and dispatches

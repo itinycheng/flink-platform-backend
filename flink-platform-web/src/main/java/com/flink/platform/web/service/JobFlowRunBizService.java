@@ -33,12 +33,7 @@ public class JobFlowRunBizService {
 
     public @Nullable RunConflict findRunConflict(
             Long flowId, ExecutionConfig config, @Nullable LocalDateTime scheduleTime) {
-        return this.findRunConflict(flowId, config, scheduleTime, null);
-    }
-
-    public @Nullable RunConflict findRunConflict(
-            Long flowId, ExecutionConfig config, @Nullable LocalDateTime scheduleTime, @Nullable Long excludedRunId) {
-        var activeRuns = flowRunService.listActiveRuns(flowId, excludedRunId);
+        var activeRuns = flowRunService.listActiveRuns(flowId);
         return findRunConflict(config, scheduleTime, activeRuns);
     }
 

@@ -440,12 +440,13 @@ Still required after the state-machine decision:
 
 | Concern | Current location |
 |---|---|
-| Flow scheduling, transactional run creation and wait deadline | `flink-platform-web/.../service/FlowScheduleService.java` |
+| Flow scheduling and wait deadline | `flink-platform-web/.../service/FlowScheduleService.java` |
+| Run snapshot construction and transactional creation | `flink-platform-web/.../service/FlowRunCreationService.java` |
 | Quartz trigger adapter and legacy duplicate alert | `flink-platform-web/.../quartz/JobFlowRunner.java` |
 | Scheduled/run-once Quartz creation | `flink-platform-web/.../quartz/QuartzService.java` |
 | Waiting polling and deadline | `flink-platform-web/.../runner/FlowRunDispatcher.java` |
 | Non-terminal lookup and WAITING CAS | `flink-platform-dao/.../service/JobFlowRunService.java` |
 | Dependency lookup/evaluation | `DependencyService`, `JobFlowMapper#selectLatestRunPerFlow` |
 | Manual Run now | `JobFlowController#runOnce` |
-| Sub-flow schedule-time inheritance | `FlowCommandExecutor#runOnceInTransaction` |
+| Sub-flow schedule-time inheritance and synchronous creation | `FlowCommandExecutor#execCommand` |
 | Schema | `docs/sql/schema.sql`, `docs/sql/migration.sql` |

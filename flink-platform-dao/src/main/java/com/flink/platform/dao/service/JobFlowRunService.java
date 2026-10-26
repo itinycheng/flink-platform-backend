@@ -121,12 +121,11 @@ public class JobFlowRunService extends ServiceImpl<JobFlowRunMapper, JobFlowRun>
                         .eq(JobFlowRun::getStatus, fromStatus));
     }
 
-    public List<JobFlowRun> listActiveRuns(Long flowId, Long excludedRunId) {
+    public List<JobFlowRun> listActiveRuns(Long flowId) {
         return list(new QueryWrapper<JobFlowRun>()
                 .lambda()
                 .eq(JobFlowRun::getFlowId, flowId)
-                .in(JobFlowRun::getStatus, getNonTerminals())
-                .ne(excludedRunId != null, JobFlowRun::getId, excludedRunId));
+                .in(JobFlowRun::getStatus, getNonTerminals()));
     }
 
     @Transactional

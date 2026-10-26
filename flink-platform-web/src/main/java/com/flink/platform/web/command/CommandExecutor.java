@@ -26,7 +26,7 @@ public interface CommandExecutor {
         long jobRunId = command.getJobRunId();
         try {
             RUNNING_MAP.put(jobRunId, command);
-            JobCallback callback = execCommand(command);
+            var callback = execCommand(command);
             if (callback.getStatus() == KILLING) {
                 killCommand(command);
                 callback.setStatus(KILLED);

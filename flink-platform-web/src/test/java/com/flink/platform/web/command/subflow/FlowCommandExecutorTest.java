@@ -1,41 +1,32 @@
 package com.flink.platform.web.command.subflow;
 
-import com.flink.platform.dao.entity.ExecutionConfig;
 import com.flink.platform.dao.entity.JobFlow;
 import com.flink.platform.dao.entity.JobFlowRun;
 import com.flink.platform.dao.service.JobFlowRunService;
 import com.flink.platform.dao.service.JobFlowService;
 import com.flink.platform.dao.service.JobRunInfoService;
-import com.flink.platform.web.quartz.QuartzService;
-import com.flink.platform.web.service.JobFlowRunBizService;
+import com.flink.platform.web.model.FlowRunCreationResult;
+import com.flink.platform.web.service.FlowRunTriggerService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDateTime;
-import java.util.Map;
 
-import static com.flink.platform.common.constants.JobConstant.CONFIG;
-import static com.flink.platform.common.constants.JobConstant.SCHEDULE_TIME;
+import static com.flink.platform.common.enums.ExecutionStatus.FAILURE;
+import static com.flink.platform.common.enums.ExecutionStatus.WAITING;
+import static com.flink.platform.common.enums.JobFlowStatus.ONLINE;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.same;
-import static org.mockito.Mockito.doReturn;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class FlowCommandExecutorTest {
 
-    private static final LocalDateTime FIRE_TIME = LocalDateTime.of(2026, 9, 28, 10, 0);
-
-    @Mock
-    private QuartzService quartzService;
+    private static final LocalDateTime PARENT_SCHEDULE_TIME = LocalDateTime.of(2026, 10, 27, 10, 0);
 
     @Mock
     private JobFlowService jobFlowService;
@@ -44,40 +35,51 @@ class FlowCommandExecutorTest {
     private JobFlowRunService jobFlowRunService;
 
     @Mock
-    private JobFlowRunBizService flowRunBizService;
-
-    @Mock
     private JobRunInfoService jobRunService;
 
-    @Captor
-    private ArgumentCaptor<JobFlowRun> flowRunCaptor;
-
-    @Captor
-    private ArgumentCaptor<Map<String, Object>> dataCaptor;
+    @Mock
+    private FlowRunTriggerService triggerService;
 
     @InjectMocks
     private FlowCommandExecutor executor;
 
     @Test
-    void transactionReservesSubflowRunBeforeSchedulingIt() {
-        var subflow = new JobFlow();
-        subflow.setId(10L);
-        subflow.setConfig(new ExecutionConfig());
-        when(jobFlowRunService.save(any())).thenAnswer(invocation -> {
-            invocation.getArgument(0, JobFlowRun.class).setId(7L);
-            return true;
-        });
-        doReturn(true).when(quartzService).runFlowOnce(same(subflow), any());
+    void returnsCreatedChildIdAndStatusUsingParentScheduleTime() {
+        var child = runnableChild();
+        var run = new JobFlowRun();
+        run.setId(42L);
+        run.setStatus(WAITING);
+        when(jobFlowRunService.getScheduleTimeOrNow(7L)).thenReturn(PARENT_SCHEDULE_TIME);
+        when(triggerService.handle(child, PARENT_SCHEDULE_TIME)).thenReturn(FlowRunCreationResult.created(run));
 
-        var flowRunId = executor.runOnceInTransaction(subflow, new ExecutionConfig(), FIRE_TIME);
+        var callback = executor.execCommand(new FlowCommand(11L, 7L, 10L));
 
-        assertEquals(7L, flowRunId);
-        verify(jobFlowService).lockForUpdate(10L);
-        verify(jobFlowRunService).save(flowRunCaptor.capture());
-        assertEquals(FIRE_TIME, flowRunCaptor.getValue().getScheduleTime());
-        verify(quartzService).runFlowOnce(same(subflow), dataCaptor.capture());
-        var data = dataCaptor.getValue();
-        assertEquals("2026-09-28 10:00:00", data.get(SCHEDULE_TIME));
-        assertFalse(String.valueOf(data.get(CONFIG)).contains("scheduleTime"));
+        assertEquals(42L, callback.getFlowRunId());
+        assertEquals(WAITING, callback.getStatus());
+        verify(triggerService).handle(child, PARENT_SCHEDULE_TIME);
+    }
+
+    @Test
+    void blockedChildFailsParentJobWithoutChildId() {
+        var child = runnableChild();
+        var conflict = new JobFlowRun();
+        conflict.setId(41L);
+        when(jobFlowRunService.getScheduleTimeOrNow(7L)).thenReturn(PARENT_SCHEDULE_TIME);
+        when(triggerService.handle(child, PARENT_SCHEDULE_TIME))
+                .thenReturn(FlowRunCreationResult.blocked(
+                        new JobFlowRun(), conflict, "Duplicate schedule time", java.util.List.of()));
+
+        var callback = executor.execCommand(new FlowCommand(11L, 7L, 10L));
+
+        assertEquals(FAILURE, callback.getStatus());
+        assertTrue(callback.getMessage().contains("41"));
+    }
+
+    private JobFlow runnableChild() {
+        var child = new JobFlow();
+        child.setId(10L);
+        child.setStatus(ONLINE);
+        when(jobFlowService.getById(10L)).thenReturn(child);
+        return child;
     }
 }

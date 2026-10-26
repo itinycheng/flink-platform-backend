@@ -664,3 +664,19 @@ run of its can reach `WAITING`.
       starting point.
 - [ ] **New UI: `WAITING` is a new `ExecutionStatus` (code 11)** — needs a label, a colour and
       a filter entry wherever run statuses are rendered.
+
+---
+
+## Sub-flow Reference Validation
+
+`FlowCommandExecutor` fails the parent job when a `SUB_FLOW` target is missing or not
+`ONLINE`/`SCHEDULING`. Return the error when the user edits or starts the flow instead; cases and
+the run-time contract are recorded in
+[docs/design/flow-run-single-phase-creation.md](docs/design/flow-run-single-phase-creation.md#follow-up-reject-invalid-sub-flow-references-up-front).
+
+- [ ] Validate `SUB_FLOW` targets on flow save/update: existence, runnable status, workspace,
+      self-reference, and reference cycles.
+- [ ] Validate the whole DAG on `schedule/start` and `schedule/runOnce`, so a child taken offline
+      while the parent was `OFFLINE` is caught before scheduling.
+- [ ] Reject `purge` of a flow referenced by a parent DAG.
+- [ ] Decide whether a `JOB_LIST` flow is a valid sub-flow target.
