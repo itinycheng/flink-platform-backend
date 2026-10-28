@@ -5,14 +5,14 @@ import com.flink.platform.dao.entity.Dependency;
 import com.flink.platform.dao.entity.DependencyConfig;
 import com.flink.platform.dao.entity.JobFlowRun;
 import com.flink.platform.dao.service.JobFlowRunService;
-import com.flink.platform.dao.service.JobFlowService;
 import com.flink.platform.web.config.WorkerConfig;
+import com.flink.platform.web.flowrun.FlowRunBizService;
+import com.flink.platform.web.flowrun.FlowRunKillService;
+import com.flink.platform.web.flowrun.FlowRunStateService;
+import com.flink.platform.web.flowrun.FlowRunTransition;
 import com.flink.platform.web.quartz.QuartzService;
 import com.flink.platform.web.service.DependencyService;
 import com.flink.platform.web.service.DependencyService.DependencyState;
-import com.flink.platform.web.service.FlowScheduleService;
-import com.flink.platform.web.service.JobFlowRunBizService;
-import com.flink.platform.web.service.KillJobService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -54,24 +54,21 @@ class FlowRunDispatcherTest {
     private JobFlowRunService jobFlowRunService;
 
     @Mock
-    private JobFlowService jobFlowService;
-
-    @Mock
-    private JobFlowRunBizService flowRunBizService;
-
-    @Mock
     private AlertSendingService alertSendingService;
 
     @Mock
-    private KillJobService killJobService;
+    private FlowRunKillService killService;
 
     @Mock
     private DependencyService dependencyService;
 
+    @Mock
+    private FlowRunStateService stateService;
+
     /** Real: nextTriggerTimeAfter is pure cron arithmetic and never touches the scheduler. */
     private final QuartzService quartzService = new QuartzService();
 
-    private FlowScheduleService flowScheduleService;
+    private FlowRunBizService bizService;
 
     private FlowRunDispatcher dispatcher;
 
@@ -80,52 +77,15 @@ class FlowRunDispatcherTest {
         lenient().when(workerConfig.getFlowExecThreads()).thenReturn(4);
         lenient().when(workerConfig.getFlowWaitTimeout()).thenReturn(Duration.ofHours(24));
         lenient().when(workerConfig.getFlowWaitWarningAfter()).thenReturn(Duration.ofHours(1));
-        flowScheduleService = new FlowScheduleService(jobFlowService, quartzService, workerConfig);
+        bizService = new FlowRunBizService(jobFlowRunService, quartzService, workerConfig);
         dispatcher = new FlowRunDispatcher(
                 workerConfig,
                 jobFlowRunService,
+                bizService,
                 alertSendingService,
-                killJobService,
+                killService,
                 dependencyService,
-                flowScheduleService);
-    }
-
-    @Test
-    void waitNotTimedOutWithinFallbackWindow() {
-        var run = waitingRun();
-        var waitStartedAt = LocalDateTime.now().minusHours(1);
-        run.setScheduleTime(waitStartedAt);
-        setCreateTime(run, waitStartedAt);
-        assertFalse(hasWaitTimedOut(run));
-    }
-
-    @Test
-    void waitTimedOutBeyondFallbackWindow() {
-        var run = waitingRun();
-        var waitStartedAt = LocalDateTime.now().minusHours(25);
-        run.setScheduleTime(waitStartedAt);
-        setCreateTime(run, waitStartedAt);
-        assertTrue(hasWaitTimedOut(run));
-    }
-
-    @Test
-    void waitNotTimedOutBeforeNextCronFire() {
-        var run = waitingRun();
-        run.setCronExpr("0 * * * * ?"); // every minute
-        run.setScheduleTime(LocalDateTime.now().plusMinutes(1));
-        // The adjusted deadline remains in the future.
-        assertFalse(hasWaitTimedOut(run));
-    }
-
-    @Test
-    void waitTimedOutAfterNextCronFire() {
-        var run = waitingRun();
-        run.setCronExpr("0 * * * * ?"); // every minute
-        var scheduleTime = LocalDateTime.now().minusMinutes(5);
-        run.setScheduleTime(scheduleTime);
-        setCreateTime(run, scheduleTime);
-        // next fire after (now-5min) is ~4min in the past → timed out
-        assertTrue(hasWaitTimedOut(run));
+                stateService);
     }
 
     @Test
@@ -136,7 +96,7 @@ class FlowRunDispatcherTest {
 
         run.setScheduleTime(scheduleTime);
         setCreateTime(run, scheduleTime);
-        assertEquals(scheduleTime.plusMinutes(1), flowScheduleService.resolveWaitDeadline(run));
+        assertEquals(scheduleTime.plusMinutes(1), bizService.resolveWaitDeadline(run));
     }
 
     @Test
@@ -148,7 +108,7 @@ class FlowRunDispatcherTest {
         setCreateTime(run, waitStartedAt);
 
         lenient().when(workerConfig.getFlowWaitTimeout()).thenReturn(Duration.ofMinutes(30));
-        assertEquals(LocalDateTime.of(2026, 1, 10, 11, 0), flowScheduleService.resolveWaitDeadline(run));
+        assertEquals(LocalDateTime.of(2026, 1, 10, 11, 0), bizService.resolveWaitDeadline(run));
     }
 
     /**
@@ -161,7 +121,7 @@ class FlowRunDispatcherTest {
         run.setCronExpr("not-a-valid-cron");
         run.setScheduleTime(LocalDateTime.now());
         when(jobFlowRunService.listWaitingRunsOnHost()).thenReturn(List.of(run));
-        when(jobFlowRunService.updateStatusFromTo(1L, WAITING, FAILURE)).thenReturn(true);
+        when(stateService.failWaiting(1L)).thenReturn(FlowRunTransition.applied(FAILURE));
 
         dispatcher.advanceWaitingRuns();
 
@@ -185,7 +145,8 @@ class FlowRunDispatcherTest {
 
         dispatcher.advanceWaitingRuns();
 
-        verify(jobFlowRunService, never()).updateStatusFromTo(anyLong(), any(), any());
+        verify(stateService, never()).submitWaiting(anyLong());
+        verify(stateService, never()).failWaiting(anyLong());
         verify(alertSendingService, never()).sendAlertsDirectly(any(), any());
     }
 
@@ -200,7 +161,8 @@ class FlowRunDispatcherTest {
 
         dispatcher.advanceWaitingRuns();
 
-        verify(jobFlowRunService, never()).updateStatusFromTo(anyLong(), any(), any());
+        verify(stateService, never()).submitWaiting(anyLong());
+        verify(stateService, never()).failWaiting(anyLong());
     }
 
     @Test
@@ -245,7 +207,7 @@ class FlowRunDispatcherTest {
         run.setScheduleTime(waitStartedAt);
         setCreateTime(run, waitStartedAt);
         when(jobFlowRunService.listWaitingRunsOnHost()).thenReturn(List.of(run));
-        when(jobFlowRunService.updateStatusFromTo(1L, WAITING, FAILURE)).thenReturn(true);
+        when(stateService.failWaiting(1L)).thenReturn(FlowRunTransition.applied(FAILURE));
 
         dispatcher.advanceWaitingRuns();
 
@@ -255,36 +217,20 @@ class FlowRunDispatcherTest {
     }
 
     @Test
-    void expiredRunFailsBeforeItsDependencyIsEvaluated() {
-        var run = waitingRun();
-        var waitStartedAt = LocalDateTime.now().minusHours(25);
-        run.setScheduleTime(waitStartedAt);
-        setCreateTime(run, waitStartedAt);
-        when(jobFlowRunService.listWaitingRunsOnHost()).thenReturn(List.of(run));
-        when(jobFlowRunService.updateStatusFromTo(1L, WAITING, FAILURE)).thenReturn(true);
-
-        dispatcher.advanceWaitingRuns();
-
-        verify(jobFlowRunService).updateStatusFromTo(1L, WAITING, FAILURE);
-        verify(jobFlowRunService, never()).updateStatusFromTo(eq(List.of(1L)), eq(WAITING), eq(SUBMITTED));
-        verify(dependencyService, never()).evaluate(any());
-        verify(alertSendingService).sendAlerts(eq(run), any());
-    }
-
-    @Test
-    void satisfiedRunsAreAdvancedInOneConditionalBatch() {
+    void satisfiedRunsAreAdvancedOneByOne() {
         var first = waitingRun();
         var second = waitingRun();
         second.setId(2L);
         when(jobFlowRunService.listWaitingRunsOnHost()).thenReturn(List.of(first, second));
         when(dependencyService.evaluate(any())).thenReturn(DependencyState.SATISFIED);
-        when(jobFlowRunService.updateStatusFromTo(List.of(1L, 2L), WAITING, SUBMITTED))
-                .thenReturn(2);
+        when(stateService.submitWaiting(1L)).thenReturn(FlowRunTransition.applied(SUBMITTED));
+        when(stateService.submitWaiting(2L)).thenReturn(FlowRunTransition.applied(SUBMITTED));
 
         dispatcher.advanceWaitingRuns();
 
-        verify(jobFlowRunService).updateStatusFromTo(List.of(1L, 2L), WAITING, SUBMITTED);
-        verify(jobFlowRunService, never()).updateStatusFromTo(anyLong(), eq(WAITING), eq(SUBMITTED));
+        verify(stateService).submitWaiting(1L);
+        verify(stateService).submitWaiting(2L);
+        verify(stateService, never()).failWaiting(anyLong());
     }
 
     @Test
@@ -294,15 +240,14 @@ class FlowRunDispatcherTest {
         failed.setId(2L);
         when(jobFlowRunService.listWaitingRunsOnHost()).thenReturn(List.of(satisfied, failed));
         when(dependencyService.evaluate(any())).thenReturn(DependencyState.SATISFIED, DependencyState.UNSATISFIABLE);
-        when(jobFlowRunService.updateStatusFromTo(List.of(1L), WAITING, SUBMITTED))
-                .thenReturn(1);
-        when(jobFlowRunService.updateStatusFromTo(2L, WAITING, FAILURE)).thenReturn(true);
+        when(stateService.submitWaiting(1L)).thenReturn(FlowRunTransition.applied(SUBMITTED));
+        when(stateService.failWaiting(2L)).thenReturn(FlowRunTransition.applied(FAILURE));
 
         dispatcher.advanceWaitingRuns();
 
-        var ordered = inOrder(jobFlowRunService);
-        ordered.verify(jobFlowRunService).updateStatusFromTo(List.of(1L), WAITING, SUBMITTED);
-        ordered.verify(jobFlowRunService).updateStatusFromTo(2L, WAITING, FAILURE);
+        var ordered = inOrder(stateService);
+        ordered.verify(stateService).submitWaiting(1L);
+        ordered.verify(stateService).failWaiting(2L);
         verify(alertSendingService).sendAlerts(eq(failed), any());
     }
 
@@ -313,19 +258,15 @@ class FlowRunDispatcherTest {
         failed.setId(2L);
         when(jobFlowRunService.listWaitingRunsOnHost()).thenReturn(List.of(concurrentlyUpdated, failed));
         when(dependencyService.evaluate(any())).thenReturn(DependencyState.UNSATISFIABLE);
-        when(jobFlowRunService.updateStatusFromTo(1L, WAITING, FAILURE)).thenReturn(false);
-        when(jobFlowRunService.updateStatusFromTo(2L, WAITING, FAILURE)).thenReturn(true);
+        when(stateService.failWaiting(1L)).thenReturn(FlowRunTransition.rejected(WAITING));
+        when(stateService.failWaiting(2L)).thenReturn(FlowRunTransition.applied(FAILURE));
 
         dispatcher.advanceWaitingRuns();
 
-        verify(jobFlowRunService).updateStatusFromTo(1L, WAITING, FAILURE);
-        verify(jobFlowRunService).updateStatusFromTo(2L, WAITING, FAILURE);
+        verify(stateService).failWaiting(1L);
+        verify(stateService).failWaiting(2L);
+        verify(alertSendingService, never()).sendAlerts(eq(concurrentlyUpdated), any());
         verify(alertSendingService).sendAlerts(eq(failed), any());
-    }
-
-    /** Resolves whether a waiting run is currently past its deadline. */
-    private boolean hasWaitTimedOut(JobFlowRun run) {
-        return LocalDateTime.now().isAfter(flowScheduleService.resolveWaitDeadline(run));
     }
 
     private JobFlowRun waitingRun() {

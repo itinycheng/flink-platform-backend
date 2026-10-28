@@ -9,8 +9,9 @@ import com.flink.platform.dao.service.JobFlowRunService;
 import com.flink.platform.dao.util.JobFlowDagHelper;
 import com.flink.platform.web.common.SpringContext;
 import com.flink.platform.web.config.WorkerConfig;
+import com.flink.platform.web.flowrun.FlowRunKillService;
+import com.flink.platform.web.flowrun.FlowRunStateService;
 import com.flink.platform.web.lifecycle.AppRunner;
-import com.flink.platform.web.service.KillJobService;
 import com.flink.platform.web.util.ThreadUtil;
 import lombok.extern.slf4j.Slf4j;
 
@@ -22,20 +23,24 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Semaphore;
 
 import static com.flink.platform.common.constants.Constant.HOST_IP;
+import static com.flink.platform.common.enums.ExecutionStatus.KILLED;
 import static com.flink.platform.common.enums.ExecutionStatus.RUNNING;
+import static com.flink.platform.web.flowrun.FlowRunTransition.Outcome.APPLIED;
 import static com.flink.platform.web.util.ThreadUtil.FIVE_SECOND_MILLIS;
 
 /** Process flow in a separate thread. */
 @Slf4j
 public class FlowExecuteThread implements Runnable {
 
-    private static final ExecutorService jobExecService = ThreadUtil.newVirtualThreadExecutor("JobExecuteThread");
+    private static final ExecutorService jobExecService = ThreadUtil.newVirtualThreadExecutor("job-exec");
 
     private final JobFlowRunService jobFlowRunService = SpringContext.getBean(JobFlowRunService.class);
 
     private final AlertSendingService alertSendingService = SpringContext.getBean(AlertSendingService.class);
 
-    private final KillJobService killJobService = SpringContext.getBean(KillJobService.class);
+    private final FlowRunKillService killService = SpringContext.getBean(FlowRunKillService.class);
+
+    private final FlowRunStateService stateService = SpringContext.getBean(FlowRunStateService.class);
 
     private final FlowRunDispatcher flowRunDispatcher = SpringContext.getBean(FlowRunDispatcher.class);
 
@@ -67,17 +72,9 @@ public class FlowExecuteThread implements Runnable {
     }
 
     private void execute() {
-        // Update jobFlowRun.
-        var newJobFlowRun = new JobFlowRun();
-        newJobFlowRun.setId(jobFlowRun.getId());
-        newJobFlowRun.setStatus(RUNNING);
-        if (jobFlowRun.getStartTime() == null) {
-            var startTime = LocalDateTime.now();
-            jobFlowRun.setStartTime(startTime);
-            newJobFlowRun.setStartTime(startTime);
+        if (!claimOrResumeExecution()) {
+            return;
         }
-        jobFlowRunService.updateById(newJobFlowRun);
-        jobFlowRun.setStatus(RUNNING);
 
         // Process job flow.
         log.info("Start scheduling job flow: {}", jobFlowRun.getId());
@@ -119,11 +116,29 @@ public class FlowExecuteThread implements Runnable {
                 .join();
     }
 
+    private boolean claimOrResumeExecution() {
+        return switch (jobFlowRun.getStatus()) {
+            case SUBMITTED -> claimSubmittedRun();
+            case RUNNING -> canResumeRunning();
+            default -> false;
+        };
+    }
+
+    private boolean claimSubmittedRun() {
+        if (stateService.startRunning(jobFlowRun.getId(), HOST_IP).outcome() != APPLIED) {
+            return false;
+        }
+        jobFlowRun.setStatus(RUNNING);
+        jobFlowRun.setStartTime(LocalDateTime.now());
+        return true;
+    }
+
     private void handleTimeout(TimeoutStrategy[] strategies) {
         for (var strategy : strategies) {
             switch (strategy) {
                 case ALARM -> alertSendingService.sendAlertsDirectly(jobFlowRun, "execution timeout");
-                case FAILURE -> killJobService.killFlowRun(jobFlowRun.getId());
+                // Timeout is run-wide; a former owner may request durable kill intent after handoff.
+                case FAILURE -> killService.requestKill(jobFlowRun.getId());
             }
         }
     }
@@ -131,12 +146,19 @@ public class FlowExecuteThread implements Runnable {
     /** Update status of jobFlow and send notification. */
     private void completeAndNotify(JobFlowDag flow) {
         var finalStatus = JobFlowDagHelper.getFinalStatus(flow);
+        // Durable kill confirmation belongs to kill orchestration.
+        if (finalStatus == KILLED) {
+            killService.requestKill(jobFlowRun.getId(), HOST_IP);
+            return;
+        }
+        if (stateService
+                        .completeRunning(jobFlowRun.getId(), HOST_IP, finalStatus)
+                        .outcome()
+                != APPLIED) {
+            return;
+        }
         jobFlowRun.setStatus(finalStatus);
-        var newJobFlowRun = new JobFlowRun();
-        newJobFlowRun.setId(jobFlowRun.getId());
-        newJobFlowRun.setEndTime(LocalDateTime.now());
-        newJobFlowRun.setStatus(finalStatus);
-        jobFlowRunService.updateById(newJobFlowRun);
+        jobFlowRun.setEndTime(LocalDateTime.now());
 
         // send notification.
         alertSendingService.sendAlerts(jobFlowRun);
@@ -174,6 +196,11 @@ public class FlowExecuteThread implements Runnable {
                 execVertex(nextVertex, flow);
             }
         }
+    }
+
+    private boolean canResumeRunning() {
+        var flowRun = jobFlowRunService.getLiteById(jobFlowRun.getId());
+        return flowRun != null && flowRun.getStatus() == RUNNING && HOST_IP.equals(flowRun.getHost());
     }
 
     private boolean ownedByAnotherWorker() {

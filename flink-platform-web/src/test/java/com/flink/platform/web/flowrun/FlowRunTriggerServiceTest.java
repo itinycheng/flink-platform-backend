@@ -1,11 +1,14 @@
-package com.flink.platform.web.service;
+package com.flink.platform.web.flowrun;
 
+import com.flink.platform.alert.AlertSendingService;
 import com.flink.platform.dao.entity.ExecutionConfig;
 import com.flink.platform.dao.entity.JobFlow;
 import com.flink.platform.dao.entity.JobFlowRun;
 import com.flink.platform.dao.service.JobFlowRunService;
 import com.flink.platform.dao.service.JobFlowService;
 import com.flink.platform.web.config.WorkerConfig;
+import com.flink.platform.web.quartz.QuartzService;
+import com.flink.platform.web.service.DependencyService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -21,19 +24,21 @@ import static com.flink.platform.common.enums.ExecutionStatus.RUNNING;
 import static com.flink.platform.common.enums.ExecutionStatus.SUBMITTED;
 import static com.flink.platform.common.enums.ExecutionStatus.WAITING;
 import static com.flink.platform.common.enums.JobFlowType.JOB_FLOW;
-import static com.flink.platform.web.model.FlowRunCreationResult.State.BLOCKED;
-import static com.flink.platform.web.model.FlowRunCreationResult.State.CREATED;
+import static com.flink.platform.web.flowrun.FlowRunCreationResult.State.BLOCKED;
+import static com.flink.platform.web.flowrun.FlowRunCreationResult.State.CREATED;
 import static com.flink.platform.web.service.DependencyService.DependencyState.SATISFIED;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-class FlowRunCreationServiceTest {
+class FlowRunTriggerServiceTest {
 
     private static final LocalDateTime SCHEDULE_TIME = LocalDateTime.of(2026, 10, 27, 10, 0);
 
@@ -44,7 +49,7 @@ class FlowRunCreationServiceTest {
     private JobFlowRunService jobFlowRunService;
 
     @Mock
-    private FlowScheduleService flowScheduleService;
+    private FlowRunStateService stateService;
 
     @Mock
     private DependencyService dependencyService;
@@ -52,7 +57,12 @@ class FlowRunCreationServiceTest {
     @Mock
     private LegacyJobListService legacyJobListService;
 
-    private FlowRunCreationService service;
+    @Mock
+    private AlertSendingService alertSendingService;
+
+    private FlowRunTriggerService service;
+
+    private FlowRunBizService bizService;
 
     private JobFlow flow;
 
@@ -62,14 +72,11 @@ class FlowRunCreationServiceTest {
         workerConfig.setPerFlowExecThreads(5);
         workerConfig.setMaxPerFlowExecThreads(10);
         workerConfig.setMaxActiveRunsPerFlow(10);
-        service = new FlowRunCreationService(
-                jobFlowService,
-                jobFlowRunService,
-                new JobFlowRunBizService(jobFlowRunService, workerConfig),
-                flowScheduleService,
-                workerConfig,
-                dependencyService,
-                legacyJobListService);
+        bizService = spy(new FlowRunBizService(jobFlowRunService, new QuartzService(), workerConfig));
+        var transactionService = new FlowRunCreationService.TransactionService(
+                jobFlowService, jobFlowRunService, bizService, stateService);
+        var creationService = new FlowRunCreationService(transactionService, legacyJobListService);
+        service = new FlowRunTriggerService(workerConfig, dependencyService, alertSendingService, creationService);
 
         flow = new JobFlow();
         flow.setId(10L);
@@ -87,6 +94,7 @@ class FlowRunCreationServiceTest {
         flow.setConfig(flowConfig);
         var override = new ExecutionConfig();
         override.setMaxActiveRuns(3);
+        when(jobFlowService.lockForUpdate(10L)).thenReturn(flow);
         when(dependencyService.resolveAndEvaluate(null)).thenReturn(SATISFIED);
         when(jobFlowRunService.listActiveRuns(10L)).thenReturn(List.of());
         when(jobFlowRunService.save(any())).thenAnswer(invocation -> {
@@ -95,7 +103,7 @@ class FlowRunCreationServiceTest {
             return true;
         });
 
-        var result = service.tryCreateFlowRun(flow, override, 21L, SCHEDULE_TIME);
+        var result = service.handle(flow, override, 21L, SCHEDULE_TIME);
 
         assertEquals(CREATED, result.state());
         assertEquals(42L, result.run().getId());
@@ -115,9 +123,10 @@ class FlowRunCreationServiceTest {
         active.setStatus(RUNNING);
         active.setScheduleTime(SCHEDULE_TIME);
         active.setConfig(new ExecutionConfig());
+        when(jobFlowService.lockForUpdate(10L)).thenReturn(flow);
         when(jobFlowRunService.listActiveRuns(10L)).thenReturn(List.of(active));
 
-        var result = service.tryCreateFlowRun(flow, null, null, SCHEDULE_TIME);
+        var result = service.handle(flow, null, null, SCHEDULE_TIME);
 
         assertEquals(BLOCKED, result.state());
         assertSame(active, result.blockOn());
@@ -130,12 +139,13 @@ class FlowRunCreationServiceTest {
         expired.setId(41L);
         expired.setStatus(WAITING);
         ReflectionTestUtils.setField(expired, "createTime", SCHEDULE_TIME.minusHours(2));
+        when(jobFlowService.lockForUpdate(10L)).thenReturn(flow);
         when(jobFlowRunService.listActiveRuns(10L)).thenReturn(List.of(expired));
-        when(flowScheduleService.resolveWaitDeadline(expired)).thenReturn(SCHEDULE_TIME.minusHours(1));
-        when(jobFlowRunService.updateStatusFromTo(41L, WAITING, FAILURE)).thenReturn(true);
+        doReturn(SCHEDULE_TIME.minusHours(1)).when(bizService).resolveWaitDeadline(expired);
+        when(stateService.failWaiting(41L)).thenReturn(FlowRunTransition.applied(FAILURE));
         when(jobFlowRunService.save(any())).thenReturn(true);
 
-        var result = service.tryCreateFlowRun(flow, null, null, SCHEDULE_TIME);
+        var result = service.handle(flow, null, null, SCHEDULE_TIME);
 
         assertEquals(CREATED, result.state());
         assertEquals(FAILURE, expired.getStatus());
@@ -143,5 +153,29 @@ class FlowRunCreationServiceTest {
         assertSame(expired, result.timeouts().getFirst().run());
         assertTrue(result.timeouts().getFirst().reason().startsWith("Waiting timeout"));
         verify(jobFlowRunService).save(result.run());
+    }
+
+    @Test
+    void waitingRunClaimedByDispatcherBlocksTheNewRun() {
+        var expired = new JobFlowRun();
+        expired.setId(41L);
+        expired.setStatus(WAITING);
+        expired.setScheduleTime(SCHEDULE_TIME);
+        ReflectionTestUtils.setField(expired, "createTime", SCHEDULE_TIME.minusHours(2));
+        var claimed = new JobFlowRun();
+        claimed.setId(41L);
+        claimed.setStatus(SUBMITTED);
+        claimed.setScheduleTime(SCHEDULE_TIME);
+        claimed.setConfig(new ExecutionConfig());
+        when(jobFlowService.lockForUpdate(10L)).thenReturn(flow);
+        when(jobFlowRunService.listActiveRuns(10L)).thenReturn(List.of(expired), List.of(claimed));
+        doReturn(SCHEDULE_TIME.minusHours(1)).when(bizService).resolveWaitDeadline(expired);
+        when(stateService.failWaiting(41L)).thenReturn(FlowRunTransition.rejected(SUBMITTED));
+
+        var result = service.handle(flow, null, null, SCHEDULE_TIME);
+
+        assertEquals(BLOCKED, result.state());
+        assertSame(claimed, result.blockOn());
+        verify(jobFlowRunService, never()).save(any());
     }
 }

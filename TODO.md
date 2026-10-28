@@ -207,6 +207,11 @@ fault-tolerance re-dispatch) do, but stays MySQL-only / no ZooKeeper / no new sc
 
 ### Deferred work (ROI order)
 
+- [ ] **P2 · Conditional host reassignment (fence).** `WorkerHeartbeat.reassignFlowRunsOf` scans
+      non-terminal runs and then rewrites `host` with an unconditional `updateBatchById`. A run that
+      completed, was killed, or was re-claimed between the scan and the write can still be moved.
+      Add `updateHostsIfOwnedBy(ids, expectedHost, targetHost, expectedStatuses)` and only count
+      rows the CAS actually updated. Deferred to follow-up work after this state-machine migration.
 - [ ] **P2 · Submit idempotency guard (no schema, no timer).** In `ProcessJobService.processJob` /
       `CommandExecutor.exec`: if `jobRunId` already in `RUNNING_MAP`, or the job_run already has an app_id /
       is already RUNNING → do NOT resubmit, attach/return instead. `RUNNING_MAP.put` currently overwrites
@@ -261,6 +266,72 @@ fault-tolerance re-dispatch) do, but stays MySQL-only / no ZooKeeper / no new sc
 - **True exactly-once needs resource-layer fencing** (deterministic Flink jobName / dedup key so the
   cluster rejects duplicates). DB-only can guarantee "orchestration not duplicated / job_run not
   re-created", not the one submit a partitioned node makes without touching the DB.
+
+---
+
+## Job Launch Claim — Uncertain Submit
+
+Follow-up after the flow-run state-machine work. `ProcessJobService.processJob` submits in step 4
+(`exec(command)`) and writes the result only in step 5 with an unconditional `updateById`, so the
+job-run row stays `CREATED` for the whole submit. If the gRPC call fails (no stub deadline, worker
+crash, step 5's DB write failure, or a lost reply), two things can happen:
+
+- `JobExecuteThread` reads `CREATED`, applies `LOCAL_ERROR` (`CREATED → ERROR`) and retries with a
+  **new** job run while the first remote Flink job may already be running.
+- A late step-5 write can overwrite the flow-side `ERROR` back to `SUBMITTED` on the old row, so the
+  old remote job ends up untracked but keeps running.
+
+The `processRemoteJob` catch has been removed (unified into the `callOnce` catch), which accepts one
+`retryInterval` of delay before polling resumes after a lost reply. That trade-off is settled; the
+ordering below is not.
+
+- [ ] Persist the launch claim (`SUBMITTED`) before `exec`, so the flow side can tell "claimed" from
+      "not claimed".
+- [ ] Make the step-5 write conditional on the claim; a late worker write must not resurrect a row
+      the flow side has already failed.
+- [ ] Settle an uncertain claim by querying the worker (the former `JobRunLaunchService.settlePending`
+      / `recoverStaleLaunch` idea) instead of failing it locally.
+- [ ] **P2 · Preserve active job runs across transient reads.** This predates the state machine:
+      if `JobExecuteThread.callOnce` cannot read an existing `SUBMITTED`/`RUNNING` run, its local
+      status becomes `ERROR` and a configured retry may create a second run. After migration,
+      retry the read without consuming job retries or losing the active run id.
+
+Code anchors: `ProcessJobService.processJob` — the `buildCommand` call, the `exec(command)` submit,
+and the `jobRunInfoService.updateById` that persists the result; `JobExecuteThread.processRemoteJob`;
+`JobExecuteThread.StatusUpdate.LOCAL_ERROR`.
+
+Related: [transient DB failure handling](docs/design/transient-db-failure-handling.md),
+[flow-run state machine](docs/design/flow-run-state-machine.md), and the "Persist app_id ASAP" item
+under Failover Hardening.
+
+---
+
+## Job Status Polling — Fixed 5s Interval
+
+`JobExecuteThread.updateAndWaitForComplete` polls the worker via `getJobStatus` every
+`FIVE_SECOND_MILLIS` (5s), independent of job duration; `FlowExecuteThread` waits on the same
+constant for its DAG loop. Consequences:
+
+- Short jobs: completion is observed up to 5s late per vertex, so a DAG of quick jobs pays that
+  latency at every step.
+- Long jobs: a multi-hour run issues thousands of status RPCs and INFO log lines it does not need
+  (the conditional update is skipped when the status is unchanged, so the cost is RPC + logging,
+  not a DB write per poll); multiplied by concurrent jobs this is steady background load.
+- No per-job or per-job-type tuning, and no backoff once a job has been running for a while.
+
+Not a correctness issue: the worker's status remains the source of truth, and kill goes to the
+worker directly (`KillJobService`), so the interval only affects convergence latency and load.
+
+- [ ] Choose the mechanism: adaptive backoff (e.g. 1s → 30s cap, reset on status change),
+      per-job/per-type configuration, or worker push with polling as the fallback.
+- [ ] Keep a short interval right after submit and after each observed state change so fast jobs
+      stay responsive.
+- [ ] Keep the wait loop responsive to flow kill and shutdown while sleeping.
+- [ ] Decide whether `FlowExecuteThread`'s 5s DAG wait loop shares the same knob or stays separate.
+
+Code anchors: `JobExecuteThread.updateAndWaitForComplete` — the
+`ThreadUtil.sleep(FIVE_SECOND_MILLIS)` after each `getJobStatus`; `FlowExecuteThread.execute` — the
+`ThreadUtil.safeSleep(FIVE_SECOND_MILLIS)` DAG wait loop.
 
 ---
 
@@ -485,11 +556,14 @@ constant and build the array from it so the two can't drift again.
 ## Alerting Strategy — Remaining Work
 
 Flow-level `depends_on` parks runs in `WAITING`. Waiting is bounded by
-`FlowScheduleService#resolveWaitDeadline`, and a minimal delayed warning is implemented; the
+`FlowRunBizService#resolveWaitDeadline`, and a minimal delayed warning is implemented; the
 remaining work is about richer diagnostics, user-defined policy and delivery governance.
 
 See design: [docs/design/alerting-strategy.md](docs/design/alerting-strategy.md)
 
+- [ ] **P1 · Restore `KILLED` alerts after the state-machine migration.**
+      `FlowRunKillService` finalizes kills without notifying. Publish one terminal alert from the
+      winning transition when alerting is unified.
 - [ ] **Structured dependency diagnostics** — distinguish no upstream run, still running,
       expired result, and settled-but-unmatched status. The last case currently collapses back to
       `PENDING` under the default `onUnmatched=WAIT`, so a settled failure is later reported as a
@@ -552,15 +626,17 @@ See design:
 
 ### Admission and state-machine follow-ups
 
-Flow-run admission now takes a flow-row lock and atomically replaces an expired `WAITING` run when
-its `WAITING → FAILURE` CAS succeeds. If the dispatcher changes that run after the admission
-snapshot but before the CAS, admission deliberately fails fast and does not create the candidate.
-Resolving that race requires an explicit lifecycle state-machine decision rather than an ad-hoc
-retry inside the current service.
+- [ ] **P1 · Close the generic flow-run update bypass.** `/jobFlowRun/update` still passes a
+      partial `JobFlowRun` to `updateById`, so callers can write lifecycle status and timestamps
+      without a state transition. Allow only editable metadata; route legacy `{status: KILLED}`
+      through a permission-checked operation rather than a controller self-call.
+- [ ] **P2 · Fair KILLING cleanup scan.** `listKillingRunsOnHost` orders by id and takes a fixed
+      limit. If the first batch repeatedly fails and leaves `inFlightCleanups`, every scan selects
+      it again and later runs never get cleanup. Add a cursor or retry backoff before limiting.
+- [ ] **P3 · Delay parent kill completion for `SUB_FLOW`.** `FlowCommandExecutor.killCommand`
+      requests child cancellation, but `KillJobService` can mark its parent-side job run `KILLED`
+      while the child flow remains `KILLING`. Resolve this with the job-run kill redesign.
 
-- [ ] **Handle WAITING CAS loss in the lifecycle state machine.** Distinguish dispatcher advance,
-      dispatcher failure and user kill, then decide whether the candidate should be blocked,
-      created or cancelled. Preserve single-winner timeout alerting.
 - [ ] **Add a DB-backed two-worker admission test.** Unit tests verify that every admission takes
       the flow-row lock, but a real MySQL concurrency test is still needed to prove the lock and
       transaction boundary together. Do not rely on `JobFlowRunner`'s JVM-local `synchronized` map.

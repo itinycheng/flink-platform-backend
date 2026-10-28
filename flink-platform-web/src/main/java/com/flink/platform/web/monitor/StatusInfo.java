@@ -22,10 +22,11 @@ public class StatusInfo {
 
     private Long endTime;
 
-    public LocalDateTime toEndTime() {
-        if (endTime == null || endTime == 0) {
-            return null;
+    public LocalDateTime getEndTimeOrNow() {
+        if (endTime == null || endTime <= 0) {
+            return LocalDateTime.now();
         }
+
         return toLocalDateTime(endTime);
     }
 

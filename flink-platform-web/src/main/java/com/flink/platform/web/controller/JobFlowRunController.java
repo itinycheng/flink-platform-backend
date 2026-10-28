@@ -11,7 +11,7 @@ import com.flink.platform.dao.service.JobFlowRunService;
 import com.flink.platform.web.annotation.RequirePermission;
 import com.flink.platform.web.dto.ResultInfo;
 import com.flink.platform.web.dto.request.JobFlowRunRequest;
-import com.flink.platform.web.service.KillJobService;
+import com.flink.platform.web.flowrun.FlowRunKillService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -28,6 +28,8 @@ import org.springframework.web.bind.annotation.RestController;
 import java.time.LocalDateTime;
 
 import static com.flink.platform.common.enums.EntityType.FLOW_RUN;
+import static com.flink.platform.common.enums.ExecutionStatus.KILLED;
+import static com.flink.platform.common.enums.ExecutionStatus.KILLING;
 import static com.flink.platform.common.enums.Permission.TASK_EDIT;
 import static com.flink.platform.common.enums.Permission.TASK_EXEC;
 import static com.flink.platform.common.enums.Permission.TASK_VIEW;
@@ -49,7 +51,7 @@ public class JobFlowRunController {
 
     private final JobFlowRunService jobFlowRunService;
 
-    private final KillJobService killJobService;
+    private final FlowRunKillService killService;
 
     @RequirePermission(TASK_VIEW)
     @GetMapping(value = "/get/{flowRunId}")
@@ -59,19 +61,25 @@ public class JobFlowRunController {
     }
 
     @RequirePermission(TASK_EDIT)
+    @Auditable(type = FLOW_RUN, operation = OperationType.UPDATE)
     @PostMapping(value = "/update")
-    public ResultInfo<Long> update(@RequestBody JobFlowRunRequest flowRunRequest) {
-        var errorMsg = flowRunRequest.validateOnUpdate();
+    public ResultInfo<Long> update(@RequestBody JobFlowRunRequest request) {
+        var errorMsg = request.validateOnUpdate();
         if (StringUtils.isNotBlank(errorMsg)) {
             return failure(ERROR_PARAMETER, errorMsg);
         }
 
-        flowRunRequest.setFlow(null);
-        flowRunRequest.setFlowId(null);
-        flowRunRequest.setUserId(null);
-        flowRunRequest.setCronExpr(null);
-        jobFlowRunService.updateById(flowRunRequest.getJobFlowRun());
-        return success(flowRunRequest.getId());
+        // TODO: Audit legacy KILLED updates as KILL; this self-call bypasses forceKilled's audit aspect.
+        if (request.getStatus() == KILLED) {
+            return forceKilled(request.getId());
+        }
+
+        request.setFlow(null);
+        request.setFlowId(null);
+        request.setUserId(null);
+        request.setCronExpr(null);
+        jobFlowRunService.updateById(request.getJobFlowRun());
+        return success(request.getId());
     }
 
     @RequirePermission(TASK_VIEW)
@@ -111,13 +119,33 @@ public class JobFlowRunController {
     @Auditable(type = FLOW_RUN, operation = OperationType.KILL, auditOnFailure = true)
     @GetMapping(value = "/kill/{flowRunId}")
     public ResultInfo<Long> kill(@PathVariable Long flowRunId) {
-        var jobFlowRun = jobFlowRunService.getById(flowRunId);
-        var status = jobFlowRun.getStatus();
-        if (status != null && status.isTerminalState()) {
-            return failure(FLOW_ALREADY_TERMINATED);
+        var transition = killService.requestKill(flowRunId);
+        var status = transition.status();
+        if (status == KILLING || status == KILLED) {
+            return success(flowRunId);
         }
 
-        var isSuccess = killJobService.killFlowRun(flowRunId);
-        return isSuccess ? success(flowRunId) : failure(KILL_FLOW_EXCEPTION_FOUND);
+        return status != null && status.isTerminalState()
+                ? failure(FLOW_ALREADY_TERMINATED)
+                : failure(KILL_FLOW_EXCEPTION_FOUND);
+    }
+
+    @RequirePermission(TASK_EXEC)
+    @Auditable(type = FLOW_RUN, operation = OperationType.KILL, auditOnFailure = true)
+    @PostMapping(value = "/force-killed/{flowRunId}")
+    public ResultInfo<Long> forceKilled(@PathVariable Long flowRunId) {
+        if (flowRunId == null || flowRunId <= 0) {
+            return failure(ERROR_PARAMETER);
+        }
+
+        var transition = killService.forceKilled(flowRunId);
+        var status = transition.status();
+        if (status == KILLED) {
+            return success(flowRunId);
+        }
+
+        return status != null && status.isTerminalState()
+                ? failure(FLOW_ALREADY_TERMINATED)
+                : failure(KILL_FLOW_EXCEPTION_FOUND);
     }
 }

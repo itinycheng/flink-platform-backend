@@ -23,7 +23,7 @@ class ExecutionStatusTest {
         assertFalse(ExecutionStatus.KILLING.isTerminalState());
         assertTrue(ExecutionStatus.KILLING.isTransient());
         // Must remain in NON_TERMINALS so recovery / kill queries keep matching it.
-        assertTrue(ExecutionStatus.getNonTerminals().contains(ExecutionStatus.KILLING));
+        assertTrue(ExecutionStatus.getUnfinishedStatuses().contains(ExecutionStatus.KILLING));
     }
 
     @Test

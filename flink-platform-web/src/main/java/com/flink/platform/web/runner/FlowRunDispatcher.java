@@ -1,15 +1,16 @@
 package com.flink.platform.web.runner;
 
 import com.flink.platform.alert.AlertSendingService;
-import com.flink.platform.common.util.ExceptionUtil;
 import com.flink.platform.dao.entity.JobFlowRun;
 import com.flink.platform.dao.service.JobFlowRunService;
 import com.flink.platform.web.config.WorkerConfig;
+import com.flink.platform.web.flowrun.FlowRunBizService;
+import com.flink.platform.web.flowrun.FlowRunKillService;
+import com.flink.platform.web.flowrun.FlowRunStateService;
 import com.flink.platform.web.lifecycle.AppRunner;
 import com.flink.platform.web.service.DependencyService;
-import com.flink.platform.web.service.FlowScheduleService;
-import com.flink.platform.web.service.KillJobService;
 import com.flink.platform.web.util.ThreadUtil;
+import jakarta.annotation.PreDestroy;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,14 +26,15 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ThreadPoolExecutor;
 
 import static com.flink.platform.common.constants.Constant.SEMICOLON;
 import static com.flink.platform.common.enums.ExecutionStatus.FAILURE;
 import static com.flink.platform.common.enums.ExecutionStatus.KILLING;
-import static com.flink.platform.common.enums.ExecutionStatus.SUBMITTED;
-import static com.flink.platform.common.enums.ExecutionStatus.WAITING;
 import static com.flink.platform.common.util.DurationUtil.humanizeDuration;
+import static com.flink.platform.common.util.ExceptionUtil.runWithErrorLogging;
+import static com.flink.platform.web.flowrun.FlowRunTransition.Outcome.APPLIED;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static java.util.stream.Collectors.joining;
 
@@ -45,36 +47,44 @@ public class FlowRunDispatcher {
 
     private final JobFlowRunService jobFlowRunService;
 
+    private final FlowRunBizService flowRunBizService;
+
     private final AlertSendingService alertSendingService;
 
-    private final KillJobService killJobService;
+    private final FlowRunKillService killService;
 
     private final DependencyService dependencyService;
 
-    private final FlowScheduleService flowScheduleService;
+    private final FlowRunStateService stateService;
 
     private final ThreadPoolExecutor flowExecService;
+
+    private final ExecutorService cleanupExecutor;
 
     private final Map<Long, JobFlowRun> inFlightFlowRuns = new ConcurrentHashMap<>();
 
     private final Set<Long> warnedWaitingRuns = ConcurrentHashMap.newKeySet();
 
+    private final Set<Long> inFlightCleanups = ConcurrentHashMap.newKeySet();
+
     @Autowired
     public FlowRunDispatcher(
             WorkerConfig workerConfig,
             JobFlowRunService jobFlowRunService,
+            FlowRunBizService flowRunBizService,
             AlertSendingService alertSendingService,
-            KillJobService killJobService,
+            FlowRunKillService killService,
             DependencyService dependencyService,
-            FlowScheduleService flowScheduleService) {
+            FlowRunStateService stateService) {
         this.workerConfig = workerConfig;
         this.jobFlowRunService = jobFlowRunService;
+        this.flowRunBizService = flowRunBizService;
         this.alertSendingService = alertSendingService;
-        this.killJobService = killJobService;
+        this.killService = killService;
         this.dependencyService = dependencyService;
-        this.flowScheduleService = flowScheduleService;
-        this.flowExecService =
-                ThreadUtil.newFixedVirtualThreadExecutor("FlowExecThread", workerConfig.getFlowExecThreads());
+        this.stateService = stateService;
+        this.flowExecService = ThreadUtil.newFixedVirtualThreadExecutor("flow-exec", workerConfig.getFlowExecThreads());
+        this.cleanupExecutor = ThreadUtil.newVirtualThreadExecutor("flow-kill");
     }
 
     @Scheduled(fixedDelay = 2, timeUnit = SECONDS)
@@ -83,15 +93,21 @@ public class FlowRunDispatcher {
             return;
         }
 
+        // calculate available slot.
         var freeSlots = workerConfig.getFlowExecThreads() - inFlightFlowRuns.size();
+        // clean up flow runs with KILLING status in separate threads.
+        runWithErrorLogging("Failed to scan flow runs awaiting kill cleanup", () -> jobFlowRunService
+                .listKillingRunsOnHost(inFlightCleanups, Math.max(freeSlots, 10))
+                .forEach(this::submitCleanup));
+
         if (freeSlots <= 0) {
             return;
         }
 
         // TODO: when a host owns many non-terminal runs, the following can get costly.
-        var inFlight = new HashSet<>(inFlightFlowRuns.keySet());
-        ExceptionUtil.runWithErrorLogging("Failed to drain job flow runs for execution.", () -> jobFlowRunService
-                .listExecutableRunsOnHost(inFlight, freeSlots)
+        var inFlightRuns = new HashSet<>(inFlightFlowRuns.keySet());
+        runWithErrorLogging("Failed to drain job flow runs for execution", () -> jobFlowRunService
+                .listExecutableRunsOnHost(inFlightRuns, freeSlots)
                 .forEach(this::submitToExecutor));
     }
 
@@ -115,18 +131,18 @@ public class FlowRunDispatcher {
                 .toList();
         dependencyService.populateLatestExecutions(depConfigs);
 
-        var readyIds = new ArrayList<Long>();
+        var readyRuns = new ArrayList<JobFlowRun>();
         var failures = new ArrayList<WaitingFailure>();
         var warnings = new ArrayList<WaitingWarning>();
         for (var waiting : waitingRuns) {
             try {
-                var deadline = flowScheduleService.resolveWaitDeadline(waiting);
+                var deadline = flowRunBizService.resolveWaitDeadline(waiting);
                 if (collectTimeoutFailure(waiting, deadline, failures)) {
                     continue;
                 }
 
                 switch (dependencyService.evaluate(waiting.getDependsOn())) {
-                    case SATISFIED -> readyIds.add(waiting.getId());
+                    case SATISFIED -> readyRuns.add(waiting);
                     case UNSATISFIABLE -> failures.add(new WaitingFailure(waiting, "Upstream status not accepted"));
                     case MISCONFIGURED -> failures.add(new WaitingFailure(waiting, "Invalid dependency configuration"));
                     case PENDING -> collectPendingActions(waiting, deadline, failures, warnings);
@@ -138,7 +154,7 @@ public class FlowRunDispatcher {
             }
         }
 
-        advanceWaitingFlowRuns(readyIds);
+        advanceWaitingFlowRuns(readyRuns);
         failWaitingFlowRuns(failures);
         sendWaitingWarnings(warnings);
     }
@@ -151,9 +167,37 @@ public class FlowRunDispatcher {
         return new ArrayList<>(inFlightFlowRuns.values());
     }
 
+    @PreDestroy
+    public void close() {
+        cleanupExecutor.shutdownNow();
+        flowExecService.shutdownNow();
+    }
+
     // ====================================================
     // ====================== private =====================
     // ====================================================
+
+    private void submitCleanup(JobFlowRun run) {
+        var id = run.getId();
+        if (!inFlightCleanups.add(id)) {
+            return;
+        }
+
+        try {
+            cleanupExecutor.execute(() -> {
+                try {
+                    killService.advanceKilling(id);
+                } catch (Exception e) {
+                    log.error("Failed to reconcile killing flow run, flowRunId={}", id, e);
+                } finally {
+                    inFlightCleanups.remove(id);
+                }
+            });
+        } catch (Exception e) {
+            inFlightCleanups.remove(id);
+            log.error("Failed to submit flow-run kill cleanup, flowRunId={}", id, e);
+        }
+    }
 
     private void collectPendingActions(
             JobFlowRun waiting, LocalDateTime deadline, List<WaitingFailure> failures, List<WaitingWarning> warnings) {
@@ -200,21 +244,16 @@ public class FlowRunDispatcher {
         }
     }
 
-    private void advanceWaitingFlowRuns(List<Long> flowRunIds) {
-        if (flowRunIds.isEmpty()) {
-            return;
-        }
-
-        try {
-            var updated = jobFlowRunService.updateStatusFromTo(flowRunIds, WAITING, SUBMITTED);
-            if (updated > 0) {
-                log.info(
-                        "All dependencies satisfied, advancing {} of {} flow runs WAITING -> SUBMITTED",
-                        updated,
-                        flowRunIds.size());
+    private void advanceWaitingFlowRuns(List<JobFlowRun> runs) {
+        for (var run : runs) {
+            var flowRunId = run.getId();
+            try {
+                if (stateService.submitWaiting(flowRunId).outcome() == APPLIED) {
+                    log.info("All dependencies satisfied, advancing flow run {} WAITING -> SUBMITTED", flowRunId);
+                }
+            } catch (Exception e) {
+                log.error("Failed to advance waiting flow run: {}", flowRunId, e);
             }
-        } catch (Exception e) {
-            log.error("Failed to advance waiting flow runs", e);
         }
     }
 
@@ -224,7 +263,7 @@ public class FlowRunDispatcher {
                 var waiting = failure.run();
                 var reason = failure.reason();
                 // Conditional on WAITING: a concurrent kill must not be overwritten with FAILURE.
-                if (!jobFlowRunService.updateStatusFromTo(waiting.getId(), WAITING, FAILURE)) {
+                if (stateService.failWaiting(waiting.getId()).outcome() != APPLIED) {
                     continue;
                 }
 
@@ -248,16 +287,16 @@ public class FlowRunDispatcher {
         try {
             var status = jobFlowRun.getStatus();
             if (KILLING.equals(status)) {
+                // unreachable.
                 log.info("Flow run {} is {}, finalizing kill instead of executing", jobFlowRun.getId(), status);
-                killJobService.forceKillFlowRun(jobFlowRun.getId());
+                submitCleanup(jobFlowRun);
                 return;
             }
 
             var flow = jobFlowRun.getFlow();
             if (flow == null || CollectionUtils.isEmpty(flow.getVertices())) {
                 log.warn("No JobVertex found, no scheduling required, flow run id: {}", jobFlowRun.getId());
-                failAndUpdateJobFlowRun(jobFlowRun);
-                alertSendingService.sendAlerts(jobFlowRun, "No job vertex found");
+                failRunWithoutVertices(jobFlowRun);
                 return;
             }
 
@@ -273,20 +312,15 @@ public class FlowRunDispatcher {
         }
     }
 
-    private void failAndUpdateJobFlowRun(JobFlowRun jobFlowRun) {
-        var currentTime = LocalDateTime.now();
-        var newJobFlowRun = new JobFlowRun();
-        newJobFlowRun.setId(jobFlowRun.getId());
-        newJobFlowRun.setStatus(FAILURE);
-        if (jobFlowRun.getStartTime() == null) {
-            newJobFlowRun.setStartTime(currentTime);
+    private void failRunWithoutVertices(JobFlowRun jobFlowRun) {
+        // Only SUBMITTED is expected; a RUNNING row with no vertices is legacy/corrupt data left
+        // for manual reconciliation. The conditional update protects a concurrent kill.
+        if (stateService.failSubmitted(jobFlowRun.getId()).outcome() != APPLIED) {
+            return;
         }
-        newJobFlowRun.setEndTime(currentTime);
-        jobFlowRunService.updateById(newJobFlowRun);
-
         jobFlowRun.setStatus(FAILURE);
-        jobFlowRun.setStartTime(currentTime);
-        jobFlowRun.setEndTime(currentTime);
+        jobFlowRun.setEndTime(LocalDateTime.now());
+        alertSendingService.sendAlerts(jobFlowRun, "No job vertex found");
     }
 
     private record WaitingFailure(JobFlowRun run, String reason) {}

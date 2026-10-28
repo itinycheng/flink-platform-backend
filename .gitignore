@@ -91,3 +91,4 @@ flink-platform-plugin/flink-platform-plugin-apollo/src/main/resources/META-INF/
 docs/superpowers/*
 /qodana.yaml
 /.superpowers/
+/.worktrees/

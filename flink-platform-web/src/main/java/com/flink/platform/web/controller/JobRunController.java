@@ -30,7 +30,7 @@ import java.util.Collection;
 import java.util.Collections;
 
 import static com.flink.platform.common.enums.EntityType.JOB_RUN;
-import static com.flink.platform.common.enums.ExecutionStatus.getNonTerminals;
+import static com.flink.platform.common.enums.ExecutionStatus.getUnfinishedStatuses;
 import static com.flink.platform.common.enums.Permission.TASK_EXEC;
 import static com.flink.platform.common.enums.Permission.TASK_VIEW;
 import static com.flink.platform.common.enums.ResponseStatus.KILL_JOB_EXCEPTION_FOUND;
@@ -77,7 +77,7 @@ public class JobRunController {
             @RequestParam(name = "sort", required = false) String sort) {
         var queryWrapper = new QueryWrapper<JobRunInfo>()
                 .lambda()
-                .select(JobRunInfo.class, jobRunInfoService::isNonLargeField)
+                .select(JobRunInfo.class, jobRunInfoService::isPageField)
                 .eq(nonNull(id), JobRunInfo::getId, id)
                 .eq(nonNull(flowRunId), JobRunInfo::getFlowRunId, flowRunId)
                 .eq(nonNull(jobId), JobRunInfo::getJobId, jobId)
@@ -117,7 +117,7 @@ public class JobRunController {
         var jobRun = jobRunInfoService.getOne(new QueryWrapper<JobRunInfo>()
                 .lambda()
                 .eq(JobRunInfo::getId, runId)
-                .in(JobRunInfo::getStatus, getNonTerminals()));
+                .in(JobRunInfo::getStatus, getUnfinishedStatuses()));
 
         if (jobRun == null) {
             return failure(NO_RUNNING_JOB_FOUND);

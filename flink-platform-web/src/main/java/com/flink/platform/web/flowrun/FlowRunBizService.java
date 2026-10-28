@@ -1,13 +1,14 @@
-package com.flink.platform.web.service;
+package com.flink.platform.web.flowrun;
 
 import com.flink.platform.common.enums.ExecutionStrategy;
 import com.flink.platform.dao.entity.ExecutionConfig;
 import com.flink.platform.dao.entity.JobFlowRun;
 import com.flink.platform.dao.service.JobFlowRunService;
 import com.flink.platform.web.config.WorkerConfig;
+import com.flink.platform.web.quartz.QuartzService;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
-import org.jspecify.annotations.NullMarked;
+import org.apache.commons.lang3.StringUtils;
 import org.jspecify.annotations.Nullable;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -16,20 +17,42 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
 
-import static com.flink.platform.web.service.JobFlowRunBizService.ConflictType.DUPLICATE_SCHEDULE;
-import static com.flink.platform.web.service.JobFlowRunBizService.ConflictType.DUPLICATE_START_JOB;
-import static com.flink.platform.web.service.JobFlowRunBizService.ConflictType.MAX_ACTIVE_RUNS;
+import static com.flink.platform.web.flowrun.FlowRunBizService.ConflictType.DUPLICATE_SCHEDULE;
+import static com.flink.platform.web.flowrun.FlowRunBizService.ConflictType.DUPLICATE_START_JOB;
+import static com.flink.platform.web.flowrun.FlowRunBizService.ConflictType.MAX_ACTIVE_RUNS;
 import static java.time.temporal.ChronoUnit.SECONDS;
 
 /** Business rules for admitting a new flow run. */
-@NullMarked
 @Service
 @RequiredArgsConstructor(onConstructor_ = @Autowired)
-public class JobFlowRunBizService {
+public class FlowRunBizService {
 
     private final JobFlowRunService flowRunService;
 
+    private final QuartzService quartzService;
+
     private final WorkerConfig workerConfig;
+
+    // TODO: A run created near the next cron fire can receive an impractically short wait deadline.
+    public LocalDateTime resolveWaitDeadline(JobFlowRun jobFlowRun) {
+        var createTime = jobFlowRun.getCreateTime();
+        var cronExpr = jobFlowRun.getCronExpr();
+        if (StringUtils.isBlank(cronExpr)) {
+            return createTime.plus(workerConfig.getFlowWaitTimeout());
+        }
+
+        // A normal run must not wait beyond its next scheduled occurrence.
+        var scheduleTime = jobFlowRun.getScheduleTime();
+        var scheduledDeadline = quartzService.nextTriggerTimeAfter(cronExpr, scheduleTime);
+        if (scheduledDeadline.isPresent() && scheduledDeadline.get().isAfter(createTime)) {
+            return scheduledDeadline.get();
+        }
+
+        // A historical or severely delayed run waits until the next live scheduled occurrence.
+        return quartzService
+                .nextTriggerTimeAfter(cronExpr, createTime)
+                .orElseGet(() -> createTime.plus(workerConfig.getFlowWaitTimeout()));
+    }
 
     public @Nullable RunConflict findRunConflict(
             Long flowId, ExecutionConfig config, @Nullable LocalDateTime scheduleTime) {

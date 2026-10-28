@@ -1,4 +1,4 @@
-package com.flink.platform.web.service;
+package com.flink.platform.web.flowrun;
 
 import com.flink.platform.common.model.JobVertex;
 import com.flink.platform.dao.entity.ExecutionConfig;
@@ -6,23 +6,28 @@ import com.flink.platform.dao.entity.JobFlowDag;
 import com.flink.platform.dao.entity.JobFlowDag.NodeLayout;
 import com.flink.platform.dao.entity.JobFlowRun;
 import com.flink.platform.dao.service.JobFlowRunService;
+import com.flink.platform.dao.service.JobFlowService;
 import com.flink.platform.dao.service.JobInfoService;
 import com.flink.platform.dao.service.JobRunInfoService;
-import com.flink.platform.web.model.FlowRunCreationResult;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import static com.flink.platform.common.enums.ExecutionStatus.FAILURE;
+import static org.springframework.transaction.annotation.Isolation.READ_COMMITTED;
+import static org.springframework.transaction.annotation.Propagation.REQUIRES_NEW;
 
-/** Temporary compatibility boundary for JOB_LIST flow runs. */
+/** Creates JOB_LIST runs with their historical start-job admission rule. */
 @Slf4j
 @Service
 @RequiredArgsConstructor(onConstructor_ = @Autowired)
-public class LegacyJobListService {
+class LegacyJobListService {
 
     private final JobFlowRunService jobFlowRunService;
+
+    private final JobFlowService jobFlowService;
 
     private final JobInfoService jobInfoService;
 
@@ -30,8 +35,18 @@ public class LegacyJobListService {
 
     /**
      * Creates the legacy JOB_LIST run, or returns a blocked result when another start-job run is active.
+     *
+     * <p>Admission owns its transaction: joining a caller's would hold the flow lock until that caller
+     * commits and would let a caller rollback discard the created run. Only this package can reference the
+     * class, and {@code REQUIRES_NEW} keeps creation isolated from any same-package caller transaction.
      */
-    public FlowRunCreationResult create(JobFlowRun candidate) {
+    @Transactional(propagation = REQUIRES_NEW, rollbackFor = Exception.class, isolation = READ_COMMITTED)
+    public FlowRunCreationResult attempt(JobFlowRun candidate) {
+        var jobFlow = jobFlowService.lockForUpdate(candidate.getFlowId());
+        if (jobFlow == null) {
+            throw new IllegalStateException("Job flow not found: " + candidate.getFlowId());
+        }
+
         var executionConfig = candidate.getConfig();
         var activeRun = jobRunService.findActiveRunByJobId(executionConfig.getStartJobId());
         if (activeRun != null) {

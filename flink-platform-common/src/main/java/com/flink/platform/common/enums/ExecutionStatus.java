@@ -30,8 +30,11 @@ public enum ExecutionStatus {
 
     @Deprecated
     NOT_EXIST(7, TerminalState.TERMINAL),
+
+    /** ! Only for jobRun: status before SUBMITTED. */
     CREATED(8, TerminalState.NON_TERMINAL),
 
+    /** ! Only for jobFlowRun: transient status. */
     @JsonAlias("KILLABLE")
     KILLING(9, TerminalState.TRANSIENT),
 
@@ -44,12 +47,14 @@ public enum ExecutionStatus {
     public static final Set<ExecutionStatus> FAILURE_STATUSES =
             Stream.of(FAILURE, KILLED, ABNORMAL, ERROR, NOT_EXIST).collect(toSet());
 
-    public static final List<ExecutionStatus> NON_TERMINALS = Arrays.stream(values())
-            .filter(executionStatus -> executionStatus.terminalState != TerminalState.TERMINAL)
+    public static final List<ExecutionStatus> UNFINISHED_STATUSES = Arrays.stream(values())
+            .filter(status -> status.terminalState != TerminalState.TERMINAL)
             .collect(toList());
 
-    public static final List<ExecutionStatus> EXECUTABLE_STATUSES =
-            NON_TERMINALS.stream().filter(status -> status != WAITING).collect(toList());
+    public static final List<ExecutionStatus> EXECUTABLE_STATUSES = Arrays.stream(values())
+            .filter(status -> status.terminalState == TerminalState.NON_TERMINAL)
+            .filter(status -> status != WAITING)
+            .collect(toList());
 
     @Getter
     private final int code;
@@ -69,8 +74,8 @@ public enum ExecutionStatus {
         return terminalState == TerminalState.TRANSIENT;
     }
 
-    public static List<ExecutionStatus> getNonTerminals() {
-        return NON_TERMINALS;
+    public static List<ExecutionStatus> getUnfinishedStatuses() {
+        return UNFINISHED_STATUSES;
     }
 
     public static ExecutionStatus from(Integer code) {

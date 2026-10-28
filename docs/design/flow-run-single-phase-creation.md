@@ -24,8 +24,8 @@ A flow run is created once, in one transaction, with its full snapshot and its i
   - `JobFlowRunner` handles cron and manual Quartz triggers: load the flow by code, call `handle`.
   - `FlowCommandExecutor` handles sub-flows: load the flow by id, call `handle`, and return the
     child id and status in its `JobCallback`.
-- `JOB_LIST` stays outside the lifecycle. The creation service routes it to
-  `LegacyJobListService`, which owns its create/block path for both adapters.
+- `JOB_LIST` keeps its distinct create/block path in `LegacyJobListService` for both adapters.
+  Once created, its runs use the shared flow-run lifecycle.
 
 ### Contract
 

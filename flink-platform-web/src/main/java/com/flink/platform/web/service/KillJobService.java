@@ -2,16 +2,13 @@ package com.flink.platform.web.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.flink.platform.common.exception.UnrecoverableException;
-import com.flink.platform.dao.entity.JobFlowRun;
 import com.flink.platform.dao.entity.JobRunInfo;
-import com.flink.platform.dao.service.JobFlowRunService;
 import com.flink.platform.dao.service.JobRunInfoService;
 import com.flink.platform.grpc.KillJobRequest;
 import com.flink.platform.web.command.CommandExecutor;
 import com.flink.platform.web.grpc.JobGrpcClient;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -19,8 +16,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import static com.flink.platform.common.enums.ExecutionStatus.KILLED;
-import static com.flink.platform.common.enums.ExecutionStatus.KILLING;
-import static com.flink.platform.common.enums.ExecutionStatus.getNonTerminals;
+import static com.flink.platform.common.enums.ExecutionStatus.getUnfinishedStatuses;
 
 /** Kill job service. */
 @Slf4j
@@ -34,38 +30,11 @@ public class KillJobService {
 
     private final List<CommandExecutor> jobCommandExecutors;
 
-    private final JobFlowRunService jobFlowRunService;
-
-    public void forceKillFlowRun(Long flowRunId) {
-        killFlowRun(flowRunId);
-
-        var newFlowRun = new JobFlowRun();
-        newFlowRun.setId(flowRunId);
-        newFlowRun.setStatus(KILLED);
-        newFlowRun.setEndTime(LocalDateTime.now());
-        jobFlowRunService.updateById(newFlowRun);
-    }
-
-    public boolean killFlowRun(Long flowRunId) {
-        var runList = jobRunService.listLiteNonTerminalRuns(flowRunId);
-        if (CollectionUtils.isEmpty(runList)) {
-            jobFlowRunService.updateStatusById(flowRunId, KILLED);
-            return true;
-        }
-
-        // kill remote runs.
-        jobFlowRunService.updateStatusById(flowRunId, KILLING);
-        return runList.parallelStream()
-                .map(this::attemptToKillJob)
-                .reduce((bool1, bool2) -> bool1 && bool2)
-                .orElse(false);
-    }
-
     public boolean attemptToKillJob(JobRunInfo jobRun) {
         try {
             return killRemoteJob(jobRun);
         } catch (Exception e) {
-            log.error("kill job: {} failed.", jobRun.getId(), e);
+            log.error("Failed to request job-run kill, jobRunId={}", jobRun.getId(), e);
             return false;
         }
     }
@@ -75,7 +44,7 @@ public class KillJobService {
                 .lambda()
                 .select(JobRunInfo::getType)
                 .eq(JobRunInfo::getId, jobRunId)
-                .in(JobRunInfo::getStatus, getNonTerminals()));
+                .in(JobRunInfo::getStatus, getUnfinishedStatuses()));
         if (jobRun == null) {
             return;
         }
@@ -88,19 +57,10 @@ public class KillJobService {
                 .orElseThrow(() -> new UnrecoverableException("No available job command executor"))
                 .kill(jobRunId);
 
-        jobRun = jobRunService.getOne(new QueryWrapper<JobRunInfo>()
-                .lambda()
-                .select(JobRunInfo::getStatus)
-                .eq(JobRunInfo::getId, jobRunId));
-
-        // set status to KILLED
-        // Better in a transaction with serializable isolation level.
-        if (!jobRun.getStatus().isTerminalState()) {
-            var newJobRun = new JobRunInfo();
-            newJobRun.setId(jobRunId);
-            newJobRun.setStatus(KILLED);
-            newJobRun.setEndTime(LocalDateTime.now());
-            jobRunService.updateById(newJobRun);
+        var update = new JobRunInfo();
+        update.setStatus(KILLED);
+        update.setEndTime(LocalDateTime.now());
+        if (jobRunService.updateStatusFromAnyTo(jobRunId, getUnfinishedStatuses(), update) == 1) {
             log.info("Kill job run: {} finished, time: {}", jobRunId, System.currentTimeMillis());
         }
     }

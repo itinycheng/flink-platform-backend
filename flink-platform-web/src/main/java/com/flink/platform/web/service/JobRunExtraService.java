@@ -5,6 +5,7 @@ import com.flink.platform.common.util.JsonUtil;
 import com.flink.platform.dao.entity.JobInfo;
 import com.flink.platform.dao.entity.JobRunInfo;
 import com.flink.platform.dao.entity.result.JobCallback;
+import com.flink.platform.dao.service.JobFlowRunService;
 import com.flink.platform.dao.service.JobRunInfoService;
 import com.flink.platform.web.enums.Variable;
 import com.flink.platform.web.variable.VariableResolver;
@@ -13,6 +14,7 @@ import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
@@ -25,6 +27,7 @@ import static com.flink.platform.common.constants.JobConstant.JOB_RUN_DIR;
 import static com.flink.platform.common.constants.JobConstant.USER_DIR_FORMAT;
 import static com.flink.platform.common.enums.ExecutionStatus.CREATED;
 import static com.flink.platform.common.enums.ExecutionStatus.ERROR;
+import static com.flink.platform.common.enums.ExecutionStatus.RUNNING;
 import static com.flink.platform.common.util.DateUtil.DATE_FORMAT;
 import static com.flink.platform.common.util.DateUtil.READABLE_TIMESTAMP_FORMAT;
 import static java.util.Locale.ROOT;
@@ -36,13 +39,24 @@ public class JobRunExtraService {
 
     private final JobRunInfoService jobRunService;
 
+    private final JobFlowRunService flowRunService;
+
     private final WorkerSelectService workerSelectService;
 
     private final StorageService storageService;
 
     private final List<VariableResolver> variableResolvers;
 
-    public Long createJobRun(JobInfo jobInfo, Long flowRunId) {
+    @Transactional(rollbackFor = Exception.class)
+    public CreateResult createJobRunIfOwned(JobInfo jobInfo, Long flowRunId, String expectedHost) {
+        var parent = flowRunService.lockForUpdate(flowRunId);
+        if (parent == null
+                || parent.getStatus() != RUNNING
+                || expectedHost == null
+                || !expectedHost.equals(parent.getHost())) {
+            return new CreateResult.Skipped("flow run is invalid on the current host, flowRunId: " + flowRunId);
+        }
+
         var worker = workerSelectService.randomWorker(jobInfo.getRouteUrl());
         var host = worker == null ? null : worker.getIp();
         var jobRun = createFrom(jobInfo, flowRunId, host);
@@ -52,8 +66,11 @@ public class JobRunExtraService {
             jobRun.setBackInfo(new JobCallback("No available worker found for job: " + jobInfo.getName(), ERROR));
         }
 
-        jobRunService.save(jobRun);
-        return jobRun.getId();
+        if (!jobRunService.save(jobRun)) {
+            throw new IllegalStateException("Failed to create job run: " + jobInfo.getId());
+        }
+
+        return new CreateResult.Created(jobRun.getId());
     }
 
     public JobRunInfo createFrom(JobInfo jobInfo, Long flowRunId, String host) {
@@ -125,5 +142,12 @@ public class JobRunExtraService {
     private String buildTimestampedFileName(JobRunInfo jobRun, String fileSuffix) {
         var readableTime = DateUtil.format(jobRun.getCreateTime(), READABLE_TIMESTAMP_FORMAT);
         return String.join(DOT, jobRun.getJobCode(), readableTime, fileSuffix);
+    }
+
+    public sealed interface CreateResult {
+
+        record Created(long jobRunId) implements CreateResult {}
+
+        record Skipped(String reason) implements CreateResult {}
     }
 }

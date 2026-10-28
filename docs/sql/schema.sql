@@ -357,7 +357,7 @@ CREATE TABLE `t_job_flow_run` (
   KEY `t_job_flow_run_end_time_idx` (`end_time`) USING BTREE,
   KEY `t_job_flow_run_status_idx` (`status`) USING BTREE,
   KEY `t_job_flow_run_flow_schedule_idx` (`flow_id`,`schedule_time`) USING BTREE,
-  KEY `t_job_flow_run_host_status_priority_idx` (`host`,`status`,`priority`) USING BTREE
+  KEY `t_job_flow_run_host_status_idx` (`host`,`status`) USING BTREE
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4;
 
 -- ----------------------------
@@ -438,7 +438,6 @@ CREATE TABLE `t_user` (
   `password` varchar(255) DEFAULT NULL,
   `email` varchar(255) DEFAULT NULL,
   `external_id` varchar(255) DEFAULT NULL COMMENT 'external id, NULL for local users',
-  `workers` varchar(255) DEFAULT NULL,
   `roles` varchar(1024) NOT NULL,
   `status` varchar(32) DEFAULT NULL,
   `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,

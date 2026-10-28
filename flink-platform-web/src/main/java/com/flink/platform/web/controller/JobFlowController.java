@@ -25,9 +25,9 @@ import com.flink.platform.web.config.WorkerConfig;
 import com.flink.platform.web.dto.ResultInfo;
 import com.flink.platform.web.dto.request.JobFlowExecRequest;
 import com.flink.platform.web.dto.request.JobFlowRequest;
+import com.flink.platform.web.flowrun.FlowRunBizService;
 import com.flink.platform.web.quartz.QuartzService;
 import com.flink.platform.web.service.FlowScheduleService;
-import com.flink.platform.web.service.JobFlowRunBizService;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -85,7 +85,7 @@ public class JobFlowController {
 
     private final JobFlowService jobFlowService;
 
-    private final JobFlowRunBizService flowRunBizService;
+    private final FlowRunBizService flowRunBizService;
 
     private final FlowScheduleService flowScheduleService;
 

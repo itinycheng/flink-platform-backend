@@ -17,6 +17,7 @@ import com.flink.platform.dao.query.JobPageQuery;
 import com.flink.platform.dao.view.JobDetails;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.collections4.CollectionUtils;
+import org.jspecify.annotations.Nullable;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -43,6 +44,11 @@ public class JobInfoService extends ServiceImpl<JobInfoMapper, JobInfo> {
     private final JobRunInfoService jobRunService;
 
     private final JobFlowRunService jobFlowRunService;
+
+    public @Nullable JobInfo findJobByIdAndStatus(Long jobId, JobStatus status) {
+        return getOne(
+                new QueryWrapper<JobInfo>().lambda().eq(JobInfo::getId, jobId).eq(JobInfo::getStatus, status));
+    }
 
     @Transactional(rollbackFor = Exception.class)
     public void removeAllById(long jobId) {

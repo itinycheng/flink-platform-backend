@@ -1,9 +1,8 @@
 # Logical Flow Runs, Retry, and Dependency Matching
 
-> **Status:** Partly implemented — transactional flow-run admission and the normal expired-WAITING
-> replacement path are in the code. Losing the WAITING CAS still fails admission; resolving that
-> race is deferred to the lifecycle state-machine work. A DB-backed two-worker concurrency test and
-> Phases 2–4 also remain.
+> **Status:** Partly implemented — transactional flow-run admission and bounded reconciliation of
+> a lost expired-WAITING CAS are in the code. A DB-backed two-worker concurrency test and
+> Phases 2–4 remain.
 >
 > This is the forward-looking lifecycle design for flow-level `depends_on`. The current evaluator
 > and its compatibility decisions remain documented in
@@ -11,6 +10,9 @@
 > [alerting-strategy.md](alerting-strategy.md).
 > The period-aware mode below is a future design. This document does not change the current
 > latest-upstream-run behavior or the existing `DEPENDENT` job type.
+> Distributed lifecycle transitions, kill fencing,
+> and state-writer arbitration are specified in
+> [flow-run-state-machine.md](flow-run-state-machine.md).
 
 ## Why this design exists
 
@@ -154,14 +156,15 @@ Route `JOB_FLOW` creation through one transactional Spring service:
 
 1. lock the `t_job_flow` row (`SELECT ... FOR UPDATE`) so the decision is cluster-wide; the
    current `synchronized (code)` protects only one JVM;
-2. load the flow's non-terminal runs, excluding a pre-created candidate row when applicable;
+2. load the flow's non-terminal runs; the candidate has not been inserted yet;
 3. classify a `WAITING` run as expired when `resolveWaitDeadline(old) <=` the physical admission
    time;
 4. apply duplicate/capacity policy to the remaining active runs; a `SUBMITTED`, `RUNNING`,
-   `CREATED`, `KILLING`, or unexpired `WAITING` run may still block the candidate;
-5. conditionally update every expired row from `WAITING` to `FAILURE`; if any CAS loses, throw and
-   roll back instead of making a decision from a stale snapshot;
-6. save the candidate in the same transaction;
+   `KILLING`, or unexpired `WAITING` run may still block the candidate. A residual legacy
+   `CREATED` row is also counted as active until reconciled;
+5. conditionally update every expired row from `WAITING` to `FAILURE`; if a CAS loses, re-read the
+   active runs once and apply the conflict policy to the fresh snapshot;
+6. save the complete candidate with initial `WAITING` or `SUBMITTED` status in the same transaction;
 7. publish timeout or trigger-skipped alerts only after the transaction returns.
 
 `JOB_LIST` keeps its existing running-Job guard, but gets no dedicated FlowRun scheduling branch.

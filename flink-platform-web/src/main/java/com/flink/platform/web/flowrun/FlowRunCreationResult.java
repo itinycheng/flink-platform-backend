@@ -1,4 +1,4 @@
-package com.flink.platform.web.model;
+package com.flink.platform.web.flowrun;
 
 import com.flink.platform.dao.entity.JobFlowRun;
 import org.apache.commons.lang3.StringUtils;

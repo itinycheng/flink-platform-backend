@@ -25,6 +25,7 @@ import com.flink.platform.dao.view.JobFlowLatestRun;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashMap;
@@ -55,10 +56,13 @@ public class JobFlowService extends ServiceImpl<JobFlowMapper, JobFlow> {
 
     private final JobRunInfoService jobRunInfoService;
 
-    public void lockForUpdate(Long flowId) {
-        if (baseMapper.selectForUpdate(flowId) == null) {
-            throw new IllegalStateException("Job flow not found: " + flowId);
-        }
+    @Transactional(propagation = Propagation.MANDATORY)
+    public JobFlow lockForUpdate(Long flowId) {
+        return getOne(new QueryWrapper<JobFlow>()
+                .lambda()
+                .select(JobFlow::getId)
+                .eq(JobFlow::getId, flowId)
+                .last("FOR UPDATE"));
     }
 
     @Transactional

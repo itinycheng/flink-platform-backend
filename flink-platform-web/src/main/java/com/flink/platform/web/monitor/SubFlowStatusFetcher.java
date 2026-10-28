@@ -34,11 +34,13 @@ public class SubFlowStatusFetcher implements StatusFetcher {
         var jobRun = jobRunService.getById(request.getJobRunId());
         var backInfo = jobRun.getBackInfo();
         var jobFlowRun = jobFlowRunService.getById(backInfo.getFlowRunId());
-        var status = jobFlowRun.getStatus();
-        // Reset EXPECTED_FAILURE to FAILURE.
-        if (ExecutionStatus.EXPECTED_FAILURE.equals(status)) {
-            status = ExecutionStatus.FAILURE;
-        }
+        var status =
+                switch (jobFlowRun.getStatus()) {
+                    case CREATED, WAITING -> ExecutionStatus.SUBMITTED;
+                    case KILLING -> jobRun.getStatus();
+                    case EXPECTED_FAILURE -> ExecutionStatus.FAILURE;
+                    default -> jobFlowRun.getStatus();
+                };
 
         return JobStatusReply.newBuilder()
                 .setStatus(status.getCode())

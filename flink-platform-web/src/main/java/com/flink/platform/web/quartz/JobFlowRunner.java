@@ -8,7 +8,7 @@ import com.flink.platform.dao.entity.ExecutionConfig;
 import com.flink.platform.dao.entity.JobFlow;
 import com.flink.platform.dao.service.JobFlowService;
 import com.flink.platform.web.common.SpringContext;
-import com.flink.platform.web.service.FlowRunTriggerService;
+import com.flink.platform.web.flowrun.FlowRunTriggerService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ObjectUtils;
 import org.quartz.Job;
@@ -29,7 +29,7 @@ import static java.time.temporal.ChronoUnit.SECONDS;
 @Slf4j
 public class JobFlowRunner implements Job {
 
-    private static final Map<String, Object> PARALLEL_LOCK_MAP = new ConcurrentHashMap<>();
+    private static final Map<String, Object> LOCKS = new ConcurrentHashMap<>();
 
     private final JobFlowService jobFlowService = SpringContext.getBean(JobFlowService.class);
 
@@ -67,7 +67,7 @@ public class JobFlowRunner implements Job {
 
     private Object getProcessLock(String code) {
         var newLock = new Object();
-        var lock = PARALLEL_LOCK_MAP.putIfAbsent(code, newLock);
+        var lock = LOCKS.putIfAbsent(code, newLock);
         if (lock == null) {
             lock = newLock;
         }

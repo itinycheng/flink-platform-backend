@@ -11,16 +11,19 @@ import com.flink.platform.common.enums.JobStatus;
 import com.flink.platform.dao.entity.JobRunInfo;
 import com.flink.platform.dao.mapper.JobRunInfoMapper;
 import jakarta.annotation.Nonnull;
+import org.jspecify.annotations.Nullable;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static com.flink.platform.common.enums.ExecutionStatus.CREATED;
 import static com.flink.platform.common.enums.ExecutionStatus.FAILURE_STATUSES;
-import static com.flink.platform.common.enums.ExecutionStatus.getNonTerminals;
+import static com.flink.platform.common.enums.ExecutionStatus.getUnfinishedStatuses;
 import static com.flink.platform.common.enums.JobType.SUB_FLOW;
 
 /** job run info. */
@@ -28,7 +31,7 @@ import static com.flink.platform.common.enums.JobType.SUB_FLOW;
 @DS("master_platform")
 public class JobRunInfoService extends ServiceImpl<JobRunInfoMapper, JobRunInfo> {
 
-    private static final Set<String> LARGE_FIELDS = Set.of("backInfo", "params", "subject");
+    private static final Set<String> LARGE_FIELDS = Set.of("subject");
 
     public static final List<ExecutionStatus> UNEXPECTED = new ArrayList<>() {
         {
@@ -36,6 +39,36 @@ public class JobRunInfoService extends ServiceImpl<JobRunInfoMapper, JobRunInfo>
             add(ExecutionStatus.KILLING);
         }
     };
+
+    public int updateStatusFromAnyTo(Long id, Collection<ExecutionStatus> expected, JobRunInfo update) {
+        if (id == null || expected.isEmpty() || update.getStatus() == null) {
+            return 0;
+        }
+        return baseMapper.update(
+                update,
+                new QueryWrapper<JobRunInfo>()
+                        .lambda()
+                        .eq(JobRunInfo::getId, id)
+                        .in(JobRunInfo::getStatus, expected));
+    }
+
+    public List<JobRunInfo> listLiteRunsLatestFirst(long jobId, long flowRunId) {
+        return list(new QueryWrapper<JobRunInfo>()
+                .lambda()
+                .select(JobRunInfo.class, this::isLiteField)
+                .eq(JobRunInfo::getJobId, jobId)
+                .eq(JobRunInfo::getFlowRunId, flowRunId)
+                .orderByDesc(JobRunInfo::getId));
+    }
+
+    public @Nullable JobRunInfo findCreatedRun(long jobId, long flowRunId) {
+        return getOne(new QueryWrapper<JobRunInfo>()
+                .lambda()
+                .eq(JobRunInfo::getJobId, jobId)
+                .eq(JobRunInfo::getFlowRunId, flowRunId)
+                .eq(JobRunInfo::getStatus, CREATED)
+                .last("LIMIT 1"));
+    }
 
     public List<JobRunInfo> listLatestLiteRunPerJob(Long flowRunId, List<Long> jobIds) {
         return this.baseMapper.selectLatestLiteRunPerJob(flowRunId, jobIds);
@@ -45,7 +78,7 @@ public class JobRunInfoService extends ServiceImpl<JobRunInfoMapper, JobRunInfo>
         return getOne(new QueryWrapper<JobRunInfo>()
                 .lambda()
                 .eq(JobRunInfo::getJobId, jobId)
-                .in(JobRunInfo::getStatus, getNonTerminals())
+                .in(JobRunInfo::getStatus, getUnfinishedStatuses())
                 .last("limit 1"));
     }
 
@@ -65,12 +98,17 @@ public class JobRunInfoService extends ServiceImpl<JobRunInfoMapper, JobRunInfo>
     public JobRunInfo getLiteById(Long id) {
         return getOne(new QueryWrapper<JobRunInfo>()
                 .lambda()
-                .select(JobRunInfo.class, this::isNonLargeField)
+                .select(JobRunInfo.class, this::isLiteField)
                 .eq(JobRunInfo::getId, id));
     }
 
-    public boolean isNonLargeField(TableFieldInfo field) {
-        return !LARGE_FIELDS.contains(field.getProperty());
+    public boolean isLiteField(TableFieldInfo field) {
+        return field.getTypeHandler() == null && !LARGE_FIELDS.contains(field.getProperty());
+    }
+
+    /** The run list needs backInfo for its tracking link; internal lite reads do not. */
+    public boolean isPageField(TableFieldInfo field) {
+        return isLiteField(field) || "backInfo".equals(field.getProperty());
     }
 
     public List<Map<String, Object>> countJobRunGroupByStatus(
@@ -83,6 +121,6 @@ public class JobRunInfoService extends ServiceImpl<JobRunInfoMapper, JobRunInfo>
                 .lambda()
                 .select(JobRunInfo.class, info -> info.getTypeHandler() == null)
                 .eq(JobRunInfo::getFlowRunId, flowRunId)
-                .in(JobRunInfo::getStatus, getNonTerminals()));
+                .in(JobRunInfo::getStatus, getUnfinishedStatuses()));
     }
 }
