@@ -222,8 +222,8 @@ validation branch was therefore removed rather than kept alongside.
 ### 8. Naming
 
 Mapper methods mirror SQL (`select*`); service methods state their contract (`get*` non-null, `find*` nullable, `list*`,
-`map*` with the key in the name). Written up in
-CLAUDE.md under *DAO Naming Conventions*, and applied here: `selectLatestRunPerFlow`,
+`map*` with the key in the name). These conventions are recorded in
+[code standards](../code-standards.md) and applied here: `selectLatestRunPerFlow`,
 `mapLatestRunByFlowId`, `listLatestLiteRunPerJob`.
 
 `isFreshEnough` → `isLatestRunWithinWindow`, which flips all three branches positive and removes the
@@ -238,7 +238,7 @@ genuinely belongs there — `JobVertex` and `ConditionJob` share it.
 
 ## Two implementations
 
-|                    | `DEPENDENT` job type (shipped) | Flow-level `depends_on` (this work) |
+|                    | `DEPENDENT` job type           | Flow-level `depends_on`             |
 |--------------------|--------------------------------|-------------------------------------|
 | Config             | `DependentJob.DependentItem`   | `Dependency`                        |
 | Evaluation         | `DependentCommandBuilder`      | `DependencyService`                 |
@@ -249,10 +249,8 @@ genuinely belongs there — `JobVertex` and `ConditionJob` share it.
 | Target granularity | flow *or* job                  | flow only                           |
 | No cron            | `RuntimeException`             | `MISCONFIGURED` → fail + alert      |
 
-The duplication is real. It is left in place because the old path is shipped and the new one is
-not, and because the old one is expected to be retired by the new one under the "job as
-first-class citizen" direction, at which point the duplication disappears rather than needing a
-merge.
+Both implementations now coexist. The older `DEPENDENT` job path remains for existing workflows;
+retiring it under the "job as first-class citizen" direction is future work.
 
 ## Deliberate: dependencies cross workspaces
 

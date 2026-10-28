@@ -55,6 +55,9 @@ such as `feat`, `fix`, `refactor`, `docs`, or `chore`; scope it to the affected 
 After a squash, rewrite the subject and any body to describe the combined diff. Leave unrelated
 changes out of the commit.
 
+Do not rewrite an existing commit to include agent-authored changes. Create a separate commit
+unless the owner explicitly asks to combine them.
+
 ## Project map
 
 - `flink-platform-web`: Spring Boot APIs, Quartz scheduling, flow dispatch, execution, and worker lifecycle.
