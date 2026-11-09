@@ -35,7 +35,7 @@ services:
     ports:
       - "3306:3306"
     volumes:
-      - ./docs/sql/schema.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./docs/sql/schema.sql:/docker-entrypoint-initdb.d/init.sql:ro
       - ./docker/mysql:/var/lib/mysql
     restart: always
     environment:
@@ -92,15 +92,18 @@ services:
   minio_init:
     image: minio/mc:latest
     profiles: ["s3"]
+    environment:
+      MINIO_ROOT_USER: ${DEV_USER}
+      MINIO_ROOT_PASSWORD: ${DEV_PASSWORD}
     depends_on:
       minio:
         condition: service_healthy
-    entrypoint: >
-      /bin/sh -c "
-      /usr/bin/mc alias set local http://minio:9000 ${DEV_USER} ${DEV_PASSWORD};
-      /usr/bin/mc mb --ignore-existing local/datacenter;
-      exit 0;
-      "
+    entrypoint:
+      - /bin/sh
+      - -ec
+      - >
+        mc alias set local http://minio:9000 "$$MINIO_ROOT_USER" "$$MINIO_ROOT_PASSWORD"
+        && mc mb --ignore-existing local/datacenter
 
   web-s3:
     <<: *web-base

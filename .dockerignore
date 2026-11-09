@@ -1,0 +1,16 @@
+.git
+.github
+.idea
+.worktrees
+.env*
+docker
+docs
+config-cache
+logs
+*.md
+**/node_modules
+**/target
+flink-platform-ui/frontend/node
+flink-platform-ui/frontend/dist
+flink-platform-ui/frontend/package-lock.json
+flink-platform-web/src/main/resources/static

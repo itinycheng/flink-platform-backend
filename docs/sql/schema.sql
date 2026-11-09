@@ -243,9 +243,6 @@ CREATE TABLE `t_catalog_info` (
   `user_id` bigint(11) NOT NULL COMMENT 'user id',
   `workspace_id` bigint(11) NOT NULL COMMENT 'workspace id',
   `type` varchar(64) NOT NULL COMMENT 'catalog type',
-  `default_database` varchar(64) NOT NULL COMMENT 'default database',
-  `config_path` varchar(128) DEFAULT NULL COMMENT 'config dir path',
-  `configs` varchar(1024) DEFAULT NULL COMMENT 'config properties',
   `create_sql` varchar(2048) DEFAULT NULL COMMENT 'catalog create sql',
   `create_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT 'create time',
   `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'update time',
@@ -562,22 +559,19 @@ CREATE TABLE `t_audit_log` (
 -- Records of t_user
 -- ----------------------------
 BEGIN;
-INSERT INTO `t_user` VALUES (1, 'admin', '111111', 'super_admin@email.com', NULL, '[]', '{"global":"SUPER_ADMIN","workspaces":{}}', 'NORMAL', now(), now());
+INSERT INTO `t_user` (`id`, `username`, `password`, `email`, `external_id`, `roles`, `status`, `update_time`, `create_time`)
+VALUES (1, 'admin', '111111', 'super_admin@email.com', NULL, '{"global":"SUPER_ADMIN","workspaces":{}}', 'NORMAL', now(), now());
 COMMIT;
 
 -- ----------------------------
 -- Records of t_workspace
 -- ----------------------------
 BEGIN;
-INSERT INTO `t_workspace` VALUES (1, 'default', 'Default workspace.', '{}', 'ENABLE', now(), now());
+INSERT INTO `t_workspace` (`id`, `name`, `description`, `config`, `status`, `update_time`, `create_time`)
+VALUES (1, 'default', 'Default workspace.', '{}', 'ENABLE', now(), now());
 COMMIT;
 
 -- ----------------------------
--- Records of t_catalog_info
+-- Catalog definitions depend on external services and are configured after startup.
 -- ----------------------------
-BEGIN;
-INSERT INTO `t_catalog_info` VALUES(1, 'hive', 'hive_db', 1, 'HIVE', 'profile', '/etc/hive/conf', NULL, NULL, now(), now());
-INSERT INTO `t_catalog_info` VALUES (2, 'tidb', 'tidb_db', 1, 'TIDB', 'discovery', NULL, '{\"tidb.database.url\":\"jdbc:mysql://0.0.0.0:4000/discovery\",\"tidb.username\":\"admin\",\"tidb.password\":\"passwd\",\"tidb.filter-push-down\":\"true\"}', NULL, now(), now());
-INSERT INTO `t_catalog_info` VALUES (3, 'clickhouse', 'user_db', 1, 'CLICKHOUSE', 'user_db', NULL, '{\"url\":\"clickhouse://0.0.0.0:8123\", \"username\":\"user\", \"password\":\"passwd\", \"sink.flush-interval\":\"60s\", \"sink.write-local\":\"true\", \"sink.batch-size\":\"500000\"}', NULL, now(), now());
-INSERT INTO `t_catalog_info` VALUES (4, 'iceberg', 'iceberg_db', 1, 'ICEBERG', 'iceberg_db', NULL, NULL, 'CREATE CATALOG iceberg WITH (\n  \'type\'=\'iceberg\',\n  \'catalog-type\'=\'hive\',\n  \'hive-conf-dir\'=\'/etc/hive/conf\',\n  \'property-version\'=\'1\',\n  \'warehouse\'=\'hdfs:///iceberg/warehouse\',\n  \'default-database\'=\'iceberg_db\'\n)', now(), now());
-COMMIT;
+SET FOREIGN_KEY_CHECKS = 1;
