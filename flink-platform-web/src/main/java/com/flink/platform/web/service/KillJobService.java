@@ -16,7 +16,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import static com.flink.platform.common.enums.ExecutionStatus.KILLED;
-import static com.flink.platform.common.enums.ExecutionStatus.getUnfinishedStatuses;
+import static com.flink.platform.common.enums.ExecutionStatus.UNFINISHED_STATUSES;
 
 /** Kill job service. */
 @Slf4j
@@ -44,7 +44,7 @@ public class KillJobService {
                 .lambda()
                 .select(JobRunInfo::getType)
                 .eq(JobRunInfo::getId, jobRunId)
-                .in(JobRunInfo::getStatus, getUnfinishedStatuses()));
+                .in(JobRunInfo::getStatus, UNFINISHED_STATUSES));
         if (jobRun == null) {
             return;
         }
@@ -60,7 +60,7 @@ public class KillJobService {
         var update = new JobRunInfo();
         update.setStatus(KILLED);
         update.setEndTime(LocalDateTime.now());
-        if (jobRunService.updateStatusFromAnyTo(jobRunId, getUnfinishedStatuses(), update) == 1) {
+        if (jobRunService.updateStatusFromAnyTo(jobRunId, UNFINISHED_STATUSES, update) == 1) {
             log.info("Kill job run: {} finished, time: {}", jobRunId, System.currentTimeMillis());
         }
     }

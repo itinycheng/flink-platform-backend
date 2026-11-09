@@ -26,7 +26,7 @@ import java.util.List;
 import static com.flink.platform.common.constants.Constant.HOSTNAME;
 import static com.flink.platform.common.constants.Constant.HOST_IP;
 import static com.flink.platform.common.constants.Constant.LOCALHOST;
-import static com.flink.platform.common.enums.ExecutionStatus.getUnfinishedStatuses;
+import static com.flink.platform.common.enums.ExecutionStatus.UNFINISHED_STATUSES;
 import static com.flink.platform.common.enums.WorkerStatus.ACTIVE;
 import static com.flink.platform.common.enums.WorkerStatus.DELETED;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -118,7 +118,7 @@ public class WorkerHeartbeat {
     }
 
     private void reassignFlowRunsOf(Worker deadWorker) {
-        var flowRuns = getNonTerminalFlowRuns(deadWorker);
+        var flowRuns = getUnfinishedFlowRuns(deadWorker);
         if (CollectionUtils.isEmpty(flowRuns)) {
             return;
         }
@@ -172,10 +172,10 @@ public class WorkerHeartbeat {
                 .collect(toList());
     }
 
-    private List<JobFlowRun> getNonTerminalFlowRuns(Worker worker) {
+    private List<JobFlowRun> getUnfinishedFlowRuns(Worker worker) {
         return jobFlowRunService.list(new QueryWrapper<JobFlowRun>()
                 .lambda()
                 .eq(JobFlowRun::getHost, worker.getIp())
-                .in(JobFlowRun::getStatus, getUnfinishedStatuses()));
+                .in(JobFlowRun::getStatus, UNFINISHED_STATUSES));
     }
 }

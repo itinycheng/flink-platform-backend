@@ -96,7 +96,7 @@ class FlowRunTriggerServiceTest {
         override.setMaxActiveRuns(3);
         when(jobFlowService.lockForUpdate(10L)).thenReturn(flow);
         when(dependencyService.resolveAndEvaluate(null)).thenReturn(SATISFIED);
-        when(jobFlowRunService.listActiveRuns(10L)).thenReturn(List.of());
+        when(jobFlowRunService.listUnfinishedRuns(10L)).thenReturn(List.of());
         when(jobFlowRunService.save(any())).thenAnswer(invocation -> {
             JobFlowRun run = invocation.getArgument(0);
             run.setId(42L);
@@ -124,7 +124,7 @@ class FlowRunTriggerServiceTest {
         active.setScheduleTime(SCHEDULE_TIME);
         active.setConfig(new ExecutionConfig());
         when(jobFlowService.lockForUpdate(10L)).thenReturn(flow);
-        when(jobFlowRunService.listActiveRuns(10L)).thenReturn(List.of(active));
+        when(jobFlowRunService.listUnfinishedRuns(10L)).thenReturn(List.of(active));
 
         var result = service.handle(flow, null, null, SCHEDULE_TIME);
 
@@ -140,7 +140,7 @@ class FlowRunTriggerServiceTest {
         expired.setStatus(WAITING);
         ReflectionTestUtils.setField(expired, "createTime", SCHEDULE_TIME.minusHours(2));
         when(jobFlowService.lockForUpdate(10L)).thenReturn(flow);
-        when(jobFlowRunService.listActiveRuns(10L)).thenReturn(List.of(expired));
+        when(jobFlowRunService.listUnfinishedRuns(10L)).thenReturn(List.of(expired));
         doReturn(SCHEDULE_TIME.minusHours(1)).when(bizService).resolveWaitDeadline(expired);
         when(stateService.failWaiting(41L)).thenReturn(FlowRunTransition.applied(FAILURE));
         when(jobFlowRunService.save(any())).thenReturn(true);
@@ -168,7 +168,7 @@ class FlowRunTriggerServiceTest {
         claimed.setScheduleTime(SCHEDULE_TIME);
         claimed.setConfig(new ExecutionConfig());
         when(jobFlowService.lockForUpdate(10L)).thenReturn(flow);
-        when(jobFlowRunService.listActiveRuns(10L)).thenReturn(List.of(expired), List.of(claimed));
+        when(jobFlowRunService.listUnfinishedRuns(10L)).thenReturn(List.of(expired), List.of(claimed));
         doReturn(SCHEDULE_TIME.minusHours(1)).when(bizService).resolveWaitDeadline(expired);
         when(stateService.failWaiting(41L)).thenReturn(FlowRunTransition.rejected(SUBMITTED));
 

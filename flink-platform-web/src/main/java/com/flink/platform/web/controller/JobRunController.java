@@ -30,7 +30,7 @@ import java.util.Collection;
 import java.util.Collections;
 
 import static com.flink.platform.common.enums.EntityType.JOB_RUN;
-import static com.flink.platform.common.enums.ExecutionStatus.getUnfinishedStatuses;
+import static com.flink.platform.common.enums.ExecutionStatus.UNFINISHED_STATUSES;
 import static com.flink.platform.common.enums.Permission.TASK_EXEC;
 import static com.flink.platform.common.enums.Permission.TASK_VIEW;
 import static com.flink.platform.common.enums.ResponseStatus.KILL_JOB_EXCEPTION_FOUND;
@@ -117,7 +117,7 @@ public class JobRunController {
         var jobRun = jobRunInfoService.getOne(new QueryWrapper<JobRunInfo>()
                 .lambda()
                 .eq(JobRunInfo::getId, runId)
-                .in(JobRunInfo::getStatus, getUnfinishedStatuses()));
+                .in(JobRunInfo::getStatus, UNFINISHED_STATUSES));
 
         if (jobRun == null) {
             return failure(NO_RUNNING_JOB_FOUND);

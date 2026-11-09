@@ -4,6 +4,7 @@ import com.flink.platform.common.enums.ExecutionStatus;
 import com.flink.platform.common.util.JsonUtil;
 import org.junit.jupiter.api.Test;
 
+import static com.flink.platform.common.enums.ExecutionStatus.UNFINISHED_STATUSES;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -23,7 +24,7 @@ class ExecutionStatusTest {
         assertFalse(ExecutionStatus.KILLING.isTerminalState());
         assertTrue(ExecutionStatus.KILLING.isTransient());
         // Must remain in NON_TERMINALS so recovery / kill queries keep matching it.
-        assertTrue(ExecutionStatus.getUnfinishedStatuses().contains(ExecutionStatus.KILLING));
+        assertTrue(UNFINISHED_STATUSES.contains(ExecutionStatus.KILLING));
     }
 
     @Test

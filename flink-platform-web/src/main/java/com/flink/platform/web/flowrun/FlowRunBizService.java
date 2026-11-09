@@ -56,7 +56,7 @@ public class FlowRunBizService {
 
     public @Nullable RunConflict findRunConflict(
             Long flowId, ExecutionConfig config, @Nullable LocalDateTime scheduleTime) {
-        var activeRuns = flowRunService.listActiveRuns(flowId);
+        var activeRuns = flowRunService.listUnfinishedRuns(flowId);
         return findRunConflict(config, scheduleTime, activeRuns);
     }
 

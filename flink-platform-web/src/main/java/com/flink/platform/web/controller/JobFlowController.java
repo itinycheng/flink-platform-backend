@@ -330,7 +330,7 @@ public class JobFlowController {
             }
 
             // check if the start job is finished.
-            if (jobRunService.findActiveRunByJobId(config.getStartJobId()) != null) {
+            if (jobRunService.findUnfinishedByJobId(config.getStartJobId()) != null) {
                 return failure(EXIST_UNFINISHED_PROCESS);
             }
         } else {

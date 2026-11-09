@@ -51,7 +51,7 @@ class FlowRunKillServiceTest {
     @Test
     void requestKillWithoutChildrenFinalizesImmediately() {
         when(stateService.requestKill(RUN_ID)).thenReturn(FlowRunTransition.applied(KILLING));
-        when(jobRunService.listLiteNonTerminalRuns(RUN_ID)).thenReturn(List.of());
+        when(jobRunService.listLiteUnfinishedRuns(RUN_ID)).thenReturn(List.of());
 
         var result = service.requestKill(RUN_ID);
 
@@ -77,7 +77,7 @@ class FlowRunKillServiceTest {
         var child = new JobRunInfo();
         child.setId(42L);
         when(flowRunService.getLiteById(RUN_ID)).thenReturn(runWith(KILLING));
-        when(jobRunService.listLiteNonTerminalRuns(RUN_ID)).thenReturn(List.of(child));
+        when(jobRunService.listLiteUnfinishedRuns(RUN_ID)).thenReturn(List.of(child));
         when(jobKillService.attemptToKillJob(child)).thenReturn(false);
 
         assertFalse(service.advanceKilling(RUN_ID));
@@ -91,7 +91,7 @@ class FlowRunKillServiceTest {
         var child = new JobRunInfo();
         child.setId(42L);
         when(flowRunService.getLiteById(RUN_ID)).thenReturn(runWith(KILLING));
-        when(jobRunService.listLiteNonTerminalRuns(RUN_ID)).thenReturn(List.of(child), List.of());
+        when(jobRunService.listLiteUnfinishedRuns(RUN_ID)).thenReturn(List.of(child), List.of());
         when(jobKillService.attemptToKillJob(child)).thenReturn(true);
         when(stateService.confirmKilled(RUN_ID)).thenReturn(FlowRunTransition.applied(KILLED));
 

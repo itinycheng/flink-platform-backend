@@ -48,7 +48,7 @@ class LegacyJobListService {
         }
 
         var executionConfig = candidate.getConfig();
-        var activeRun = jobRunService.findActiveRunByJobId(executionConfig.getStartJobId());
+        var activeRun = jobRunService.findUnfinishedByJobId(executionConfig.getStartJobId());
         if (activeRun != null) {
             log.warn("The job: {} is in non-terminal status, job run id: {}", activeRun.getName(), activeRun.getId());
             candidate.setStatus(FAILURE);

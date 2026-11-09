@@ -61,7 +61,7 @@ public class FlowRunKillService {
 
     private boolean confirmAfterJobRunKilled(Long id) {
         try {
-            var jobRunList = jobRunService.listLiteNonTerminalRuns(id);
+            var jobRunList = jobRunService.listLiteUnfinishedRuns(id);
             if (CollectionUtils.isEmpty(jobRunList)) {
                 return stateService.confirmKilled(id).status() == KILLED;
             }
@@ -78,7 +78,7 @@ public class FlowRunKillService {
         }
 
         try {
-            var runList = jobRunService.listLiteNonTerminalRuns(id);
+            var runList = jobRunService.listLiteUnfinishedRuns(id);
             if (CollectionUtils.isEmpty(runList)) {
                 stateService.forceKilled(id);
                 return;

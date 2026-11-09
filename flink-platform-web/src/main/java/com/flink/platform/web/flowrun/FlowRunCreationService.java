@@ -74,7 +74,7 @@ public class FlowRunCreationService {
             }
 
             var timeouts = new ArrayList<WaitTimeout>();
-            var activeRuns = flowRunService.listActiveRuns(candidate.getFlowId());
+            var activeRuns = flowRunService.listUnfinishedRuns(candidate.getFlowId());
             var now = LocalDateTime.now();
             var expiredRuns = activeRuns.stream()
                     .filter(run -> run.getStatus() == WAITING)
@@ -103,7 +103,7 @@ public class FlowRunCreationService {
 
             if (lostTransition) {
                 // One fresh READ_COMMITTED snapshot reconciles every CAS loser; no unbounded transition loop.
-                var freshRuns = flowRunService.listActiveRuns(candidate.getFlowId());
+                var freshRuns = flowRunService.listUnfinishedRuns(candidate.getFlowId());
                 conflict = flowRunBizService.findRunConflict(
                         candidate.getConfig(), candidate.getScheduleTime(), freshRuns);
                 if (conflict != null) {

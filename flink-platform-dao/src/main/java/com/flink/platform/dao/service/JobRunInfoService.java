@@ -23,7 +23,7 @@ import java.util.Set;
 
 import static com.flink.platform.common.enums.ExecutionStatus.CREATED;
 import static com.flink.platform.common.enums.ExecutionStatus.FAILURE_STATUSES;
-import static com.flink.platform.common.enums.ExecutionStatus.getUnfinishedStatuses;
+import static com.flink.platform.common.enums.ExecutionStatus.UNFINISHED_STATUSES;
 import static com.flink.platform.common.enums.JobType.SUB_FLOW;
 
 /** job run info. */
@@ -74,11 +74,11 @@ public class JobRunInfoService extends ServiceImpl<JobRunInfoMapper, JobRunInfo>
         return this.baseMapper.selectLatestLiteRunPerJob(flowRunId, jobIds);
     }
 
-    public JobRunInfo findActiveRunByJobId(Long jobId) {
+    public JobRunInfo findUnfinishedByJobId(Long jobId) {
         return getOne(new QueryWrapper<JobRunInfo>()
                 .lambda()
                 .eq(JobRunInfo::getJobId, jobId)
-                .in(JobRunInfo::getStatus, getUnfinishedStatuses())
+                .in(JobRunInfo::getStatus, UNFINISHED_STATUSES)
                 .last("limit 1"));
     }
 
@@ -116,11 +116,11 @@ public class JobRunInfoService extends ServiceImpl<JobRunInfoMapper, JobRunInfo>
         return baseMapper.countJobRunGroupByStatus(workspaceId, startTime, endTime);
     }
 
-    public List<JobRunInfo> listLiteNonTerminalRuns(Long flowRunId) {
+    public List<JobRunInfo> listLiteUnfinishedRuns(Long flowRunId) {
         return list(new QueryWrapper<JobRunInfo>()
                 .lambda()
-                .select(JobRunInfo.class, info -> info.getTypeHandler() == null)
+                .select(JobRunInfo.class, this::isLiteField)
                 .eq(JobRunInfo::getFlowRunId, flowRunId)
-                .in(JobRunInfo::getStatus, getUnfinishedStatuses()));
+                .in(JobRunInfo::getStatus, UNFINISHED_STATUSES));
     }
 }

@@ -45,7 +45,7 @@ the flow has remaining capacity. Different start jobs or different strategies ma
 the admission layer deliberately does not infer overlap from the DAG. Setting `maxActiveRuns`
 above `1` therefore opts into possible overlap between the jobs executed by different flow runs.
 
-The module boundary is deliberate: DAO `JobFlowRunService.listActiveRuns` loads non-terminal rows
+The module boundary is deliberate: DAO `JobFlowRunService.listUnfinishedRuns` loads non-terminal rows
 for duplicate, overlap, and capacity checks. Terminal history remains available for audit but does
 not participate in admission.
 

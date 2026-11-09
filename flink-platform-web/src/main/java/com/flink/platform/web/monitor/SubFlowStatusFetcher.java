@@ -7,14 +7,12 @@ import com.flink.platform.dao.service.JobRunInfoService;
 import com.flink.platform.grpc.JobStatusReply;
 import jakarta.annotation.Nonnull;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
 import static com.flink.platform.common.enums.JobType.SUB_FLOW;
 
-@Slf4j
 @Order(1)
 @Component
 @RequiredArgsConstructor(onConstructor_ = @Autowired)
@@ -33,7 +31,11 @@ public class SubFlowStatusFetcher implements StatusFetcher {
     public JobStatusReply getStatus(@Nonnull StatusRequest request) {
         var jobRun = jobRunService.getById(request.getJobRunId());
         var backInfo = jobRun.getBackInfo();
-        var jobFlowRun = jobFlowRunService.getById(backInfo.getFlowRunId());
+        var jobFlowRun = jobFlowRunService.getLiteById(backInfo.getFlowRunId());
+        if (jobFlowRun == null) {
+            throw new IllegalStateException("Flow run not found: " + backInfo.getFlowRunId());
+        }
+
         var status =
                 switch (jobFlowRun.getStatus()) {
                     case CREATED, WAITING -> ExecutionStatus.SUBMITTED;

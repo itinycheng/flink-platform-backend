@@ -74,10 +74,6 @@ public enum ExecutionStatus {
         return terminalState == TerminalState.TRANSIENT;
     }
 
-    public static List<ExecutionStatus> getUnfinishedStatuses() {
-        return UNFINISHED_STATUSES;
-    }
-
     public static ExecutionStatus from(Integer code) {
         for (ExecutionStatus value : values()) {
             if (value.code == code) {

@@ -55,7 +55,7 @@ admission is blocked, instead of leaving a reservation behind.
 - Deploy with a short drain of sub-flow triggers (pause `SUB_FLOW` execution or let pending
   Quartz triggers fire) so no legacy reservation is in flight. No compatibility flag or shim.
 - **Breaking:** a flow run left in `CREATED` by the old reservation is still counted as active
-  (`JobFlowRunService.listActiveRuns` includes every non-terminal status), but is never dispatched
+  (`JobFlowRunService.listUnfinishedRuns` includes every non-terminal status), but is never dispatched
   (the dispatcher claims only runs owned by the local host) and never expired (expiry only touches
   `WAITING`). With the default `maxActiveRuns = 1`, every later trigger for that flow stays
   `BLOCKED` until the row is changed.

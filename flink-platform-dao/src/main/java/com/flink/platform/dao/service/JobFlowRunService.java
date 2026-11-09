@@ -26,8 +26,8 @@ import static com.flink.platform.common.constants.Constant.HOST_IP;
 import static com.flink.platform.common.enums.ExecutionStatus.EXECUTABLE_STATUSES;
 import static com.flink.platform.common.enums.ExecutionStatus.KILLING;
 import static com.flink.platform.common.enums.ExecutionStatus.RUNNING;
+import static com.flink.platform.common.enums.ExecutionStatus.UNFINISHED_STATUSES;
 import static com.flink.platform.common.enums.ExecutionStatus.WAITING;
-import static com.flink.platform.common.enums.ExecutionStatus.getUnfinishedStatuses;
 import static org.apache.commons.collections4.CollectionUtils.isNotEmpty;
 
 /** job config info. */
@@ -147,11 +147,11 @@ public class JobFlowRunService extends ServiceImpl<JobFlowRunMapper, JobFlowRun>
                 .getScheduleTime();
     }
 
-    public List<JobFlowRun> listActiveRuns(Long flowId) {
+    public List<JobFlowRun> listUnfinishedRuns(Long flowId) {
         return list(new QueryWrapper<JobFlowRun>()
                 .lambda()
                 .eq(JobFlowRun::getFlowId, flowId)
-                .in(JobFlowRun::getStatus, getUnfinishedStatuses()));
+                .in(JobFlowRun::getStatus, UNFINISHED_STATUSES));
     }
 
     @Transactional
