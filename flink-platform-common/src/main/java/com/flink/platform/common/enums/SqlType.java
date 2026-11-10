@@ -13,10 +13,10 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
-/** sql command type. */
+/** SQL command type. */
 public enum SqlType {
 
-    /** sql type enums. */
+    /** SQL type enums. */
     SELECT("SELECT.*", (operands) -> Optional.of(new String[] {operands[0]})),
 
     INSERT_INTO("INSERT\\s+INTO.*", (operands) -> Optional.of(new String[] {operands[0]})),
@@ -112,13 +112,13 @@ public enum SqlType {
     }
 
     public static Sql parse(String statement) {
-        // delete the comment and semicolon at the end of sql
+        // delete the comment and semicolon at the end of SQL
         String stmt = SqlUtil.stripUselessCharsFromSql(statement);
         if (StringUtils.isBlank(stmt)) {
             return null;
         }
 
-        // parse sql
+        // parse SQL
         for (SqlType type : values()) {
             Matcher matcher = type.pattern.matcher(stmt);
             if (matcher.matches()) {

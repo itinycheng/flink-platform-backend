@@ -12,7 +12,7 @@ import java.lang.annotation.Target;
 /**
  * Bounds a {@link java.time.Duration} property, the {@code @Min}/{@code @Max} equivalent for time spans.
  *
- * <p>Bounds are written the same way the property itself is written in yaml (e.g. {@code "30s"}, {@code "24h"}) and are
+ * <p>Bounds are written the same way the property itself is written in YAML (e.g. {@code "30s"}, {@code "24h"}) and are
  * parsed by {@link com.flink.platform.common.util.DurationUtil}. An empty bound means unbounded on that side.
  *
  * <p>Per Jakarta Bean Validation convention a {@code null} value is considered valid; pair with {@code @NotNull} when

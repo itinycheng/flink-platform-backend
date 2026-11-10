@@ -67,7 +67,7 @@ public class JobRunInfo implements Identifiable {
 
     private ExecutionStatus status;
 
-    /** store json data of JobStatistics. */
+    /** store JSON data of JobStatistics. */
     @TableField(typeHandler = Jackson3TypeHandler.class)
     private JobCallback backInfo;
 

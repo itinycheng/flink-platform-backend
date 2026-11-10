@@ -2,14 +2,12 @@ package com.flink.platform.web.util;
 
 import com.flink.platform.web.common.SpringContext;
 import jakarta.servlet.http.HttpServletRequest;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
 import static com.flink.platform.common.constants.Constant.COLON;
 import static com.flink.platform.common.constants.Constant.COMMA;
 
 /** Http utils. */
-@Slf4j
 public class HttpUtil {
 
     public static final String HTTP_HEADER_UNKNOWN = "unKnown";

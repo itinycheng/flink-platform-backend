@@ -9,7 +9,7 @@ import tools.jackson.databind.node.StringNode;
 /**
  * warning: this isn't an efficient implementation, improve the code in the future.
  *
- * <p>keep a json as string when use jackson to deSerde a string value trim double quotes when a
+ * <p>keep a JSON as string when use jackson to deSerde a string value trim double quotes when a
  * TextNode appears
  */
 @SuppressWarnings("unused")

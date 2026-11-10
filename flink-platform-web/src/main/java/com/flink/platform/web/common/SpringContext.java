@@ -69,7 +69,7 @@ public class SpringContext implements ApplicationContextAware, DisposableBean {
     }
 
     @Override
-    public void destroy() throws Exception {
+    public void destroy() {
         log.info("Clean ApplicationContext instance in SpringContext class");
         applicationContext = null;
         applicationName = null;

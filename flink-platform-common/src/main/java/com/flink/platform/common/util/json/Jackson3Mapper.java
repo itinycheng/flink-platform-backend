@@ -83,7 +83,7 @@ public class Jackson3Mapper implements JacksonBaseMapper<JsonMapper> {
     }
 
     // ====================================================
-    // ============== jackson global configs ==============
+    // ============== Jackson global configs ==============
     // ====================================================
 
     public void jacksonBuilderWithGlobalConfigs(JsonMapper.Builder builder) {

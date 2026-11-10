@@ -47,6 +47,10 @@ public class CommandMonitor {
         }
 
         var command = runningJobMap.getFirst();
+        if (command == null) {
+            return;
+        }
+
         var expected = command.getExpectedStopTime();
         if (expected == null) {
             return;

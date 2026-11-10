@@ -98,15 +98,4 @@ public class TypeConvertFunction extends ScalarFunction {
                 })
                 .build();
     }
-
-    public static void main(String[] args) {
-        System.out.println(new TypeConvertFunction().eval("true", "BOOL"));
-        System.out.println(new TypeConvertFunction().eval("true", "LONG"));
-        System.out.println(new TypeConvertFunction().eval("false", "LONG"));
-        System.out.println(new TypeConvertFunction().eval("1.0", "LONG"));
-        System.out.println(new TypeConvertFunction().eval("2.0", "DOUBLE"));
-        System.out.println(new TypeConvertFunction().eval("3", "LONG"));
-        System.out.println(new TypeConvertFunction().eval("null", "INT"));
-        System.out.println(new TypeConvertFunction().eval("3", "STRING"));
-    }
 }

@@ -27,7 +27,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
@@ -75,7 +74,7 @@ public class LoginController {
     }
 
     @PostMapping(value = "/logout")
-    public ResultInfo<Map<String, Object>> logout(@RequestBody UserRequest userRequest) throws IOException {
+    public ResultInfo<Map<String, Object>> logout(@RequestBody UserRequest userRequest) {
         if (StringUtils.isNotEmpty(userRequest.getToken())) {
             sessionService.remove(new QueryWrapper<Session>().lambda().eq(Session::getToken, userRequest.getToken()));
         }

@@ -13,7 +13,7 @@ class FileTest {
 
     @Test
     void test1() {
-        System.out.println(UUID.randomUUID().toString());
+        System.out.println(UUID.randomUUID());
         File file = new File("application.yml");
         System.out.println(file.getAbsolutePath());
     }
@@ -22,6 +22,6 @@ class FileTest {
     void test2() throws Exception {
         Path path = Path.of("tmp/t.log");
         FileUtils.write(path.toFile(), "data", StandardCharsets.UTF_8);
-        System.out.println("~~~" + path.toAbsolutePath().toString());
+        System.out.println("~~~" + path.toAbsolutePath());
     }
 }

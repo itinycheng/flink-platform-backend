@@ -50,7 +50,7 @@ public class JobFlow implements Identifiable {
     /** crontab. */
     private String cronExpr;
 
-    /** job flow json. */
+    /** job flow JSON. */
     @TableField(typeHandler = Jackson3TypeHandler.class)
     private JobFlowDag flow;
 

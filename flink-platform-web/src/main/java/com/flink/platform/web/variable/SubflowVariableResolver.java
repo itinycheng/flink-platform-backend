@@ -5,7 +5,6 @@ import com.flink.platform.dao.entity.task.FlowJob;
 import com.flink.platform.dao.service.JobFlowRunService;
 import com.flink.platform.dao.service.JobRunInfoService;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.MapUtils;
 import org.jspecify.annotations.Nullable;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,7 +21,6 @@ import static com.flink.platform.common.constants.JobConstant.SUBFLOW_PATTERN;
 /**
  * Subflow variable resolver. ${subflow:paramName} ${subflow:code:paramName}
  */
-@Slf4j
 @Order(6)
 @Component
 @RequiredArgsConstructor(onConstructor_ = @Autowired)

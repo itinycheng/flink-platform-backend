@@ -6,7 +6,6 @@ import com.flink.platform.dao.service.JobFlowRunService;
 import com.flink.platform.dao.service.JobParamService;
 import com.flink.platform.web.util.ObjectUtil;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.MapUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.annotation.Order;
@@ -20,7 +19,6 @@ import static com.flink.platform.common.constants.JobConstant.PARAM_PATTERN;
 /**
  * Job parameter variable resolver. Resolves ${param:paramName} placeholders.
  */
-@Slf4j
 @Order(4)
 @Component
 @RequiredArgsConstructor(onConstructor_ = @Autowired)

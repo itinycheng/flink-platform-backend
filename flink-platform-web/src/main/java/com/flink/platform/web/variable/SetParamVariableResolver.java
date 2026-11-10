@@ -1,7 +1,6 @@
 package com.flink.platform.web.variable;
 
 import com.flink.platform.dao.entity.JobRunInfo;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
@@ -15,7 +14,6 @@ import static com.flink.platform.common.constants.JobConstant.SET_PARAM_PATTERN;
  * Set value variable resolver.
  * Resolves ${setParam:key=value} placeholders.
  */
-@Slf4j
 @Order(99)
 @Component
 public class SetParamVariableResolver implements VariableResolver {

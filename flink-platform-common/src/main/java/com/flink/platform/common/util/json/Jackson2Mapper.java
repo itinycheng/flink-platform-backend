@@ -84,7 +84,7 @@ public class Jackson2Mapper implements JacksonBaseMapper<JsonMapper> {
     }
 
     // ====================================================
-    // ============== jackson global configs ==============
+    // ============== Jackson global configs ==============
     // ====================================================
 
     public static void jacksonBuilderWithGlobalConfigs(JsonMapper.Builder builder) {

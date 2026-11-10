@@ -3,6 +3,7 @@ package com.flink.platform.web.command.sql;
 import com.flink.platform.dao.entity.Datasource;
 import com.flink.platform.dao.entity.ds.DatasourceParam;
 import com.flink.platform.dao.entity.result.JobCallback;
+import com.flink.platform.web.util.ThreadUtil;
 import com.google.common.annotations.VisibleForTesting;
 import jakarta.annotation.Nonnull;
 import lombok.extern.slf4j.Slf4j;
@@ -16,11 +17,10 @@ import java.util.Map;
 import java.util.StringJoiner;
 
 import static com.flink.platform.common.constants.Constant.LINE_SEPARATOR;
+import static com.flink.platform.web.util.ThreadUtil.ONE_SECOND_MILLIS;
 
 @Slf4j
 public class HiveSqlTask extends SqlTask {
-
-    private static final int DEFAULT_QUERY_LOG_INTERVAL = 1000;
 
     private final StringBuffer logBuffer;
 
@@ -116,7 +116,7 @@ public class HiveSqlTask extends SqlTask {
                 for (String log : statement.getQueryLog()) {
                     logBuffer.append(log).append(LINE_SEPARATOR);
                 }
-                Thread.sleep(DEFAULT_QUERY_LOG_INTERVAL);
+                ThreadUtil.sleep(ONE_SECOND_MILLIS);
             }
         } catch (Exception e) {
             log.error("get hive query log error", e);
