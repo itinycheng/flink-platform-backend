@@ -24,6 +24,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -140,6 +141,61 @@ public class VariableResolverTest {
         assertEquals("2026-06-20 23:00:00", result.get(time11));
         assertEquals("2026-06-20 00:00:00", result.get(time12));
         Mockito.verify(jobFlowRunService, Mockito.times(1)).getScheduleTimeOrNow(100L);
+    }
+
+    @Test
+    public void timeOffsetsResolveWithAndWithoutWhitespace() {
+        Mockito.when(jobFlowRunService.getScheduleTimeOrNow(100L))
+                .thenReturn(LocalDateTime.of(2026, 6, 21, 23, 59, 59));
+
+        var compact = "${time:yyyyMMdd[bizDay-1d]}";
+        var spaced = "${time:yyyyMMdd[bizDay - 1d]}";
+        var positive = "${time:yyyyMMdd[ bizDay + 2d ]}";
+        var noOffset = "${time:yyyyMMdd[ bizDay ]}";
+        var hourOffset = "${time:yyyy-MM-dd HH:mm[bizHour - 30m]}";
+        var mixedCase = "${time:yyyyMMdd[BIZDAY - 1d]}";
+        var jobRun = new JobRunInfo();
+        jobRun.setFlowRunId(100L);
+
+        var result = timeVariableResolver.resolve(
+                jobRun, String.join(" ", compact, spaced, positive, noOffset, hourOffset, mixedCase, spaced));
+
+        assertEquals("20260620", result.get(compact));
+        assertEquals("20260620", result.get(spaced));
+        assertEquals("20260623", result.get(positive));
+        assertEquals("20260621", result.get(noOffset));
+        assertEquals("2026-06-21 22:30", result.get(hourOffset));
+        assertEquals("20260620", result.get(mixedCase));
+        assertEquals(6, result.size());
+        Mockito.verify(jobFlowRunService).getScheduleTimeOrNow(100L);
+    }
+
+    @Test
+    public void curHourOffsetUsesCurrentTimeWithoutFlowRunLookup() {
+        var jobRun = new JobRunInfo();
+        jobRun.setFlowRunId(200L);
+        var expression = "${time:yyyy-MM-dd HH:mm[curHour + 2h]}";
+        var before = LocalDateTime.now().truncatedTo(ChronoUnit.HOURS).plusHours(2);
+
+        var result = timeVariableResolver.resolve(jobRun, expression);
+
+        var after = LocalDateTime.now().truncatedTo(ChronoUnit.HOURS).plusHours(2);
+        var resolved = result.get(expression);
+        assertTrue(List.of(DateUtil.format(before, "yyyy-MM-dd HH:mm"), DateUtil.format(after, "yyyy-MM-dd HH:mm"))
+                .contains(resolved));
+        Mockito.verifyNoInteractions(jobFlowRunService);
+    }
+
+    @Test
+    public void unsupportedTimeOffsetUnitFailsParsing() {
+        Mockito.when(jobFlowRunService.getScheduleTimeOrNow(100L))
+                .thenReturn(LocalDateTime.of(2026, 6, 21, 23, 59, 59));
+        var jobRun = new JobRunInfo();
+        jobRun.setFlowRunId(100L);
+
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> timeVariableResolver.resolve(jobRun, "${time:yyyyMMdd[bizDay + 1fortnight]}"));
     }
 
     @Test

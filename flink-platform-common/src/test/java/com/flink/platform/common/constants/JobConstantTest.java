@@ -34,6 +34,25 @@ class JobConstantTest {
     }
 
     @Test
+    void timePatternMatchesWhitespaceAroundBaseTimeAndOffset() {
+        String[][] cases = {
+            {"${time:yyyyMMdd[bizDay - 1d]}", "bizDay", "-", "1d"},
+            {"${time:yyyyMMdd[ bizDay + 2d ]}", "bizDay", "+", "2d"},
+            {"${time:yyyyMMdd[ bizDay ]}", "bizDay", null, null},
+            {"${time:yyyyMMdd[curHour- 30m]}", "curHour", "-", "30m"},
+            {"${time:yyyyMMdd[BIZDAY - 1d]}", "BIZDAY", "-", "1d"}
+        };
+        for (String[] testCase : cases) {
+            Matcher m = JobConstant.TIME_PATTERN.matcher(testCase[0]);
+            assertTrue(m.matches(), testCase[0]);
+            assertEquals("yyyyMMdd", m.group("format"), testCase[0]);
+            assertEquals(testCase[1], m.group("baseTime"), testCase[0]);
+            assertEquals(testCase[2], m.group("operator"), testCase[0]);
+            assertEquals(testCase[3], m.group("duration"), testCase[0]);
+        }
+    }
+
+    @Test
     void timePatternMatchesWithoutBracket() {
         Matcher m = JobConstant.TIME_PATTERN.matcher("${time:yyyyMMdd}");
         assertTrue(m.find());

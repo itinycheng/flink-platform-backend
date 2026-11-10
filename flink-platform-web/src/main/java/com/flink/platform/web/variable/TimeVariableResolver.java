@@ -7,7 +7,6 @@ import com.flink.platform.dao.entity.JobRunInfo;
 import com.flink.platform.dao.service.JobFlowRunService;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.jspecify.annotations.Nullable;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,7 +33,6 @@ import static com.flink.platform.common.util.Preconditions.checkNotNull;
  * (bizYear/bizMonth/bizDay/bizHour/bizMinute/bizSecond/bizMillisecond) — anchored to
  * JobFlowRun.scheduleTime
  */
-@Slf4j
 @Order(5)
 @Component
 @RequiredArgsConstructor(onConstructor_ = @Autowired)
@@ -57,6 +55,9 @@ public class TimeVariableResolver implements VariableResolver {
             var baseTime = matcher.group("baseTime");
             var operator = matcher.group("operator");
             var duration = matcher.group("duration");
+            if ((operator == null) != (duration == null)) {
+                throw new IllegalArgumentException("Time offset requires an operator and duration: " + variable);
+            }
             var destTime = baseTime == null
                     ? LocalDateTime.now()
                     : BaseTimeUnit.of(baseTime).provider.apply(ctx);
