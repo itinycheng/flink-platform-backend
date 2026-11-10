@@ -30,7 +30,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ThreadPoolExecutor;
 
 import static com.flink.platform.common.constants.Constant.SEMICOLON;
-import static com.flink.platform.common.enums.ExecutionStatus.FAILURE;
 import static com.flink.platform.common.enums.ExecutionStatus.KILLING;
 import static com.flink.platform.common.util.DurationUtil.humanizeDuration;
 import static com.flink.platform.common.util.ExceptionUtil.runWithErrorLogging;
@@ -263,14 +262,11 @@ public class FlowRunDispatcher {
                 var waiting = failure.run();
                 var reason = failure.reason();
                 // Conditional on WAITING: a concurrent kill must not be overwritten with FAILURE.
-                if (stateService.failWaiting(waiting.getId()).outcome() != APPLIED) {
+                if (stateService.failWaiting(waiting.getId(), reason).outcome() != APPLIED) {
                     continue;
                 }
 
-                waiting.setStatus(FAILURE);
-                waiting.setEndTime(LocalDateTime.now());
                 log.warn("{}, failed waiting flow run: {}", reason, waiting.getId());
-                alertSendingService.sendAlerts(waiting, reason);
             } catch (Exception e) {
                 log.error("Failed to fail waiting flow run: {}", failure.run().getId(), e);
             }
@@ -296,7 +292,9 @@ public class FlowRunDispatcher {
             var flow = jobFlowRun.getFlow();
             if (flow == null || CollectionUtils.isEmpty(flow.getVertices())) {
                 log.warn("No JobVertex found, no scheduling required, flow run id: {}", jobFlowRun.getId());
-                failRunWithoutVertices(jobFlowRun);
+                // Only SUBMITTED is expected; a RUNNING row with no vertices is legacy/corrupt data left
+                // for manual reconciliation. The conditional update protects a concurrent kill.
+                stateService.failSubmitted(jobFlowRun.getId(), "No job vertex found");
                 return;
             }
 
@@ -310,17 +308,6 @@ public class FlowRunDispatcher {
                 releaseInFlight(jobFlowRun.getId());
             }
         }
-    }
-
-    private void failRunWithoutVertices(JobFlowRun jobFlowRun) {
-        // Only SUBMITTED is expected; a RUNNING row with no vertices is legacy/corrupt data left
-        // for manual reconciliation. The conditional update protects a concurrent kill.
-        if (stateService.failSubmitted(jobFlowRun.getId()).outcome() != APPLIED) {
-            return;
-        }
-        jobFlowRun.setStatus(FAILURE);
-        jobFlowRun.setEndTime(LocalDateTime.now());
-        alertSendingService.sendAlerts(jobFlowRun, "No job vertex found");
     }
 
     private record WaitingFailure(JobFlowRun run, String reason) {}

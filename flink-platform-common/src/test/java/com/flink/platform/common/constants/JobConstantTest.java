@@ -53,6 +53,16 @@ class JobConstantTest {
     }
 
     @Test
+    void timePatternMatchesOffsetWithSpaces() {
+        Matcher m = JobConstant.TIME_PATTERN.matcher("${time:yyyyMMdd[ curDay - 1d ]}");
+        assertTrue(m.find());
+        assertEquals("yyyyMMdd", m.group("format"));
+        assertEquals("curDay", m.group("baseTime"));
+        assertEquals("-", m.group("operator"));
+        assertEquals("1d", m.group("duration"));
+    }
+
+    @Test
     void timePatternMatchesWithoutBracket() {
         Matcher m = JobConstant.TIME_PATTERN.matcher("${time:yyyyMMdd}");
         assertTrue(m.find());

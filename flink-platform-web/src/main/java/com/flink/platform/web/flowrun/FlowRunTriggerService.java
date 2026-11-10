@@ -84,13 +84,11 @@ public class FlowRunTriggerService {
     }
 
     private void report(FlowRunCreationResult result, JobFlow jobFlow) {
-        result.timeouts().forEach(timeout -> {
-            log.warn(
-                    "{}, failed waiting flow run: {}",
-                    timeout.reason(),
-                    timeout.run().getId());
-            alertSendingService.sendAlerts(timeout.run(), timeout.reason());
-        });
+        result.timeouts()
+                .forEach(timeout -> log.warn(
+                        "{}, failed waiting flow run: {}",
+                        timeout.reason(),
+                        timeout.run().getId()));
 
         switch (result.state()) {
             case BLOCKED -> {

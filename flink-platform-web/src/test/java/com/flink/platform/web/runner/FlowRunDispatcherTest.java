@@ -31,7 +31,6 @@ import static com.flink.platform.common.enums.ExecutionStatus.SUBMITTED;
 import static com.flink.platform.common.enums.ExecutionStatus.WAITING;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -121,14 +120,12 @@ class FlowRunDispatcherTest {
         run.setCronExpr("not-a-valid-cron");
         run.setScheduleTime(LocalDateTime.now());
         when(jobFlowRunService.listWaitingRunsOnHost()).thenReturn(List.of(run));
-        when(stateService.failWaiting(1L)).thenReturn(FlowRunTransition.applied(FAILURE));
+        when(stateService.failWaiting(eq(1L), any())).thenReturn(FlowRunTransition.applied(FAILURE));
 
         dispatcher.advanceWaitingRuns();
 
         var reason = ArgumentCaptor.forClass(String.class);
-        verify(alertSendingService).sendAlerts(eq(run), reason.capture());
-        assertEquals(FAILURE, run.getStatus());
-        assertNotNull(run.getEndTime());
+        verify(stateService).failWaiting(eq(1L), reason.capture());
         assertTrue(reason.getValue().contains("Failed"), reason.getValue());
         verify(dependencyService, never()).evaluate(any());
     }
@@ -146,7 +143,7 @@ class FlowRunDispatcherTest {
         dispatcher.advanceWaitingRuns();
 
         verify(stateService, never()).submitWaiting(anyLong());
-        verify(stateService, never()).failWaiting(anyLong());
+        verify(stateService, never()).failWaiting(anyLong(), any());
         verify(alertSendingService, never()).sendAlertsDirectly(any(), any());
     }
 
@@ -162,7 +159,7 @@ class FlowRunDispatcherTest {
         dispatcher.advanceWaitingRuns();
 
         verify(stateService, never()).submitWaiting(anyLong());
-        verify(stateService, never()).failWaiting(anyLong());
+        verify(stateService, never()).failWaiting(anyLong(), any());
     }
 
     @Test
@@ -207,11 +204,11 @@ class FlowRunDispatcherTest {
         run.setScheduleTime(waitStartedAt);
         setCreateTime(run, waitStartedAt);
         when(jobFlowRunService.listWaitingRunsOnHost()).thenReturn(List.of(run));
-        when(stateService.failWaiting(1L)).thenReturn(FlowRunTransition.applied(FAILURE));
+        when(stateService.failWaiting(eq(1L), any())).thenReturn(FlowRunTransition.applied(FAILURE));
 
         dispatcher.advanceWaitingRuns();
 
-        verify(alertSendingService).sendAlerts(eq(run), any());
+        verify(stateService).failWaiting(eq(1L), any());
         verify(alertSendingService, never()).sendAlertsDirectly(any(), any());
         verify(dependencyService, never()).evaluate(any());
     }
@@ -230,7 +227,7 @@ class FlowRunDispatcherTest {
 
         verify(stateService).submitWaiting(1L);
         verify(stateService).submitWaiting(2L);
-        verify(stateService, never()).failWaiting(anyLong());
+        verify(stateService, never()).failWaiting(anyLong(), any());
     }
 
     @Test
@@ -241,14 +238,13 @@ class FlowRunDispatcherTest {
         when(jobFlowRunService.listWaitingRunsOnHost()).thenReturn(List.of(satisfied, failed));
         when(dependencyService.evaluate(any())).thenReturn(DependencyState.SATISFIED, DependencyState.UNSATISFIABLE);
         when(stateService.submitWaiting(1L)).thenReturn(FlowRunTransition.applied(SUBMITTED));
-        when(stateService.failWaiting(2L)).thenReturn(FlowRunTransition.applied(FAILURE));
+        when(stateService.failWaiting(eq(2L), any())).thenReturn(FlowRunTransition.applied(FAILURE));
 
         dispatcher.advanceWaitingRuns();
 
         var ordered = inOrder(stateService);
         ordered.verify(stateService).submitWaiting(1L);
-        ordered.verify(stateService).failWaiting(2L);
-        verify(alertSendingService).sendAlerts(eq(failed), any());
+        ordered.verify(stateService).failWaiting(eq(2L), any());
     }
 
     @Test
@@ -258,15 +254,13 @@ class FlowRunDispatcherTest {
         failed.setId(2L);
         when(jobFlowRunService.listWaitingRunsOnHost()).thenReturn(List.of(concurrentlyUpdated, failed));
         when(dependencyService.evaluate(any())).thenReturn(DependencyState.UNSATISFIABLE);
-        when(stateService.failWaiting(1L)).thenReturn(FlowRunTransition.rejected(WAITING));
-        when(stateService.failWaiting(2L)).thenReturn(FlowRunTransition.applied(FAILURE));
+        when(stateService.failWaiting(eq(1L), any())).thenReturn(FlowRunTransition.rejected(WAITING));
+        when(stateService.failWaiting(eq(2L), any())).thenReturn(FlowRunTransition.applied(FAILURE));
 
         dispatcher.advanceWaitingRuns();
 
-        verify(stateService).failWaiting(1L);
-        verify(stateService).failWaiting(2L);
-        verify(alertSendingService, never()).sendAlerts(eq(concurrentlyUpdated), any());
-        verify(alertSendingService).sendAlerts(eq(failed), any());
+        verify(stateService).failWaiting(eq(1L), any());
+        verify(stateService).failWaiting(eq(2L), any());
     }
 
     private JobFlowRun waitingRun() {

@@ -110,9 +110,9 @@ public class FlowExecuteThread implements Runnable {
             ThreadUtil.safeSleep(FIVE_SECOND_MILLIS);
         }
 
-        // Wait for all jobs complete, call completeAndNotify in the last completed thread.
+        // Wait for all jobs to complete before finalizing the flow run.
         CompletableFuture.allOf(runningJobs.values().toArray(new CompletableFuture[0]))
-                .thenAccept(unused -> completeAndNotify(flow))
+                .thenAccept(unused -> completeFlowRun(flow))
                 .join();
     }
 
@@ -143,25 +143,15 @@ public class FlowExecuteThread implements Runnable {
         }
     }
 
-    /** Update status of jobFlow and send notification. */
-    private void completeAndNotify(JobFlowDag flow) {
+    /** Complete the flow run after its jobs finish. */
+    private void completeFlowRun(JobFlowDag flow) {
         var finalStatus = JobFlowDagHelper.getFinalStatus(flow);
         // Durable kill confirmation belongs to kill orchestration.
         if (finalStatus == KILLED) {
             killService.requestKill(jobFlowRun.getId(), HOST_IP);
             return;
         }
-        if (stateService
-                        .completeRunning(jobFlowRun.getId(), HOST_IP, finalStatus)
-                        .outcome()
-                != APPLIED) {
-            return;
-        }
-        jobFlowRun.setStatus(finalStatus);
-        jobFlowRun.setEndTime(LocalDateTime.now());
-
-        // send notification.
-        alertSendingService.sendAlerts(jobFlowRun);
+        stateService.completeRunning(jobFlowRun.getId(), HOST_IP, finalStatus);
     }
 
     // ! synchronized won't unmount the virtual thread, and thus block both its carrier and the underlying OS thread.

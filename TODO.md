@@ -561,18 +561,19 @@ remaining work is about richer diagnostics, user-defined policy and delivery gov
 
 See design: [docs/design/alerting-strategy.md](docs/design/alerting-strategy.md)
 
-- [ ] **P1 · Restore `KILLED` alerts after the state-machine migration.**
-      `FlowRunKillService` finalizes kills without notifying. Publish one terminal alert from the
-      winning transition when alerting is unified.
+- [x] **P1 · Restore `KILLED` alerts after the state-machine migration.**
+      `FlowRunStateService` now publishes filtered alerts after every winning terminal
+      transition commits, including `KILLED`. Delivery remains best effort without a transactional outbox.
 - [ ] **Structured dependency diagnostics** — distinguish no upstream run, still running,
       expired result, and settled-but-unmatched status. The last case currently collapses back to
       `PENDING` under the default `onUnmatched=WAIT`, so a settled failure is later reported as a
       timeout. `DependencyService#evaluate` returns only one group verdict; preserve the reason and
       evaluated items so warnings and terminal alerts can state the exact cause.
 - [ ] **Throttle the direct channel** — `sendAlertsDirectly` de-duplicates nothing, so
-      `JOB_LIST`'s duplicate-run guard fires once per cron tick while its start job remains active.
+      recovery and unscheduled-flow checks can repeatedly alert for the same condition.
       De-dup by `(flowId, alert kind)` inside `dispatch`, never throttling terminal-status
-      notifications. Requires modelling an "alert kind", which is the bulk of the work.
+      notifications. The filtered `JOB_LIST` duplicate-run guard can also repeat on each cron tick.
+      Requires modelling an "alert kind", which is the bulk of the work.
 - [ ] **Stop forging `FAILURE` in the `sendErrAlerts*` helpers** — the run is synthetic and nothing
       failed; the trigger was *skipped*. Recipients routing by status see a false failure;
       `sendErrAlertsDirectly` also bypasses `AlertConfig.statuses`. Schedule separately: it changes

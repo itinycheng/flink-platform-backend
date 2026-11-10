@@ -1,5 +1,6 @@
 package com.flink.platform.web.flowrun;
 
+import com.flink.platform.alert.AlertSendingService;
 import com.flink.platform.common.enums.ExecutionStatus;
 import com.flink.platform.common.util.Preconditions;
 import com.flink.platform.dao.service.JobFlowRunService;
@@ -34,16 +35,26 @@ public class FlowRunStateService {
 
     private final JobFlowRunService flowRunService;
 
+    private final AlertSendingService alertSendingService;
+
     public FlowRunTransition submitWaiting(Long id) {
         return transition(id, TransitionSpec.SUBMIT_WAITING);
     }
 
     public FlowRunTransition failWaiting(Long id) {
-        return transition(id, TransitionSpec.FAIL_WAITING);
+        return failWaiting(id, "");
+    }
+
+    public FlowRunTransition failWaiting(Long id, String reason) {
+        return transition(id, TransitionSpec.FAIL_WAITING, reason);
     }
 
     public FlowRunTransition failSubmitted(Long id) {
-        return transition(id, TransitionSpec.FAIL_SUBMITTED);
+        return failSubmitted(id, "");
+    }
+
+    public FlowRunTransition failSubmitted(Long id, String reason) {
+        return transition(id, TransitionSpec.FAIL_SUBMITTED, reason);
     }
 
     public FlowRunTransition startRunning(Long id, String workerHost) {
@@ -81,9 +92,14 @@ public class FlowRunStateService {
 
     /** For transitions justified by durable, cluster-wide facts; any worker may apply them. */
     private FlowRunTransition transition(Long id, TransitionSpec transitionSpec) {
+        return transition(id, transitionSpec, "");
+    }
+
+    private FlowRunTransition transition(Long id, TransitionSpec transitionSpec, String alertMsg) {
         Preconditions.checkArgument(id > 0, "flow run id must be positive");
         var result = attemptTransition(id, null, transitionSpec);
         logTransition(id, null, transitionSpec, result);
+        sendTerminalAlert(id, result, alertMsg);
         return result;
     }
 
@@ -103,7 +119,17 @@ public class FlowRunStateService {
         Preconditions.checkArgument(!ownerHost.isBlank(), "Worker host must not be blank");
         var result = attemptTransition(id, ownerHost, transitionSpec);
         logTransition(id, ownerHost, transitionSpec, result);
+        sendTerminalAlert(id, result, "");
         return result;
+    }
+
+    private void sendTerminalAlert(Long id, FlowRunTransition transition, String message) {
+        if (transition.outcome() != Outcome.APPLIED
+                || transition.status() == null
+                || !transition.status().isTerminalState()) {
+            return;
+        }
+        runAfterCommitOrNow(newTerminalAlertTask(id, transition, message));
     }
 
     private FlowRunTransition attemptTransition(Long id, @Nullable String expectedHost, TransitionSpec transitionSpec) {
@@ -122,7 +148,7 @@ public class FlowRunStateService {
             return;
         }
 
-        Runnable publish = () -> log.info(
+        Runnable task = () -> log.info(
                 "Flow-run transition flowRunId={} operation={} expectedStatuses={} expectedHost={} "
                         + "targetStatus={} outcome={} status={} worker={}",
                 id,
@@ -133,16 +159,40 @@ public class FlowRunStateService {
                 result.outcome(),
                 defaultIfNull(result.status(), "unknown"),
                 HOST_IP);
+        runAfterCommitOrNow(task);
+    }
+
+    private Runnable newTerminalAlertTask(Long id, FlowRunTransition transition, String message) {
+        var terminalStatus = transition.status();
+        return () -> {
+            try {
+                var flowRun = flowRunService.getById(id);
+                if (flowRun == null || flowRun.getStatus() != terminalStatus) {
+                    log.warn(
+                            "Skip terminal alert for flow run {}: expected {}, actual {}",
+                            id,
+                            terminalStatus,
+                            flowRun == null ? null : flowRun.getStatus());
+                    return;
+                }
+                alertSendingService.sendAlerts(flowRun, message);
+            } catch (Exception e) {
+                log.error("Failed to send terminal alert for flow run {}", id, e);
+            }
+        };
+    }
+
+    private void runAfterCommitOrNow(Runnable action) {
         if (TransactionSynchronizationManager.isActualTransactionActive()
                 && TransactionSynchronizationManager.isSynchronizationActive()) {
             TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
                 @Override
                 public void afterCommit() {
-                    publish.run();
+                    action.run();
                 }
             });
         } else {
-            publish.run();
+            action.run();
         }
     }
 

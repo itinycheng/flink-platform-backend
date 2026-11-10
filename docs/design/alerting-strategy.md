@@ -2,6 +2,7 @@
 
 > **Status:** Partially implemented. WAITING runs now emit one warning after
 > `worker.flowWaitWarningAfter` (default 1h) when the deadline is later than that threshold.
+> Terminal flow-run alerts are published from successful transitions in `FlowRunStateService`.
 > Remaining alert-governance work is tracked in [TODO.md](../../TODO.md).
 >
 > Raised while implementing flow-level `depends_on`. The new `WAITING` status exposed a
@@ -60,19 +61,18 @@ vs direct sending` on master.
 
 | Location | Mode | Occasion |
 |---|---|---|
-| `FlowExecuteThread#completeAndNotify` | filtered | Flow reached a terminal status |
+| `FlowRunStateService` | filtered | Any successful terminal flow-run transition, including `KILLED`; publishes after commit |
 | `FlowExecuteThread#handleTimeout` | direct | Execution timeout, `ALARM` strategy |
-| `FlowRunDispatcher#failWaitingFlowRuns` | filtered | A `WAITING` run gave up (dependency hopeless, or wait timed out) |
 | `FlowRunDispatcher#sendWaitingWarnings` | direct | A `WAITING` run passed the configured warning delay |
-| `FlowRunDispatcher#submitToExecutor` | filtered | Flow has no job vertex |
 | `WorkerHeartbeat` | direct | Failover with no active worker |
-| `JobFlowRunner` (`JOB_FLOW`) | `sendErrAlerts` | A conflicting occurrence or active run causes this trigger to be skipped |
-| `JobFlowRunner` (`JOB_LIST`) | `sendErrAlertsDirectly` | The start job is still active, so this trigger is skipped |
+| `FlowRunTriggerService` (`JOB_FLOW` and `JOB_LIST`) | `sendErrAlerts` | A conflicting occurrence or active start job causes this trigger to be skipped |
 | `JobsInJobListStatusChecker` | filtered | Cron health check |
 | `UnscheduledJobFlowChecker` | `sendErrAlertsDirectly` | Cron health check |
 
-Direct mode still dominates operational alerts. Terminal-status notifications and the normal
-`JOB_FLOW` conflict path respect the user's `AlertConfig.statuses`.
+Direct mode still handles operational alerts. Terminal-status notifications and blocked triggers
+respect the user's `AlertConfig.statuses`.
+Terminal delivery reads the committed run and is attempted once by the transition winner; a crash
+between commit and publication can still lose the alert until durable delivery is introduced.
 
 ## Problems
 
@@ -87,10 +87,10 @@ should eventually be expressed as per-flow event rules rather than more schedule
 
 ### 2. Direct alerts have no throttling
 
-`sendAlertsDirectly` sends on every call with no de-duplication. The clearest remaining case is the
-legacy `JOB_LIST` guard: while its start job remains active, **every cron tick** produces another
-"There is already an active run" alert. An hourly flow sends one an hour; a 5-minute flow sends
-twelve an hour. These bury the alerts that matter.
+`sendAlertsDirectly` sends on every call with no de-duplication. `WorkerHeartbeat` can emit a
+"No active worker" alert on repeated recovery scans, and the unscheduled-flow checker emits on
+every hourly scan until the schedule is repaired. Blocked `JOB_LIST` triggers now use the filtered
+channel, but they can also repeat on every cron tick when `FAILURE` is selected.
 
 The minimal mid-wait warning has its own run-level one-shot guard, but other direct alerts still
 need event-aware throttling.

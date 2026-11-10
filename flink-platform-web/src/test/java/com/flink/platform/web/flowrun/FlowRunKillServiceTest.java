@@ -49,8 +49,20 @@ class FlowRunKillServiceTest {
     private FlowRunKillService service;
 
     @Test
+    void directKillDoesNotRepeatCleanupAfterTerminalTransition() {
+        when(stateService.requestKill(RUN_ID))
+                .thenReturn(FlowRunTransition.applied(KILLED), FlowRunTransition.rejected(KILLED));
+
+        assertEquals(APPLIED, service.requestKill(RUN_ID).outcome());
+        assertEquals(REJECTED, service.requestKill(RUN_ID).outcome());
+        verify(stateService, times(2)).requestKill(RUN_ID);
+        verifyNoInteractions(jobRunService);
+    }
+
+    @Test
     void requestKillWithoutChildrenFinalizesImmediately() {
         when(stateService.requestKill(RUN_ID)).thenReturn(FlowRunTransition.applied(KILLING));
+        when(stateService.forceKilled(RUN_ID)).thenReturn(FlowRunTransition.applied(KILLED));
         when(jobRunService.listLiteUnfinishedRuns(RUN_ID)).thenReturn(List.of());
 
         var result = service.requestKill(RUN_ID);

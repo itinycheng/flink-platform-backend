@@ -4,7 +4,6 @@ import com.flink.platform.dao.entity.JobFlow;
 import com.flink.platform.dao.entity.JobFlowRun;
 import com.flink.platform.dao.service.JobFlowService;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -13,7 +12,6 @@ import static com.flink.platform.common.constants.Constant.EMPTY;
 import static com.flink.platform.common.enums.ExecutionStatus.FAILURE;
 
 /** Alert sending service. */
-@Slf4j
 @Service
 @RequiredArgsConstructor(onConstructor_ = @Autowired)
 public class AlertSendingService {

@@ -91,14 +91,13 @@ public class FlowRunCreationService {
 
             var lostTransition = false;
             for (var waitingRun : expiredRuns) {
-                if (stateService.failWaiting(waitingRun.getId()).outcome() != APPLIED) {
+                var reason = "Waiting timeout, dependencies not satisfied by "
+                        + flowRunBizService.resolveWaitDeadline(waitingRun);
+                if (stateService.failWaiting(waitingRun.getId(), reason).outcome() != APPLIED) {
                     lostTransition = true;
                     continue;
                 }
-                timeouts.add(new FlowRunCreationResult.WaitTimeout(
-                        waitingRun,
-                        "Waiting timeout, dependencies not satisfied by "
-                                + flowRunBizService.resolveWaitDeadline(waitingRun)));
+                timeouts.add(new FlowRunCreationResult.WaitTimeout(waitingRun, reason));
             }
 
             if (lostTransition) {

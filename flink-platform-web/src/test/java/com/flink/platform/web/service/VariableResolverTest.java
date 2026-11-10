@@ -256,6 +256,20 @@ public class VariableResolverTest {
     }
 
     @Test
+    public void timeOffsetWithSpacesResolvesFromScheduleTime() {
+        Mockito.when(jobFlowRunService.getScheduleTimeOrNow(100L))
+                .thenReturn(LocalDateTime.of(2026, 6, 21, 23, 59, 59));
+
+        var variable = "${time:yyyyMMdd[bizDay - 1d]}";
+        var jobRun = new JobRunInfo();
+        jobRun.setFlowRunId(100L);
+        jobRun.setSubject("dt=" + variable);
+
+        var result = timeVariableResolver.resolve(jobRun, jobRun.getSubject());
+        assertEquals("20260620", result.get(variable));
+    }
+
+    @Test
     public void paramsResolveFromTheFlowRunOfTheJobRun() {
         var flowRun = new JobFlowRun();
         flowRun.setFlowId(55L);

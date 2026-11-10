@@ -1,5 +1,6 @@
 package com.flink.platform.web.flowrun;
 
+import com.flink.platform.alert.AlertSendingService;
 import com.flink.platform.common.enums.ExecutionStatus;
 import com.flink.platform.dao.entity.JobFlowRun;
 import com.flink.platform.dao.service.JobFlowRunService;
@@ -30,6 +31,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 /** Verifies which conditional update each transition issues, without a database. */
@@ -42,6 +44,9 @@ class FlowRunStateServiceTest {
 
     @Mock
     private JobFlowRunService flowRunService;
+
+    @Mock
+    private AlertSendingService alertSendingService;
 
     @InjectMocks
     private FlowRunStateService service;
@@ -187,6 +192,42 @@ class FlowRunStateServiceTest {
         when(flowRunService.getLiteById(RUN_ID)).thenReturn(null);
 
         assertEquals(NOT_FOUND, service.submitWaiting(RUN_ID).outcome());
+    }
+
+    @Test
+    void appliedTerminalTransitionSendsAlertWithReason() {
+        var failed = runWith(FAILURE);
+        when(flowRunService.updateStatusFromAnyTo(eq(RUN_ID), eq(Set.of(WAITING)), isNull(), eq(FAILURE)))
+                .thenReturn(1);
+        when(flowRunService.getById(RUN_ID)).thenReturn(failed);
+
+        assertEquals(
+                APPLIED, service.failWaiting(RUN_ID, "dependency unsatisfiable").outcome());
+
+        verify(alertSendingService).sendAlerts(failed, "dependency unsatisfiable");
+    }
+
+    @Test
+    void nonTerminalTransitionDoesNotSendAlert() {
+        when(flowRunService.getLiteById(RUN_ID)).thenReturn(runWith(RUNNING));
+        when(flowRunService.updateStatusFromAnyTo(eq(RUN_ID), eq(Set.of(RUNNING)), isNull(), eq(KILLING)))
+                .thenReturn(1);
+
+        assertEquals(APPLIED, service.requestKill(RUN_ID).outcome());
+
+        verifyNoInteractions(alertSendingService);
+    }
+
+    @Test
+    void alertIsSkippedWhenTheRunMovedOnBeforeDelivery() {
+        when(flowRunService.updateStatusFromAnyTo(eq(RUN_ID), eq(Set.of(WAITING)), isNull(), eq(FAILURE)))
+                .thenReturn(1);
+        when(flowRunService.getById(RUN_ID)).thenReturn(runWith(KILLED));
+
+        assertEquals(
+                APPLIED, service.failWaiting(RUN_ID, "dependency unsatisfiable").outcome());
+
+        verifyNoInteractions(alertSendingService);
     }
 
     private JobFlowRun runWith(ExecutionStatus status) {

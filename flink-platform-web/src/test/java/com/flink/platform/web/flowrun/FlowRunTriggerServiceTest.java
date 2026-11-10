@@ -31,6 +31,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
@@ -142,7 +143,7 @@ class FlowRunTriggerServiceTest {
         when(jobFlowService.lockForUpdate(10L)).thenReturn(flow);
         when(jobFlowRunService.listUnfinishedRuns(10L)).thenReturn(List.of(expired));
         doReturn(SCHEDULE_TIME.minusHours(1)).when(bizService).resolveWaitDeadline(expired);
-        when(stateService.failWaiting(41L)).thenReturn(FlowRunTransition.applied(FAILURE));
+        when(stateService.failWaiting(eq(41L), any())).thenReturn(FlowRunTransition.applied(FAILURE));
         when(jobFlowRunService.save(any())).thenReturn(true);
 
         var result = service.handle(flow, null, null, SCHEDULE_TIME);
@@ -170,7 +171,7 @@ class FlowRunTriggerServiceTest {
         when(jobFlowService.lockForUpdate(10L)).thenReturn(flow);
         when(jobFlowRunService.listUnfinishedRuns(10L)).thenReturn(List.of(expired), List.of(claimed));
         doReturn(SCHEDULE_TIME.minusHours(1)).when(bizService).resolveWaitDeadline(expired);
-        when(stateService.failWaiting(41L)).thenReturn(FlowRunTransition.rejected(SUBMITTED));
+        when(stateService.failWaiting(eq(41L), any())).thenReturn(FlowRunTransition.rejected(SUBMITTED));
 
         var result = service.handle(flow, null, null, SCHEDULE_TIME);
 
