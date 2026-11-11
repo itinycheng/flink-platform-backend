@@ -79,6 +79,23 @@ public class JobFlowRunService extends ServiceImpl<JobFlowRunMapper, JobFlowRun>
                         .eq(expectedHost != null, JobFlowRun::getHost, expectedHost));
     }
 
+    public int updateHostsIfOwnedBy(
+            List<Long> flowRunIds, String expectedHost, String targetHost, List<ExecutionStatus> expectedStatuses) {
+        if (flowRunIds.isEmpty() || expectedStatuses.isEmpty()) {
+            return 0;
+        }
+
+        var update = new JobFlowRun();
+        update.setHost(targetHost);
+        return baseMapper.update(
+                update,
+                new QueryWrapper<JobFlowRun>()
+                        .lambda()
+                        .in(JobFlowRun::getId, flowRunIds)
+                        .eq(JobFlowRun::getHost, expectedHost)
+                        .in(JobFlowRun::getStatus, expectedStatuses));
+    }
+
     public JobFlowRun getLiteByIdOrNull(Long flowRunId) {
         try {
             return getLiteById(flowRunId);

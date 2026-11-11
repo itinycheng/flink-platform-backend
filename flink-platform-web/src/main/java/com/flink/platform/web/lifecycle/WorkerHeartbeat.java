@@ -13,6 +13,7 @@ import com.flink.platform.web.service.WorkerSelectService;
 import lombok.extern.slf4j.Slf4j;
 import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.collections4.ListUtils;
 import org.apache.commons.lang3.time.StopWatch;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -21,6 +22,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 import static com.flink.platform.common.constants.Constant.HOSTNAME;
@@ -43,6 +45,8 @@ import static java.util.stream.Collectors.toMap;
 @Slf4j
 @Component
 public class WorkerHeartbeat {
+
+    private static final int REASSIGN_BATCH_SIZE = 200;
 
     private final WorkerService workerService;
 
@@ -128,7 +132,7 @@ public class WorkerHeartbeat {
                 flowRuns.stream().map(JobFlowRun::getWorkspaceId).distinct().collect(toList());
         var workspaceMap = workspaceService.listByIds(workspaceIds).stream().collect(toMap(Workspace::getId, w -> w));
 
-        var reassigned = new ArrayList<JobFlowRun>();
+        var runIdsByTargetHost = new HashMap<String, List<Long>>();
         for (var flowRun : flowRuns) {
             var workspace = workspaceMap.get(flowRun.getWorkspaceId());
             var workspaceWorkerIds = workspace != null && workspace.getConfig() != null
@@ -150,14 +154,22 @@ public class WorkerHeartbeat {
                 continue;
             }
 
-            var newFlowRun = new JobFlowRun();
-            newFlowRun.setId(flowRun.getId());
-            newFlowRun.setHost(target.getIp());
-            reassigned.add(newFlowRun);
+            runIdsByTargetHost
+                    .computeIfAbsent(target.getIp(), ignored -> new ArrayList<>())
+                    .add(flowRun.getId());
         }
 
-        if (!reassigned.isEmpty()) {
-            jobFlowRunService.updateBatchById(reassigned);
+        int reassigned = 0;
+        for (var entry : runIdsByTargetHost.entrySet()) {
+            reassigned += ListUtils.partition(entry.getValue(), REASSIGN_BATCH_SIZE).stream()
+                    .map(partition -> jobFlowRunService.updateHostsIfOwnedBy(
+                            partition, deadWorker.getIp(), entry.getKey(), UNFINISHED_STATUSES))
+                    .reduce(Integer::sum)
+                    .orElse(0);
+        }
+
+        if (reassigned > 0) {
+            log.info("Reassigned {} flow runs from worker {}", reassigned, deadWorker.getIp());
         }
     }
 

@@ -16,10 +16,9 @@ updates arbitrate the source status and, for executor transitions, the owning ho
 transition owns its alert or cleanup side effects. `KILLING` is durable intent: new child
 reservations are fenced, cleanup is retried, and the run becomes `KILLED` after its child rows
 appear terminal. This does not prove that a previously reserved external command has stopped.
-Worker reassignment does **not** yet use the same host and status fence: `reassignFlowRunsOf` rewrites
-`host` unconditionally, so a run that completed, was killed, or was re-claimed between the scan and
-the write can still be moved. Closing this gap is deferred until the state-machine work is complete
-(see [TODO](../../TODO.md) → Failover Hardening).
+Worker reassignment uses a conditional host and status update: `reassignFlowRunsOf` moves a candidate
+only if it is still owned by the observed dead host and remains non-terminal. Candidates are grouped
+by target host and written in bounded batches. The returned update count reflects rows actually moved.
 
 `JOB_LIST` remains on `LegacyJobListService` for creation: it checks for an active start-job run
 and builds the single-job DAG. Existing and new `JOB_LIST` runs then use the same conditional

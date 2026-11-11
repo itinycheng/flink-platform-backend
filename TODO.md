@@ -207,11 +207,11 @@ fault-tolerance re-dispatch) do, but stays MySQL-only / no ZooKeeper / no new sc
 
 ### Deferred work (ROI order)
 
-- [ ] **P2 · Conditional host reassignment (fence).** `WorkerHeartbeat.reassignFlowRunsOf` scans
-      non-terminal runs and then rewrites `host` with an unconditional `updateBatchById`. A run that
-      completed, was killed, or was re-claimed between the scan and the write can still be moved.
-      Add `updateHostsIfOwnedBy(ids, expectedHost, targetHost, expectedStatuses)` and only count
-      rows the CAS actually updated. Deferred to follow-up work after this state-machine migration.
+- [x] **P2 · Conditional host reassignment (fence).** `WorkerHeartbeat.reassignFlowRunsOf` groups
+      candidate runs by target host and updates bounded batches through
+      `updateHostsIfOwnedBy(ids, expectedHost, targetHost, expectedStatuses)`. Only rows still owned
+      by the observed dead host and in a non-terminal state are moved; the returned count includes
+      only rows the conditional update changed.
 - [ ] **P2 · Submit idempotency guard (no schema, no timer).** In `ProcessJobService.processJob` /
       `CommandExecutor.exec`: if `jobRunId` already in `RUNNING_MAP`, or the job_run already has an app_id /
       is already RUNNING → do NOT resubmit, attach/return instead. `RUNNING_MAP.put` currently overwrites
