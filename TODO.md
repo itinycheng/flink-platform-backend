@@ -272,14 +272,15 @@ fault-tolerance re-dispatch) do, but stays MySQL-only / no ZooKeeper / no new sc
 ## Job Launch Claim — Uncertain Submit
 
 Follow-up after the flow-run state-machine work. `ProcessJobService.processJob` submits in step 4
-(`exec(command)`) and writes the result only in step 5 with an unconditional `updateById`, so the
+(`exec(command)`) and writes the result only in step 5. The callback write is now conditional on
+the job run remaining unfinished, but there is no durable launch claim, so the
 job-run row stays `CREATED` for the whole submit. If the gRPC call fails (no stub deadline, worker
 crash, step 5's DB write failure, or a lost reply), two things can happen:
 
 - `JobExecuteThread` reads `CREATED`, applies `LOCAL_ERROR` (`CREATED → ERROR`) and retries with a
   **new** job run while the first remote Flink job may already be running.
-- A late step-5 write can overwrite the flow-side `ERROR` back to `SUBMITTED` on the old row, so the
-  old remote job ends up untracked but keeps running.
+- A late step-5 write no longer overwrites the flow-side `ERROR`, but the remote job may still
+  be running without a tracked active row.
 
 The `processRemoteJob` catch has been removed (unified into the `callOnce` catch), which accepts one
 `retryInterval` of delay before polling resumes after a lost reply. That trade-off is settled; the
@@ -287,8 +288,8 @@ ordering below is not.
 
 - [ ] Persist the launch claim (`SUBMITTED`) before `exec`, so the flow side can tell "claimed" from
       "not claimed".
-- [ ] Make the step-5 write conditional on the claim; a late worker write must not resurrect a row
-      the flow side has already failed.
+- [x] Guard the step-5 callback with an unfinished-status predicate; a late worker write cannot
+      resurrect a terminal row. Correlating it with a durable launch claim remains future work.
 - [ ] Settle an uncertain claim by querying the worker (the former `JobRunLaunchService.settlePending`
       / `recoverStaleLaunch` idea) instead of failing it locally.
 - [ ] **P2 · Preserve active job runs across transient reads.** This predates the state machine:
@@ -297,7 +298,7 @@ ordering below is not.
       retry the read without consuming job retries or losing the active run id.
 
 Code anchors: `ProcessJobService.processJob` — the `buildCommand` call, the `exec(command)` submit,
-and the `jobRunInfoService.updateById` that persists the result; `JobExecuteThread.processRemoteJob`;
+and the conditional status update that persists the result; `JobExecuteThread.processRemoteJob`;
 `JobExecuteThread.StatusUpdate.LOCAL_ERROR`.
 
 Related: [transient DB failure handling](docs/design/transient-db-failure-handling.md),

@@ -28,8 +28,10 @@ flow-run `CREATED` rows are still legacy data; they are not activated by this im
 The job-run state machine is outside this change. The parent flow's reservation transaction
 prevents creation of new child rows after it enters `KILLING`, and the parent retries cleanup of
 non-terminal children. Job-run submission itself follows the original direct implementation:
-there is no conditional launch claim or callback fence. A child reserved before flow kill can
-still start after the kill request, and duplicate process RPCs can execute it more than once.
+there is no conditional launch claim. The executor callback now updates only an unfinished
+job-run row, so it cannot restore an already committed terminal state. A child reserved before
+flow kill can still start after the kill request, and duplicate process RPCs can execute it more
+than once.
 Job-run status writes stay gated by the persisted row: `StatusUpdate.WORKER_REPORTED` accepts
 `CREATED`/`WAITING`/`SUBMITTED`/`RUNNING`, while `StatusUpdate.LOCAL_ERROR` accepts only `CREATED`.
 A worker report is authoritative once the run is claimed; a local exception must not overwrite a

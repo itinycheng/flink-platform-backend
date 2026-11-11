@@ -16,7 +16,6 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -40,7 +39,7 @@ public class JobRunInfoService extends ServiceImpl<JobRunInfoMapper, JobRunInfo>
         }
     };
 
-    public int updateStatusFromAnyTo(Long id, Collection<ExecutionStatus> expected, JobRunInfo update) {
+    public int updateStatusFromAnyTo(Long id, List<ExecutionStatus> expected, JobRunInfo update) {
         if (id == null || expected.isEmpty() || update.getStatus() == null) {
             return 0;
         }
