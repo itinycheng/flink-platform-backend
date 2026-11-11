@@ -111,6 +111,10 @@ public class ShellTask extends AbstractTask {
 
     @Override
     public void cancel() {
+        if (exited) {
+            return;
+        }
+
         if (processId != null) {
             CommandUtil.forceKill(processId);
         }

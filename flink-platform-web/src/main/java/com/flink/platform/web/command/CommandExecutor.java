@@ -24,8 +24,8 @@ public interface CommandExecutor {
     @Nonnull
     default JobCallback exec(@Nonnull JobCommand command) throws Exception {
         long jobRunId = command.getJobRunId();
+        RUNNING_MAP.put(jobRunId, command);
         try {
-            RUNNING_MAP.put(jobRunId, command);
             var callback = execCommand(command);
             if (callback.getStatus() == KILLING) {
                 killCommand(command);
