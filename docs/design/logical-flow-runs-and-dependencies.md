@@ -447,7 +447,7 @@ Still required after the state-machine decision:
 | Run snapshot construction and transactional creation | `flink-platform-web/.../service/FlowRunCreationService.java` |
 | Quartz trigger adapter and legacy duplicate alert | `flink-platform-web/.../quartz/JobFlowRunner.java` |
 | Scheduled/run-once Quartz creation | `flink-platform-web/.../quartz/QuartzService.java` |
-| Waiting polling and deadline | `flink-platform-web/.../runner/FlowRunDispatcher.java` |
+| Waiting polling and deadline | `flink-platform-web/.../runner/FlowRunCoordinator.java` |
 | Non-terminal lookup and WAITING CAS | `flink-platform-dao/.../service/JobFlowRunService.java` |
 | Dependency lookup/evaluation | `DependencyService`, `JobFlowMapper#selectLatestRunPerFlow` |
 | Manual Run now | `JobFlowController#runOnce` |

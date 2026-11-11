@@ -47,7 +47,7 @@ admission is blocked, instead of leaving a reservation behind.
 
 - Flow-run `CREATED` has no producer. Existing rows are legacy: a kill maps them directly to
   `KILLED`. `ExecutionStatus.CREATED` remains in the enum for the job-run lifecycle.
-- Dispatch is unchanged: `SUBMITTED` runs are claimed by `FlowRunDispatcher`; `WAITING` runs are
+- Dispatch is unchanged: `SUBMITTED` runs are claimed by `FlowRunCoordinator`; `WAITING` runs are
   advanced by dependency evaluation.
 
 ## Rollout and compatibility

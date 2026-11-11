@@ -20,7 +20,7 @@
 | 写入者 | 典型状态变化 | 当前问题 |
 |---|---|---|
 | `FlowScheduleService` | `WAITING → FAILURE` | 自己处理 CAS 失败和重读 |
-| `FlowRunDispatcher` | `WAITING → SUBMITTED/FAILURE` | 自己判断竞争结果 |
+| `FlowRunCoordinator` | `WAITING → SUBMITTED/FAILURE` | 自己判断竞争结果 |
 | `KillJobService` | 未终态 → `KILLING/KILLED` | 部分路径按 ID 无条件覆盖 |
 | `FlowExecuteThread` | `SUBMITTED → RUNNING → 终态` | 部分路径按 ID 无条件覆盖 |
 | 其他失败、恢复和通用更新接口 | 多种状态 | 可以绕过状态机 |
@@ -350,7 +350,7 @@ CAS 失败时直接抛异常改为有界协调。
 
 ## 九、调用方迁移
 
-### `FlowRunDispatcher`
+### `FlowRunCoordinator`
 
 - `WAITING → SUBMITTED/FAILURE` 改用状态服务；
 - 只有 `APPLIED` 才发送对应终态告警；
@@ -526,7 +526,7 @@ warning/error：
 
 ### Phase 2：准入与 Dispatcher
 
-- 迁移 `FlowScheduleService`、`FlowRunDispatcher`；
+- 迁移 `FlowScheduleService`、`FlowRunCoordinator`；
 - 把准入 CAS 失败直接抛异常改为有界协调；
 - 在准入事务中一次性插入子流程完整快照；
 - 对明确可重试的数据库异常增加最多 3 次事务尝试（首次加 2 次重试）；

@@ -13,6 +13,7 @@ import com.flink.platform.web.util.ThreadUtil;
 import jakarta.annotation.PreDestroy;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.collections4.ListUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
@@ -29,6 +30,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ThreadPoolExecutor;
 
+import static com.flink.platform.common.constants.Constant.HOST_IP;
 import static com.flink.platform.common.constants.Constant.SEMICOLON;
 import static com.flink.platform.common.enums.ExecutionStatus.KILLING;
 import static com.flink.platform.common.util.DurationUtil.humanizeDuration;
@@ -40,7 +42,9 @@ import static java.util.stream.Collectors.joining;
 /** Schedule job flow. */
 @Slf4j
 @Component
-public class FlowRunDispatcher {
+public class FlowRunCoordinator {
+
+    private static final int OWNERSHIP_BATCH_SIZE = 200;
 
     private final WorkerConfig workerConfig;
 
@@ -67,7 +71,7 @@ public class FlowRunDispatcher {
     private final Set<Long> inFlightCleanups = ConcurrentHashMap.newKeySet();
 
     @Autowired
-    public FlowRunDispatcher(
+    public FlowRunCoordinator(
             WorkerConfig workerConfig,
             JobFlowRunService jobFlowRunService,
             FlowRunBizService flowRunBizService,
@@ -158,8 +162,23 @@ public class FlowRunDispatcher {
         sendWaitingWarnings(warnings);
     }
 
+    @Scheduled(fixedDelay = 5, timeUnit = SECONDS)
+    public void checkInFlightOwnership() {
+        if (AppRunner.isStopped()) {
+            return;
+        }
+
+        runWithErrorLogging("Failed to refresh in-flight flow run host", this::refreshInFlightHost);
+    }
+
     public void releaseInFlight(Long flowRunId) {
         inFlightFlowRuns.remove(flowRunId);
+    }
+
+    public boolean isOwnedByAnotherWorker(Long flowRunId) {
+        var inFlightRun = inFlightFlowRuns.get(flowRunId);
+        var host = inFlightRun != null ? inFlightRun.getHost() : null;
+        return host != null && !HOST_IP.equals(host);
     }
 
     public List<JobFlowRun> getInFlightFlowRuns() {
@@ -175,6 +194,35 @@ public class FlowRunDispatcher {
     // ====================================================
     // ====================== private =====================
     // ====================================================
+
+    @SuppressWarnings("D")
+    private void refreshInFlightHost() {
+        var inFlightRunIds = new ArrayList<>(inFlightFlowRuns.keySet());
+        if (inFlightRunIds.isEmpty()) {
+            return;
+        }
+
+        for (var partition : ListUtils.partition(inFlightRunIds, OWNERSHIP_BATCH_SIZE)) {
+            for (var owner : jobFlowRunService.listHostByIds(partition)) {
+                var observedHost = owner.getHost();
+                if (observedHost == null) {
+                    continue;
+                }
+
+                var inFlightRun = inFlightFlowRuns.get(owner.getId());
+                if (inFlightRun == null) {
+                    continue;
+                }
+
+                inFlightFlowRuns.computeIfPresent(owner.getId(), (id, current) -> {
+                    if (current == inFlightRun && !observedHost.equals(current.getHost())) {
+                        current.setHost(observedHost);
+                    }
+                    return current;
+                });
+            }
+        }
+    }
 
     private void submitCleanup(JobFlowRun run) {
         var id = run.getId();

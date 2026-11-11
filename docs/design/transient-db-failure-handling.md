@@ -32,7 +32,7 @@ Adding a blanket retry to every DAO call is not the answer:
 - Retrying business rejections (job offline, dependency unsatisfiable, invalid configuration)
   is meaningless and can mask real failures.
 - `FlowExecuteThread` and `JobExecuteThread` are instantiated with `new`
-  (`FlowExecuteThread.java:157`, `FlowRunDispatcher.java:265`), not obtained from the Spring
+  (`FlowRunCoordinator#submitToExecutor`, `FlowExecuteThread#execVertex`), not obtained from the Spring
   container, so annotation-based retry (`@Retryable`) cannot apply to them.
 
 ## Goals and Non-Goals
@@ -159,14 +159,16 @@ status write is corrected when the run is re-adopted and the remote status is po
   is safe because each job re-reads its existing `CREATED`/non-terminal job run and re-adopts it
   rather than inserting a duplicate.
 - Do not retry the in-memory DAG bookkeeping; only the two database writes.
-- `ownedByAnotherWorker` already degrades safely because `getLiteByIdOrNull` returns `null` on
-  failure and the caller treats that as "still ours".
+- `FlowExecuteThread` checks the in-flight host cached by `FlowRunCoordinator`. The coordinator
+  refreshes hosts from the database in batches every 10 seconds. If a batch read fails, that batch
+  and later batches keep their cached hosts until the next scheduled refresh. A missing or null
+  cached host is treated as "still ours"; this does not fence execution during a database outage.
 
-### 6. `FlowRunDispatcher`
+### 6. `FlowRunCoordinator`
 
-No change in Phase 1. `drainAndExecute` already logs and retries on the next tick (`FlowRunDispatcher.java:93-95`);
+No change in Phase 1. `drainAndExecute` already logs and retries on the next tick (`FlowRunCoordinator#drainAndExecute`);
 `advanceWaitingRuns` is re-invoked by `@Scheduled`; per-item
-failure handling already isolates one bad run (`FlowRunDispatcher.java:121-139`). Adding another
+failure handling already isolates one bad run (`FlowRunCoordinator#advanceWaitingRuns`). Adding another
 retry layer here would amplify load during a database incident.
 
 ### 7. Creation path (Phase 2, not implemented now)

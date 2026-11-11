@@ -11,9 +11,9 @@
 | Workflow definitions and manual runs    | [JobFlowController](../flink-platform-web/src/main/java/com/flink/platform/web/controller/JobFlowController.java)                                                | `JobFlowService`, `FlowScheduleService`, `QuartzService`                                                                           |
 | Workflow graph model                    | [JobFlowDag](../flink-platform-dao/src/main/java/com/flink/platform/dao/entity/JobFlowDag.java)                                                                  | [DAG](../flink-platform-common/src/main/java/com/flink/platform/common/graph/DAG.java), `JobVertex`, `JobEdge`, `JobFlowDagHelper` |
 | Scheduled run creation                  | [JobFlowRunner](../flink-platform-web/src/main/java/com/flink/platform/web/quartz/JobFlowRunner.java)                                                            | `FlowRunTriggerService`, `FlowRunCreationService`, `LegacyJobListService`                                                          |
-| Waiting and DAG execution               | [FlowRunDispatcher](../flink-platform-web/src/main/java/com/flink/platform/web/runner/FlowRunDispatcher.java)                                                    | `FlowExecuteThread`, `JobExecuteThread`, `JobGrpcClient`                                                                           |
+| Waiting and DAG execution               | [FlowRunCoordinator](../flink-platform-web/src/main/java/com/flink/platform/web/runner/FlowRunCoordinator.java)                                                  | `FlowExecuteThread`, `JobExecuteThread`, `JobGrpcClient`                                                                           |
 | Job submission                          | [JobGrpcServer](../flink-platform-web/src/main/java/com/flink/platform/web/grpc/JobGrpcServer.java)                                                              | `ProcessJobService`, `CommandBuilder` and `CommandExecutor` implementations                                                        |
-| Worker ownership and recovery           | [WorkerHeartbeat](../flink-platform-web/src/main/java/com/flink/platform/web/lifecycle/WorkerHeartbeat.java)                                                     | `JobFlowRunService`, `FlowRunDispatcher`                                                                                           |
+| Worker ownership and recovery           | [WorkerHeartbeat](../flink-platform-web/src/main/java/com/flink/platform/web/lifecycle/WorkerHeartbeat.java)                                                     | `JobFlowRunService`, `FlowRunCoordinator`                                                                                           |
 | API authentication and workspace access | [LoginInterceptor](../flink-platform-web/src/main/java/com/flink/platform/web/config/interceptor/LoginInterceptor.java)                                          | `PermissionInterceptor`, `RequestContext`, `WorkspaceTenantLineHandler`                                                            |
 | Persistence contract                    | [entities](../flink-platform-dao/src/main/java/com/flink/platform/dao/entity/) and [mappers](../flink-platform-dao/src/main/java/com/flink/platform/dao/mapper/) | DAO services, [schema](sql/schema.sql), [migrations](sql/migration.sql)                                                            |
 
@@ -30,7 +30,7 @@ jobs in MySQL; when a trigger fires, `JobFlowRunner` and sub-flow commands (`Flo
 call `FlowRunTriggerService`, which creates the run and then publishes its timeout and blocked
 alerts. There is no in-memory handoff queue.
 
-Each worker's `FlowRunDispatcher.drainAndExecute` polls for its non-terminal runs, ordered by
+Each worker's `FlowRunCoordinator.drainAndExecute` polls for its non-terminal runs, ordered by
 priority and bounded by available executor slots. It advances waiting runs and dispatches
 eligible ones to `FlowExecuteThread`. That thread drives the DAG and starts `JobExecuteThread`
 for each runnable job. `JobExecuteThread` calls the selected worker through `JobGrpcClient` and
@@ -56,14 +56,15 @@ resources use the configured local, HDFS, or S3 storage backend.
 
 The scheduler uses MySQL rather than a separate coordination service such as ZooKeeper. Persisted
 non-terminal runs are recovered by polling: after a worker restarts,
-`FlowRunDispatcher.drainAndExecute` queries the rows whose `host` points to that worker, so no
+`FlowRunCoordinator.drainAndExecute` queries the rows whose `host` points to that worker, so no
 dedicated in-memory reload step is needed.
 
 When a node dies, its unfinished workflows are migrated automatically:
 `com.flink.platform.web.lifecycle.WorkerHeartbeat.reassignOrphans` (guarded by ShedLock) detects
 workers whose heartbeat has gone stale and rewrites the `host` of their non-terminal `t_job_flow_run`
 rows to a healthy worker in the same workspace; that worker's `drainAndExecute` then picks the runs
-up. If the old node is still alive, its orchestration loop notices the `host` change and abandons
-the flow. This is not full execution fencing: an already-submitted external application or local
-process may overlap with the new owner during a partition. Submit idempotency, executor self-fencing,
+up. If the old node is still alive, the worker checks its in-flight runs' owners in batches;
+its orchestration loop then abandons a reassigned flow. This is not full execution fencing: an
+already-submitted external application or local process may overlap with the new owner during a
+partition. Submit idempotency, executor self-fencing,
 and stronger lease semantics remain tracked under **Failover Hardening** in [TODO.md](../TODO.md).

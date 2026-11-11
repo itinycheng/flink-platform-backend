@@ -44,7 +44,7 @@ import static org.mockito.Mockito.when;
 
 /** Verifies how long a WAITING flow run is allowed to wait. Dependency evaluation is covered separately. */
 @ExtendWith(MockitoExtension.class)
-class FlowRunDispatcherTest {
+class FlowRunCoordinatorTest {
 
     @Mock
     private WorkerConfig workerConfig;
@@ -69,7 +69,7 @@ class FlowRunDispatcherTest {
 
     private FlowRunBizService bizService;
 
-    private FlowRunDispatcher dispatcher;
+    private FlowRunCoordinator dispatcher;
 
     @BeforeEach
     void setUp() {
@@ -77,7 +77,7 @@ class FlowRunDispatcherTest {
         lenient().when(workerConfig.getFlowWaitTimeout()).thenReturn(Duration.ofHours(24));
         lenient().when(workerConfig.getFlowWaitWarningAfter()).thenReturn(Duration.ofHours(1));
         bizService = new FlowRunBizService(jobFlowRunService, quartzService, workerConfig);
-        dispatcher = new FlowRunDispatcher(
+        dispatcher = new FlowRunCoordinator(
                 workerConfig,
                 jobFlowRunService,
                 bizService,

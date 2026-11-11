@@ -63,7 +63,7 @@ vs direct sending` on master.
 |---|---|---|
 | `FlowRunStateService` | filtered | Any successful terminal flow-run transition, including `KILLED`; publishes after commit |
 | `FlowExecuteThread#handleTimeout` | direct | Execution timeout, `ALARM` strategy |
-| `FlowRunDispatcher#sendWaitingWarnings` | direct | A `WAITING` run passed the configured warning delay |
+| `FlowRunCoordinator#sendWaitingWarnings` | direct | A `WAITING` run passed the configured warning delay |
 | `WorkerHeartbeat` | direct | Failover with no active worker |
 | `FlowRunTriggerService` (`JOB_FLOW` and `JOB_LIST`) | `sendErrAlerts` | A conflicting occurrence or active start job causes this trigger to be skipped |
 | `JobsInJobListStatusChecker` | filtered | Cron health check |
@@ -182,7 +182,7 @@ The minimal fixed-delay warning is implemented. Remaining work should proceed as
 | What | Where |
 |---|---|
 | Alert dispatch + the two modes | `flink-platform-alert/.../AlertSendingService.java` |
-| Waiting poller and warning | `flink-platform-web/.../runner/FlowRunDispatcher.java` (`advanceWaitingRuns`, `collectPendingActions`, `sendWaitingWarnings`) |
+| Waiting poller and warning | `flink-platform-web/.../runner/FlowRunCoordinator.java` (`advanceWaitingRuns`, `collectPendingActions`, `sendWaitingWarnings`) |
 | Wait-deadline calculation | `flink-platform-web/.../service/FlowScheduleService.java` (`resolveWaitDeadline`) |
 | Dependency evaluation + `latest*` back-fill | `flink-platform-web/.../service/DependencyService.java` |
 | Per-item message precedent (job-level DEPENDENT) | `flink-platform-web/.../command/dependent/DependentCommandBuilder.java` |

@@ -24,10 +24,10 @@ At the time of this design, flow-run state was written by several independent co
 | Writer | Representative transitions | Current mechanism |
 |---|---|---|
 | `FlowRunCreationService` | `WAITING → FAILURE` | Conditional update during admission |
-| `FlowRunDispatcher` | `WAITING → SUBMITTED/FAILURE` | Conditional update |
+| `FlowRunCoordinator` | `WAITING → SUBMITTED/FAILURE` | Conditional update |
 | `KillJobService` | non-terminal → `KILLING/KILLED` | Unconditional update in important paths |
 | `FlowExecuteThread` | `SUBMITTED → RUNNING`, `RUNNING → terminal` | Unconditional update |
-| `FlowRunDispatcher#failAndUpdateJobFlowRun` | executable → `FAILURE` | Unconditional update |
+| `FlowRunCoordinator#failAndUpdateJobFlowRun` | executable → `FAILURE` | Unconditional update |
 | Generic flow-run update API | partial entity update | Status ownership is not explicit at the boundary |
 
 The database already provides the essential distributed primitive:
@@ -488,7 +488,7 @@ id and initial status to the parent callback.
 
 ## Call-site migration
 
-### `FlowRunDispatcher`
+### `FlowRunCoordinator`
 
 - `WAITING → SUBMITTED` uses the transition service.
 - Dependency failure and timeout use `WAITING → FAILURE`.
@@ -710,7 +710,7 @@ Mock-only tests cannot establish transaction isolation, affected-row, or row-loc
 
 ### Phase 2 — admission and dispatcher
 
-- Migrate `FlowScheduleService` and `FlowRunDispatcher`.
+- Migrate `FlowScheduleService` and `FlowRunCoordinator`.
 - Replace admission's CAS-loss exception with one CAS pass and bounded reconciliation.
 - Insert complete sub-flow candidate snapshots in the admission transaction.
 - Add the bounded transaction retry wrapper for explicitly retryable database failures.
