@@ -455,7 +455,7 @@ void runningRunOnLocalHostUsesRecoveryPathWithoutSecondTransition() {
 }
 ```
 
-Refactor `FlowExecuteThread` constructor to receive testable collaborators from `FlowRunDispatcher` instead of resolving new state dependencies through `SpringContext`. Add a package-private nested `JobThreadFactory` functional interface whose production implementation returns `new JobExecuteThread(flowRunId, vertex)`.
+Refactor `FlowExecuteThread` constructor to receive testable collaborators from `FlowRunCoordinator` instead of resolving new state dependencies through `SpringContext`. Add a package-private nested `JobThreadFactory` functional interface whose production implementation returns `new JobExecuteThread(flowRunId, vertex)`.
 
 - [ ] **Step 2: Implement first-start versus resume branching**
 
@@ -473,7 +473,7 @@ Only an applied completion transition sends the normal terminal alert. A rejecte
 
 - [ ] **Step 3: Replace no-vertex unconditional failure**
 
-In `FlowRunDispatcher`, use `failSubmitted` for a `SUBMITTED` row and host-fenced `completeExecution(..., FAILURE)` for a recovered `RUNNING` row. Send the failure alert only for `APPLIED`.
+In `FlowRunCoordinator`, use `failSubmitted` for a `SUBMITTED` row and host-fenced `completeExecution(..., FAILURE)` for a recovered `RUNNING` row. Send the failure alert only for `APPLIED`.
 
 - [ ] **Step 4: Make orphan reassignment conditional per row**
 
@@ -536,7 +536,7 @@ For `CREATED/WAITING/SUBMITTED`, return the direct `KILLED` transition. For `RUN
 
 - [ ] **Step 3: Migrate callers**
 
-Inject `FlowRunKillService` into `JobFlowRunController`, `FlowRunDispatcher`, and `FlowCommandExecutor`. Remove the controller's read-then-write status check; map the transition returned by `requestKill` to the existing response codes. Remove `killFlowRun` and `forceKillFlowRun` from `KillJobService`; keep `killJob` and `attemptToKillJob` there.
+Inject `FlowRunKillService` into `JobFlowRunController`, `FlowRunCoordinator`, and `FlowCommandExecutor`. Remove the controller's read-then-write status check; map the transition returned by `requestKill` to the existing response codes. Remove `killFlowRun` and `forceKillFlowRun` from `KillJobService`; keep `killJob` and `attemptToKillJob` there.
 
 - [ ] **Step 4: Run tests and commit**
 

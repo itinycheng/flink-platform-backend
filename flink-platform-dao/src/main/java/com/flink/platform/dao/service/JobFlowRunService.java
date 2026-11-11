@@ -112,6 +112,17 @@ public class JobFlowRunService extends ServiceImpl<JobFlowRunMapper, JobFlowRun>
                 .eq(JobFlowRun::getId, flowRunId));
     }
 
+    public List<JobFlowRun> listHostByIds(Collection<Long> flowRunIds) {
+        if (flowRunIds.isEmpty()) {
+            return List.of();
+        }
+
+        return list(new QueryWrapper<JobFlowRun>()
+                .lambda()
+                .select(JobFlowRun::getId, JobFlowRun::getHost)
+                .in(JobFlowRun::getId, flowRunIds));
+    }
+
     public List<JobFlowRun> listWaitingRunsOnHost() {
         return list(new QueryWrapper<JobFlowRun>()
                 .lambda()

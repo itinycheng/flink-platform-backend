@@ -42,7 +42,7 @@ public class FlowExecuteThread implements Runnable {
 
     private final FlowRunStateService stateService = SpringContext.getBean(FlowRunStateService.class);
 
-    private final FlowRunDispatcher flowRunDispatcher = SpringContext.getBean(FlowRunDispatcher.class);
+    private final FlowRunCoordinator flowRunCoordinator = SpringContext.getBean(FlowRunCoordinator.class);
 
     private final Map<Long, CompletableFuture<Void>> runningJobs = new ConcurrentHashMap<>();
 
@@ -67,7 +67,7 @@ public class FlowExecuteThread implements Runnable {
         } catch (Exception e) {
             log.error("Flow run {} execution aborted", jobFlowRun.getId(), e);
         } finally {
-            flowRunDispatcher.releaseInFlight(jobFlowRun.getId());
+            flowRunCoordinator.releaseInFlight(jobFlowRun.getId());
         }
     }
 
@@ -96,7 +96,7 @@ public class FlowExecuteThread implements Runnable {
                 return;
             }
 
-            if (ownedByAnotherWorker()) {
+            if (flowRunCoordinator.isOwnedByAnotherWorker(jobFlowRun.getId())) {
                 log.warn("Flow run {} owned by another worker, abandoning local execution", jobFlowRun.getId());
                 return;
             }
@@ -191,12 +191,6 @@ public class FlowExecuteThread implements Runnable {
     private boolean canResumeRunning() {
         var flowRun = jobFlowRunService.getLiteById(jobFlowRun.getId());
         return flowRun != null && flowRun.getStatus() == RUNNING && HOST_IP.equals(flowRun.getHost());
-    }
-
-    private boolean ownedByAnotherWorker() {
-        var flowRun = jobFlowRunService.getLiteByIdOrNull(jobFlowRun.getId());
-        var host = flowRun != null ? flowRun.getHost() : null;
-        return host != null && !HOST_IP.equals(host);
     }
 
     private int getMaxJobsPerRun() {

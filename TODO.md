@@ -134,7 +134,7 @@ means the marker validates *existence*, not *ownership*.
 `workspace_id` only exists on HTTP threads (`RequestContext` set by `LoginInterceptor`).
 Background / internal threads have none, so scoped-table queries there run **across all workspaces**
 (fail-open). Today this is *functionally* safe: the background chain
-(`FlowRunDispatcher → FlowExecuteThread → JobExecuteThread`) addresses every scoped table by a precise
+(`FlowRunCoordinator → FlowExecuteThread → JobExecuteThread`) addresses every scoped table by a precise
 key (PK, or `(jobId, flowRunId)`), never a "list all rows in my workspace" query, so the missing filter
 changes no result. It becomes a problem the moment (a) a background query starts relying on the filter
 to narrow results, or (b) we flip to fail-close (below). Fix = let any entry point populate
@@ -162,8 +162,8 @@ the entry points below will call) and `runWithoutTenant(...)` (still to be added
       handler also has no context; load JobRun by `jobRunId`, then `runAs(workspaceId)`.
 
 **Entry points — explicit global scans (`runWithoutTenant`, to be added):**
-- [ ] `FlowRunDispatcher.drainAndExecute` (@Scheduled) — `listExecutableRunsOnHost(...)` is a genuine
-      cross-workspace scan (a worker adopts every workspace's runs on this host). MUST be
+- [ ] `FlowRunCoordinator.drainAndExecute` (@Scheduled) — `listExecutableRunsOnHost(...)` is a genuine
+  cross-workspace scan (a worker adopts every workspace's runs on this host). MUST be
       `runWithoutTenant`, not `runAs`.
 - [ ] Cron `JobsInJobListStatusChecker` / `UnscheduledJobFlowChecker`, `CommandMonitor` — only if they
       touch scoped tables.
@@ -176,7 +176,7 @@ the entry points below will call) and `runWithoutTenant(...)` (still to be added
 - [ ] Decide whether "no context on a scoped-table query" stays **fail-open** (current) or becomes
       **fail-close** (throw). Hard prerequisite for fail-close: every background entry point above must
       first declare `runAs` / `runWithoutTenant`, otherwise the whole
-      `FlowRunDispatcher → FlowExecuteThread → JobExecuteThread` chain throws on its first scoped query.
+      `FlowRunCoordinator → FlowExecuteThread → JobExecuteThread` chain throws on its first scoped query.
       Also audit raw SQL / JOINs (see Known limits) — the interceptor can't rewrite those, so they
       would silently bypass a fail-close guard.
 
@@ -582,7 +582,7 @@ See design: [docs/design/alerting-strategy.md](docs/design/alerting-strategy.md)
 ### Long-term: user-defined, event-driven alert policies
 
 The fixed WAITING warning is a compatibility-sized fix, not the final alert model. Do not
-keep adding timing branches to `FlowRunDispatcher` or boolean variants to `AlertSendingService`.
+keep adding timing branches to `FlowRunCoordinator` or boolean variants to `AlertSendingService`.
 The target is for a flow owner to configure alert rules by event, independently from the runtime
 rule that decides when a run changes status.
 
@@ -702,7 +702,7 @@ The following work targets `JOB_FLOW`; `JOB_LIST` receives compatibility fixes o
 
 ## Flow Dependencies (`depends_on`) — Remaining Work
 
-Backend is in place (`DependencyService`, `FlowRunDispatcher#advanceWaitingRuns`, `WAITING`
+Backend is in place (`DependencyService`, `FlowRunCoordinator#advanceWaitingRuns`, `WAITING`
 status, `t_job_flow(_run).depends_on`). What is left, roughly in the order it blocks use.
 
 See current evaluator design:

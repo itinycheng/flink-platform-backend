@@ -5,7 +5,7 @@ import com.flink.platform.web.annotation.RequirePermission;
 import com.flink.platform.web.annotation.WorkspaceOptional;
 import com.flink.platform.web.dto.ResultInfo;
 import com.flink.platform.web.environment.YarnAppService;
-import com.flink.platform.web.runner.FlowRunDispatcher;
+import com.flink.platform.web.runner.FlowRunCoordinator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,7 +30,7 @@ public class StatsController {
 
     private final YarnAppService yarnAppService;
 
-    private final FlowRunDispatcher flowRunDispatcher;
+    private final FlowRunCoordinator flowRunCoordinator;
 
     @WorkspaceOptional
     @RequirePermission(SYSTEM_MANAGE)
@@ -45,7 +45,7 @@ public class StatsController {
     @RequirePermission(SYSTEM_MANAGE)
     @GetMapping(value = "/worker/active-flow-runs")
     public ResultInfo<List<JobFlowRun>> activeFlowRuns() {
-        var activeFlowRuns = flowRunDispatcher.getInFlightFlowRuns().stream()
+        var activeFlowRuns = flowRunCoordinator.getInFlightFlowRuns().stream()
                 .sorted(comparing(JobFlowRun::getId))
                 .toList();
         return success(activeFlowRuns);
