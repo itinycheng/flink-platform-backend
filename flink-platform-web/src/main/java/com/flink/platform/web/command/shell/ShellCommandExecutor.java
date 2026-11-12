@@ -51,8 +51,12 @@ public class ShellCommandExecutor implements CommandExecutor {
         var task = command.getTask();
         if (task == null) {
             var jobRun = jobRunInfoService.getById(command.getJobRunId());
+            if (jobRun == null || jobRun.getStatus().isTerminalState()) {
+                return;
+            }
+
             var jobCallback = jobRun.getBackInfo();
-            if (!jobRun.getStatus().isTerminalState() && jobCallback != null) {
+            if (jobCallback != null) {
                 task = new ShellTask(jobRun.getId(), jobCallback.getProcessId());
             }
         }

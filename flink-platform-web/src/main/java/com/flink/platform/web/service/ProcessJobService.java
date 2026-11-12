@@ -37,7 +37,7 @@ import static org.apache.commons.lang3.ObjectUtils.isNotEmpty;
 @Service
 @RequiredArgsConstructor(onConstructor_ = @Autowired)
 public class ProcessJobService {
-    
+
     private static final List<ExecutionStatus> EXPECTED_CREATED = List.of(CREATED);
 
     private final JobRunInfoService jobRunInfoService;
