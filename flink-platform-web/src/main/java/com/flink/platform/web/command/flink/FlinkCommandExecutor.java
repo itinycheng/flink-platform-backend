@@ -50,7 +50,8 @@ public class FlinkCommandExecutor implements CommandExecutor {
                 flinkCommand.getMode(),
                 flinkCommand.toCommandString(),
                 null,
-                workerConfig.getFlinkSubmissionTimeout());
+                workerConfig.getFlinkSubmissionTimeout(),
+                yarnAppService);
         flinkCommand.setTask(task);
         task.run();
 
@@ -82,21 +83,22 @@ public class FlinkCommandExecutor implements CommandExecutor {
 
     @Override
     public void killCommand(@Nonnull JobCommand command) {
-        // Need provide processId, applicationId, deployMode.
+        // Need provide processId and deployMode.
         var task = command.getTask();
         if (task == null) {
             var jobRun = jobRunInfoService.getById(command.getJobRunId());
-            var callback = jobRun.getBackInfo();
-            if (!jobRun.getStatus().isTerminalState() && callback != null) {
-                var newTask = new FlinkYarnTask(jobRun.getId(), jobRun.getDeployMode());
-                newTask.setProcessId(callback.getProcessId());
-                newTask.setAppId(callback.getAppId());
-                task = newTask;
+            if (jobRun == null || jobRun.getStatus().isTerminalState()) {
+                return;
             }
+
+            var newTask = new FlinkYarnTask(jobRun.getId(), jobRun.getDeployMode(), yarnAppService);
+            var callback = jobRun.getBackInfo();
+            if (callback != null) {
+                newTask.setProcessId(callback.getProcessId());
+            }
+            task = newTask;
         }
 
-        if (task != null) {
-            task.cancel();
-        }
+        task.cancel();
     }
 }

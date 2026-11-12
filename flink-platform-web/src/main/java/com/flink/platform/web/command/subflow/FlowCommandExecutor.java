@@ -73,6 +73,10 @@ public class FlowCommandExecutor implements CommandExecutor {
     @Override
     public void killCommand(@Nonnull JobCommand command) {
         var jobRun = jobRunService.getById(command.getJobRunId());
+        if (jobRun == null) {
+            return;
+        }
+
         var backInfo = jobRun.getBackInfo();
         if (backInfo == null || backInfo.getFlowRunId() == null) {
             // TODO: Child creation and ProcessJobService's backInfo write use separate transactions.

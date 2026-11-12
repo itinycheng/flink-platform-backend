@@ -27,18 +27,26 @@ its creation interface remain available while production definitions are migrate
 flow-run `CREATED` rows are still legacy data; they are not activated by this implementation.
 The job-run state machine is outside this change. The parent flow's reservation transaction
 prevents creation of new child rows after it enters `KILLING`, and the parent retries cleanup of
-non-terminal children. Job-run submission itself follows the original direct implementation:
-there is no conditional launch claim. The executor callback now updates only an unfinished
-job-run row, so it cannot restore an already committed terminal state. A child reserved before
-flow kill can still start after the kill request, and duplicate process RPCs can execute it more
-than once.
+non-terminal children. Job-run submission claims `CREATED -> SUBMITTED` with a conditional
+update before the external command starts, so duplicate process RPCs cannot submit the same run
+twice. A child reserved before flow kill can still start after the kill request. The executor
+callback updates only a row that is still unfinished, so it cannot restore an already committed
+terminal state. If the launch fails after the claim, the launcher cancels the resource and writes
+`ERROR` only when the executor confirms cancellation; otherwise the row stays `SUBMITTED` for the
+status poller to settle.
 Job-run status writes stay gated by the persisted row: `StatusUpdate.WORKER_REPORTED` accepts
 `CREATED`/`WAITING`/`SUBMITTED`/`RUNNING`, while `StatusUpdate.LOCAL_ERROR` accepts only `CREATED`.
 A worker report is authoritative once the run is claimed; a local exception must not overwrite a
-`SUBMITTED` or `RUNNING` row with `ERROR`.
-Job-run kill uses the original direct `KILLED` write after requesting external cancellation;
-it does not enter `KILLING` or wait for durable stop proof. Deployments requiring stronger launch
-and cleanup guarantees need a separate job-run design.
+`SUBMITTED` or `RUNNING` row with `ERROR`. The launch callback is accepted only while the row is
+unfinished, so a late terminal callback cannot overwrite `KILLED`. If the row was terminated while
+the command was launching, the launcher requests cancellation for the resource it just started.
+Job-run kill still writes `KILLED` directly after requesting external cancellation. The Flink YARN
+executor retries the kill request against resource manager failures, treats an unregistered or
+already terminal application as nothing to stop, and does not wait for the application to reach a
+terminal state. A resource that outlives the request is left for a later kill request or manual
+cleanup, which the deterministic application tag makes possible.
+Deployments requiring stronger launch and cleanup guarantees need a separate job-run design; see
+the proposed [job-run submission claim](job-run-submission-claim.md).
 
 ## Rollout and remaining work
 

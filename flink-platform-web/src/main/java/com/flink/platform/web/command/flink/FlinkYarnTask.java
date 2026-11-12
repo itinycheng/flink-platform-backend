@@ -2,7 +2,6 @@ package com.flink.platform.web.command.flink;
 
 import com.flink.platform.common.enums.DeployMode;
 import com.flink.platform.web.command.shell.ShellTask;
-import com.flink.platform.web.common.SpringContext;
 import com.flink.platform.web.environment.YarnAppService;
 import com.flink.platform.web.util.YarnHelper;
 import lombok.Getter;
@@ -35,17 +34,24 @@ public class FlinkYarnTask extends ShellTask {
 
     private String jobId;
 
-    public FlinkYarnTask(long jobRunId, DeployMode mode, String command, Map<String, String> envp, Duration timeout) {
+    public FlinkYarnTask(
+            long jobRunId,
+            DeployMode mode,
+            String command,
+            Map<String, String> envp,
+            Duration timeout,
+            YarnAppService yarnAppService) {
         super(jobRunId, command, envp, timeout);
         this.mode = mode;
+        this.yarnAppService = yarnAppService;
         setLogConsumer(this.extractAppIdAndJobId());
     }
 
     /** Only for kill job. */
-    public FlinkYarnTask(long jobRunId, DeployMode mode) {
+    public FlinkYarnTask(long jobRunId, DeployMode mode, YarnAppService yarnAppService) {
         super(jobRunId, null, null, Duration.ZERO);
         this.mode = mode;
-        this.yarnAppService = SpringContext.getBean(YarnAppService.class);
+        this.yarnAppService = yarnAppService;
     }
 
     public void run() throws Exception {
@@ -63,10 +69,11 @@ public class FlinkYarnTask extends ShellTask {
                 var applicationTag = YarnHelper.getApplicationTag(jobRunId);
                 yarnAppService.killApplication(applicationTag);
             } else {
-                log.warn("Kill command unsupported deployMode: {}, applicationId: {}", mode, appId);
+                // TODO: kill session-cluster jobs through the Flink REST API by jobId.
+                log.error("Kill command unsupported deployMode: {}, jobRunId: {}", mode, jobRunId);
             }
         } catch (Exception e) {
-            log.error("Kill yarn application: {} failed", appId, e);
+            log.error("Kill yarn application failed, jobRunId: {}", jobRunId, e);
         }
     }
 

@@ -14,6 +14,9 @@ requested review cadence; if the owner asks for end-to-end implementation, compl
    directory. Use a separate worktree when concurrent sessions would edit the same files.
 3. State the requested outcome and trace its real path through callers, persistence, scheduling, execution, and external
    interfaces as applicable. Check claims in old documents against source code.
+4. Before changing code, tell the owner the affected modules and files, approximate diff size, and smallest complete
+   behavior for the next increment. Use the estimate to find a smaller boundary when needed; do not leave behavior
+   incomplete merely to meet a line count.
 
 ## Development flow
 
@@ -21,11 +24,14 @@ requested review cadence; if the owner asks for end-to-end implementation, compl
    concise design in `docs/design/` covering desired behavior, boundaries, key contracts, risks, and an incremental
    rollout. Distinguish the target architecture from today's implementation. Unless the owner requires compatibility
    with a specific existing decision, recommend the cleanest sound design and explain a practical migration path.
-2. **Plan:** Divide a larger feature into reviewable slices that each compile and have an observable outcome. Keep the
-   plan with its design or in the task discussion. Avoid ceremonial plans for small changes.
+2. **Plan:** Divide a larger feature by behavior or contract into small slices that each compile, can be verified, and
+   can be committed separately. Record their order and expected outcomes with the design or in the task discussion.
+   Even for an end-to-end request, work through those slices in order. Avoid ceremonial plans for small changes.
 3. **Implement:** Complete one slice, follow the affected behavior end to end, and inspect sibling paths for the same
-   defect or contract. Keep unrelated refactoring separate. Do not start the next slice until the owner reviews and
-   adjusts the current one, unless the owner asked for the whole feature at once.
+   defect or contract. Defer unrelated fixes and refactoring to separate slices. If unexpected dependencies would
+   substantially increase the diff, update the estimate and split the remaining work before expanding the current
+   slice. Do not start the next slice until the owner reviews and adjusts the current one, unless the owner asked for
+   the whole feature at once.
 4. **Verify:** The default gate for code is a successful compile of the affected Maven modules and their dependencies,
    including the repository's compile-time formatting, Checkstyle, and NullAway checks. Run focused additional checks
    when needed to resolve a concrete risk. Do not add or expand unit tests before asking the owner. Recommend a small
@@ -33,8 +39,8 @@ requested review cadence; if the owner asks for end-to-end implementation, compl
    hard-to-reproduce regression, and write them once authorized. Report any existing tests that fail or were not run;
    never claim unrun tests passed. Compilation does not establish runtime correctness.
 5. **Hand off:** Summarize **Changed**, **Checked** (exact commands and results), **Review** (what to inspect or
-   exercise), and **Next slice**. Call out assumptions and remaining risks. The owner reviews and may edit the diff
-   before continuation.
+   exercise), and **Next slice**. Compare the actual changed files and diff size with the estimate; explain material
+   growth. Call out assumptions and remaining risks. The owner reviews and may edit the diff before continuation.
 
 Use JDK 21 (`mise.toml` selects it). Check `JAVA_HOME` when the shell defaults to another JDK. For a backend-only
 change, a typical compile command is:
@@ -52,6 +58,9 @@ separate `runnelo-ui` project when relevant, but do not change that repository i
 When asked to commit, inspect the staged diff and use `type(scope): Capitalized imperative summary`
 in English (for example, `docs(guidance): Refresh configuration and operations`). Choose a type
 such as `feat`, `fix`, `refactor`, `docs`, or `chore`; scope it to the affected module or topic.
+Keep each commit to one small, coherent implementation slice; do not combine independent behaviors
+just to reduce the number of commits. For an end-to-end request, preserve those separate commit
+boundaries when commits are requested.
 After a squash, rewrite the subject and any body to describe the combined diff. Leave unrelated
 changes out of the commit.
 

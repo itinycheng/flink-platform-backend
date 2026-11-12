@@ -101,6 +101,7 @@ public class YarnAppService {
         return statusReport;
     }
 
+    @Retryable(maxRetries = 2, delay = 1000, multiplier = 2, predicate = AppRunningRetryPredicate.class)
     public void killApplication(String applicationTag) throws Exception {
         var statusReport = getStatusReportWithRetry(applicationTag);
         if (statusReport == null || statusReport.isTerminalState()) {

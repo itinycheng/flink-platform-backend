@@ -57,9 +57,7 @@ public interface CommandExecutor {
     JobCallback execCommand(@Nonnull JobCommand command) throws Exception;
 
     /**
-     * kill command if needed.
-     *
-     * @param command job command
+     * Kill command if needed.
      */
     default void killCommand(@Nonnull JobCommand command) {}
 }
