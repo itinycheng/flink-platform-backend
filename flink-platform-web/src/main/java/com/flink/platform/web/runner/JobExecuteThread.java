@@ -14,6 +14,7 @@ import com.flink.platform.grpc.JobStatusRequest;
 import com.flink.platform.grpc.ProcessJobRequest;
 import com.flink.platform.web.common.SpringContext;
 import com.flink.platform.web.grpc.JobGrpcClient;
+import com.flink.platform.web.jobrun.JobRunStateService;
 import com.flink.platform.web.lifecycle.AppRunner;
 import com.flink.platform.web.monitor.StatusInfo;
 import com.flink.platform.web.service.JobRunExtraService;
@@ -24,7 +25,7 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.jspecify.annotations.Nullable;
 
 import java.time.Duration;
-import java.util.List;
+import java.time.LocalDateTime;
 import java.util.function.Supplier;
 
 import static com.flink.platform.common.constants.Constant.HOST_IP;
@@ -32,11 +33,9 @@ import static com.flink.platform.common.enums.ExecutionStatus.CREATED;
 import static com.flink.platform.common.enums.ExecutionStatus.ERROR;
 import static com.flink.platform.common.enums.ExecutionStatus.KILLED;
 import static com.flink.platform.common.enums.ExecutionStatus.KILLING;
-import static com.flink.platform.common.enums.ExecutionStatus.RUNNING;
-import static com.flink.platform.common.enums.ExecutionStatus.SUBMITTED;
 import static com.flink.platform.common.enums.ExecutionStatus.SUCCESS;
-import static com.flink.platform.common.enums.ExecutionStatus.WAITING;
 import static com.flink.platform.grpc.JobGrpcServiceGrpc.JobGrpcServiceBlockingStub;
+import static com.flink.platform.web.jobrun.JobRunTransition.Outcome.APPLIED;
 import static com.flink.platform.web.util.ThreadUtil.FIVE_SECOND_MILLIS;
 import static com.flink.platform.web.util.ThreadUtil.THREE_SECOND_MILLIS;
 import static java.util.Objects.requireNonNull;
@@ -52,6 +51,8 @@ public class JobExecuteThread implements Supplier<JobResponse> {
     private final JobInfoService jobInfoService;
 
     private final JobRunInfoService jobRunInfoService;
+
+    private final JobRunStateService jobRunStateService;
 
     private final JobRunExtraService jobRunExtraService;
 
@@ -70,6 +71,7 @@ public class JobExecuteThread implements Supplier<JobResponse> {
         this.jobId = jobVertex.getJobId();
         this.jobInfoService = SpringContext.getBean(JobInfoService.class);
         this.jobRunInfoService = SpringContext.getBean(JobRunInfoService.class);
+        this.jobRunStateService = SpringContext.getBean(JobRunStateService.class);
         this.jobRunExtraService = SpringContext.getBean(JobRunExtraService.class);
         this.flowRunService = SpringContext.getBean(JobFlowRunService.class);
         this.jobGrpcClient = SpringContext.getBean(JobGrpcClient.class);
@@ -163,8 +165,7 @@ public class JobExecuteThread implements Supplier<JobResponse> {
                 }
             }
         } catch (Exception e) {
-            var statusInfo = new StatusInfo(ERROR, null, System.currentTimeMillis());
-            updateJobRunIfNeeded(jobRun, statusInfo, StatusUpdate.LOCAL_ERROR, e);
+            completeWithError(jobRun, e);
             jobRunStatus = jobRun == null ? ERROR : jobRun.getStatus();
             log.error("Exception found when executing jobRun: {} and wait for complete", jobRunId, e);
         }
@@ -252,9 +253,11 @@ public class JobExecuteThread implements Supplier<JobResponse> {
                 var statusInfo = StatusInfo.fromReplay(statusReply);
                 log.info(
                         "Job runId: {}, name: {} Status: {}", jobRun.getId(), jobRun.getName(), statusInfo.getStatus());
-                updateJobRunIfNeeded(jobRun, statusInfo, StatusUpdate.WORKER_REPORTED, null);
-                if (jobRun.getStatus().isTerminalState()) {
-                    return new StatusInfo(jobRun.getStatus(), statusInfo.getStartTime(), statusInfo.getEndTime());
+
+                updateJobRunStatus(jobRun, statusInfo);
+                var status = jobRun.getStatus();
+                if (status.isTerminalState()) {
+                    return new StatusInfo(status, statusInfo.getStartTime(), statusInfo.getEndTime());
                 }
             } catch (Exception e) {
                 log.error("Fetch job status failed, runId: {}", jobRun.getId(), e);
@@ -275,31 +278,43 @@ public class JobExecuteThread implements Supplier<JobResponse> {
                 .build();
     }
 
-    private void updateJobRunIfNeeded(
-            @Nullable JobRunInfo jobRun, StatusInfo statusInfo, StatusUpdate update, @Nullable Exception exception) {
+    /**
+     * Uses the transition result as the committed status.
+     */
+    private void updateJobRunStatus(JobRunInfo jobRun, StatusInfo statusInfo) {
+        var status = statusInfo.getStatus();
+        if (jobRun.getStatus() == status) {
+            return;
+        }
+
         try {
-            var status = statusInfo.getStatus();
-            if (jobRun == null || jobRun.getStatus() == status) {
-                return;
-            }
-
-            var newRun = new JobRunInfo();
-            newRun.setStatus(status);
+            var update = new JobRunInfo();
             if (status.isTerminalState()) {
-                newRun.setEndTime(statusInfo.getEndTimeOrNow());
-            }
-            if (exception != null) {
-                var exceptionMsg = ExceptionUtil.stackTrace(exception);
-                newRun.setBackInfo(new JobCallback(exceptionMsg, null));
+                update.setEndTime(statusInfo.getEndTimeOrNow());
             }
 
-            if (jobRunInfoService.updateStatusFromAnyTo(jobRun.getId(), update.expectedStatuses, newRun) == 1) {
-                jobRun.setStatus(status);
-            } else {
-                var current = jobRunInfoService.getLiteById(jobRun.getId());
-                if (current != null) {
-                    jobRun.setStatus(current.getStatus());
-                }
+            var transition = jobRunStateService.updateFromReport(jobRun.getId(), status, update);
+            if (transition.status() != null) {
+                jobRun.setStatus(transition.status());
+            }
+        } catch (Exception e) {
+            log.error("Update job run status failed", e);
+        }
+    }
+
+    private void completeWithError(@Nullable JobRunInfo jobRun, Exception exception) {
+        if (jobRun == null || jobRun.getStatus() == ERROR) {
+            return;
+        }
+
+        try {
+            var update = new JobRunInfo();
+            update.setEndTime(LocalDateTime.now());
+            update.setBackInfo(new JobCallback(ExceptionUtil.stackTrace(exception), null));
+            var transition = jobRunStateService.completeWithError(jobRun.getId(), update);
+            // update cache.
+            if (transition.outcome() == APPLIED) {
+                jobRun.setStatus(transition.status());
             }
         } catch (Exception e) {
             log.error("Update job run status failed", e);
@@ -352,20 +367,6 @@ public class JobExecuteThread implements Supplier<JobResponse> {
 
         /** Flow finished or being killed — stop and report the job as {@code KILLED}. */
         TERMINATE
-    }
-
-    private enum StatusUpdate {
-        /** Accept a worker report while the persisted run is still active. */
-        WORKER_REPORTED(List.of(CREATED, WAITING, SUBMITTED, RUNNING)),
-
-        /** A local exception may fail a run only before remote execution has been claimed. */
-        LOCAL_ERROR(List.of(CREATED));
-
-        private final List<ExecutionStatus> expectedStatuses;
-
-        StatusUpdate(List<ExecutionStatus> expectedStatuses) {
-            this.expectedStatuses = expectedStatuses;
-        }
     }
 
     private record RetryAndRun(

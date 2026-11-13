@@ -273,14 +273,18 @@ fault-tolerance re-dispatch) do, but stays MySQL-only / no ZooKeeper / no new sc
 
 Follow-up after the flow-run state-machine work. `ProcessJobService.processJob` claims the run with
 `CREATED -> SUBMITTED` before `exec(command)`, so a duplicate process request cannot submit it
-twice and the row is active during submission. If the launch fails after the claim, the launcher
-cancels the resource and writes `ERROR` only when the executor confirms cancellation; otherwise
-the row stays `SUBMITTED` for the status poller to settle. What remains is the uncertain case: if
-the gRPC call fails after the claim (no stub deadline, worker crash, step 5's DB write failure, or
-a lost reply), the claim can outlive its owner:
+twice and the row is active during submission. Any failure after the claim is settled by the
+flow-side caller as `SUBMITTED -> ERROR`; an exception during `exec` or callback persistence
+requests cancellation best-effort first. Before launch, the worker skips a run that is no longer
+`SUBMITTED`. Concurrent kill is handled by `KillJobService`; if it runs before the resource exists,
+the request may miss it. `KILLED` records the cancellation request, not confirmed external exit.
+The remaining risk is the uncertain case: if the gRPC call fails after the claim (no stub deadline,
+worker crash, step 5's DB write failure, or a lost reply), the flow side cannot tell it from a
+confirmed local failure and writes `ERROR` too:
 
-- `JobExecuteThread` no longer reads `CREATED`; `LOCAL_ERROR` (`CREATED -> ERROR`) does not apply,
-  so the run is adopted and polled instead of retried.
+- `JobRunStateService.completeWithError` accepts `CREATED` and `SUBMITTED`, so a claimed run is not
+  adopted for polling after a failed call. A resource that started despite the reported failure
+  needs manual cleanup; the deterministic application tag makes it findable.
 - A late step-5 write no longer overwrites a terminal row, but the remote job may still be running
   without a tracked active row.
 
@@ -302,11 +306,132 @@ ordering below is not.
 Code anchors: `ProcessJobService.processJob` — the `CREATED -> SUBMITTED` claim, the `buildCommand`
 call, the `exec(command)` submit, and the conditional status update that persists the result;
 `JobExecuteThread.processRemoteJob`;
-`JobExecuteThread.StatusUpdate.LOCAL_ERROR`.
+`JobRunStateService.completeWithError`.
 
 Related: [transient DB failure handling](docs/design/transient-db-failure-handling.md),
 [flow-run state machine](docs/design/flow-run-state-machine.md), and the "Persist app_id ASAP" item
 under Failover Hardening.
+
+---
+
+## Flink Submission Timeout — Orphan YARN App and Duplicate Run
+
+**Status:** seen once; root cause unconfirmed. The current submission-grace and timeout changes
+reduce the suspected duplicate windows; reproduce and verify later.
+
+In the observed incident, a Flink submission hit `worker.flink-submission-timeout` (5m), the
+YARN app kept running, and a retry submitted a second app. Cancellation was not confirmed.
+
+Suspected chains (all visible in current code, none confirmed):
+
+- App id parsed but the tag lookup misses → an early `FAILURE` used to trigger retry. The status
+  fetcher now waits until the submission timeout plus one minute has elapsed.
+- No appId/jobId parsed after a client timeout → the run used to become `KILLED` immediately. It
+  now stays `SUBMITTED` for tag lookup after a best-effort cancellation request.
+- Cancellation can still miss an application that registers after the request; a later status
+  lookup observes it, but does not retry the cancellation automatically.
+
+`flink run` uses `-d`, so a 5m wait means the client itself hung. The Flink cancellation path
+requests a YARN kill by tag, but a missing report makes that request a no-op. Retries create a new
+run with a new `tag_<jobRunId>`; they do not cancel an orphan from the previous attempt.
+
+Verify when reproducing:
+
+- [ ] App id on stdout or stderr? `extractAppIdAndJobId` reads only `STD`.
+- [ ] Worker log: two `Exec command:` lines and/or `No application found for tag`.
+- [ ] `t_job_run` attempt 1: `exited=false`, `exitValue=1`, empty `appId`; `KILLED` vs
+      `SUBMITTED -> FAILURE` tells the chains apart.
+- [ ] YARN: two apps, same name, different tags; the first starts after attempt 1 ended.
+
+Remaining risk: an application may register after the bounded grace or after the one-shot kill
+request. Measure that window before adding recovery or repeated cancellation machinery.
+
+---
+
+## Prevent Purge of Active Runs
+
+`/jobInfo/purge/{jobId}` checks whether the job is still in a flow DAG, but
+`JobInfoService.removeAllById` deletes all of its run rows without checking their status.
+`/jobFlow/purge/{flowId}` requires the definition to be `DELETE`, but
+`JobFlowService.deleteAllById` likewise deletes all child run rows; definition status does not
+prove that earlier runs have finished. A purge racing with submission can make
+`JobRunStateService.updateFromReport` return `NOT_FOUND` after an external resource starts.
+
+- [ ] Reject both purge operations while any affected job or flow run has an unfinished status.
+      Coordinate the check with deletion and run creation so a new run cannot appear between them;
+      retain completed history deletion behavior.
+
+---
+
+## Per-Type Kill Idempotency in `CommandExecutor.killCommand`
+
+**Deferred until the current job-run state-machine refactor lands.** No uncommitted-candidate
+change; keep the call site in `ProcessJobService.processJob` uniform.
+
+Context: once `exec(command)` returns, the external resource may already exist. If the callback
+status cannot be persisted, the `finally` block calls `executor.killCommand(command)` best-effort
+and the exception propagates, so `JobExecuteThread` writes `SUBMITTED -> ERROR` and stops polling.
+The call site should stay type-agnostic: each executor decides what a kill means.
+
+A shared "skip the kill for async jobs" rule is not writable from the service. Whether a kill is
+needed depends on facts only the type knows: whether the resource outlives `exec` (flink/subflow,
+yes; shell/sql/condition/dependent, no), whether the caller can re-observe it
+(`YarnStatusFetcher`/`SubFlowStatusFetcher` vs `DefaultStatusFetcher`, which only echoes the row),
+and whether the retry loop would launch a duplicate (`JobExecuteThread` creates a new run once the
+row is terminal `ERROR`). The failure cause is ambiguous too: the same exception can leave the row
+at `SUBMITTED` (write failed) or at a different status (rejection read failed).
+
+Contract to enforce, in the interface javadoc (a minimal `KillResult` is optional):
+
+- [ ] Nothing to kill / target already terminal → return normally; do not rely on the caller
+      swallowing exceptions for idempotency.
+- [ ] Repeated calls must not harm another job. Flink's deterministic tag and subflow's CAS-based
+      `requestKill` already satisfy this; shell does not (below).
+- [ ] "Target not found" must be logged or measured, not a silent no-op.
+
+Gaps:
+
+- [ ] **P0 · subflow.** `FlowCommandExecutor.execCommand` knows the child flow-run id, but
+      `killCommand` only reads it from the DB `backInfo` — exactly the field the failed write would
+      have persisted. It returns silently, so the parent run becomes `ERROR` while the child flow
+      run keeps running. Keep the child id on `FlowCommand` and prefer it in `killCommand`, with
+      `backInfo` as fallback.
+- [ ] **P1 · shell.** `CommandUtil.forceKill` kills by pid with no identity check; killing a
+      recycled pid can hit an unrelated process. Validate process identity (start time or command
+      marker) before killing. `task == null` plus missing `backInfo` is also a silent no-op.
+- [ ] **P2 · flink.** `FlinkYarnTask.cancel` logs and returns for session-cluster mode, so that
+      deploy mode has no kill path. `getStatusReportWithRetry` picks `applications.getFirst()` when
+      a tag maps to several apps. (The `@Retryable` on `killApplication` and the terminal-state
+      skip are the good parts; keep them.)
+- [ ] **P3 · sql/hive.** Make "no active statement → return" explicit rather than depending on
+      `statement.cancel()` being harmless after completion.
+- [ ] **Job-run stop time has mixed origins.** Flink status polling stores YARN application
+      `finishTime` (or a local fallback), while `KillJobService.killJob` stores local time after
+      cancellation. Which path wins the status race determines the meaning of `t_job_run.stop_time`;
+      the current YARN kill call can return before the application is terminal.
+
+Code anchors: `ProcessJobService.processJob`, `CommandExecutor.killCommand` and its five
+implementations, `ShellTask.cancel`, `SqlTask.cancel`, `FlinkYarnTask.cancel`,
+`FlowCommandExecutor.killCommand`, `CommandUtil.forceKill`, `YarnAppService.killApplication`.
+
+Related: [Job Launch Claim — Uncertain Submit](#job-launch-claim--uncertain-submit) above and the
+"Persist app_id ASAP" item under Failover Hardening.
+
+---
+
+## KILLING Job-Run Settlement
+
+A job run can stay `KILLING` forever. Only flow runs in `KILLING` drive kill retries
+(`FlowRunCoordinator`, 2s), so these cases have no driver:
+
+- a job run killed on its own while its flow run is still `RUNNING`;
+- a dead job host — every gRPC kill fails and `WorkerHeartbeat` reassigns flow runs only;
+- `killJob` failing repeatedly before `confirmKilled` (e.g. no supported executor).
+
+- [ ] Periodic scan of `KILLING` job runs that retries `killJob`, independent of flow-run status.
+- [ ] Bounded settlement with a persisted `killing_since` (no update-time column today): on
+      deadline, inactive host, or no supported executor, settle `KILLED` as external cleanup
+      unconfirmed and alert.
 
 ---
 
@@ -331,6 +456,10 @@ worker directly (`KillJobService`), so the interval only affects convergence lat
 - [ ] Keep a short interval right after submit and after each observed state change so fast jobs
       stay responsive.
 - [ ] Keep the wait loop responsive to flow kill and shutdown while sleeping.
+- [ ] Abort the wait loop on ownership change with a memory check, not a DB read:
+      `FlowRunCoordinator.isOwnedByAnotherWorker(flowRunId)` is a map lookup refreshed by the
+      existing 5s batched query (`refreshInFlightHost`); reuse it here and to short-circuit
+      `checkFlowAction`.
 - [ ] Decide whether `FlowExecuteThread`'s 5s DAG wait loop shares the same knob or stays separate.
 
 Code anchors: `JobExecuteThread.updateAndWaitForComplete` — the
@@ -761,3 +890,53 @@ the run-time contract are recorded in
       while the parent was `OFFLINE` is caught before scheduling.
 - [ ] Reject `purge` of a flow referenced by a parent DAG.
 - [ ] Decide whether a `JOB_LIST` flow is a valid sub-flow target.
+
+---
+
+## Parameter Publishing — Retire `setParam`
+
+`${setParam:key=value}` is declared inside a job's subject/config and published into
+`t_job_flow_run.params` at launch. This conflates a flow-scoped declaration with a task output,
+and produces a shared mutable namespace with no owner, no dependency edge, and no conflict rule.
+
+Symptoms:
+
+- Producer scope (job run) and consumer scope (flow run) differ: parallel branches have no defined
+  winner, and retries are not idempotent (`lockAndUpdateParams` appends a duplicate list entry).
+- A reader that does not depend on the declaring job may run first; `ParamVariableResolver`
+  yields `null` and `ProcessJobService.replaceVariables` substitutes the literal string `null`.
+- The write is a `SELECT ... FOR UPDATE` plus read-modify-write of the whole params JSON on every
+  launch. The flow-run row becomes a fan-out hot spot, and a params-write failure blocks the launch.
+- It shares one namespace with flow-definition params (`FlowRunTriggerService.buildRun`) and is
+  extracted by regex over SQL/shell text, so declarations in comments or string literals are
+  indistinguishable from real ones.
+
+Both legitimate uses already have a home, so the runtime write is the only extra behavior:
+
+- Flow-wide constant → `JobFlow.params`, copied to the flow run at creation.
+- Per-job value → `JobInfo.params`, the highest-precedence layer in `ParamVariableResolver`.
+
+Target:
+
+- Freeze `setParam`; do not extend it (no list semantics, no success gating, no new syntax).
+- Flow params are declared on `JobFlow`, frozen at run creation, read-only to tasks. Validate at
+  flow save/online that every `${param:k}` resolves from global/flow/job layers.
+- If task outputs are ever required, add an explicit outputs mechanism instead of reusing
+  `${param:}`: declare on the job, publish only on success, scope by job run, reference the
+  producer explicitly so the DAG can enforce ordering (Airflow XCom / DolphinScheduler OUT params).
+
+Steps:
+
+- [ ] Stopgap: conflict validation plus idempotent write (first write wins) so current behavior is
+      at least predictable.
+- [ ] Static scan of job definitions; migrate `${setParam:k=v}` to `JobFlow.params` and report
+      same-key conflicts. Duplicate git history/data is out of scope by owner decision.
+- [ ] Remove `updateParamsInJobFlowRun` and the launch-path params write; `ProcessJobService`
+      returns to claim → read status → exec.
+- [ ] Collapse the read merge to scalar precedence `global < flow < job`; delete the list merge in
+      `ParamVariableResolver` (`ObjectUtil.merge` / `mergeToList`).
+- [ ] Optional: explicit task outputs, only after a real use case appears.
+
+Code anchors: `JobConstant.SET_PARAM_PATTERN`, `SetParamVariableResolver`,
+`ProcessJobService.updateParamsInJobFlowRun`, `JobFlowRunService.lockAndUpdateParams`,
+`ParamVariableResolver.resolve`, `FlowRunTriggerService.buildRun`.

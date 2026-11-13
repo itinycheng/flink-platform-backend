@@ -31,22 +31,28 @@ non-terminal children. Job-run submission claims `CREATED -> SUBMITTED` with a c
 update before the external command starts, so duplicate process RPCs cannot submit the same run
 twice. A child reserved before flow kill can still start after the kill request. The executor
 callback updates only a row that is still unfinished, so it cannot restore an already committed
-terminal state. If the launch fails after the claim, the launcher cancels the resource and writes
-`ERROR` only when the executor confirms cancellation; otherwise the row stays `SUBMITTED` for the
-status poller to settle.
-Job-run status writes stay gated by the persisted row: `StatusUpdate.WORKER_REPORTED` accepts
-`CREATED`/`WAITING`/`SUBMITTED`/`RUNNING`, while `StatusUpdate.LOCAL_ERROR` accepts only `CREATED`.
-A worker report is authoritative once the run is claimed; a local exception must not overwrite a
-`SUBMITTED` or `RUNNING` row with `ERROR`. The launch callback is accepted only while the row is
-unfinished, so a late terminal callback cannot overwrite `KILLED`. If the row was terminated while
-the command was launching, the launcher requests cancellation for the resource it just started.
-Job-run kill still writes `KILLED` directly after requesting external cancellation. The Flink YARN
-executor retries the kill request against resource manager failures, treats an unregistered or
-already terminal application as nothing to stop, and does not wait for the application to reach a
-terminal state. A resource that outlives the request is left for a later kill request or manual
-cleanup, which the deterministic application tag makes possible.
-Deployments requiring stronger launch and cleanup guarantees need a separate job-run design; see
-the proposed [job-run submission claim](job-run-submission-claim.md).
+terminal state. Any failure after the claim is settled by the flow-side caller as `SUBMITTED ->
+ERROR`; an exception during `exec` requests cancellation best-effort first. A lost reply or a
+worker crash cannot be told apart from a confirmed local failure, so such a run is also written
+`ERROR`; the external resource may already exist.
+
+Job-run status writes stay gated by the persisted row: `JobRunStateService.updateFromReport`
+accepts `CREATED`/`WAITING`/`SUBMITTED`/`RUNNING` sources, except `RUNNING` for a `SUBMITTED`
+observation, while `completeWithError` accepts `CREATED` and `SUBMITTED`.
+A worker report is authoritative once the run is claimed; a flow-side local exception may still
+settle `CREATED` or `SUBMITTED` as `ERROR`. Before starting the command, the worker re-reads
+the claimed row and skips a run that is no longer `SUBMITTED`. Kill requests are handled by
+`KillJobService`; a kill that races after this read may miss a resource that has not started yet.
+While waiting for completion, `JobExecuteThread` re-reads the committed job-run status when a
+polled observation is rejected and stops waiting on `KILLING` or a terminal status.
+`KillJobService` writes `KILLING` before requesting external cancellation, then conditionally
+writes `KILLED`.
+The Flink YARN executor retries the kill request against resource manager failures, treats an
+unregistered or already terminal application as nothing to stop, and does not wait for the
+application to reach a terminal state. `KILLED` records the best-effort cancellation request, not
+confirmed external exit.
+A resource that outlives the request needs manual cleanup using the deterministic application tag;
+the normal kill endpoint skips terminal job runs.
 
 ## Rollout and remaining work
 

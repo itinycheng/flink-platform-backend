@@ -21,7 +21,7 @@ public class DefaultStatusFetcher implements StatusFetcher {
     }
 
     public JobStatusReply getStatus(@Nonnull StatusRequest request) {
-        var current = jobRunInfoService.getById(request.getJobRunId());
+        var current = jobRunInfoService.getLiteById(request.getJobRunId());
         return JobStatusReply.newBuilder()
                 .setStatus(current.getStatus().getCode())
                 .build();

@@ -7,6 +7,7 @@ import com.flink.platform.dao.service.JobRunInfoService;
 import com.flink.platform.grpc.KillJobRequest;
 import com.flink.platform.web.command.CommandExecutor;
 import com.flink.platform.web.grpc.JobGrpcClient;
+import com.flink.platform.web.jobrun.JobRunStateService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,8 +16,9 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.List;
 
-import static com.flink.platform.common.enums.ExecutionStatus.KILLED;
+import static com.flink.platform.common.enums.ExecutionStatus.KILLING;
 import static com.flink.platform.common.enums.ExecutionStatus.UNFINISHED_STATUSES;
+import static com.flink.platform.web.jobrun.JobRunTransition.Outcome.APPLIED;
 
 /** Kill job service. */
 @Slf4j
@@ -27,6 +29,8 @@ public class KillJobService {
     private final JobGrpcClient jobGrpcClient;
 
     private final JobRunInfoService jobRunService;
+
+    private final JobRunStateService stateService;
 
     private final List<CommandExecutor> jobCommandExecutors;
 
@@ -49,7 +53,12 @@ public class KillJobService {
             return;
         }
 
-        // exec kill
+        // Already KILLING: retry the command without another state write.
+        var transition = stateService.requestKill(jobRunId);
+        if (transition.outcome() != APPLIED && transition.status() != KILLING) {
+            return;
+        }
+
         var type = jobRun.getType();
         jobCommandExecutors.stream()
                 .filter(executor -> executor.isSupported(type))
@@ -58,9 +67,8 @@ public class KillJobService {
                 .kill(jobRunId);
 
         var update = new JobRunInfo();
-        update.setStatus(KILLED);
         update.setEndTime(LocalDateTime.now());
-        if (jobRunService.updateStatusFromAnyTo(jobRunId, UNFINISHED_STATUSES, update) == 1) {
+        if (stateService.confirmKilled(jobRunId, update).outcome() == APPLIED) {
             log.info("Kill job run: {} finished, time: {}", jobRunId, System.currentTimeMillis());
         }
     }

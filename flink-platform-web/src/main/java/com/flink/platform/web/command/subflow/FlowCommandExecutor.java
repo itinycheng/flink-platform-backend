@@ -17,6 +17,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import static com.flink.platform.common.enums.ExecutionStatus.ERROR;
 import static com.flink.platform.common.enums.ExecutionStatus.FAILURE;
 import static com.flink.platform.common.enums.ExecutionStatus.KILLING;
 import static com.flink.platform.common.enums.ExecutionStatus.SUBMITTED;
@@ -66,7 +67,7 @@ public class FlowCommandExecutor implements CommandExecutor {
             };
         } catch (Exception e) {
             log.error("Subflow run failed, flowId: {}", subFlow.getId(), e);
-            return new JobCallback(ExceptionUtil.stackTrace(e), FAILURE);
+            return new JobCallback(ExceptionUtil.stackTrace(e), ERROR);
         }
     }
 

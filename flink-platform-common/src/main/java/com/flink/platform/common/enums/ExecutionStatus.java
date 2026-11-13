@@ -34,7 +34,7 @@ public enum ExecutionStatus {
     /** ! Only for jobRun: status before SUBMITTED. */
     CREATED(8, TerminalState.NON_TERMINAL),
 
-    /** ! Only for jobFlowRun: transient status. */
+    /** Transient status while a flow run or job run is being killed. */
     @JsonAlias("KILLABLE")
     KILLING(9, TerminalState.TRANSIENT),
 
