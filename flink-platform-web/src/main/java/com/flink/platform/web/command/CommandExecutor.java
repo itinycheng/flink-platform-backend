@@ -57,7 +57,9 @@ public interface CommandExecutor {
     JobCallback execCommand(@Nonnull JobCommand command) throws Exception;
 
     /**
-     * Kill command if needed.
+     * Stop the task, retrying or waiting as needed. Return only when it is terminal; repeated
+     * calls must be safe. Propagate failures, since a normal return permits the caller to record
+     * {@code KILLED}.
      */
     default void killCommand(@Nonnull JobCommand command) {}
 }

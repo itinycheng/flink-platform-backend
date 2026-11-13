@@ -1,7 +1,7 @@
 package com.flink.platform.web.service;
 
-import com.flink.platform.common.enums.ExecutionStatus;
 import com.flink.platform.common.exception.UnrecoverableException;
+import com.flink.platform.common.util.ExceptionUtil;
 import com.flink.platform.common.util.JsonUtil;
 import com.flink.platform.dao.entity.JobRunInfo;
 import com.flink.platform.dao.entity.task.BaseJob;
@@ -10,6 +10,7 @@ import com.flink.platform.dao.service.JobFlowRunService;
 import com.flink.platform.dao.service.JobRunInfoService;
 import com.flink.platform.web.command.CommandBuilder;
 import com.flink.platform.web.command.CommandExecutor;
+import com.flink.platform.web.jobrun.JobRunStateService;
 import com.flink.platform.web.variable.SetParamVariableResolver;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -26,9 +27,10 @@ import java.util.Map.Entry;
 
 import static com.flink.platform.common.constants.Constant.HOST_IP;
 import static com.flink.platform.common.enums.ExecutionStatus.CREATED;
-import static com.flink.platform.common.enums.ExecutionStatus.RUNNING;
+import static com.flink.platform.common.enums.ExecutionStatus.KILLED;
+import static com.flink.platform.common.enums.ExecutionStatus.KILLING;
 import static com.flink.platform.common.enums.ExecutionStatus.SUBMITTED;
-import static com.flink.platform.common.enums.ExecutionStatus.WAITING;
+import static com.flink.platform.web.jobrun.JobRunTransition.Outcome.APPLIED;
 import static java.util.stream.Collectors.toMap;
 import static org.apache.commons.lang3.ObjectUtils.isNotEmpty;
 
@@ -38,9 +40,9 @@ import static org.apache.commons.lang3.ObjectUtils.isNotEmpty;
 @RequiredArgsConstructor(onConstructor_ = @Autowired)
 public class ProcessJobService {
 
-    private static final List<ExecutionStatus> EXPECTED_CREATED = List.of(CREATED);
-
     private final JobRunInfoService jobRunInfoService;
+
+    private final JobRunStateService jobRunStateService;
 
     private final JobRunExtraService jobRunExtraService;
 
@@ -79,7 +81,6 @@ public class ProcessJobService {
         newJobRun.setSubject(replacedContent);
         newJobRun.setConfig(replacedConfig);
         newJobRun.setHost(HOST_IP);
-        newJobRun.setStatus(SUBMITTED);
         newJobRun.setSubmitTime(submitTime);
 
         jobRun.setParams(varMap);
@@ -90,39 +91,42 @@ public class ProcessJobService {
         var builder = getBuilderOrThrow(jobRun);
         var executor = getExecutorOrThrow(jobRun);
         var command = builder.buildCommand(jobRun);
-        if (jobRunInfoService.updateStatusFromAnyTo(jobRunId, EXPECTED_CREATED, newJobRun) != 1) {
-            log.warn("Job run {} is no longer launchable; skipping duplicate submission", jobRunId);
+        if (jobRunStateService.submitCreated(jobRunId, newJobRun).outcome() != APPLIED) {
+            log.warn("Job run {} is no longer CREATED; skipping duplicate submission", jobRunId);
             return;
         }
 
+        // TODO: remove ${setParam:..}
         updateParamsInJobFlowRun(jobRun);
-        var callback = executor.exec(command);
-
-        var executionStatus = callback.getStatus();
-        var result = new JobRunInfo();
-        result.setId(jobRunId);
-        result.setStatus(executionStatus);
-        result.setTrimmedBackInfo(callback);
-        if (executionStatus.isTerminalState()) {
-            result.setEndTime(LocalDateTime.now());
+        var current = jobRunInfoService.getLiteById(jobRunId);
+        if (current == null || current.getStatus() != SUBMITTED) {
+            log.info("Job run {} is no longer SUBMITTED; skipping execution command", jobRunId);
+            return;
         }
 
-        var executionStatuses = expectedForCallback(executionStatus);
-        if (jobRunInfoService.updateStatusFromAnyTo(jobRunId, executionStatuses, result) != 1) {
-            log.warn("Job run {} callback did not change its committed status", jobRunId);
+        var cancelAfterExec = true;
+        try {
+            var callback = executor.exec(command);
+
+            var status = callback.getStatus();
+            newJobRun = new JobRunInfo();
+            newJobRun.setId(jobRunId);
+            newJobRun.setTrimmedBackInfo(callback);
+            if (status.isTerminalState()) {
+                newJobRun.setEndTime(LocalDateTime.now());
+            }
+
+            var transition = jobRunStateService.updateFromReport(jobRunId, status, newJobRun);
+            var committed = transition.status();
+            cancelAfterExec = committed == null || committed == KILLING || committed == KILLED;
+            log.info("Job run {} callback transition: {}", jobRunId, transition);
+        } finally {
+            if (cancelAfterExec) {
+                ExceptionUtil.runWithErrorLogging(
+                        "Failed to cancel job run %d after launch".formatted(jobRunId),
+                        () -> executor.killCommand(command));
+            }
         }
-
-        log.info("Job run: {} submitted, time: {}", jobRunId, System.currentTimeMillis());
-    }
-
-    private static List<ExecutionStatus> expectedForCallback(ExecutionStatus executionStatus) {
-        return switch (executionStatus) {
-            case SUBMITTED -> List.of(SUBMITTED);
-            case WAITING -> List.of(SUBMITTED, WAITING);
-            case CREATED, KILLING ->
-                throw new IllegalArgumentException("Unexpected job submission result: " + executionStatus);
-            default -> List.of(SUBMITTED, WAITING, RUNNING);
-        };
     }
 
     private CommandBuilder getBuilderOrThrow(JobRunInfo jobRun) {

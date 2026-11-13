@@ -69,6 +69,16 @@ check their POMs before using newer Java APIs.
 For local setup, see [startup](docs/startup.md). The [architecture](docs/architecture.md) includes a source map for
 the main runtime paths; [configuration](docs/configuration.md) explains profiles and infrastructure settings.
 
+## Documentation map
+
+- Current behavior and setup: [architecture](docs/architecture.md), [configuration](docs/configuration.md),
+  and [startup](docs/startup.md). The SQL files in `docs/sql/` support database initialization and migration.
+- Development rules: [AGENTS.md](AGENTS.md), [code standards](docs/code-standards.md), and
+  [review lessons](LESSONS.md).
+- Open work: [TODO.md](TODO.md) links the relevant designs in `docs/design/`. Check each design's status before
+  using it; some describe a proposal or the reasoning behind an earlier implementation. For current flow-run
+  behavior and rollout, start with the [state-machine migration notes](docs/design/flow-run-state-machine-migration.md).
+
 ## AI-assisted development
 
 [AGENTS.md](AGENTS.md) defines the daily agent workflow and links the relevant coding rules and project context.
