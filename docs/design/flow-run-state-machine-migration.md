@@ -37,14 +37,15 @@ worker crash cannot be told apart from a confirmed local failure, so such a run 
 `ERROR`; the external resource may already exist.
 
 Job-run status writes stay gated by the persisted row: `JobRunStateService.updateFromReport`
-accepts `CREATED`/`WAITING`/`SUBMITTED`/`RUNNING` sources, except `RUNNING` for a `SUBMITTED`
-observation, while `completeWithError` accepts `CREATED` and `SUBMITTED`.
+writes a non-terminal observation only from a `SUBMITTED` or `RUNNING` row and a terminal
+observation from any unfinished row; `CREATED` and `KILLING` observations are never written.
+`completeWithError` accepts `CREATED` and `SUBMITTED`.
 A worker report is authoritative once the run is claimed; a flow-side local exception may still
 settle `CREATED` or `SUBMITTED` as `ERROR`. Before starting the command, the worker re-reads
 the claimed row and skips a run that is no longer `SUBMITTED`. Kill requests are handled by
 `KillJobService`; a kill that races after this read may miss a resource that has not started yet.
-While waiting for completion, `JobExecuteThread` re-reads the committed job-run status when a
-polled observation is rejected and stops waiting on `KILLING` or a terminal status.
+While waiting for completion, `JobExecuteThread` adopts the committed status returned by a rejected
+observation and keeps polling until it is terminal; `KILLING` does not end the wait.
 `KillJobService` writes `KILLING` before requesting external cancellation, then conditionally
 writes `KILLED`.
 The Flink YARN executor retries the kill request against resource manager failures, treats an
@@ -61,8 +62,10 @@ under coordinated quiescence, because a worker still running the previous binary
 without a fence and therefore cannot participate in the guarantee. Before the first start, confirm
 that no non-terminal row lacks an owning host (`host IS NULL` for `SUBMITTED`, `RUNNING`, or
 `KILLING`); otherwise the host fence rejects that run's start, completion, and reassignment.
-Reconcile residual flow-run `CREATED` rows using the procedure in
-[single-phase flow-run creation](flow-run-single-phase-creation.md). No schema migration is needed.
+Reconcile residual flow-run `CREATED` rows before activation: rows reserved by the old sub-flow
+path have an empty `host`. Set each to `FAILURE`, or `KILLED` when a parent job still tracks it,
+and re-run `SELECT id, flow_id, host, create_time FROM t_job_flow_run WHERE status = 'CREATED'`
+until it returns nothing. No schema migration is needed.
 
 Unit tests cover the transition matrix, kill orchestration, admission, and dispatcher behavior. The
 affected Maven reactor must compile with formatting, Checkstyle, and NullAway checks. Runtime

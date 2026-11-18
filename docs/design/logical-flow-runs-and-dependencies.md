@@ -11,8 +11,8 @@
 > The period-aware mode below is a future design. This document does not change the current
 > latest-upstream-run behavior or the existing `DEPENDENT` job type.
 > Distributed lifecycle transitions, kill fencing,
-> and state-writer arbitration are specified in
-> [flow-run-state-machine.md](flow-run-state-machine.md).
+> and state-writer arbitration are specified in the
+> [state-machine migration notes](flow-run-state-machine-migration.md).
 
 ## Why this design exists
 
