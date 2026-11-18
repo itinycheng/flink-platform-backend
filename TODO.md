@@ -238,7 +238,7 @@ fault-tolerance re-dispatch) do, but stays MySQL-only / no ZooKeeper / no new sc
       `UNIQUE(flow_run_id, job_id, attempt)`; `createJobRun` inserts next attempt and reads-existing on
       duplicate-key. Collapses the "two job_run rows created" race to one row. Deprioritized: the sharper
       double-submit ("same row submitted twice") is handled by P2's guard, not this constraint. Retries
-      today create a new row per attempt (`getCountAndLastJobRun` counts rows), so the unique key MUST
+      today create a new row per attempt (`JobExecuteThread` counts existing runs), so the unique key MUST
       include `attempt`; backfill existing rows by id order. = Airflow `try_number`.
 - [ ] **Phase 4/5 · Architectural convergence (only if we want to delete the old path).** Add
       `lease_expire_at` to `t_job_flow_run`; make `drainAndExecute` claim via atomic CAS
@@ -308,9 +308,7 @@ call, the `exec(command)` submit, and the conditional status update that persist
 `JobExecuteThread.processRemoteJob`;
 `JobRunStateService.completeWithError`.
 
-Related: [transient DB failure handling](docs/design/transient-db-failure-handling.md),
-[flow-run state machine](docs/design/flow-run-state-machine.md), and the "Persist app_id ASAP" item
-under Failover Hardening.
+Related: the "Persist app_id ASAP" item under Failover Hardening.
 
 ---
 
@@ -421,6 +419,12 @@ Related: [Job Launch Claim — Uncertain Submit](#job-launch-claim--uncertain-su
 
 ## KILLING Job-Run Settlement
 
+`KILLING` is durable cancellation intent for every job type: it fences late launch callbacks and
+lets a repeated request retry the executor's kill operation. `KILLED` records that the scheduler
+finished logical cancellation; it does not confirm the external resource stopped. A flow run in
+`KILLING` waits for its child job runs to leave nonterminal states, so a job run needs a bounded
+path out of `KILLING`.
+
 A job run can stay `KILLING` forever. Only flow runs in `KILLING` drive kill retries
 (`FlowRunCoordinator`, 2s), so these cases have no driver:
 
@@ -431,7 +435,10 @@ A job run can stay `KILLING` forever. Only flow runs in `KILLING` drive kill ret
 - [ ] Periodic scan of `KILLING` job runs that retries `killJob`, independent of flow-run status.
 - [ ] Bounded settlement with a persisted `killing_since` (no update-time column today): on
       deadline, inactive host, or no supported executor, settle `KILLED` as external cleanup
-      unconfirmed and alert.
+      unconfirmed and alert. Requires a persisted cancellation timestamp and cleanup record, with
+      schema migration before backend deployment.
+- [ ] Display `KILLING` for job runs in the embedded UI and align the status contract with the
+      separate `runnelo-ui` project.
 
 ---
 
@@ -880,9 +887,7 @@ run of its can reach `WAITING`.
 ## Sub-flow Reference Validation
 
 `FlowCommandExecutor` fails the parent job when a `SUB_FLOW` target is missing or not
-`ONLINE`/`SCHEDULING`. Return the error when the user edits or starts the flow instead; cases and
-the run-time contract are recorded in
-[docs/design/flow-run-single-phase-creation.md](docs/design/flow-run-single-phase-creation.md#follow-up-reject-invalid-sub-flow-references-up-front).
+`ONLINE`/`SCHEDULING`. Return the error when the user edits or starts the flow instead.
 
 - [ ] Validate `SUB_FLOW` targets on flow save/update: existence, runnable status, workspace,
       self-reference, and reference cycles.
