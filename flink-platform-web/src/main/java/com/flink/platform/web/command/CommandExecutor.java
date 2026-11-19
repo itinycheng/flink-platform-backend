@@ -27,6 +27,7 @@ public interface CommandExecutor {
         RUNNING_MAP.put(jobRunId, command);
         try {
             var callback = execCommand(command);
+            // TODO: KILLING mixes command timeout with cancellation state.
             if (callback.getStatus() == KILLING) {
                 killCommand(command);
                 callback.setStatus(KILLED);

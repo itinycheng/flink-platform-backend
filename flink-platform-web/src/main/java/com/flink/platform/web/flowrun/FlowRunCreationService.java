@@ -30,8 +30,18 @@ public class FlowRunCreationService {
 
     private final LegacyJobListService legacyJobListService;
 
-    @Retryable(maxRetries = 2, delay = 20, jitter = 50)
+    @Retryable(maxRetries = 2, delay = 20, jitter = 50, excludes = IllegalStateException.class)
     public FlowRunCreationResult tryCreateFlowRun(JobFlowRun candidate) {
+        return createFlowRun(candidate, id -> {});
+    }
+
+    /** Runs the hook after the insert and before the admission transaction commits. */
+    @Retryable(maxRetries = 2, delay = 20, jitter = 50, excludes = IllegalStateException.class)
+    public FlowRunCreationResult tryCreateFlowRun(JobFlowRun candidate, FlowRunCreationHook onCreated) {
+        return createFlowRun(candidate, onCreated);
+    }
+
+    private FlowRunCreationResult createFlowRun(JobFlowRun candidate, FlowRunCreationHook onCreated) {
         // Admission owns its transaction; joining a caller's would hold the flow lock and hide uncommitted runs.
         if (TransactionSynchronizationManager.isActualTransactionActive()) {
             throw new IllegalStateException("Flow run creation must not run inside a caller transaction");
@@ -41,10 +51,10 @@ public class FlowRunCreationService {
         candidate.setId(null);
         // TODO: legacy, remove in the future.
         if (JOB_LIST.equals(candidate.getType())) {
-            return legacyJobListService.attempt(candidate);
+            return legacyJobListService.attempt(candidate, onCreated);
         }
 
-        var result = transactionService.attempt(candidate);
+        var result = transactionService.attempt(candidate, onCreated);
         result.timeouts().forEach(timeout -> {
             timeout.run().setStatus(FAILURE);
             timeout.run().setEndTime(LocalDateTime.now());
@@ -67,7 +77,7 @@ public class FlowRunCreationService {
         private final FlowRunStateService stateService;
 
         @Transactional(propagation = REQUIRES_NEW, isolation = READ_COMMITTED, rollbackFor = Exception.class)
-        public FlowRunCreationResult attempt(JobFlowRun candidate) {
+        public FlowRunCreationResult attempt(JobFlowRun candidate, FlowRunCreationHook onCreated) {
             var jobFlow = jobFlowService.lockForUpdate(candidate.getFlowId());
             if (jobFlow == null) {
                 throw new IllegalStateException("Job flow not found: " + candidate.getFlowId());
@@ -113,6 +123,7 @@ public class FlowRunCreationService {
             if (!flowRunService.save(candidate)) {
                 throw new IllegalStateException("Failed to save flow run: " + candidate.getId());
             }
+            onCreated.onCreated(candidate);
             return FlowRunCreationResult.created(candidate, timeouts);
         }
 

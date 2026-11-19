@@ -1,7 +1,6 @@
 package com.flink.platform.web.command.subflow;
 
 import com.flink.platform.common.enums.JobType;
-import com.flink.platform.common.util.ExceptionUtil;
 import com.flink.platform.dao.entity.result.JobCallback;
 import com.flink.platform.dao.service.JobFlowRunService;
 import com.flink.platform.dao.service.JobFlowService;
@@ -13,16 +12,13 @@ import com.flink.platform.web.flowrun.FlowRunKillService;
 import com.flink.platform.web.flowrun.FlowRunTriggerService;
 import jakarta.annotation.Nonnull;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import static com.flink.platform.common.enums.ExecutionStatus.ERROR;
 import static com.flink.platform.common.enums.ExecutionStatus.FAILURE;
 import static com.flink.platform.common.enums.ExecutionStatus.KILLING;
 import static com.flink.platform.common.enums.ExecutionStatus.SUBMITTED;
 
-@Slf4j
 @Component("flowCommandExecutor")
 @RequiredArgsConstructor(onConstructor_ = @Autowired)
 public class FlowCommandExecutor implements CommandExecutor {
@@ -51,24 +47,20 @@ public class FlowCommandExecutor implements CommandExecutor {
             return new JobCallback("Subflow is not runnable, flowId: " + flowId, FAILURE);
         }
 
-        try {
-            // Inherit parent flow's scheduleTime so the whole workflow tree shares one biz* anchor.
-            var scheduleTime = jobFlowRunService.getScheduleTimeOrNow(command.getFlowRunId());
-            var result = triggerService.handle(subFlow, scheduleTime);
-            return switch (result.state()) {
-                case CREATED -> {
-                    var run = result.run();
-                    var callback = new JobCallback();
-                    callback.setFlowRunId(run.getId());
-                    callback.setStatus(run.getStatus() == KILLING ? SUBMITTED : run.getStatus());
-                    yield callback;
-                }
-                case BLOCKED -> new JobCallback(result.blockMessage(), FAILURE);
-            };
-        } catch (Exception e) {
-            log.error("Subflow run failed, flowId: {}", subFlow.getId(), e);
-            return new JobCallback(ExceptionUtil.stackTrace(e), ERROR);
-        }
+        // Inherit parent flow's scheduleTime so the whole workflow tree shares one biz* anchor.
+        var scheduleTime = jobFlowRunService.getScheduleTimeOrNow(command.getFlowRunId());
+        var result = triggerService.handle(
+                subFlow, scheduleTime, run -> linkToParentJobRun(command.getJobRunId(), run.getId()));
+        return switch (result.state()) {
+            case CREATED -> {
+                var run = result.run();
+                var callback = new JobCallback();
+                callback.setFlowRunId(run.getId());
+                callback.setStatus(run.getStatus() == KILLING ? SUBMITTED : run.getStatus());
+                yield callback;
+            }
+            case BLOCKED -> new JobCallback(result.blockMessage(), FAILURE);
+        };
     }
 
     @Override
@@ -80,13 +72,17 @@ public class FlowCommandExecutor implements CommandExecutor {
 
         var backInfo = jobRun.getBackInfo();
         if (backInfo == null || backInfo.getFlowRunId() == null) {
-            // TODO: Child creation and ProcessJobService's backInfo write use separate transactions.
-            // A kill between them misses the child while KillJobService may mark this job run KILLED.
             return;
         }
 
         // avoid circular dependency.
         var service = SpringContext.getBean(FlowRunKillService.class);
         service.requestKill(backInfo.getFlowRunId());
+    }
+
+    private void linkToParentJobRun(long jobRunId, long subFlowRunId) {
+        if (!jobRunService.linkSubFlowRunIfSubmitted(jobRunId, subFlowRunId)) {
+            throw new IllegalStateException("Parent job run is no longer SUBMITTED, jobRunId: " + jobRunId);
+        }
     }
 }

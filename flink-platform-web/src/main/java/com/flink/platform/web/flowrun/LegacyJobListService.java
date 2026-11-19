@@ -41,7 +41,7 @@ class LegacyJobListService {
      * class, and {@code REQUIRES_NEW} keeps creation isolated from any same-package caller transaction.
      */
     @Transactional(propagation = REQUIRES_NEW, rollbackFor = Exception.class, isolation = READ_COMMITTED)
-    public FlowRunCreationResult attempt(JobFlowRun candidate) {
+    public FlowRunCreationResult attempt(JobFlowRun candidate, FlowRunCreationHook onCreated) {
         var jobFlow = jobFlowService.lockForUpdate(candidate.getFlowId());
         if (jobFlow == null) {
             throw new IllegalStateException("Job flow not found: " + candidate.getFlowId());
@@ -60,6 +60,7 @@ class LegacyJobListService {
         if (!jobFlowRunService.save(candidate)) {
             throw new IllegalStateException("Failed to save JOB_LIST flow run: " + candidate.getId());
         }
+        onCreated.onCreated(candidate);
 
         log.info(
                 "The job flow of type JOB_LIST: {} is created, time: {}",
