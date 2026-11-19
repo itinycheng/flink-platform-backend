@@ -37,9 +37,9 @@ limit.
 The immediate lifecycle bug was narrower but came from the same missing separation. A scheduled
 `WAITING` run uses the flow's next cron fire as its deadline. At exactly that fire, the old run can
 still be non-terminal when the fresh occurrence is admitted. The admission service now replaces
-that expired row when it wins the status CAS. A remaining race exists when the dispatcher changes
-the row after admission reads it but before that CAS; the current implementation fails fast and
-leaves the candidate uncreated.
+that expired row when it wins the status CAS. If the dispatcher changes the row after admission
+reads it but before that CAS, admission re-reads unfinished runs once and applies the conflict
+policy to the fresh state.
 
 ## Goals
 
@@ -154,8 +154,7 @@ data-period model.
 
 Route `JOB_FLOW` creation through one transactional Spring service:
 
-1. lock the `t_job_flow` row (`SELECT ... FOR UPDATE`) so the decision is cluster-wide; the
-   current `synchronized (code)` protects only one JVM;
+1. lock the `t_job_flow` row (`SELECT ... FOR UPDATE`) so the decision is cluster-wide;
 2. load the flow's non-terminal runs; the candidate has not been inserted yet;
 3. classify a `WAITING` run as expired when `resolveWaitDeadline(old) <=` the physical admission
    time;
@@ -175,12 +174,12 @@ wait clock: `resolveWaitDeadline` starts from the old run's `createTime`, and ad
 deadline with wall-clock time. Admission treats equality as expired; the periodic dispatcher keeps
 its strict `now.isAfter(deadline)` check.
 
-`JobFlowRunService.updateStatusFromTo(..., WAITING, ...)` provides the status compare-and-set. If
-the trigger wins it, the dispatcher later updates zero rows and sends no duplicate timeout alert.
-If the dispatcher wins before the admission query, admission observes the resulting state. If it
-wins after that query but before the trigger's CAS, admission currently throws and the fresh
-candidate is not created. The future lifecycle state machine must distinguish an advance, timeout,
-and user kill before deciding whether to block or create the candidate.
+`FlowRunStateService.failWaiting` provides the status compare-and-set. If the trigger wins it,
+the dispatcher later updates zero rows and sends no duplicate timeout alert. If the dispatcher
+wins before the admission query, admission observes the resulting state. If it wins after that
+query but before the trigger's CAS, admission re-reads unfinished runs once. A remaining conflict
+blocks the candidate; otherwise admission creates it. A DB-backed concurrency test must still
+verify this transaction boundary across workers.
 
 Do not implement this by excluding every `WAITING` row from conflict detection: a not-yet-expired
 manual or irregular occurrence must not create an unbounded pile of waiting runs.
@@ -190,8 +189,8 @@ manual or irregular occurrence must not create an unbounded pile of waiting runs
 Different `scheduleTime` values do not automatically permit parallel execution. A 02:00 run may
 still be using the same sink when the 03:00 occurrence arrives.
 
-The current behaviour is effectively **SKIP while active** and should remain so during the first
-phase. A future explicit flow-level policy may offer:
+The default `maxActiveRuns = 1` effectively **SKIPs while active**. A larger configured cap
+already permits concurrent flow runs. A future explicit flow-level policy may offer:
 
 - `SKIP` — discard a new occurrence while older work is executing;
 - `QUEUE` — persist the new occurrence and execute it later;
@@ -371,13 +370,12 @@ incremental dependencies should ultimately match data partitions rather than clo
 
 ## Delivery plan
 
-### Phase 1 — transactional admission (partly implemented, no lifecycle schema change)
+### Phase 1 — transactional admission (implemented, DB concurrency test pending)
 
 - Implemented: move flow-run admission into a transactional service and lock the flow row.
-- Implemented: fail expired `WAITING` rows and save the candidate in one transaction when every CAS
-  succeeds.
+- Implemented: fail expired `WAITING` rows and save the candidate in one transaction; reconcile a
+  lost CAS with one fresh read before deciding whether to block or create.
 - Implemented: make timeout alerting single-winner and post-commit.
-- Remaining: model CAS-loss outcomes in the lifecycle state machine instead of failing all of them.
 - Remaining: add a DB-backed multi-node admission test.
 
 ### Phase 2 — explicit retry scope
@@ -408,16 +406,16 @@ incremental dependencies should ultimately match data partitions rather than clo
 ### Transactional admission
 
 - expired `WAITING` at fire `T` becomes `FAILURE` and the `T` run is created;
-- a lost `WAITING` CAS rolls back and leaves the candidate uncreated;
+- a lost `WAITING` CAS rechecks active runs, then blocks or creates the candidate accordingly;
 - trigger-first timeout CAS sends one alert; the dispatcher loser sends none;
 - a `WAITING` run whose deadline is after `T` still blocks;
 - `RUNNING`/`SUBMITTED` still block according to the overlap policy;
 - invalid cron/evaluation failure does not leave the flow lock or transaction open.
 
-Still required after the state-machine decision:
+Still required as DB-backed concurrency coverage:
 
-- dispatcher advance, dispatcher timeout, and user-kill races produce the explicitly chosen
-  candidate outcome;
+- dispatcher advance, dispatcher timeout, and user-kill races produce the expected
+  candidate outcome after the fresh read;
 - two workers admitting the same occurrence create one run in a real database test.
 
 ### Retry scope

@@ -172,35 +172,20 @@ public class JobExecuteThread implements Supplier<JobResponse> {
     }
 
     private RetryAndRun getRetryAndLatestRun() {
-        int retry = 0;
-        while (AppRunner.isRunning() && retry++ < 3) {
-            try {
-                var job = jobInfoService.getById(jobId);
-                var config = job.getConfig();
+        var job = jobInfoService.getById(jobId);
+        var config = job.getConfig();
 
-                Long jobRunId = null;
-                ExecutionStatus jobRunStatus = null;
-                var jobRuns = jobRunInfoService.listLiteRunsLatestFirst(jobId, flowRunId);
-                if (CollectionUtils.isNotEmpty(jobRuns)) {
-                    var latest = jobRuns.getFirst();
-                    jobRunId = latest.getId();
-                    jobRunStatus = latest.getStatus();
-                }
-
-                return new RetryAndRun(
-                        config.getRetryTimes(),
-                        config.parseRetryInterval(),
-                        jobRuns.size() - 1,
-                        jobRunId,
-                        jobRunStatus);
-            } catch (Exception e) {
-                log.error("Load retry config and latest run failed, jobId: {}, flowRunId: {}", jobId, flowRunId, e);
-                ThreadUtil.sleep(1000);
-            }
+        Long jobRunId = null;
+        ExecutionStatus jobRunStatus = null;
+        var jobRuns = jobRunInfoService.listLiteRunsLatestFirst(jobId, flowRunId);
+        if (CollectionUtils.isNotEmpty(jobRuns)) {
+            var latest = jobRuns.getFirst();
+            jobRunId = latest.getId();
+            jobRunStatus = latest.getStatus();
         }
-        throw new IllegalStateException(
-                "Load retry config and latest run failed, retry exhausted, jobId: %s, flowRunId: %s"
-                        .formatted(jobId, flowRunId));
+
+        return new RetryAndRun(
+                config.getRetryTimes(), config.parseRetryInterval(), jobRuns.size() - 1, jobRunId, jobRunStatus);
     }
 
     private void sleepRetry(@Nullable Duration interval) {

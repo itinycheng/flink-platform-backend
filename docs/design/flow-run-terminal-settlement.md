@@ -49,6 +49,9 @@ status, schema, REST, or gRPC contract.
 
 Job runs are created as DAG predecessors finish; vertices whose preconditions never match have
 no job run. The child check therefore covers all *created* attempts, not every DAG vertex.
+For a `SUB_FLOW` job, waiting for its job-run row to become terminal does not itself wait for
+the nested child flow run. That separate cancellation contract is proposed in
+[sub-flow job-run cancellation](subflow-job-run-cancellation.md).
 
 ## Scope and limits
 

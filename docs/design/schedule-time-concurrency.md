@@ -1,7 +1,7 @@
 # Schedule-Time-Aware Run Concurrency
 
 > **Status:** Phase 1 is implemented for `JobFlowRun`, including flow-row-locked admission. A
-> DB-backed two-worker test, WAITING-CAS lifecycle handling, and flow-less job runs remain
+> DB-backed two-worker test and flow-less job runs remain
 > follow-up work.
 
 ## Problem
@@ -112,8 +112,6 @@ The common pattern is to keep logical identity, overlap behavior, and resource l
 - Give flow-less/ad-hoc job runs their own persisted logical time before applying the same policy at
   `job_id` scope.
 - Add a DB-backed two-worker test for the flow-row lock and transactional active-run admission.
-- Move WAITING-CAS race outcomes into the lifecycle state machine; admission currently fails fast
-  if the dispatcher changes a WAITING row after the active-run snapshot.
 - Add explicit attempt metadata if the UI needs to link reruns of the same logical time.
 - Complete the timezone work in `TODO.md`; logical-time equality must use a consistently resolved
   schedule zone/instant across the cluster.

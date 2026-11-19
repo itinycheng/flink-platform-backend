@@ -1,6 +1,7 @@
 # Flow-run state machine migration
 
-Status: implementation migrated to `feat/state-machine`; activation remains an operational step.
+> **Status:** Implemented in the current code. The rollout checklist below applies when upgrading
+> a deployment from a build that wrote flow-run status without conditional transitions.
 
 ## Current contract
 

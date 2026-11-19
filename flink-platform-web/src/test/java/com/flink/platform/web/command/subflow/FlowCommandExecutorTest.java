@@ -5,6 +5,7 @@ import com.flink.platform.dao.entity.JobFlowRun;
 import com.flink.platform.dao.service.JobFlowRunService;
 import com.flink.platform.dao.service.JobFlowService;
 import com.flink.platform.dao.service.JobRunInfoService;
+import com.flink.platform.web.flowrun.FlowRunCreationHook;
 import com.flink.platform.web.flowrun.FlowRunCreationResult;
 import com.flink.platform.web.flowrun.FlowRunTriggerService;
 import org.junit.jupiter.api.Test;
@@ -20,6 +21,8 @@ import static com.flink.platform.common.enums.ExecutionStatus.WAITING;
 import static com.flink.platform.common.enums.JobFlowStatus.ONLINE;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -50,13 +53,14 @@ class FlowCommandExecutorTest {
         run.setId(42L);
         run.setStatus(WAITING);
         when(jobFlowRunService.getScheduleTimeOrNow(7L)).thenReturn(PARENT_SCHEDULE_TIME);
-        when(triggerService.handle(child, PARENT_SCHEDULE_TIME)).thenReturn(FlowRunCreationResult.created(run));
+        when(triggerService.handle(eq(child), eq(PARENT_SCHEDULE_TIME), any(FlowRunCreationHook.class)))
+                .thenReturn(FlowRunCreationResult.created(run));
 
         var callback = executor.execCommand(new FlowCommand(11L, 7L, 10L));
 
         assertEquals(42L, callback.getFlowRunId());
         assertEquals(WAITING, callback.getStatus());
-        verify(triggerService).handle(child, PARENT_SCHEDULE_TIME);
+        verify(triggerService).handle(eq(child), eq(PARENT_SCHEDULE_TIME), any(FlowRunCreationHook.class));
     }
 
     @Test
@@ -65,7 +69,7 @@ class FlowCommandExecutorTest {
         var conflict = new JobFlowRun();
         conflict.setId(41L);
         when(jobFlowRunService.getScheduleTimeOrNow(7L)).thenReturn(PARENT_SCHEDULE_TIME);
-        when(triggerService.handle(child, PARENT_SCHEDULE_TIME))
+        when(triggerService.handle(eq(child), eq(PARENT_SCHEDULE_TIME), any(FlowRunCreationHook.class)))
                 .thenReturn(FlowRunCreationResult.blocked(
                         new JobFlowRun(), conflict, "Duplicate schedule time", java.util.List.of()));
 

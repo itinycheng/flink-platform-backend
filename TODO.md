@@ -363,8 +363,9 @@ prove that earlier runs have finished. A purge racing with submission can make
 
 ## Per-Type Kill Idempotency in `CommandExecutor.killCommand`
 
-**Deferred until the current job-run state-machine refactor lands.** No uncommitted-candidate
-change; keep the call site in `ProcessJobService.processJob` uniform.
+The job-run conditional-state increment has landed. Keep the call site in
+`ProcessJobService.processJob` uniform. The two `SUB_FLOW` increments are specified in
+[sub-flow job-run cancellation](docs/design/subflow-job-run-cancellation.md).
 
 Context: once `exec(command)` returns, the external resource may already exist. If the callback
 status cannot be persisted, the `finally` block calls `executor.killCommand(command)` best-effort
@@ -389,11 +390,21 @@ Contract to enforce, in the interface javadoc (a minimal `KillResult` is optiona
 
 Gaps:
 
-- [ ] **P0 · subflow.** `FlowCommandExecutor.execCommand` knows the child flow-run id, but
-      `killCommand` only reads it from the DB `backInfo` — exactly the field the failed write would
-      have persisted. It returns silently, so the parent run becomes `ERROR` while the child flow
-      run keeps running. Keep the child id on `FlowCommand` and prefer it in `killCommand`, with
-      `backInfo` as fallback.
+- [x] **P0 · subflow creation/association race.** Create the child flow run and persist its ID
+      on the parent job run in the same short admission transaction. Use a narrow transactional
+      `onCreated` hook with a conditional parent-row UPDATE; it rolls back child creation if
+      cancellation won. Child terminal waiting remains a separate increment in the linked
+      design.
+- [ ] **Deferred · Preserve the subflow link after a local error.** `completeWithError` still
+      replaces the parent job run's whole `backInfo` with an error callback. If child cancellation
+      also failed, this erases the committed child ID and leaves no automatic retry path. Revisit
+      immutable child association or an atomic merge separately from the creation/cancel race.
+- [ ] **Deferred · Reconcile subflow creation exceptions with cancellation.** The existing
+      `FlowCommandExecutor.execCommand` catch converts a rejected association hook or a
+      post-commit trigger exception to an `ERROR` callback. A terminal `ERROR` observation can
+      replace `KILLING`, and an exception after child creation may leave that child active.
+      Define the cancellation/error outcome and compensation separately from the hook-only
+      increment; keep the current status flow unchanged in this review.
 - [ ] **P1 · shell.** `CommandUtil.forceKill` kills by pid with no identity check; killing a
       recycled pid can hit an unrelated process. Validate process identity (start time or command
       marker) before killing. `task == null` plus missing `backInfo` is also a silent no-op.
@@ -776,7 +787,9 @@ See design:
       it again and later runs never get cleanup. Add a cursor or retry backoff before limiting.
 - [ ] **P3 · Delay parent kill completion for `SUB_FLOW`.** `FlowCommandExecutor.killCommand`
       requests child cancellation, but `KillJobService` can mark its parent-side job run `KILLED`
-      while the child flow remains `KILLING`. Resolve this with the job-run kill redesign.
+      while the child flow remains `KILLING`. Keep the parent job run `KILLING` until the child is
+      terminal, with a retry driver for direct job kills. See
+      [sub-flow job-run cancellation](docs/design/subflow-job-run-cancellation.md).
 
 - [ ] **Add a DB-backed two-worker admission test.** Unit tests verify that every admission takes
       the flow-row lock, but a real MySQL concurrency test is still needed to prove the lock and

@@ -34,13 +34,26 @@ public class FlowRunTriggerService {
     private final FlowRunCreationService creationService;
 
     public FlowRunCreationResult handle(JobFlow jobFlow, LocalDateTime scheduleTime) {
-        return handle(jobFlow, null, null, scheduleTime);
+        return handle(jobFlow, null, null, scheduleTime, run -> {});
+    }
+
+    public FlowRunCreationResult handle(JobFlow jobFlow, LocalDateTime scheduleTime, FlowRunCreationHook onCreated) {
+        return handle(jobFlow, null, null, scheduleTime, onCreated);
     }
 
     public FlowRunCreationResult handle(
             JobFlow jobFlow, @Nullable ExecutionConfig config, @Nullable Long userId, LocalDateTime scheduleTime) {
+        return handle(jobFlow, config, userId, scheduleTime, run -> {});
+    }
+
+    private FlowRunCreationResult handle(
+            JobFlow jobFlow,
+            @Nullable ExecutionConfig config,
+            @Nullable Long userId,
+            LocalDateTime scheduleTime,
+            FlowRunCreationHook onCreated) {
         var candidate = buildRun(jobFlow, config, userId, scheduleTime);
-        var creationResult = creationService.tryCreateFlowRun(candidate);
+        var creationResult = creationService.tryCreateFlowRun(candidate, onCreated);
         report(creationResult, jobFlow);
         return creationResult;
     }

@@ -9,10 +9,13 @@ import com.flink.platform.common.enums.JobFlowStatus;
 import com.flink.platform.common.enums.JobFlowType;
 import com.flink.platform.common.enums.JobStatus;
 import com.flink.platform.dao.entity.JobRunInfo;
+import com.flink.platform.dao.entity.result.JobCallback;
 import com.flink.platform.dao.mapper.JobRunInfoMapper;
 import jakarta.annotation.Nonnull;
 import org.jspecify.annotations.Nullable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -22,6 +25,7 @@ import java.util.Set;
 
 import static com.flink.platform.common.enums.ExecutionStatus.CREATED;
 import static com.flink.platform.common.enums.ExecutionStatus.FAILURE_STATUSES;
+import static com.flink.platform.common.enums.ExecutionStatus.SUBMITTED;
 import static com.flink.platform.common.enums.ExecutionStatus.UNFINISHED_STATUSES;
 import static com.flink.platform.common.enums.JobType.SUB_FLOW;
 
@@ -49,6 +53,21 @@ public class JobRunInfoService extends ServiceImpl<JobRunInfoMapper, JobRunInfo>
                         .lambda()
                         .eq(JobRunInfo::getId, id)
                         .in(JobRunInfo::getStatus, expected));
+    }
+
+    @Transactional(propagation = Propagation.MANDATORY)
+    public boolean pairSubFlowRunAfterCreated(Long id, Long subFlowRunId) {
+        var callback = new JobCallback();
+        callback.setFlowRunId(subFlowRunId);
+        var update = new JobRunInfo();
+        update.setBackInfo(callback);
+        return baseMapper.update(
+                        update,
+                        new QueryWrapper<JobRunInfo>()
+                                .lambda()
+                                .eq(JobRunInfo::getId, id)
+                                .eq(JobRunInfo::getStatus, SUBMITTED))
+                == 1;
     }
 
     public List<JobRunInfo> listLiteRunsLatestFirst(long jobId, long flowRunId) {

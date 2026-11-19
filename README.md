@@ -76,8 +76,8 @@ the main runtime paths; [configuration](docs/configuration.md) explains profiles
 - Development rules: [AGENTS.md](AGENTS.md), [code standards](docs/code-standards.md), and
   [review lessons](LESSONS.md).
 - Open work: [TODO.md](TODO.md) links the relevant designs in `docs/design/`. Check each design's status before
-  using it; some describe a proposal or the reasoning behind an earlier implementation. For current flow-run
-  behavior and rollout, start with the [state-machine migration notes](docs/design/flow-run-state-machine-migration.md).
+  using it; some describe a proposal or the reasoning behind an earlier implementation. For flow-run
+  migration history and deployment checks, see the [state-machine migration notes](docs/design/flow-run-state-machine-migration.md).
 
 ## AI-assisted development
 

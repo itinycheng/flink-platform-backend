@@ -54,7 +54,8 @@ public class FlowCommandExecutor implements CommandExecutor {
         try {
             // Inherit parent flow's scheduleTime so the whole workflow tree shares one biz* anchor.
             var scheduleTime = jobFlowRunService.getScheduleTimeOrNow(command.getFlowRunId());
-            var result = triggerService.handle(subFlow, scheduleTime);
+            var result = triggerService.handle(
+                    subFlow, scheduleTime, run -> pairWithParentJobRun(command.getJobRunId(), run.getId()));
             return switch (result.state()) {
                 case CREATED -> {
                     var run = result.run();
@@ -71,6 +72,12 @@ public class FlowCommandExecutor implements CommandExecutor {
         }
     }
 
+    private void pairWithParentJobRun(long parentJobRunId, long subFlowRunId) {
+        if (!jobRunService.pairSubFlowRunAfterCreated(parentJobRunId, subFlowRunId)) {
+            throw new IllegalStateException("Parent job run is no longer SUBMITTED, jobRunId: " + parentJobRunId);
+        }
+    }
+
     @Override
     public void killCommand(@Nonnull JobCommand command) {
         var jobRun = jobRunService.getById(command.getJobRunId());
@@ -80,8 +87,6 @@ public class FlowCommandExecutor implements CommandExecutor {
 
         var backInfo = jobRun.getBackInfo();
         if (backInfo == null || backInfo.getFlowRunId() == null) {
-            // TODO: Child creation and ProcessJobService's backInfo write use separate transactions.
-            // A kill between them misses the child while KillJobService may mark this job run KILLED.
             return;
         }
 
