@@ -7,7 +7,7 @@ import com.flink.platform.storage.base.StorageType;
 import com.google.auto.service.AutoService;
 
 /**
- * Hello world!
+ * Creates local filesystem storage systems.
  */
 @AutoService(StorageFactory.class)
 public class LocalStorageFactory implements StorageFactory {

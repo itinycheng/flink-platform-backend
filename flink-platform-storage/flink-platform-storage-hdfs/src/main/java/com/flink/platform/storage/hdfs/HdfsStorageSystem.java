@@ -191,8 +191,8 @@ public class HdfsStorageSystem implements StorageSystem {
     }
 
     /**
-     * basePath is always treated as absolute under the HDFS namespace root, so "flink-platform" and
-     * "/flink-platform" both resolve to <fs.defaultFS>/flink-platform.
+     * Resolves the configured base path from the HDFS namespace root.
+     * Both "flink-platform" and "/flink-platform" resolve to the same path under the configured default filesystem.
      */
     private String initializeRootPath() throws IOException {
         var absolutePath = SLASH + stripLeadingSlash(properties.getBasePath());

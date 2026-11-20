@@ -22,7 +22,9 @@ public class ResourceUtil {
     public static final String RESOURCE_DIR = "resource";
 
     /**
-     * TODO: Two options to replace this user_id_ prefix with workspace semantics:
+     * Prefixes resource directories with the owning user ID.
+     *
+     * <p>TODO: Two options to replace this user_id_ prefix with workspace semantics:
      *
      * <p>Option A — Simple prefix swap: Replace user_id_ with workspace_id_. Requires renaming all
      * existing files on storage and updating full_name in t_resource accordingly. One-time migration

@@ -76,7 +76,7 @@ This file is based on the checkstyle file of Apache Beam.
 	<!-- All Java AST specific tests live under TreeWalker module. -->
 	<module name="TreeWalker">
 
-		<!-- Allow use of comment to suppress javadocstyle -->
+		<!-- Allow use of comments to suppress selected checks. -->
 		<module name="SuppressionCommentFilter">
 			<property name="offCommentFormat" value="CHECKSTYLE.OFF\: ([\w\|]+)"/>
 			<property name="onCommentFormat" value="CHECKSTYLE.ON\: ([\w\|]+)"/>
@@ -253,9 +253,8 @@ This file is based on the checkstyle file of Apache Beam.
 			<property name="allowMissingParamTags" value="true"/>
 		</module>
 
-		<module name="JavadocStyle">
+		<module name="SummaryJavadoc">
 			<property name="severity" value="error"/>
-			<property name="checkHtml" value="true"/>
 		</module>
 
 		<!--

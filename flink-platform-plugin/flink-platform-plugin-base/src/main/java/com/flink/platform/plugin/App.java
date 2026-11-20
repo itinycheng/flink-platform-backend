@@ -1,7 +1,7 @@
 package com.flink.platform.plugin;
 
 /**
- * Hello world!
+ * Runs the sample application.
  */
 public class App {
 
