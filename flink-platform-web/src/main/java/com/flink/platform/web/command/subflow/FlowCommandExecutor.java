@@ -8,6 +8,7 @@ import com.flink.platform.dao.service.JobFlowService;
 import com.flink.platform.dao.service.JobRunInfoService;
 import com.flink.platform.web.command.CommandExecutor;
 import com.flink.platform.web.command.JobCommand;
+import com.flink.platform.web.common.MetadataFailure;
 import com.flink.platform.web.common.SpringContext;
 import com.flink.platform.web.flowrun.FlowRunKillService;
 import com.flink.platform.web.flowrun.FlowRunTriggerService;
@@ -67,6 +68,7 @@ public class FlowCommandExecutor implements CommandExecutor {
                 case BLOCKED -> new JobCallback(result.blockMessage(), FAILURE);
             };
         } catch (Exception e) {
+            MetadataFailure.rethrowIfUnavailable(e);
             log.error("Subflow run failed, flowId: {}", subFlow.getId(), e);
             return new JobCallback(ExceptionUtil.stackTrace(e), ERROR);
         }

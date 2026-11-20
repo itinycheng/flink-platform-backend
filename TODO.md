@@ -958,3 +958,23 @@ Steps:
 Code anchors: `JobConstant.SET_PARAM_PATTERN`, `SetParamVariableResolver`,
 `ProcessJobService.updateParamsInJobFlowRun`, `JobFlowRunService.lockAndUpdateParams`,
 `ParamVariableResolver.resolve`, `FlowRunTriggerService.buildRun`.
+
+---
+
+## Orchestration Failure Contract And Evolution
+
+Extends the short-outage work with an explicit failure contract and the seams needed for general
+scheduling. See
+[docs/design/orchestration-model-evolution.md](docs/design/orchestration-model-evolution.md).
+
+- [ ] Reload backoff per flow run (in-memory, 2s to 30s cap, reset on progress).
+- [ ] Abort visibility: log the causing exception type; alert when scans succeed but a run keeps
+      aborting.
+- [ ] Complete the deterministic exclusion list in `MetadataFailure`
+      (`InvalidDataAccessApiUsageException`, `PermissionDeniedDataAccessException`,
+      `DataRetrievalFailureException`).
+- [ ] Extract trigger origin and idempotency key from `FlowRunTriggerService`.
+- [ ] Extract `RunDispatcher` from `FlowRunCoordinator`.
+- [ ] Time semantics: timezone, Quartz misfire, catchup.
+- [ ] `ConcurrencyPolicy` for flow/tenant pools and priority.
+- [ ] Executor contract: `submit` / `cancel` / `reconcile` with an attempt epoch.

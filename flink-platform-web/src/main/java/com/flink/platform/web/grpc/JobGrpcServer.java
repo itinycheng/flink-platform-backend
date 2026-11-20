@@ -11,6 +11,7 @@ import com.flink.platform.grpc.ProcessJobReply;
 import com.flink.platform.grpc.ProcessJobRequest;
 import com.flink.platform.grpc.SavepointReply;
 import com.flink.platform.grpc.SavepointRequest;
+import com.flink.platform.web.common.MetadataFailure;
 import com.flink.platform.web.service.FlinkJobService;
 import com.flink.platform.web.service.KillJobService;
 import com.flink.platform.web.service.ProcessJobService;
@@ -93,7 +94,14 @@ public class JobGrpcServer extends JobGrpcServiceGrpc.JobGrpcServiceImplBase {
     }
 
     private Exception buildGrpcException(Exception e) {
-        Status status = e instanceof UnrecoverableException ? Status.UNAVAILABLE : Status.INTERNAL;
+        if (MetadataFailure.isUnavailable(e)) {
+            return Status.UNAVAILABLE
+                    .withCause(e)
+                    .withDescription(ExceptionUtil.stackTrace(e))
+                    .asRuntimeException();
+        }
+
+        Status status = e instanceof UnrecoverableException ? Status.FAILED_PRECONDITION : Status.INTERNAL;
         return status.withCause(e).withDescription(ExceptionUtil.stackTrace(e)).asRuntimeException();
     }
 }

@@ -12,6 +12,7 @@ import com.flink.platform.dao.service.JobInfoService;
 import com.flink.platform.dao.service.JobRunInfoService;
 import com.flink.platform.grpc.JobStatusRequest;
 import com.flink.platform.grpc.ProcessJobRequest;
+import com.flink.platform.web.common.MetadataFailure;
 import com.flink.platform.web.common.SpringContext;
 import com.flink.platform.web.grpc.JobGrpcClient;
 import com.flink.platform.web.jobrun.JobRunStateService;
@@ -26,6 +27,7 @@ import org.jspecify.annotations.Nullable;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
 
 import static com.flink.platform.common.constants.Constant.HOST_IP;
@@ -48,6 +50,8 @@ public class JobExecuteThread implements Supplier<JobResponse> {
 
     private final Long jobId;
 
+    private final BooleanSupplier localRunAborted;
+
     private final JobInfoService jobInfoService;
 
     private final JobRunInfoService jobRunInfoService;
@@ -66,9 +70,10 @@ public class JobExecuteThread implements Supplier<JobResponse> {
     @Nullable
     private ExecutionStatus jobRunStatus;
 
-    public JobExecuteThread(Long flowRunId, JobVertex jobVertex) {
+    public JobExecuteThread(Long flowRunId, JobVertex jobVertex, BooleanSupplier localRunAborted) {
         this.flowRunId = flowRunId;
         this.jobId = jobVertex.getJobId();
+        this.localRunAborted = localRunAborted;
         this.jobInfoService = SpringContext.getBean(JobInfoService.class);
         this.jobRunInfoService = SpringContext.getBean(JobRunInfoService.class);
         this.jobRunStateService = SpringContext.getBean(JobRunStateService.class);
@@ -79,14 +84,25 @@ public class JobExecuteThread implements Supplier<JobResponse> {
 
     @Override
     public JobResponse get() {
-        RetryAndRun retryAndRun;
-        try {
-            retryAndRun = getRetryAndLatestRun();
-        } catch (Exception e) {
-            log.error("get retry and latest run failed", e);
-            return response(ERROR);
+        if (localRunAborted.getAsBoolean()) {
+            return JobResponse.ABORTED;
         }
 
+        try {
+            return execute();
+        } catch (Exception e) {
+            if (MetadataFailure.isUnavailable(e)) {
+                log.warn("Abort local job execution, jobId: {}, flowRunId: {}: metadata unavailable", jobId, flowRunId);
+                return JobResponse.ABORTED;
+            } else {
+                log.error("Job execution failed, jobId: {}, flowRunId: {}", jobId, flowRunId, e);
+                return response(ERROR);
+            }
+        }
+    }
+
+    private JobResponse execute() {
+        var retryAndRun = getRetryAndLatestRun();
         jobRunId = retryAndRun.jobRunId();
         jobRunStatus = retryAndRun.jobRunStatus();
         if (SUCCESS.equals(jobRunStatus)) {
@@ -106,7 +122,10 @@ public class JobExecuteThread implements Supplier<JobResponse> {
                 return response(jobRunStatusOrError());
             }
 
-            callOnce();
+            if (callOnce()) {
+                return JobResponse.ABORTED;
+            }
+
             if (SUCCESS.equals(jobRunStatus)) {
                 return response(SUCCESS);
             }
@@ -122,32 +141,31 @@ public class JobExecuteThread implements Supplier<JobResponse> {
         return JobResponse.ABORTED;
     }
 
-    private void callOnce() {
+    private boolean callOnce() {
         JobRunInfo jobRun = null;
         try {
-            // Get job info, return if not found.
-            var jobInfo = jobInfoService.findJobByIdAndStatus(jobId, JobStatus.ONLINE);
-            if (jobInfo == null) {
-                throw new RuntimeException("The job: %s is no longer exists or not in ONLINE status.".formatted(jobId));
-            }
-
             // Get or create new jobRun.
+            var jobInfo = jobInfoService.findJobByIdAndStatus(jobId, JobStatus.ONLINE);
             if (jobRunId == null || jobRunStatus == null || jobRunStatus.isTerminalState()) {
-                jobRun = getOrCreateJobRun(jobInfo);
+                jobRun = getOrCreateJobRun(requireNonNull(jobInfo));
             } else {
-                jobRun = jobRunInfoService.getById(jobRunId);
+                jobRun = requireNonNull(jobRunInfoService.getById(jobRunId));
                 log.info("Job:{} already submitted, runId = {}, status: {}.", jobId, jobRunId, jobRun.getStatus());
             }
 
             if (jobRun == null) {
-                return;
+                return true;
             }
 
             // Update jobRunId and jobRunStatus in memory.
             jobRunId = jobRun.getId();
             jobRunStatus = jobRun.getStatus();
             if (jobRunStatus.isTerminalState()) {
-                return;
+                return false;
+            }
+
+            if (localRunAborted.getAsBoolean()) {
+                return true;
             }
 
             // Process job
@@ -165,10 +183,13 @@ public class JobExecuteThread implements Supplier<JobResponse> {
                 }
             }
         } catch (Exception e) {
+            MetadataFailure.rethrowIfUnavailable(e);
+            log.error("Exception found when executing jobRun: {} and wait for complete", jobRunId, e);
             completeWithError(jobRun, e);
             jobRunStatus = jobRun == null ? ERROR : jobRun.getStatus();
-            log.error("Exception found when executing jobRun: {} and wait for complete", jobRunId, e);
         }
+
+        return false;
     }
 
     private RetryAndRun getRetryAndLatestRun() {
@@ -231,7 +252,7 @@ public class JobExecuteThread implements Supplier<JobResponse> {
     // reassignment case — the new owner re-adopts the same jobRun and both converge at the remote job's terminal state.
     @Nullable
     private StatusInfo updateAndWaitForComplete(JobGrpcServiceBlockingStub stub, JobRunInfo jobRun) {
-        while (AppRunner.isRunning()) {
+        while (AppRunner.isRunning() && !localRunAborted.getAsBoolean()) {
             try {
                 var request = buildJobStatusRequest(jobRun);
                 var statusReply = stub.getJobStatus(request);
@@ -245,7 +266,8 @@ public class JobExecuteThread implements Supplier<JobResponse> {
                     return new StatusInfo(status, statusInfo.getStartTime(), statusInfo.getEndTime());
                 }
             } catch (Exception e) {
-                log.error("Fetch job status failed, runId: {}", jobRun.getId(), e);
+                MetadataFailure.rethrowIfUnavailable(e);
+                log.error("Fetch or update job status failed, runId: {}", jobRun.getId(), e);
             }
 
             ThreadUtil.sleep(FIVE_SECOND_MILLIS);
@@ -272,18 +294,14 @@ public class JobExecuteThread implements Supplier<JobResponse> {
             return;
         }
 
-        try {
-            var update = new JobRunInfo();
-            if (status.isTerminalState()) {
-                update.setEndTime(statusInfo.getEndTimeOrNow());
-            }
+        var update = new JobRunInfo();
+        if (status.isTerminalState()) {
+            update.setEndTime(statusInfo.getEndTimeOrNow());
+        }
 
-            var transition = jobRunStateService.updateFromReport(jobRun.getId(), status, update);
-            if (transition.status() != null) {
-                jobRun.setStatus(transition.status());
-            }
-        } catch (Exception e) {
-            log.error("Update job run status failed", e);
+        var transition = jobRunStateService.updateFromReport(jobRun.getId(), status, update);
+        if (transition.status() != null) {
+            jobRun.setStatus(transition.status());
         }
     }
 

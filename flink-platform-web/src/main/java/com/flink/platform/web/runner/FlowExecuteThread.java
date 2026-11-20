@@ -7,6 +7,7 @@ import com.flink.platform.dao.entity.JobFlowDag;
 import com.flink.platform.dao.entity.JobFlowRun;
 import com.flink.platform.dao.service.JobFlowRunService;
 import com.flink.platform.dao.util.JobFlowDagHelper;
+import com.flink.platform.web.common.MetadataFailure;
 import com.flink.platform.web.common.SpringContext;
 import com.flink.platform.web.config.WorkerConfig;
 import com.flink.platform.web.flowrun.FlowRunKillService;
@@ -65,9 +66,22 @@ public class FlowExecuteThread implements Runnable {
         try {
             execute();
         } catch (Exception e) {
-            log.error("Flow run {} execution aborted", jobFlowRun.getId(), e);
+            if (MetadataFailure.isUnavailable(e)) {
+                log.warn("Flow run {} paused after metadata failure", jobFlowRun.getId());
+            } else {
+                log.error("Flow run {} execution aborted", jobFlowRun.getId(), e);
+            }
         } finally {
-            flowRunCoordinator.releaseInFlight(jobFlowRun.getId());
+            abortLocalExecution();
+            try {
+                // Do not dispatch the same FlowRun while jobs from this attempt are still active.
+                CompletableFuture.allOf(runningJobs.values().toArray(new CompletableFuture[0]))
+                        .join();
+            } catch (Exception e) {
+                log.error("Flow run {} job thread failed while aborting", jobFlowRun.getId(), e);
+            } finally {
+                flowRunCoordinator.releaseInFlight(jobFlowRun.getId());
+            }
         }
     }
 
@@ -97,6 +111,7 @@ public class FlowExecuteThread implements Runnable {
             }
 
             if (flowRunCoordinator.isOwnedByAnotherWorker(jobFlowRun.getId())) {
+                abortLocalExecution();
                 log.warn("Flow run {} owned by another worker, abandoning local execution", jobFlowRun.getId());
                 return;
             }
@@ -112,7 +127,11 @@ public class FlowExecuteThread implements Runnable {
 
         // Wait for all jobs to complete before finalizing the flow run.
         CompletableFuture.allOf(runningJobs.values().toArray(new CompletableFuture[0]))
-                .thenAccept(unused -> completeFlowRun(flow))
+                .thenAccept(unused -> {
+                    if (!aborted) {
+                        completeFlowRun(flow);
+                    }
+                })
                 .join();
     }
 
@@ -157,7 +176,7 @@ public class FlowExecuteThread implements Runnable {
     // ! synchronized won't unmount the virtual thread, and thus block both its carrier and the underlying OS thread.
     // ! This doesn't make an application incorrect, but it might hinder its scalability.
     private synchronized void execVertex(JobVertex jobVertex, JobFlowDag flow) {
-        if (AppRunner.isStopped()) {
+        if (AppRunner.isStopped() || aborted) {
             return;
         }
 
@@ -166,15 +185,29 @@ public class FlowExecuteThread implements Runnable {
             return;
         }
 
-        var runnable = new SemaphoreSupplier(semaphore, new JobExecuteThread(jobFlowRun.getId(), jobVertex));
+        var runnable = new SemaphoreSupplier(
+                semaphore, () -> aborted, new JobExecuteThread(jobFlowRun.getId(), jobVertex, () -> aborted));
         var jobVertexFuture = CompletableFuture.supplyAsync(runnable, jobExecService)
-                .thenAccept(response -> handleResponse(response, jobVertex, flow));
+                .thenAccept(response -> handleResponse(response, jobVertex, flow))
+                .whenComplete((unused, failure) -> {
+                    if (failure != null) {
+                        log.error(
+                                "Job thread failed for flow run {}, job {}",
+                                jobFlowRun.getId(),
+                                jobVertex.getJobId(),
+                                failure);
+                        abortLocalExecution();
+                    }
+                });
         runningJobs.put(jobVertex.getId(), jobVertexFuture);
     }
 
-    private void handleResponse(JobResponse jobResponse, JobVertex jobVertex, JobFlowDag flow) {
+    private synchronized void handleResponse(JobResponse jobResponse, JobVertex jobVertex, JobFlowDag flow) {
         if (jobResponse == JobResponse.ABORTED) {
-            aborted = true;
+            abortLocalExecution();
+            return;
+        }
+        if (aborted) {
             return;
         }
 
@@ -186,6 +219,10 @@ public class FlowExecuteThread implements Runnable {
                 execVertex(nextVertex, flow);
             }
         }
+    }
+
+    private synchronized void abortLocalExecution() {
+        aborted = true;
     }
 
     private boolean canResumeRunning() {
