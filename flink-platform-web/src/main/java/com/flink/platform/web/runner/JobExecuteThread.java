@@ -36,6 +36,7 @@ import static com.flink.platform.common.enums.ExecutionStatus.KILLING;
 import static com.flink.platform.common.enums.ExecutionStatus.SUCCESS;
 import static com.flink.platform.grpc.JobGrpcServiceGrpc.JobGrpcServiceBlockingStub;
 import static com.flink.platform.web.jobrun.JobRunTransition.Outcome.APPLIED;
+import static com.flink.platform.web.jobrun.JobRunTransition.Outcome.NOT_FOUND;
 import static com.flink.platform.web.util.ThreadUtil.FIVE_SECOND_MILLIS;
 import static com.flink.platform.web.util.ThreadUtil.THREE_SECOND_MILLIS;
 import static java.util.Objects.requireNonNull;
@@ -278,9 +279,6 @@ public class JobExecuteThread implements Supplier<JobResponse> {
                 .build();
     }
 
-    /**
-     * Uses the transition result as the committed status.
-     */
     private void updateJobRunStatus(JobRunInfo jobRun, StatusInfo statusInfo) {
         var status = statusInfo.getStatus();
         if (jobRun.getStatus() == status) {
@@ -296,6 +294,12 @@ public class JobExecuteThread implements Supplier<JobResponse> {
             var transition = jobRunStateService.updateFromReport(jobRun.getId(), status, update);
             if (transition.status() != null) {
                 jobRun.setStatus(transition.status());
+                return;
+            }
+
+            if (transition.outcome() == NOT_FOUND && status.isTerminalState()) {
+                log.warn("Job run {} no longer exists, stop polling with remote status {}", jobRun.getId(), status);
+                jobRun.setStatus(status);
             }
         } catch (Exception e) {
             log.error("Update job run status failed", e);

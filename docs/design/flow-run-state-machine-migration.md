@@ -68,6 +68,37 @@ path have an empty `host`. Set each to `FAILURE`, or `KILLED` when a parent job 
 and re-run `SELECT id, flow_id, host, create_time FROM t_job_flow_run WHERE status = 'CREATED'`
 until it returns nothing. No schema migration is needed.
 
+### Pre-upgrade data reconciliation
+
+The host-fenced transitions and every host-scoped scan (`listExecutableRunsOnHost`,
+`listWaitingRunsOnHost`, `listKillingRunsOnHost`) ignore a row whose `host` is empty. Such a row is
+invisible to dispatch, waiting advancement, and kill cleanup, so it never reaches a terminal state.
+Run these statements in the same quiescence window, before the first start:
+
+```sql
+-- 1. Detect. Expect zero rows.
+SELECT status, COUNT(*) AS runs
+FROM platform.t_job_flow_run
+WHERE (host IS NULL OR host = '')
+  AND status IN ('CREATED', 'WAITING', 'SUBMITTED', 'RUNNING', 'KILLING')
+GROUP BY status;
+
+-- 2. Legacy sub-flow reservations were never activated. Set KILLED instead when a parent
+--    SUB_FLOW job run's back_info still references the child id.
+UPDATE platform.t_job_flow_run
+SET status = 'FAILURE', end_time = NOW()
+WHERE (host IS NULL OR host = '') AND status = 'CREATED';
+
+-- 3. WAITING/SUBMITTED rows have no owner and no started command; assign a live worker.
+UPDATE platform.t_job_flow_run
+SET host = '<live-worker-ip>'
+WHERE (host IS NULL OR host = '') AND status IN ('WAITING', 'SUBMITTED');
+```
+
+For `RUNNING` or `KILLING` rows with an empty host, inspect each row before acting: the external
+resource may still exist. Settle it as `FAILURE`, or `KILLED` when a parent job run tracks it; do not
+assign a host blindly. Re-run statement 1 until it returns nothing.
+
 Unit tests cover the transition matrix, kill orchestration, admission, and dispatcher behavior. The
 affected Maven reactor must compile with formatting, Checkstyle, and NullAway checks. Runtime
 verification of admission, concurrent kill/completion, stale owner callbacks, and launch cleanup
