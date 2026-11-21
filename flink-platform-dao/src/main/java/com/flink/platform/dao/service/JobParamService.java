@@ -2,7 +2,7 @@ package com.flink.platform.dao.service;
 
 import com.baomidou.dynamic.datasource.annotation.DS;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.baomidou.mybatisplus.spring.service.impl.ServiceImpl;
 import com.flink.platform.common.enums.JobParamType;
 import com.flink.platform.common.enums.Status;
 import com.flink.platform.dao.entity.JobParam;

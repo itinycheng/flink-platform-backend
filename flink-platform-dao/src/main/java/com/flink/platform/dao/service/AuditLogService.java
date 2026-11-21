@@ -1,7 +1,7 @@
 package com.flink.platform.dao.service;
 
 import com.baomidou.dynamic.datasource.annotation.DS;
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.baomidou.mybatisplus.spring.service.impl.ServiceImpl;
 import com.flink.platform.dao.entity.AuditLog;
 import com.flink.platform.dao.mapper.AuditLogMapper;
 import lombok.extern.slf4j.Slf4j;

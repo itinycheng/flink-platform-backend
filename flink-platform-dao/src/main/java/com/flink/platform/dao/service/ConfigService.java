@@ -2,7 +2,7 @@ package com.flink.platform.dao.service;
 
 import com.baomidou.dynamic.datasource.annotation.DS;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.baomidou.mybatisplus.spring.service.impl.ServiceImpl;
 import com.flink.platform.dao.entity.Config;
 import com.flink.platform.dao.entity.config.FlinkConfig;
 import com.flink.platform.dao.mapper.ConfigMapper;
