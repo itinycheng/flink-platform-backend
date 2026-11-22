@@ -110,6 +110,13 @@ public class JobRunController {
         return success(CollectionUtils.union(jobRunList, jobList));
     }
 
+    /**
+     * Kills a single job run.
+     * <p>
+     * Kill the owning flow run instead. Direct kill has no retry driver while the flow stays {@code RUNNING}, and it
+     * mainly serves the retiring {@code JOB_LIST} type. Kept for existing callers until removal.
+     */
+    @Deprecated
     @RequirePermission(TASK_EXEC)
     @Auditable(type = JOB_RUN, operation = OperationType.KILL, auditOnFailure = true)
     @GetMapping(value = "/kill/{runId}")

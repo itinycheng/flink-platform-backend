@@ -443,10 +443,18 @@ path out of `KILLING`.
 A job run can stay `KILLING` forever. Only flow runs in `KILLING` drive kill retries
 (`FlowRunCoordinator`, 2s), so these cases have no driver:
 
-- a job run killed on its own while its flow run is still `RUNNING`;
+- a job run killed on its own while its flow run is still `RUNNING` (the direct job-run kill
+  endpoint is deprecated in favor of killing the owning flow run);
 - a dead job host — every gRPC kill fails and `WorkerHeartbeat` reassigns flow runs only;
 - `killJob` failing repeatedly before `confirmKilled` (e.g. no supported executor).
 
+- [ ] **Dead job host fast path (no schema, deferred).** In
+      `FlowRunKillService.cleanupAfterKilling`, before `attemptToKillJob`, resolve the child's
+      host with `Worker.isActive()`. An unreachable host can never confirm, so settle the job run
+      `KILLED` with an "executor unreachable; external cleanup unconfirmed" marker and alert; the
+      next cleanup round then confirms the flow. `KILLED` still does not prove the external
+      resource stopped; use the deterministic application tag for manual cleanup. Decision for
+      now: keep the existing infinite 2s retry.
 - [ ] Periodic scan of `KILLING` job runs that retries `killJob`, independent of flow-run status.
 - [ ] Bounded settlement with a persisted `killing_since` (no update-time column today): on
       deadline, inactive host, or no supported executor, settle `KILLED` as external cleanup
