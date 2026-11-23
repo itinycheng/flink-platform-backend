@@ -13,6 +13,7 @@ import lombok.RequiredArgsConstructor;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.resilience.annotation.Retryable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -31,66 +32,26 @@ import static com.flink.platform.common.enums.ExecutionStatus.RUNNING;
 import static com.flink.platform.common.util.DateUtil.DATE_FORMAT;
 import static com.flink.platform.common.util.DateUtil.READABLE_TIMESTAMP_FORMAT;
 import static java.util.Locale.ROOT;
+import static org.springframework.transaction.annotation.Propagation.REQUIRES_NEW;
 
 /** addition method. */
 @Service
 @RequiredArgsConstructor(onConstructor_ = @Autowired)
 public class JobRunExtraService {
 
-    private final JobRunInfoService jobRunService;
-
-    private final JobFlowRunService flowRunService;
-
-    private final WorkerSelectService workerSelectService;
+    private final TransactionService transactionService;
 
     private final StorageService storageService;
 
     private final List<VariableResolver> variableResolvers;
 
-    @Transactional(rollbackFor = Exception.class)
+    @Retryable(maxRetries = 2, delay = 20, jitter = 50, excludes = IllegalStateException.class)
     public CreateResult createJobRunIfOwned(JobInfo jobInfo, Long flowRunId, String expectedHost) {
-        var parent = flowRunService.lockForUpdate(flowRunId);
-        if (parent == null
-                || parent.getStatus() != RUNNING
-                || expectedHost == null
-                || !expectedHost.equals(parent.getHost())) {
-            return new CreateResult.Skipped("flow run is invalid on the current host, flowRunId: " + flowRunId);
-        }
-
-        var worker = workerSelectService.randomWorker(jobInfo.getRouteUrl());
-        var host = worker == null ? null : worker.getIp();
-        var jobRun = createFrom(jobInfo, flowRunId, host);
-        if (StringUtils.isEmpty(host)) {
-            jobRun.setStatus(ERROR);
-            jobRun.setEndTime(LocalDateTime.now());
-            jobRun.setBackInfo(new JobCallback("No available worker found for job: " + jobInfo.getName(), ERROR));
-        }
-
-        if (!jobRunService.save(jobRun)) {
-            throw new IllegalStateException("Failed to create job run: " + jobInfo.getId());
-        }
-
-        return new CreateResult.Created(jobRun.getId());
+        return transactionService.attempt(jobInfo, flowRunId, expectedHost);
     }
 
-    public JobRunInfo createFrom(JobInfo jobInfo, Long flowRunId, String host) {
-        var jobRun = new JobRunInfo();
-        jobRun.setName(jobInfo.getName() + "-" + System.currentTimeMillis());
-        jobRun.setJobId(jobInfo.getId());
-        jobRun.setFlowRunId(flowRunId);
-        jobRun.setUserId(jobInfo.getUserId());
-        jobRun.setWorkspaceId(jobInfo.getWorkspaceId());
-        jobRun.setType(jobInfo.getType());
-        jobRun.setVersion(jobInfo.getVersion());
-        jobRun.setDeployMode(jobInfo.getDeployMode());
-        jobRun.setExecMode(jobInfo.getExecMode());
-        jobRun.setConfig(jobInfo.getConfig());
-        jobRun.setParams(jobInfo.getParams());
-        jobRun.setSubject(jobInfo.getSubject());
-        jobRun.setRouteUrl(jobInfo.getRouteUrl());
-        jobRun.setHost(host);
-        jobRun.setStatus(CREATED);
-        return jobRun;
+    public JobRunInfo buildJobRun(JobInfo jobInfo, Long flowRunId, String host) {
+        return transactionService.buildJobRun(jobInfo, flowRunId, host);
     }
 
     public Map<String, Object> parseVariables(JobRunInfo jobRun) {
@@ -142,6 +103,63 @@ public class JobRunExtraService {
     private String buildTimestampedFileName(JobRunInfo jobRun, String fileSuffix) {
         var readableTime = DateUtil.format(jobRun.getCreateTime(), READABLE_TIMESTAMP_FORMAT);
         return String.join(DOT, jobRun.getJobCode(), readableTime, fileSuffix);
+    }
+
+    @Service("jobRunTransactionService")
+    @RequiredArgsConstructor(onConstructor_ = @Autowired)
+    static class TransactionService {
+
+        private final JobRunInfoService jobRunService;
+
+        private final JobFlowRunService flowRunService;
+
+        private final WorkerSelectService workerSelectService;
+
+        @Transactional(propagation = REQUIRES_NEW, rollbackFor = Exception.class)
+        public CreateResult attempt(JobInfo jobInfo, Long flowRunId, String expectedHost) {
+            var parent = flowRunService.lockForUpdate(flowRunId);
+            if (parent == null
+                    || parent.getStatus() != RUNNING
+                    || expectedHost == null
+                    || !expectedHost.equals(parent.getHost())) {
+                return new CreateResult.Skipped("flow run is invalid on the current host, flowRunId: " + flowRunId);
+            }
+
+            var worker = workerSelectService.randomWorker(jobInfo.getRouteUrl());
+            var host = worker == null ? null : worker.getIp();
+            var jobRun = buildJobRun(jobInfo, flowRunId, host);
+            if (StringUtils.isEmpty(host)) {
+                jobRun.setStatus(ERROR);
+                jobRun.setEndTime(LocalDateTime.now());
+                jobRun.setBackInfo(new JobCallback("No available worker found for job: " + jobInfo.getName(), ERROR));
+            }
+
+            if (!jobRunService.save(jobRun)) {
+                throw new IllegalStateException("Failed to create job run: " + jobInfo.getId());
+            }
+
+            return new CreateResult.Created(jobRun.getId());
+        }
+
+        private JobRunInfo buildJobRun(JobInfo jobInfo, Long flowRunId, String host) {
+            var jobRun = new JobRunInfo();
+            jobRun.setName(jobInfo.getName() + "-" + System.currentTimeMillis());
+            jobRun.setJobId(jobInfo.getId());
+            jobRun.setFlowRunId(flowRunId);
+            jobRun.setUserId(jobInfo.getUserId());
+            jobRun.setWorkspaceId(jobInfo.getWorkspaceId());
+            jobRun.setType(jobInfo.getType());
+            jobRun.setVersion(jobInfo.getVersion());
+            jobRun.setDeployMode(jobInfo.getDeployMode());
+            jobRun.setExecMode(jobInfo.getExecMode());
+            jobRun.setConfig(jobInfo.getConfig());
+            jobRun.setParams(jobInfo.getParams());
+            jobRun.setSubject(jobInfo.getSubject());
+            jobRun.setRouteUrl(jobInfo.getRouteUrl());
+            jobRun.setHost(host);
+            jobRun.setStatus(CREATED);
+            return jobRun;
+        }
     }
 
     public sealed interface CreateResult {

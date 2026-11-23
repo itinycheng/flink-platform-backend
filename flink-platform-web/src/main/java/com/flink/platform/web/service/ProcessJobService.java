@@ -18,6 +18,7 @@ import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.resilience.annotation.Retryable;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -46,7 +47,7 @@ public class ProcessJobService {
 
     private final JobRunExtraService jobRunExtraService;
 
-    private final JobFlowRunService jobFlowRunService;
+    private final ParamUpdateService paramUpdateService;
 
     private final SetParamVariableResolver setParamResolver;
 
@@ -172,7 +173,6 @@ public class ProcessJobService {
             return;
         }
 
-        // option: use ListUtil::mergeToList if you need to merge values into list.
         params = params.entrySet().stream()
                 .map(entry -> Pair.of(setParamResolver.getSetParamKey(entry.getKey()), entry.getValue()))
                 .filter(pair -> isNotEmpty(pair.getKey()))
@@ -181,6 +181,18 @@ public class ProcessJobService {
             return;
         }
 
-        jobFlowRunService.lockAndUpdateParams(jobRun.getFlowRunId(), params);
+        paramUpdateService.lockAndOverwriteParams(jobRun.getFlowRunId(), params);
+    }
+
+    @Service("paramUpdateService")
+    @RequiredArgsConstructor(onConstructor_ = @Autowired)
+    static class ParamUpdateService {
+
+        private final JobFlowRunService flowRunService;
+
+        @Retryable(maxRetries = 2, delay = 20, jitter = 50, excludes = IllegalStateException.class)
+        public void lockAndOverwriteParams(Long flowRunId, Map<String, Object> params) {
+            flowRunService.lockAndOverwriteParams(flowRunId, params);
+        }
     }
 }

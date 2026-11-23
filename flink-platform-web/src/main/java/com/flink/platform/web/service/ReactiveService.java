@@ -57,7 +57,7 @@ public class ReactiveService {
     }
 
     public ReactiveExecVo execFlink(String execId, JobInfo jobInfo, String[] envProps) throws Exception {
-        var jobRun = jobRunExtraService.createFrom(jobInfo, null, Constant.HOST_IP);
+        var jobRun = jobRunExtraService.buildJobRun(jobInfo, null, Constant.HOST_IP);
         jobRun.setId(0L);
         jobRun.setCreateTime(LocalDateTime.now());
         var command = commandBuilders.stream()

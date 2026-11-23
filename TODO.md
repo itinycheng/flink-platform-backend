@@ -931,8 +931,8 @@ and produces a shared mutable namespace with no owner, no dependency edge, and n
 
 Symptoms:
 
-- Producer scope (job run) and consumer scope (flow run) differ: parallel branches have no defined
-  winner, and retries are not idempotent (`lockAndUpdateParams` appends a duplicate list entry).
+- Producer scope (job run) and consumer scope (flow run) differ: parallel branches overwriting the
+  same key have no declared priority; the last committed write wins.
 - A reader that does not depend on the declaring job may run first; `ParamVariableResolver`
   yields `null` and `ProcessJobService.replaceVariables` substitutes the literal string `null`.
 - The write is a `SELECT ... FOR UPDATE` plus read-modify-write of the whole params JSON on every
@@ -957,8 +957,8 @@ Target:
 
 Steps:
 
-- [ ] Stopgap: conflict validation plus idempotent write (first write wins) so current behavior is
-      at least predictable.
+- [ ] Stopgap: conflict validation so duplicate declarations are reported instead of resolved by
+      write order. The write is currently last-write-wins and commits in its own transaction.
 - [ ] Static scan of job definitions; migrate `${setParam:k=v}` to `JobFlow.params` and report
       same-key conflicts. Duplicate git history/data is out of scope by owner decision.
 - [ ] Remove `updateParamsInJobFlowRun` and the launch-path params write; `ProcessJobService`
@@ -968,5 +968,5 @@ Steps:
 - [ ] Optional: explicit task outputs, only after a real use case appears.
 
 Code anchors: `JobConstant.SET_PARAM_PATTERN`, `SetParamVariableResolver`,
-`ProcessJobService.updateParamsInJobFlowRun`, `JobFlowRunService.lockAndUpdateParams`,
+`ProcessJobService.updateParamsInJobFlowRun`, `JobFlowRunService.lockAndOverwriteParams`,
 `ParamVariableResolver.resolve`, `FlowRunTriggerService.buildRun`.

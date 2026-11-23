@@ -16,7 +16,6 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -182,44 +181,32 @@ public class JobFlowRunService extends ServiceImpl<JobFlowRunMapper, JobFlowRun>
                 .in(JobFlowRun::getStatus, UNFINISHED_STATUSES));
     }
 
-    @Transactional
-    public void lockAndUpdateParams(Long flowRunId, Map<String, Object> inputParams) {
+    @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = Exception.class)
+    public void lockAndOverwriteParams(Long flowRunId, Map<String, Object> inputParams) {
         if (MapUtils.isEmpty(inputParams)) {
             return;
         }
 
-        var jobFlowRun = lockForUpdate(flowRunId);
-        if (jobFlowRun == null) {
+        var flowRun = lockForUpdate(flowRunId);
+        if (flowRun == null) {
             throw new IllegalStateException("Flow run not found: " + flowRunId);
         }
 
-        var existedParams = jobFlowRun.getParams();
-        var sharedParams = existedParams != null ? new HashMap<>(existedParams) : new HashMap<String, Object>();
-        if (MapUtils.isEmpty(sharedParams)) {
-            sharedParams.putAll(inputParams);
-        } else {
-            inputParams.forEach((k, v) -> {
-                var inValue = v != null ? v.toString() : null;
-                if (inValue == null) {
-                    return;
-                }
+        var existingParams = flowRun.getParams();
+        var params = existingParams != null ? new HashMap<>(existingParams) : new HashMap<String, Object>();
+        inputParams.forEach((key, value) -> {
+            if (value != null) {
+                params.put(key, value.toString());
+            }
+        });
 
-                switch (sharedParams.get(k)) {
-                    case null -> sharedParams.put(k, inValue);
-                    case String s -> sharedParams.put(k, List.of(s, inValue));
-                    case List<?> sharedList -> {
-                        var list = new ArrayList<Object>(sharedList);
-                        list.add(inValue);
-                        sharedParams.put(k, list);
-                    }
-                    default -> throw new IllegalStateException("Unexpected value: " + sharedParams.get(k));
-                }
-            });
+        if (params.equals(existingParams)) {
+            return;
         }
 
         var newFlowRun = new JobFlowRun();
-        newFlowRun.setId(jobFlowRun.getId());
-        newFlowRun.setParams(sharedParams);
+        newFlowRun.setId(flowRunId);
+        newFlowRun.setParams(params);
         updateById(newFlowRun);
     }
 
