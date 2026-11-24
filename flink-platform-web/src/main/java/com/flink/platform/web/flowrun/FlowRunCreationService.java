@@ -1,5 +1,6 @@
 package com.flink.platform.web.flowrun;
 
+import com.flink.platform.common.exception.ExecutionRejectedException;
 import com.flink.platform.dao.entity.JobFlowRun;
 import com.flink.platform.dao.service.JobFlowRunService;
 import com.flink.platform.dao.service.JobFlowService;
@@ -18,6 +19,7 @@ import java.util.List;
 import static com.flink.platform.common.enums.ExecutionStatus.FAILURE;
 import static com.flink.platform.common.enums.ExecutionStatus.WAITING;
 import static com.flink.platform.common.enums.JobFlowType.JOB_LIST;
+import static com.flink.platform.common.exception.ExecutionRejectedException.Reason.MISSING_STATE;
 import static com.flink.platform.web.flowrun.FlowRunTransition.Outcome.APPLIED;
 import static org.springframework.transaction.annotation.Isolation.READ_COMMITTED;
 import static org.springframework.transaction.annotation.Propagation.REQUIRES_NEW;
@@ -30,13 +32,21 @@ public class FlowRunCreationService {
 
     private final LegacyJobListService legacyJobListService;
 
-    @Retryable(maxRetries = 2, delay = 20, jitter = 50, excludes = IllegalStateException.class)
+    @Retryable(
+            maxRetries = 2,
+            delay = 20,
+            jitter = 50,
+            excludes = {ExecutionRejectedException.class, Error.class})
     public FlowRunCreationResult tryCreateFlowRun(JobFlowRun candidate) {
         return createFlowRun(candidate, id -> {});
     }
 
     /** Runs the hook after the insert and before the admission transaction commits. */
-    @Retryable(maxRetries = 2, delay = 20, jitter = 50, excludes = IllegalStateException.class)
+    @Retryable(
+            maxRetries = 2,
+            delay = 20,
+            jitter = 50,
+            excludes = {ExecutionRejectedException.class, Error.class})
     public FlowRunCreationResult tryCreateFlowRun(JobFlowRun candidate, FlowRunCreationHook onCreated) {
         return createFlowRun(candidate, onCreated);
     }
@@ -80,7 +90,7 @@ public class FlowRunCreationService {
         public FlowRunCreationResult attempt(JobFlowRun candidate, FlowRunCreationHook onCreated) {
             var jobFlow = jobFlowService.lockForUpdate(candidate.getFlowId());
             if (jobFlow == null) {
-                throw new IllegalStateException("Job flow not found: " + candidate.getFlowId());
+                throw new ExecutionRejectedException(MISSING_STATE, "Job flow not found: " + candidate.getFlowId());
             }
 
             var timeouts = new ArrayList<WaitTimeout>();

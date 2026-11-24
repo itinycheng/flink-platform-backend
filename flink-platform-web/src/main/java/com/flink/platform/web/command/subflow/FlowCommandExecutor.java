@@ -1,6 +1,7 @@
 package com.flink.platform.web.command.subflow;
 
 import com.flink.platform.common.enums.JobType;
+import com.flink.platform.common.exception.ExecutionRejectedException;
 import com.flink.platform.dao.entity.result.JobCallback;
 import com.flink.platform.dao.service.JobFlowRunService;
 import com.flink.platform.dao.service.JobFlowService;
@@ -18,6 +19,7 @@ import org.springframework.stereotype.Component;
 import static com.flink.platform.common.enums.ExecutionStatus.FAILURE;
 import static com.flink.platform.common.enums.ExecutionStatus.KILLING;
 import static com.flink.platform.common.enums.ExecutionStatus.SUBMITTED;
+import static com.flink.platform.common.exception.ExecutionRejectedException.Reason.INVALID_STATE;
 
 @Component("flowCommandExecutor")
 @RequiredArgsConstructor(onConstructor_ = @Autowired)
@@ -82,7 +84,8 @@ public class FlowCommandExecutor implements CommandExecutor {
 
     private void linkToParentJobRun(long jobRunId, long subFlowRunId) {
         if (!jobRunService.linkSubFlowRunIfSubmitted(jobRunId, subFlowRunId)) {
-            throw new IllegalStateException("Parent job run is no longer SUBMITTED, jobRunId: " + jobRunId);
+            throw new ExecutionRejectedException(
+                    INVALID_STATE, "Parent job run is no longer SUBMITTED, jobRunId: " + jobRunId);
         }
     }
 }

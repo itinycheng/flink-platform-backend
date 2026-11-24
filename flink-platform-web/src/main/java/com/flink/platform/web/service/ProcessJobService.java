@@ -1,5 +1,6 @@
 package com.flink.platform.web.service;
 
+import com.flink.platform.common.exception.ExecutionRejectedException;
 import com.flink.platform.common.exception.UnrecoverableException;
 import com.flink.platform.common.util.ExceptionUtil;
 import com.flink.platform.common.util.JsonUtil;
@@ -190,7 +191,11 @@ public class ProcessJobService {
 
         private final JobFlowRunService flowRunService;
 
-        @Retryable(maxRetries = 2, delay = 20, jitter = 50, excludes = IllegalStateException.class)
+        @Retryable(
+                maxRetries = 2,
+                delay = 20,
+                jitter = 50,
+                excludes = {ExecutionRejectedException.class, Error.class})
         public void lockAndOverwriteParams(Long flowRunId, Map<String, Object> params) {
             flowRunService.lockAndOverwriteParams(flowRunId, params);
         }

@@ -4,6 +4,7 @@ import com.baomidou.dynamic.datasource.annotation.DS;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.spring.service.impl.ServiceImpl;
 import com.flink.platform.common.enums.ExecutionStatus;
+import com.flink.platform.common.exception.ExecutionRejectedException;
 import com.flink.platform.dao.entity.JobFlowRun;
 import com.flink.platform.dao.mapper.JobFlowRunMapper;
 import lombok.RequiredArgsConstructor;
@@ -27,6 +28,7 @@ import static com.flink.platform.common.enums.ExecutionStatus.KILLING;
 import static com.flink.platform.common.enums.ExecutionStatus.RUNNING;
 import static com.flink.platform.common.enums.ExecutionStatus.UNFINISHED_STATUSES;
 import static com.flink.platform.common.enums.ExecutionStatus.WAITING;
+import static com.flink.platform.common.exception.ExecutionRejectedException.Reason.MISSING_STATE;
 import static org.apache.commons.collections4.CollectionUtils.isNotEmpty;
 
 /** job config info. */
@@ -189,7 +191,7 @@ public class JobFlowRunService extends ServiceImpl<JobFlowRunMapper, JobFlowRun>
 
         var flowRun = lockForUpdate(flowRunId);
         if (flowRun == null) {
-            throw new IllegalStateException("Flow run not found: " + flowRunId);
+            throw new ExecutionRejectedException(MISSING_STATE, "Flow run not found: " + flowRunId);
         }
 
         var existingParams = flowRun.getParams();

@@ -1,5 +1,6 @@
 package com.flink.platform.web.flowrun;
 
+import com.flink.platform.common.exception.ExecutionRejectedException;
 import com.flink.platform.common.model.JobVertex;
 import com.flink.platform.dao.entity.ExecutionConfig;
 import com.flink.platform.dao.entity.JobFlowDag;
@@ -16,6 +17,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import static com.flink.platform.common.enums.ExecutionStatus.FAILURE;
+import static com.flink.platform.common.exception.ExecutionRejectedException.Reason.MISSING_STATE;
 import static org.springframework.transaction.annotation.Isolation.READ_COMMITTED;
 import static org.springframework.transaction.annotation.Propagation.REQUIRES_NEW;
 
@@ -44,7 +46,7 @@ class LegacyJobListService {
     public FlowRunCreationResult attempt(JobFlowRun candidate, FlowRunCreationHook onCreated) {
         var jobFlow = jobFlowService.lockForUpdate(candidate.getFlowId());
         if (jobFlow == null) {
-            throw new IllegalStateException("Job flow not found: " + candidate.getFlowId());
+            throw new ExecutionRejectedException(MISSING_STATE, "Job flow not found: " + candidate.getFlowId());
         }
 
         var executionConfig = candidate.getConfig();

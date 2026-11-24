@@ -231,7 +231,7 @@ public class JobExecuteThread implements Supplier<JobResponse> {
         return switch (jobRunExtraService.createJobRunIfOwned(jobInfo, flowRunId, HOST_IP)) {
             case CreateResult.Created created -> jobRunInfoService.getById(created.jobRunId());
             case CreateResult.Skipped skipped -> {
-                log.info("Job run not created for flow run {}, job {}: {}", flowRunId, jobId, skipped.reason());
+                log.warn("Job run not created for flow run {}, job {}: {}", flowRunId, jobId, skipped.reason());
                 yield null;
             }
         };

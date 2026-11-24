@@ -1,5 +1,6 @@
 package com.flink.platform.web.service;
 
+import com.flink.platform.common.exception.ExecutionRejectedException;
 import com.flink.platform.common.util.DateUtil;
 import com.flink.platform.common.util.JsonUtil;
 import com.flink.platform.dao.entity.JobInfo;
@@ -45,8 +46,14 @@ public class JobRunExtraService {
 
     private final List<VariableResolver> variableResolvers;
 
-    @Retryable(maxRetries = 2, delay = 20, jitter = 50, excludes = IllegalStateException.class)
+    @Retryable(
+            maxRetries = 2,
+            delay = 20,
+            jitter = 50,
+            excludes = {ExecutionRejectedException.class, Error.class})
     public CreateResult createJobRunIfOwned(JobInfo jobInfo, Long flowRunId, String expectedHost) {
+        // Idempotency is not closed: retries dedupe via findCreatedRun (CREATED only). If the no-worker
+        // ERROR insert commits but the commit ack is lost, the retry inserts a duplicate. Accepted risk.
         return transactionService.attempt(jobInfo, flowRunId, expectedHost);
     }
 
@@ -125,13 +132,18 @@ public class JobRunExtraService {
                 return new CreateResult.Skipped("flow run is invalid on the current host, flowRunId: " + flowRunId);
             }
 
+            var existing = jobRunService.findCreatedRun(jobInfo.getId(), flowRunId);
+            if (existing != null) {
+                return new CreateResult.Created(existing.getId());
+            }
+
             var worker = workerSelectService.randomWorker(jobInfo.getRouteUrl());
             var host = worker == null ? null : worker.getIp();
             var jobRun = buildJobRun(jobInfo, flowRunId, host);
             if (StringUtils.isEmpty(host)) {
                 jobRun.setStatus(ERROR);
                 jobRun.setEndTime(LocalDateTime.now());
-                jobRun.setBackInfo(new JobCallback("No available worker found for job: " + jobInfo.getName(), ERROR));
+                jobRun.setBackInfo(new JobCallback("No available worker found for job: " + jobInfo.getId(), ERROR));
             }
 
             if (!jobRunService.save(jobRun)) {
